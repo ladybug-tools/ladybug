@@ -3,7 +3,6 @@ import datetime
 import core
 
 class EPW:
-
     def __init__(self, epwFileAddress = None):
         """
         Import epw data from a local epw file
@@ -27,7 +26,8 @@ class EPW:
 
         self.importEpw() #import location and data
 
-    def checkEpwFileAddress(self, epwFileAddress):
+    @staticmethod
+    def checkEpwFileAddress(epwFileAddress):
         """ Checks the path and checks the type for an epw file"""
         if not os.path.isfile(epwFileAddress):
             raise Exception(epwFileAddress + ' is not a valid address.')
@@ -110,7 +110,7 @@ class EPW:
 
            Usage:
                epw = EPW("epw file address"")
-               epw.getAnnualHourlyData("RH", True)
+               epw.get_annualHourlyData("RH", True)
         """
 
         if dataType not in self.keys.keys():
@@ -137,7 +137,7 @@ class EPW:
            Usage:
                analysisPeriod = AnalysisPeriod(2,1,1,3,31,24) #start of Feb to end of Mar
                epw = EPW("epw file address")
-               epw.getAnnualHourlyData("dbTemp", analysisPeriod, True)
+               epw.get_annualHourlyData("dbTemp", analysisPeriod, True)
 
         """
 
@@ -171,8 +171,8 @@ class EPW:
 
            Usage:
                epwfile = EPW("epw file address")
-               epwfile.getHourlyDataByMonth("RH") # return values for relative humidity for 12 months
-               epwfile.getHourlyDataByMonth("dbTemp", [1,6,10]) # return values for dry bulb for Jan, Jun and Oct
+               epwfile.get_hourlyDataByMonth("RH") # return values for relative humidity for 12 months
+               epwfile.get_hourlyDataByMonth("dbTemp", [1,6,10]) # return values for dry bulb for Jan, Jun and Oct
 
         """
         hourlyDataByMonth = {}
@@ -188,6 +188,44 @@ class EPW:
                 hourlyDataByMonth[time.month].append(self.data[time])
 
         return hourlyDataByMonth
+
+    @classmethod
+    def get_dataByField(cls, epwFileAddress, fieldNumber):
+        """Return annual values for any fieldNumber in epw file.
+
+        This is a useful method to get the values for fields that Ladybug currently
+        doesn't import by default. For full list of field numbers check EnergyPlus Auxilary Programs
+
+        Args:
+            epwFile: Filepath to local epw file
+            fieldNumber: a value between 1 to 31 for different available epw fields.
+
+        Returns:
+            A list of 8760 values as string
+
+        TODO: Return should be changed to Ladybug list object
+        """
+
+        # check input data
+        cls.checkEpwFileAddress(epwFileAddress)
+        if not 0 < fieldNumber < 32:
+            raise ValueError("Field number should be between 1-31")
+
+        hourlyData = range(8760)
+        with open(epwFileAddress, 'rb') as epwin:
+            epwlines = epwin.readlines()
+
+        for HOY, line in enumerate(epwlines[8:]):
+            hourlyData[HOY] = line.strip().split(',')[fieldNumber]
+
+        return data
+
+    @classmethod
+    def get_fieldInfo(cls,fieldNumber):
+        """Return full name and base type for field number"""
+        # TODO copy data from DataPoints to this file
+        # TODO finish base class types for Radiation, etc
+        raise NotImplementedError
 
     def __repr__(self):
         return "EPW Data [%s]"%self.location.city
