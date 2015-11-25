@@ -11,33 +11,44 @@ class EPW:
 
         """
         if not epwFileAddress: return
-
         self.fileAddress = self.checkEpwFileAddress(epwFileAddress)
+        self.__isDataLoaded = False
+        self.__isLocationLoaded = False
+        self.__data = dict()
 
-        self.location = core.Location()
+    @property
+    def isDataLoaded(self):
+        return self.__isDataLoaded
 
-        # data will be collected under
-        # 'timestamp': {'dbTemp': 25, 'RH': 80, ...},
-        # 'timestamp': {'dbTemp': 26, 'RH': 75, ...},
-        self.data = dict()
-
-        self.year = 2000
-        self.sortedTimestamps = [] # place holder for sorted time stamps
-
-        self.importEpw() #import location and data
+    @property
+    def isLocationLoaded(self):
+        return self.__isLocationLoaded
 
     @staticmethod
     def checkEpwFileAddress(epwFileAddress):
         """ Checks the path and checks the type for an epw file"""
         if not os.path.isfile(epwFileAddress):
             raise Exception(epwFileAddress + ' is not a valid address.')
-        if not epwFileAddress.endswith('epw'):
+        if not epwFileAddress.lower().endswith('epw'):
             raise Exception(epwFileAddress + ' is not an .epw file.')
         return epwFileAddress
 
-    def importEpw(self):
+    @property
+    def location(self):
+        if not self.isLocationLoaded: self.importData(True)
+        return self.stationLocation
+
+    @property
+    def dryBulbTemperature(self):
+        """Return annaual Dry Bulb Temperature as a Ladybug Data List"""
+        if not self.isDataLoaded: self.importData()
+        return self.get_dataByField[6]
+
+
+    #TODO: import EPW header. Currently I just ignore header data
+    def importData(self, onlyImportLocation = False):
         """
-        imports data from am epw file.
+        imports data from an epw file.
         Hourly data will be saved in self.data and location data
         will be saved in self.location
         """
@@ -49,28 +60,38 @@ class EPW:
         # first line has location data - Here is an example
         # LOCATION,Denver Centennial  Golden   Nr,CO,USA,TMY3,724666,39.74,-105.18,-7.0,1829.0
         locationData = epwlines[0].strip().split(',')
-        self.location.city = locationData[1]
-        self.location.state = locationData[2]
-        self.location.country = locationData[3]
-        self.location.source = locationData[4]
-        self.location.stationId = locationData[5]
-        self.location.latitude = locationData[6]
-        self.location.longitude = locationData[7]
-        self.location.timeZone = locationData[8]
-        self.location.elevation = locationData[9]
+        self.stationLocation = core.Location()
+        self.stationLocation.city = locationData[1]
+        self.stationLocation.state = locationData[2]
+        self.stationLocation.country = locationData[3]
+        self.stationLocation.source = locationData[4]
+        self.stationLocation.stationId = locationData[5]
+        self.stationLocation.latitude = locationData[6]
+        self.stationLocation.longitude = locationData[7]
+        self.stationLocation.timeZone = locationData[8]
+        self.stationLocation.elevation = locationData[9]
+
+        self.__isLocationLoaded = True
+
+        if onlyImportLocation: return
 
         # import hourly data
+        # TODO: create empty Ladybug data list for all the fields
+        # TODO: clean and modify methods - some of the methods will be moved to DataList
+
+        # create generic header
+
         for line in epwlines[8:]:
             data = line.strip().split(',')
             year, month, day, hour = map(int, data[:4])
             # in an epw file year can be different for each month
             # since I'm using this timestamp as the key and will be using it for sorting
             # I'm setting it up to 2000 - the real year will be collected under modelYear
-            timestamp = datetime.datetime(self.year, month, day, hour-1)
-            self.data[timestamp] = dict()
+            timestamp = core.LBDateTime(month, day, hour)
             self.data[timestamp]['modelYear'] = year
             try:
-                self.data[timestamp]['dbTemp'] = float(data[6])
+                self.__data[6] = core.DataList()
+                self.__data[6] = core.LBData(float(data[6]), timestamp)
                 self.data[timestamp]['dewPoint'] = float(data[7])
                 self.data[timestamp]['RH'] = float(data[8])
                 self.data[timestamp]['windSpeed'] = float(data[21])
@@ -87,8 +108,11 @@ class EPW:
             except:
                 raise Exception("Failed to import data for " + str(timestamp))
 
+        self.__isDataLoaded = True
+
         self.sortedTimestamps = sorted(self.data.keys())
 
+    # TODO: This should move under Ladybug data list
     def get_dataByTime(self, month, day, hour, dataType = None):
         """
         Get weather data for a specific hour of the year for a specific data type (e.g. dbTemp, RH)
@@ -118,10 +142,10 @@ class EPW:
                            "check self.keys for valid keys")
         header = []
         if includeHeader:
-            header = LadybugHeader(self.location.city, dataType, \
+            header = core.Header(self.stationLocation.city, dataType, \
                         self.keys[dataType]['unit'], "Hourly", analysisPeriod)
 
-            header = header.toList()
+            header = header.toList
 
         return header + [self.data[time][dataType] for time in self.sortedTimestamps]
 
@@ -146,10 +170,10 @@ class EPW:
                            "check self.keys for valid keys")
         header = []
         if includeHeader:
-            header = LadybugHeader(self.location.city, dataType, \
+            header = core.Header(self.stationLocation.city, dataType, \
                         self.keys[dataType]['unit'], "Hourly", analysisPeriod)
 
-            header = header.toList()
+            header = header.toList
 
         # Find the index for start to end of analysis period
         stInd = self.sortedTimestamps.index(analysisPeriod.stTime)
@@ -218,7 +242,7 @@ class EPW:
         for HOY, line in enumerate(epwlines[8:]):
             hourlyData[HOY] = line.strip().split(',')[fieldNumber]
 
-        return data
+        return hourlyData
 
     @classmethod
     def get_fieldInfo(cls,fieldNumber):
@@ -228,4 +252,167 @@ class EPW:
         raise NotImplementedError
 
     def __repr__(self):
-        return "EPW Data [%s]"%self.location.city
+        return "EPW Data [%s]"%self.stationLocation.city
+
+class EPWDataTypes:
+    """EPW weather file fields"""
+
+    __fields = {
+        1 : { 'name'  : 'Year'
+            },
+
+        2 : { 'name'  : 'Month'
+            },
+
+        3 : { 'name'  : 'Day'
+            },
+
+        4 : { 'name'  : 'Hour'
+            },
+
+        5 : { 'name'  : 'Minute'
+            },
+
+        6 : { 'name'  : 'Dry Bulb Temperature',
+                'units' : 'C',
+                'min'   : -70,
+                'max'   : 70
+            },
+
+        7 : { 'name' : 'Dew Point Temperature',
+                'units' : 'C',
+                'min' : -70,
+                'max' : 70
+            },
+
+        8 : { 'name' : 'Relative Humidity',
+                'missing' : 999,
+                'min' : 0,
+                'max' : 110
+            },
+
+        9 : { 'name' : 'Atmospheric Station Pressure',
+                'units' : 'Pa',
+                'missing' : 999999,
+                'min' : 31000,
+                'max' : 120000
+            },
+
+        10 : { 'name' : 'Extraterrestrial Horizontal Radiation',
+             'units' : 'Wh/m2',
+             'missing' :  9999
+            },
+
+        11 : { 'name' : 'Extraterrestrial Direct Normal Radiation',
+             'units' :  'Wh/m2',
+             'missing' : 9999
+            },
+
+        12 : { 'name' : 'Horizontal Infrared Radiation Intensity',
+             'units' : 'Wh/m2',
+             'missing' : 9999
+            },
+
+        13 : { 'name' : 'Global Horizontal Radiation',
+             'units' : 'Wh/m2',
+             'missing' : 9999
+            },
+
+        14 : { 'name' : 'Direct Normal Radiation',
+             'units' : 'Wh/m2',
+             'missing' : 9999,
+             'min' : 0
+            },
+
+        15 : { 'name' : 'Diffuse Horizontal Radiation',
+             'units' : 'Wh/m2',
+             'missing' : 9999,
+             'min' : 0
+            },
+
+        16 : { 'name' : 'Global Horizontal Illuminance',
+             'units' : 'lux',
+             'missing' : 999999
+             # note will be missing if >= 999900
+            },
+
+        17 : { 'name' : 'Direct Normal Illuminance',
+             'units' : 'lux',
+             'missing' : 999999,
+             # note will be missing if >= 999900
+            },
+
+        18 : { 'name' : 'Diffuse Horizontal Illuminance',
+             'units' : 'lux',
+             'missing' : 999999
+             # note will be missing if >= 999900
+            },
+
+        19 : { 'name' : 'Zenith Luminance',
+             'units' : 'Cd/m2',
+             'missing' : 9999,
+             # note will be missing if >= 9999
+            },
+
+        20 : { 'name' : 'Wind Direction',
+             'units' : 'degrees',
+             'missing' : 999,
+             'min' : 0,
+             'max' : 360
+            },
+
+        21 : { 'name' : 'Wind Speed',
+             'units' : 'm/s',
+             'missing' : 999,
+             'min' : 0,
+             'max' : 40
+            },
+
+        22 : { 'name' : 'Total Sky Cover', # (used if Horizontal IR Intensity missing)
+             'missing' : 99
+            },
+
+        23 : { 'name' : 'Opaque Sky Cover', #(used if Horizontal IR Intensity missing)
+             'missing' : 99
+            },
+
+        24 : { 'name' : 'Visibility',
+             'units' : 'km',
+             'missing' : 9999
+            },
+
+        25 : { 'name' : 'Ceiling Height',
+             'units' : 'm',
+             'missing' : 99999
+            },
+
+        26 : { 'name' : 'Present Weather Observation'
+            },
+
+        27 : { 'name' : 'Present Weather Codes'
+            },
+
+        28 : { 'name' : 'Precipitable Water',
+             'units' : 'mm',
+             'missing' : 999
+            },
+
+        29 : { 'name' : 'Aerosol Optical Depth',
+             'units' : 'thousandths',
+             'missing' : 999
+            },
+
+        30 : { 'name' : 'Snow Depth',
+             'units' : 'cm',
+             'missing' : 999
+            },
+
+        31 : { 'name' :  'Days Since Last Snowfall',
+             'missing' : 99
+            }
+        }
+
+    @classmethod
+    def get_fieldByNumber(cls, fieldNumber):
+        """Return detailed field information based on field number"""
+        pass

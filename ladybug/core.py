@@ -1,8 +1,78 @@
-import datetime
 import re
+import datetime
+
+class DateTimeLib:
+    """Ladybug DateTime Libray
+    This class includes useful data and methods for date and time
+    """
+    monthList = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+    numOfDaysEachMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    numOfDaysUntilMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
+    numOfHoursUntilMonth = [24 * numOfDay for numOfDay in numOfDaysUntilMonth]
+
+    @classmethod
+    def getHourOfYear(cls, month, day, hour):
+        """Return hour of the year between 1 and 8760."""
+        # make sure input values are correct
+        cls.checkDateTime(month, day, hour)
+
+        # fix the end day
+        JD = cls.numOfDaysUntilMonth[month-1] + int(day)
+        return (JD - 1) * 24 + hour
+
+    # TODO: remove dependencies to datetime libray
+    @staticmethod
+    def checkDateTime(month, day, hour):
+        """Checks if time combination is a valid time."""
+        try:
+            return datetime.datetime(2000, month, day, hour-1)
+        except ValueError, e:
+            raise e
+
+    @classmethod
+    def getMonthDayAndHour(cls, hourOfYear):
+        """Return month, day and hour for an hour of the year"""
+        if hourOfYear%8760==0: return 12, 31, 24
+
+        # find month
+        for monthCount in range(12):
+            if hourOfYear <= cls.numOfHoursUntilMonth[monthCount + 1]:
+                month = monthCount + 1
+                break
+
+        # find day and hour
+        if hourOfYear%24 == 0:
+            # last hour of the day
+            day = int((hourOfYear - cls.numOfHoursUntilMonth[month - 1])/24)
+            hour = 24
+        else:
+            day = int((hourOfYear - cls.numOfHoursUntilMonth[month - 1])/24) + 1
+            hour = hourOfYear%24
+
+        return month, day, hour
+
+# TODO: add comparison methods (largerthan, smallerthan, ...)
+# TODO: add monthly, daily average datetime values
+class LBDateTime:
+    def __init__(self, month = 1, day = 1, hour = 1):
+        DateTimeLib.checkDateTime(month, day, hour)
+        self.month = month
+        self.day = day
+        self.hour = hour
+        self.HOY = DateTimeLib.getHourOfYear(self.month, self.day, self.hour)
+
+    @classmethod
+    def fromHOY(cls, HOY):
+        month, day, hour = DateTimeLib.getMonthDayAndHour(HOY)
+        return LBDateTime(month, day, hour)
+
+    def __repr__(self):
+        return "%d %s at %d"%( self.day, DateTimeLib.monthList[self.month-1], self.hour)
 
 class AnalysisPeriod:
-    """Define a Ladybug Analysis Period.
+    """Ladybug Analysis Period.
+
+        A continuous analysis period between two days of the year between certain hours
 
         Attributes:
             stMonth: An integer between 1-12 for starting month (default = 1)
@@ -15,52 +85,80 @@ class AnalysisPeriod:
             endHour: An integer between 1-24 for ending hour (default = 24)
             timestep: An integer between 1-60 for timestep (default = 1)
     """
-
+    #TODO: handle timestep between 1-60
     def __init__(self, stMonth = 1, stDay = 1, stHour = 1, endMonth = 12,
-                endDay = 31, endHour = 24, timestep = 1):
+                endDay = 31, endHour = 24):
         """Init an analysis period"""
-        self.year = 2000 # Ladybug's Analysis period year is always set to 2000
-        self.timestep = datetime.timedelta(hours = timestep)
-        self.stTime = self.checkDateTime(stMonth, stDay, stHour-1)
-        self.endTime = self.checkDateTime(endMonth, endDay, endHour-1)
 
-        if stHour <= endHour:
+        self.stTime = LBDateTime(int(stMonth), int(stDay), int(stHour))
+        self.endTime = LBDateTime(int(endMonth), int(endDay), int(endHour))
+        self.timestep = 1
+
+        if self.stTime.hour <= self.endTime.hour:
             self.overnight = False # each segments of hours will be in a single day
         else:
             self.overnight = True
 
-        # A reversed analysis period is went starting month is after ending month
+        # A reversed analysis period defines a period that starting month is after ending month
         # (e.g DEC to JUN)
-        if self.get_HOY(self.stTime)> self.get_HOY(self.endTime):
+        if self.stTime.HOY > self.endTime.HOY:
             self.reversed = True
         else:
             self.reversed = False
 
-        self.timestamps = self.get_timestamps()
+    @classmethod
+    def fromAnalysisPeriod(cls, analysisPeriod):
+        """Create and Analysis Period from an analysis period
 
-    def checkDateTime(self, month, day, hour):
-        """Checks if time combination is a valid time."""
+            This method is useful to be called from inside Grasshopper or Dynamo
+        """
+        if not analysisPeriod:
+            print "Analysis period is set to annual"
+            return AnalysisPeriod()
+        elif isinstance(analysisPeriod, AnalysisPeriod):
+            return analysisPeriod
+        elif isinstance(analysisPeriod, str):
+            return cls.__fromAnalysisPeriodString(analysisPeriod)
+
+    @classmethod
+    def __fromAnalysisPeriodString(cls, analysisPeriodString):
+
+        # %s/%s to %s/%s between %s to %s
+        ap = analysisPeriodString.lower() \
+                        .replace(' to ', ' ') \
+                        .replace('/', ' ') \
+                        .replace(' between ', ' ')
+
         try:
-            return datetime.datetime(self.year, month, day, hour)
-        except ValueError, e:
-            raise e
-
-    def get_HOY(self, time):
-        """Return hour of the year between 1 and 8760."""
-        # fix the end day
-        numOfDays = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]
-        JD = numOfDays[time.month-1] + int(time.day)
-        return (JD - 1) * 24 + time.hour
+            stMonth, stDay, \
+            endMonth, endDay, \
+            stHour, endHour =  ap.split(' ')
+            return AnalysisPeriod(stMonth, stDay, stHour, endMonth, endDay, endHour)
+        except:
+            raise ValueError(analysisPeriodString + " is not a valid analysis period!")
 
     def get_timestamps(self):
-        """Return a list of timestamps in this analysis period."""
+        """Return a list of Ladybug DateTime in this analysis period."""
         timestamps = []
-        curr = self.stTime
-        while curr <= self.endTime:
-            if self.isTimeIncluded(curr): timestamps.append(curr)
-            curr += self.timestep
-        return timestamps
+        curr = self.stTime.HOY
+        if not self.reversed:
+            while curr <= self.endTime.HOY:
+                time = LBDateTime.fromHOY(curr)
+                if self.isTimeIncluded(time):
+                    timestamps.append(time)
+                curr += self.timestep
+        else:
+            while (1 <= curr <= self.endTime.HOY or self.stTime.HOY <= curr <= 8760):
+                time = LBDateTime.fromHOY(curr)
+                if self.isTimeIncluded(time):
+                    timestamps.append(time)
 
+                if curr == 8759:
+                    curr = 8760
+                else:
+                    curr = (curr + self.timestep)%8760
+
+        return timestamps
 
     def isTimeIncluded(self, time):
         """Check if time is included in analysis period.
@@ -69,44 +167,39 @@ class AnalysisPeriod:
             otherwise return False
 
             Args:
-                time: An input timedate
+                time: A LBDateTime to be tested
 
             Returns:
 
         """
         # time filtering in Ladybug and honeybee is slightly different since start hour and end hour will be
         # applied for every day. For instance 2/20 9am to 2/22 5pm means hour between 9-17 during 20, 21 and 22 of Feb
+
         # First check if the day is in range
-        if not self.reversed and not self.stTime<= time <= self.endTime:
+        if not self.reversed and not self.stTime.HOY<= time.HOY <= self.endTime.HOY:
             return False
         if self.reversed and \
-           not (self.stTime<= time <= datetime.datetime(self.year, 12, 31, 23) \
-           or datetime.datetime(self.year, 1, 1, 1) <= time <= self.endTime):
+           not (self.stTime.HOY<= time.HOY <= 8760 or 1 <= time.HOY <= self.endTime.HOY):
                return False
 
-        # Now check the hours to make sure it's between the range
-        if not self.overnight and self.stTime.hour <= time.hour <= self.endTime.hour: return True
-        if self.overnight and (self.stTime.hour <= time.hour <= 23 \
-                                or 0<= time.hour <= self.endTime.hour): return True
+        # The day is in range. Now check the hours to make sure it's between the range
+        hour = time.hour
+
+        if not self.overnight \
+            and self.stTime.hour <= hour <= self.endTime.hour: return True
+
+        if self.overnight and (self.stTime.hour <= hour <= 24 \
+                                or 1 <= hour <= self.endTime.hour): return True
 
         return False
 
-    def get_startTimeAsTuple(self):
-        """Return start month, day and hour as a tuple."""
-        return (self.stTime.month, self.stTime.day, self.stTime.hour + 1)
-
-
-    def get_endTimeAsTuple(self):
-        """Return end month, day and hour of analysis period as a tuple."""
-        return (self.endTime.month, self.endTime.day, self.endTime.hour + 1)
-
     def __repr__(self):
-        return "%s/%s %s To %s/%s %s"%\
-            (self.stTime.month, self.stTime.day, self.stTime.hour + 1, \
-             self.endTime.month, self.endTime.day, self.endTime.hour + 1)
+        return "%s/%s to %s/%s between %s to %s"%\
+            (self.stTime.month, self.stTime.day, \
+             self.endTime.month, self.endTime.day, \
+             self.stTime.hour, self.endTime.hour)
 
-
-class Header:
+class LBHeader:
     """Standard Ladybug header for lists.
 
         The header carries data for city,
@@ -120,26 +213,29 @@ class Header:
             analysisPeriod: A Ladybug analysis period. (defualt: 1 Jan 1 to 31 Dec 24)
     """
 
-    def __init__(self, city = "", dataType = "", unit = "", frequency = "Hourly", analysisPeriod = None):
+    def __init__(self, city = 'unknown', dataType = 'unknown', unit = 'unknown', frequency = 'unknown', analysisPeriod = None):
         """Initiate Ladybug header for lists."""
-        self.header = 'location|dataType|units|frequency|startsAt|endsAt'
         self.city = city
         self.dataType = dataType
         self.unit = unit
         self.frequency = frequency
-        self.analysisPeriod = AnalysisPeriod() if not analysisPeriod else analysisPeriod
+        self.analysisPeriod = 'unknown' if not analysisPeriod \
+                else AnalysisPeriod.fromAnalysisPeriod(analysisPeriod)
+
+    @property
+    def __key(self):
+        return 'location|dataType|units|frequency|dataPeriod'
 
     @property
     def toList(self):
         """Return Ladybug header as a list"""
         return [
-                 self.header,
+                 self.__key,
                  self.city,
                  self.dataType,
                  self.unit,
                  self.frequency,
-                 self.analysisPeriod.get_startTimeAsTuple(),
-                 self.analysisPeriod.get_endTimeAsTuple()
+                 self.analysisPeriod
                ]
 
     def __repr__(self):
@@ -192,321 +288,79 @@ class Location:
     def __repr__(self):
         return "%s"%(self.EPStyleLocationString)
 
-class Dataset:
-    """A standard Ladybug Dataset
-        Storage of key: values for Ladybug data where:
-         key is alway a datetime
-         It will be normally used with Ladybug header
+class LBData:
+    """Ladybug data point"""
+
+    # TODO: Change value to be an object from it's data type
+    #       Check datatype.py for available datatypes
+
+    def __init__(value, dateTime):
+        self.datetime = dateTime
+        self.value = value
+
+    @classmethod
+    def fromLBData(cls, data):
+        if isinstance(data, LBData):
+            return data
+        else:
+            raise ValueError
+
+    def __repr__(self):
+        return str(self.value)
+
+class DataList:
+    """Ladybug data list
+
+        A list of ladybug data with a LBHeader
     """
-    def __init__(self, data, header):
-        self.data = data
-        self.header = header
+    def __init__(self, data = None, header = None):
 
+        self.__data = checkInputData(data)
+        self.__header = LBHeader() if not header else header
 
-    def filterByTime(self):
+    def checkInputData(self, data):
+        """Check input data"""
+        if not data: return []
+        return [LBData.fromLBData(d) for d in data]
+
+    def append(self, data):
+        """Append LBData to current list"""
+        self.extend([data])
+
+    def extend(self, dataList):
+        """Extend a list of LBData to the end of current list"""
+        self.__data.extend(self.checkInputData(dataList))
+
+    def updateValuesForAnAnalysisPeriod(self, values, AnalysisPeriod):
+        raise NotImplemented
+
+    def updateHourlyValues(self, values, hoursOfYear):
+        raise NotImplemented
+
+    def updateHourlyValue(self, value, hourOfYear):
+        raise NotImplemented
+
+    def filterByAnalysisPeriod(self):
         pass
 
     def filterByConditionalStatement(self):
         pass
 
     def filterByPattern(self):
-        pass
+        raise NotImplemented
 
     @property
     def averageMonthly(self):
-        return
+        raise NotImplemented
 
     @property
     def averageWeekly(self):
-        return
+        raise NotImplemented
 
     @property
     def averageForAnHourEveryMonth(self):
-        return
-
-class DataTypes:
-    """Collection of Ladybug's data types
-
-        Ladybug types are mainly based on available data in epw file.
-        There are also native Ladybug types which doesn't exist in epw file
-        such as cumulative radiation, sunlight hours, etc.
-
-    """
-
-    # TODO: Use field numbers to match  the names. the rest should come from type
-    __dataTypesData = {
-        'modelYear' : {'fullName':'Year', 'unit':'Year'},
-        'dbTemp'    : {'fullName':'Dry Bulb Temperature', 'type': 'Temperature'},
-        'dewPoint'  : {'fullName':'Dew Point Temperature', 'unit':'C'},
-        'RH'        : {'fullName':'Relative Humidity', 'unit':'%'},
-        'windSpeed' : {'fullName':'Wind Speed', 'unit':'m/s'},
-        'windDir'   : {'fullName':'Wind Direction', 'unit':'degrees'},
-        'dirRad'    : {'fullName':'Direct Normal Radiation', 'unit':'Wh/m2'},
-        'difRad'    : {'fullName':'Diffuse Horizontal Radiation', 'unit':'Wh/m2'},
-        'glbRad'    : {'fullName':'Global Horizontal Radiation', 'unit':'Wh/m2'},
-        'dirIll'    : {'fullName':'Direct Normal Illuminance', 'unit':'lux'},
-        'difIll'    : {'fullName':'Diffuse Horizontal Illuminance', 'unit':'lux'},
-        'glbIll'    : {'fullName':'Global Horizontal Illuminance', 'unit':'lux'},
-        'cloudCov'  : {'fullName':'Total Cloud Cover', 'unit':'tenth'},
-        'rainDepth' : {'fullName':'Liquid Precipitation Depth', 'unit':'mm'},
-        'barPress'  : {'fullName':'Barometric Pressure', 'unit':'Pa'}
-        }
-
-    __dataTypes = __dataTypesData.keys()
-
-    # error message to be raised on type error
-    __typeErrorMsg = "%s is not a valid Ladybug data Type!\nValid data types are: %s"
-
-    @classmethod
-    def unit(cls, dataType):
-        """Return unit for a dataType"""
-        if dataType not in cls.__dataTypes:
-            raise ValueError(cls.__typeErrorMsg%(dataType, cls.__dataTypes))
-        return cls.__dataTypesData[dataType]['unit']
-
-    @classmethod
-    def fullName(cls, dataType):
-        """Return fullName for a dataType"""
-        if dataType not in cls.__dataTypes:
-            raise ValueError(cls.__typeErrorMsg%(dataType, cls.__dataTypes))
-        return cls.__dataTypesData[dataType]['fullName']
-
-    @classmethod
-    def get_dataTypes(cls):
-        return cls.__dataTypes
-
-    def __repr__():
-        return "Ladybug Data Types"
-
-class DataPoint(object):
-    """ A Ladybug data point
-
-        Attributes:
-            value :<flot>, <integer>, <string> based on type
-            isEpwData: A boolean that indicates if the data is from an epw
-                file. Valid range for epw file can be differnt. For example
-                Temperature range in an ewp file is -70 C - 70 C (Default: False)
-            standard: class of SI or IP. (Default is SI)
-    """
-
-    def __init__(self, value, isEpwData = False, standard = None):
-        if not standard: standard = SI
-        self.value = value
-        self.standard = standard
-        self.isEpwData = isEpwData
-
-        self.__typeErrorMsg = "%s is not a valid input type. " + \
-            "Input should be from %s"
-        self.__valueErrorMsg = "%s is not a valid input type. " + \
-            "Input should be between %s and %s"
-        self.__standardErrorMsg = "%s is not a valid standard type. " + \
-            "Valid standards are SI and IP"
-
-        #check validity of input
-        self.isValid(raiseException = True)
-
-    def isValid(self, raiseException = False):
-        """Check validity of input"""
-        if not(self.standard is IP or self.standard is SI):
-            raise Exception(self.__standardErrorMsg%self.standard)
-
-        if self.valueType:
-            try:
-                self.value = map(self.valueType, [self.value])[0]
-            except:
-                if raiseException:
-                    raise TypeError(self.__typeErrorMsg%(self.value, self.valueType))
-                return False #not a valid standard
-
-        #check if the valus is in range
-        if self.valueType is str: return True # if not a number return True
-
-        isValid = self.__isInRange
-        if not isValid and raiseException:
-            raise ValueError(self.__valueErrorMsg%(self.value, self.minimum, self.maximum))
-        else:
-            return isValid
+        raise NotImplemented
 
     @property
-    def __isInRange(self):
-        """Retuen True is value is in range"""
-        return self.minimum <= self.value <= self.maximum
-
-    def get_valueBasedOnCurrentStandard(self, value, valueStandard):
-        """Return the value based on the current standard IP/SI
-
-            This method makes it possible to set minimum and maximum values
-            with a single number in SI or IP
-        """
-        if valueStandard is self.standard:
-            return value # the standard is the same so return the same value
-        elif self.standard is SI:
-            #The value is in IP and should be converted to SI
-            return self.get_valueInSI(value)
-        elif self.standard is IP:
-            #The value is in SI and should be converted to IP
-            return self.get_valueInIP(value)
-
-    def convertToIP(self):
-        """Change to IP system
-
-            Warning: convertToIP only and only changes this value to IP
-        """
-        if self.standard is IP: return True
-        # If it's in SI change system and value
-        self.standard = IP
-        self.value = self.get_valueBasedOnCurrentStandard(self.value, SI)
-        return True
-
-    def convertToSI(self):
-        """Change to SI system
-
-            Warning: convertToSI only and only changes this value to SI
-        """
-        if self.standard is SI: return True
-        # If it's in IP change system and value
-        self.standard = SI
-        self.value = self.get_valueBasedOnCurrentStandard(self.value, IP)
-        return True
-
-    def unit(self):
-        raise NotImplementedError
-
-    def valueType(self):
-        raise NotImplementedError
-
-    def minimum(self):
-        raise NotImplementedError
-
-    def maximum(self):
-        raise NotImplementedError
-
-    def __repr__(self):
-        return str(self.value)
-
-class GenericData(DataPoint):
-    """Generic Data Point
-
-        Attributes:
-            value :<flot>, <integer>, <string> based on type
-            isEpwData: A boolean that indicates if the data is from an epw
-                file. Valid range for epw file can be differnt. For example
-                Temperature range in an ewp file is -70 C - 70 C (Default: False)
-            standard: SI or IP. (Default is SI)
-            def __init__(self, value, isEpwData = False, standard= None):
-                DataPoint.__init__(self, value, isEpwData, standard)
-                #check validity of input
-                self.isValid(valueType = self.valueType, raiseException = True)
-    """
-    def __init__(self, value, isEpwData = False, standard= None):
-        DataPoint.__init__(self, value, isEpwData, standard)
-
-    @property
-    def unit(self):
-        return ""
-
-    @property
-    def valueType(self):
-        return str
-
-    @property
-    def minimum(self):
-        """Return minimum valid value"""
-        return float("-inf")
-
-    @property
-    def maximum(self):
-        return float("inf")
-
-    @staticmethod
-    def get_valueInIP(value):
-        """return the value in IP assuming input value is in SI"""
-        return value
-
-    @staticmethod
-    def get_valueInSI(value):
-        """return the value in SI assuming input value is in IP"""
-        return value
-
-class Temperature(DataPoint):
-    """Base type for temperature"""
-
-    def __init__(self, value, isEpwData = False, standard= None):
-        DataPoint.__init__(self, value, isEpwData, standard)
-
-    @property
-    def unit(self):
-        if self.standard is SI: return "C"
-        elif self.standard is IP: return "F"
-
-    @property
-    def valueType(self):
-        return float
-
-    @property
-    def minimum(self):
-        """Return minimum valid value"""
-        if self.isEpwData:
-            return self.get_valueBasedOnCurrentStandard(-70, SI)
-        else:
-            return float("-inf")
-
-    @property
-    def maximum(self):
-        """Return maximum valid value"""
-        if self.isEpwData:
-            return self.get_valueBasedOnCurrentStandard(70, SI)
-        else:
-            return float("inf")
-
-    @staticmethod
-    def get_valueInIP(value):
-        """return the value in F assuming input value is in C"""
-        return value * 9 / 5 + 32
-
-    @staticmethod
-    def get_valueInSI(value):
-        """return the value in C assuming input value is in F"""
-        return (value - 32) * 5 / 9
-
-class RelativeHumidity(DataPoint):
-    """Base type for Relative Humidity"""
-
-    def __init__(self, value, isEpwData = False, standard= None):
-        DataPoint.__init__(self, value, isEpwData, standard)
-
-    @property
-    def unit(self):
-        return "%"
-
-    @property
-    def valueType(self):
-        return float
-
-    @property
-    def minimum(self):
-        """Return minimum valid value"""
-        return 0
-
-    @property
-    def maximum(self):
-        """Return maximum valid value"""
-        return 100
-
-    @staticmethod
-    def get_valueInIP(value):
-        """return the value in IP assuming input value is in SI"""
-        return value
-
-    @staticmethod
-    def get_valueInSI(value):
-        """return the value in SI assuming input value is in IP"""
-        return value
-
-class SI(object):
-    def __repr__():
-        return "SI"
-
-class IP(object):
-    def __repr__():
-        return "IP"
+    def toList(self):
+        return self.__header.toList + self.__data
