@@ -7,20 +7,45 @@ Contains usage codes.It is NOT a unit test code.
 """
 _epwFile = r"C:\EnergyPlusV7-2-0\WeatherData\USA_CO_Golden-NREL.724666_TMY3.epw"
 
-# analysisPeriod = lb.core.AnalysisPeriod(12, 30, 1, 2, 1, 24)
-# print analysisPeriod.get_timestamps()
+## create an analysis period
+analysisPeriod = lb.core.AnalysisPeriod(12, 30, 1, 2, 1, 24)
+# print len(analysisPeriod.get_timestamps())
+print analysisPeriod.totalNumOfHours
 
 epwfile = lb.epw.EPW(_epwFile)
 
-#f = lb.epw.EPWDataTypes.fields()
-f = lb.epw.EPWDataTypes.get_fieldByNumber(6)
+# lb.epw.EPWDataTypes.fieldNumbers()
+
+#f = lb.epw.EPWDataTypes.get_fieldByNumber(6)
 #print f.name, f.units
 
-print epwfile.dryBulbTemperature.toList
-# print lb.epw.EPW.get_dataByField(_epwFile, 29)
+DBT = epwfile.dryBulbTemperature
+# RH_values = epwfile.relativeHumidity.values
+#print DBT.header
+# print DBT
+
+#DBT.filterByAnalysisPeriod(analysisPeriod)
+
+#montlyData = DBT.separateDataByMonth()
+#dailyData = DBT.separateDataByDay(range(1, 30))
+
+# for value in dailyData[2]: print value.datetime
+
+# print DBT.averageMonthly()
+# print DBT.averageMonthlyForEachHour()
+
+# monthlyValues = DBT.separateDataByMonth([1])
+# separatedHourlyData = DBT.separateDataByHour(userDataList = monthlyValues[1])
+# for hour, data in separatedHourlyData.items():
+#    print "average temperature values for hour " + str(hour) + " during JAN is " + str(core.DataList.average(data)) + " " + DBT.header.unit
 
 
-# print epwfile.get_hourlyDataByAnalysisPeriod("RH", analysisPeriod, True)
+## modify data in an epw weather file
+newValues = analysisPeriod.totalNumOfHours * [0]
+DBT.updateDataForAnAnalysisPeriod(newValues, analysisPeriod)
+DBT.updateDataForAnHour(20, 34)
+
+## save the epw file as a new epw file
 
 # lb.windRose.getWindRoseData(epwFile)
 #windrose = lbg.calculateWindrose(windRoseData)

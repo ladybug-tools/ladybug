@@ -15,6 +15,7 @@ class EPW:
         self.__isDataLoaded = False
         self.__isLocationLoaded = False
         self.__data = dict()
+        self.epwHeader = None
 
     @property
     def isDataLoaded(self):
@@ -38,12 +39,6 @@ class EPW:
         if not self.isLocationLoaded: self.importData(True)
         return self.stationLocation
 
-    @property
-    def dryBulbTemperature(self):
-        """Return annaual Dry Bulb Temperature as a Ladybug Data List"""
-        return self.get_dataByField(6)
-
-
     #TODO: import EPW header. Currently I just ignore header data
     def importData(self, onlyImportLocation = False):
         """
@@ -58,26 +53,27 @@ class EPW:
         # import location data
         # first line has location data - Here is an example
         # LOCATION,Denver Centennial  Golden   Nr,CO,USA,TMY3,724666,39.74,-105.18,-7.0,1829.0
-        locationData = epwlines[0].strip().split(',')
-        self.stationLocation = core.Location()
-        self.stationLocation.city = locationData[1]
-        self.stationLocation.state = locationData[2]
-        self.stationLocation.country = locationData[3]
-        self.stationLocation.source = locationData[4]
-        self.stationLocation.stationId = locationData[5]
-        self.stationLocation.latitude = locationData[6]
-        self.stationLocation.longitude = locationData[7]
-        self.stationLocation.timeZone = locationData[8]
-        self.stationLocation.elevation = locationData[9]
+        if not self.__isLocationLoaded:
+            locationData = epwlines[0].strip().split(',')
+            self.stationLocation = core.Location()
+            self.stationLocation.city = locationData[1]
+            self.stationLocation.state = locationData[2]
+            self.stationLocation.country = locationData[3]
+            self.stationLocation.source = locationData[4]
+            self.stationLocation.stationId = locationData[5]
+            self.stationLocation.latitude = locationData[6]
+            self.stationLocation.longitude = locationData[7]
+            self.stationLocation.timeZone = locationData[8]
+            self.stationLocation.elevation = locationData[9]
 
-        self.__isLocationLoaded = True
+            self.__isLocationLoaded = True
+            if onlyImportLocation: return
 
-        if onlyImportLocation: return
+        # TODO: create an object from the header and analyze data
+        # get epw header
+        self.epwHeader = epwlines[:9]
 
         # import hourly data
-        # TODO: create empty Ladybug data list for all the fields
-        # TODO: clean and modify methods - some of the methods will be moved to DataList
-
         analysisPeriod = core.AnalysisPeriod()
         fieldNumbers = [1] + range(6, 32) # 1 is year that data is collected
         for fieldNumber in fieldNumbers:
@@ -118,102 +114,8 @@ class EPW:
         if dataType in self.keys.keys(): return self.data[time][dataType]
         return self.data[time]
 
-    def get_annualHourlyData(self, dataType, includeHeader = True):
-        """Returns a list of values for annual hourly data for a specific data type
-
-           Parameters:
-               data Type: Any of the available dataTypes in self.keys
-               includeHeader: Set to True to have Ladybug Header added at the start of list
-
-           Usage:
-               epw = EPW("epw file address"")
-               epw.get_annualHourlyData("RH", True)
-        """
-
-        if dataType not in self.keys.keys():
-            raise Exception(dataType + " is not a valid key" + \
-                           "check self.keys for valid keys")
-        header = []
-        if includeHeader:
-            header = core.Header(self.stationLocation.city, dataType, \
-                        self.keys[dataType]['unit'], "Hourly", analysisPeriod)
-
-            header = header.toList
-
-        return header + [self.data[time][dataType] for time in self.sortedTimestamps]
-
-    def get_hourlyDataByAnalysisPeriod(self, dataType, analysisPeriod, includeHeader = True):
-
-        """Returns a list of values for the analysis period for a specific data type
-
-           Parameters:
-               data Type: Any of the available dataTypes in self.keys
-               analysis period: A Ladybug analysis period
-               includeHeader: Set to True to have Ladybug Header added at the start of list
-
-           Usage:
-               analysisPeriod = AnalysisPeriod(2,1,1,3,31,24) #start of Feb to end of Mar
-               epw = EPW("epw file address")
-               epw.get_annualHourlyData("dbTemp", analysisPeriod, True)
-
-        """
-
-        if dataType not in self.keys.keys():
-            raise Exception(dataType + " is not a valid key" + \
-                           "check self.keys for valid keys")
-        header = []
-        if includeHeader:
-            header = core.Header(self.stationLocation.city, dataType, \
-                        self.keys[dataType]['unit'], "Hourly", analysisPeriod)
-
-            header = header.toList
-
-        # Find the index for start to end of analysis period
-        stInd = self.sortedTimestamps.index(analysisPeriod.stTime)
-        endInd = self.sortedTimestamps.index(analysisPeriod.endTime)
-
-        if analysisPeriod.reversed:
-            timestamprange = self.sortedTimestamps[stInd:] + self.sortedTimestamps[:endInd + 1]
-        else:
-            timestamprange = self.sortedTimestamps[stInd:endInd + 1]
-
-        return header + [self.data[time][dataType] for time in timestamprange if analysisPeriod.isTimeIncluded(time)]
-
-    def get_hourlyDataByMonths(self, dataType = None, monthRange = range(1,13)):
-        """Returns dictionary of values for a specific data type separated in months
-
-           Parameters:
-               dataType:
-               monthRange: A list of numbers for months. Default is all the 12 months
-
-           Usage:
-               epwfile = EPW("epw file address")
-               epwfile.get_hourlyDataByMonth("RH") # return values for relative humidity for 12 months
-               epwfile.get_hourlyDataByMonth("dbTemp", [1,6,10]) # return values for dry bulb for Jan, Jun and Oct
-
-        """
-        hourlyDataByMonth = {}
-        for time in self.sortedTimestamps:
-
-            if not time.month in monthRange: continue
-
-            if not hourlyDataByMonth.has_key(time.month): hourlyDataByMonth[time.month] = [] #create an empty list for month
-
-            if dataType in self.keys.keys():
-                hourlyDataByMonth[time.month].append(self.data[time][dataType])
-            else:
-                hourlyDataByMonth[time.month].append(self.data[time])
-
-        return hourlyDataByMonth
-
-    def get_dataByField(self, fieldNumber):
-        if not self.isDataLoaded: self.importData()
-        return self.__data[fieldNumber]
-
-    @classmethod
-    def import_dataByField(cls, fieldNumber):
-        """Return annual values for any fieldNumber in epw file.
-
+    def __get_dataByField(self, fieldNumber):
+        """Return a data field by field number
         This is a useful method to get the values for fields that Ladybug currently
         doesn't import by default. You can find list of fields by typing EPWDataTypes.fields
 
@@ -227,14 +129,199 @@ class EPW:
         if not 1 <= fieldNumber <= 31:
             raise ValueError("Field number should be between 1-31")
 
-        return cls.get_dataByField(fieldNumber)
+        if not self.isDataLoaded: self.importData()
+        return self.__data[fieldNumber]
+
+    def save(self, filePath):
+        """Save epw object as an epw file"""
+        # check filePath
+
+        # collect data
+
+        # add header and data together
+
+        # write them to a file
+        raise NotImplementedError
 
     @classmethod
-    def get_fieldInfo(cls,fieldNumber):
-        """Return full name and base type for field number"""
-        # TODO copy data from DataPoints to this file
-        # TODO finish base class types for Radiation, etc
-        raise NotImplementedError
+    def import_dataByField(cls, fieldNumber):
+        """Return annual values for any fieldNumber in epw file.
+
+        This is a useful method to get the values for fields that Ladybug currently
+        doesn't import by default. You can find list of fields by typing EPWDataTypes.fields
+
+        Args:
+            fieldNumber: a value between 1 to 31 for different available epw fields.
+                1 Year
+                2 Month
+                3 Day
+                4 Hour
+                5 Minute
+                6 Dry Bulb Temperature
+                7 Dew Point Temperature
+                8 Relative Humidity
+                9 Atmospheric Station Pressure
+                10 Extraterrestrial Horizontal Radiation
+                11 Extraterrestrial Direct Normal Radiation
+                12 Horizontal Infrared Radiation Intensity
+                13 Global Horizontal Radiation
+                14 Direct Normal Radiation
+                15 Diffuse Horizontal Radiation
+                16 Global Horizontal Illuminance
+                17 Direct Normal Illuminance
+                18 Diffuse Horizontal Illuminance
+                19 Zenith Luminance
+                20 Wind Direction
+                21 Wind Speed
+                22 Total Sky Cover
+                23 Opaque Sky Cover
+                24 Visibility
+                25 Ceiling Height
+                26 Present Weather Observation
+                27 Present Weather Codes
+                28 Precipitable Water
+                29 Aerosol Optical Depth
+                30 Snow Depth
+                31 Days Since Last Snowfall
+        Returns:
+            An annual Ladybug list
+        """
+        return cls.__get_dataByField(fieldNumber)
+
+    @property
+    def years(self):
+        """Return years as a Ladybug Data List"""
+        return self.__get_dataByField(1)
+
+    @property
+    def dryBulbTemperature(self):
+        """Return annual Dry Bulb Temperature as a Ladybug Data List"""
+        return self.__get_dataByField(6)
+
+    @property
+    def dewPointTemperature(self):
+        """Return annual Dew Point Temperature as a Ladybug Data List"""
+        return self.__get_dataByField(7)
+
+    @property
+    def relativeHumidity(self):
+        """Return annual Relative Humidity as a Ladybug Data List"""
+        return self.__get_dataByField(8)
+
+    @property
+    def atmosphericStationPressure(self):
+        """Return annual Atmospheric Station Pressure as a Ladybug Data List"""
+        return self.__get_dataByField(9)
+
+    @property
+    def extraterrestrialHorizontalRadiation(self):
+        """Return annual Extraterrestrial Horizontal Radiation as a Ladybug Data List"""
+        return self.__get_dataByField(6)
+
+    @property
+    def extraterrestrialDirectNormalRadiation(self):
+        """Return annual Extraterrestrial Direct Normal Radiation as a Ladybug Data List"""
+        return self.__get_dataByField(6)
+
+    @property
+    def horizontalInfraredRadiationIntensity(self):
+        """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data List"""
+        return self.__get_dataByField(6)
+
+    @property
+    def globalHorizontalRadiation(self):
+        """Return annual Global Horizontal Radiation as a Ladybug Data List"""
+        return self.__get_dataByField(13)
+
+    @property
+    def directNormalRadiation(self):
+        """Return annual Direct Normal Radiation as a Ladybug Data List"""
+        return self.__get_dataByField(14)
+
+    @property
+    def diffuseHorizontalRadiation(self):
+        """Return annual Diffuse Horizontal Radiation as a Ladybug Data List"""
+        return self.__get_dataByField(15)
+
+    @property
+    def globalHorizontalIlluminance(self):
+        """Return annual Global Horizontal Illuminance as a Ladybug Data List"""
+        return self.__get_dataByField(16)
+
+    @property
+    def directNormalIlluminance(self):
+        """Return annual Direct Normal Illuminance as a Ladybug Data List"""
+        return self.__get_dataByField(17)
+
+    @property
+    def diffuseHorizontalIlluminance(self):
+        """Return annual Diffuse Horizontal Illuminance as a Ladybug Data List"""
+        return self.__get_dataByField(18)
+
+    @property
+    def zenithLuminance(self):
+        """Return annual Zenith Luminance as a Ladybug Data List"""
+        return self.__get_dataByField(19)
+
+    @property
+    def windDirection(self):
+        """Return annual Wind Direction as a Ladybug Data List"""
+        return self.__get_dataByField(20)
+
+    @property
+    def windSpeed(self):
+        """Return annual Wind Speed as a Ladybug Data List"""
+        return self.__get_dataByField(21)
+
+    @property
+    def totalSkyCover(self):
+        """Return annual Total Sky Cover as a Ladybug Data List"""
+        return self.__get_dataByField(22)
+
+    @property
+    def opaqueSkyCover(self):
+        """Return annual Opaque Sky Cover as a Ladybug Data List"""
+        return self.__get_dataByField(23)
+
+    @property
+    def visibility(self):
+        """Return annual Visibility as a Ladybug Data List"""
+        return self.__get_dataByField(24)
+
+    @property
+    def ceilingHeight(self):
+        """Return annual Ceiling Height as a Ladybug Data List"""
+        return self.__get_dataByField(25)
+
+    @property
+    def presentWeatherObservation(self):
+        """Return annual Present Weather Observation as a Ladybug Data List"""
+        return self.__get_dataByField(26)
+
+    @property
+    def presentWeatherCodes(self):
+        """Return annual Present Weather Codes as a Ladybug Data List"""
+        return self.__get_dataByField(27)
+
+    @property
+    def precipitableWater(self):
+        """Return annual Precipitable Water as a Ladybug Data List"""
+        return self.__get_dataByField(28)
+
+    @property
+    def aerosolOpticalDepth(self):
+        """Return annual Aerosol Optical Depth as a Ladybug Data List"""
+        return self.__get_dataByField(29)
+
+    @property
+    def snowDepth(self):
+        """Return annual Snow Depth as a Ladybug Data List"""
+        return self.__get_dataByField(30)
+
+    @property
+    def daysSinceLastSnowfall(self):
+        """Return annual Days Since Last Snow Fall as a Ladybug Data List"""
+        return self.__get_dataByField(31)
 
     def __repr__(self):
         return "EPW Data [%s]"%self.stationLocation.city
@@ -437,10 +524,50 @@ class EPWDataTypes:
                 self.units = 'N/A'
 
     @classmethod
+    def fieldNumbers(cls):
+        for key, value in cls.__fields.items():
+            print key, value['name']
+
+    @classmethod
     def fields(cls):
+        """Return fields as a dictionary
+            If you are looking for field numbers try fieldNumbers method instead
+        """
         return cls.__fields
 
     @classmethod
     def get_fieldByNumber(cls, fieldNumber):
-        """Return detailed field information based on field number"""
-        return cls.EPWField(cls.fields()[fieldNumber])
+        """Return an EPWField based on field number
+            1 Year
+            2 Month
+            3 Day
+            4 Hour
+            5 Minute
+            6 Dry Bulb Temperature
+            7 Dew Point Temperature
+            8 Relative Humidity
+            9 Atmospheric Station Pressure
+            10 Extraterrestrial Horizontal Radiation
+            11 Extraterrestrial Direct Normal Radiation
+            12 Horizontal Infrared Radiation Intensity
+            13 Global Horizontal Radiation
+            14 Direct Normal Radiation
+            15 Diffuse Horizontal Radiation
+            16 Global Horizontal Illuminance
+            17 Direct Normal Illuminance
+            18 Diffuse Horizontal Illuminance
+            19 Zenith Luminance
+            20 Wind Direction
+            21 Wind Speed
+            22 Total Sky Cover
+            23 Opaque Sky Cover
+            24 Visibility
+            25 Ceiling Height
+            26 Present Weather Observation
+            27 Present Weather Codes
+            28 Precipitable Water
+            29 Aerosol Optical Depth
+            30 Snow Depth
+            31 Days Since Last Snowfall
+        """
+        return cls.EPWField(cls.__fields[fieldNumber])

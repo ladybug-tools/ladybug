@@ -1,5 +1,6 @@
 import re
 import datetime
+import copy
 
 class DateTimeLib:
     """Ladybug DateTime Libray
@@ -19,6 +20,15 @@ class DateTimeLib:
         # fix the end day
         JD = cls.numOfDaysUntilMonth[month-1] + int(day)
         return (JD - 1) * 24 + hour
+
+    @classmethod
+    def getDayOfYear(cls, month, day):
+        """Retuen day of the year between 1 and 365"""
+        # make sure input values are correct
+        cls.checkDateTime(month, day, hour = 1)
+
+        # fix the end day
+        return cls.numOfDaysUntilMonth[month-1] + int(day)
 
     # TODO: remove dependencies to datetime libray
     @staticmethod
@@ -60,6 +70,7 @@ class LBDateTime:
         self.day = day
         self.hour = hour
         self.HOY = DateTimeLib.getHourOfYear(self.month, self.day, self.hour)
+        self.DOY = DateTimeLib.getDayOfYear(self.month, self.day)
 
     @classmethod
     def fromHOY(cls, HOY):
@@ -160,6 +171,21 @@ class AnalysisPeriod:
 
         return timestamps
 
+    @property
+    def totalNumOfHours(self):
+        """Total number of hours during this analysis period"""
+        if not self.reversed:
+            numberOfDays = self.endTime.DOY - self.stTime.DOY + 1
+        else:
+            numberOfDays = self.endTime.DOY + (365 - self.stTime.DOY) + 1
+
+        if not self.overnight:
+            numberOfHoursEachDay = self.endTime.hour - self.stTime.hour + 1
+        else:
+            numberOfHoursEachDay = self.endTime.hour + (24 - self.stTime.hour) + 1
+
+        return numberOfDays * numberOfHoursEachDay
+
     def isTimeIncluded(self, time):
         """Check if time is included in analysis period.
 
@@ -170,7 +196,7 @@ class AnalysisPeriod:
                 time: A LBDateTime to be tested
 
             Returns:
-
+                A boolean. True if time is included in analysis period
         """
         # time filtering in Ladybug and honeybee is slightly different since start hour and end hour will be
         # applied for every day. For instance 2/20 9am to 2/22 5pm means hour between 9-17 during 20, 21 and 22 of Feb
@@ -305,6 +331,9 @@ class LBData:
         else:
             raise ValueError
 
+    def updateValue(self, newValue):
+        self.value = newValue
+
     def __repr__(self):
         return str(self.value)
 
@@ -316,7 +345,17 @@ class DataList:
     def __init__(self, data = None, header = None):
 
         self.__data = self.checkInputData(data)
-        self.__header = LBHeader() if not header else header
+        self.header = LBHeader() if not header else header
+
+    @property
+    def values(self):
+        """Return the list of values"""
+        return self.__data
+
+    @property
+    def valuesWithHeader(self):
+        """Return the list of values with ladybug header"""
+        return self.header.toList + self.__data
 
     def checkInputData(self, data):
         """Check input data"""
@@ -331,36 +370,264 @@ class DataList:
         """Extend a list of LBData to the end of current list"""
         self.__data.extend(self.checkInputData(dataList))
 
-    def updateValuesForAnAnalysisPeriod(self, values, AnalysisPeriod):
-        raise NotImplemented
+    def duplicate(self):
+        """Duplicate current data list"""
+        return copy.deepcopy(self)
 
-    def updateHourlyValues(self, values, hoursOfYear):
-        raise NotImplemented
+    @staticmethod
+    def average(data):
+        values = [value.value for value in data]
+        return sum(values)/len(data)
 
-    def updateHourlyValue(self, value, hourOfYear):
-        raise NotImplemented
+    # I'm not sure about the best approach here
+    # I can duplicate data before filtering the values but then if someone
+    # does so many operations it can be very costly.
+    # Maybe I need to have two sets of methods for each of them
+    def filterByAnalysisPeriod(self, analysisPeriod):
 
-    def filterByAnalysisPeriod(self):
-        pass
+        """Filters the list of data based on analysis period
+
+            This method will also update the header based on the new analysis period
+
+           Parameters:
+               analysis period: A Ladybug analysis period
+
+           Usage:
+               analysisPeriod = AnalysisPeriod(2,1,1,3,31,24) #start of Feb to end of Mar
+               epw = EPW("c:\ladybug\weatherdata.epw")
+               epw.dryBulbTemperature.filterByAnalysisPeriod(analysisPeriod)
+        """
+        # There is no guarantee that data is continuous so I iterate through the
+        # each data point one by one
+        filteredData = [ d for d in self.__data if analysisPeriod.isTimeIncluded(d.datetime)]
+
+        self.header.analysisPeriod = analysisPeriod
+        self.__data = filteredData
+        return self #return self for chaining methods
+
+    def separateDataByMonth(self, monthRange = range(1,13), userDataList = None):
+        """Return a dictionary of values where values are separated for each month
+
+            key values are between 1-12
+
+           Parameters:
+               monthRange: A list of numbers for months. Default is 1-12
+               userDataList: An optional data list of LBData to be processed
+
+           Usage:
+               epwfile = EPW("epw file address")
+               monthlyValues = epwfile.dryBulbTemperature.separateValuesByMonth()
+               print monthlyValues[2] # returns values for the month of March
+        """
+        hourlyDataByMonth = {}
+        if userDataList:
+            data = [LBData.fromLBData(d) for d in userDataList]
+        else:
+            data = self.__data
+
+        for d in data:
+            if not d.datetime.month in monthRange: continue
+
+            if not hourlyDataByMonth.has_key(d.datetime.month): hourlyDataByMonth[d.datetime.month] = [] #create an empty list for month
+
+            hourlyDataByMonth[d.datetime.month].append(d)
+
+        print "Found data for months " + str(hourlyDataByMonth.keys())
+        return hourlyDataByMonth
+
+    def separateDataByDay(self, dayRange = range(1, 366), userDataList = None):
+        """Return a dictionary of values where values are separated by each day of year
+
+            key values are between 1-365
+
+           Parameters:
+               dayRange: A list of numbers for days. Default is 1-365
+               userDataList: An optional data list of LBData to be processed
+           Usage:
+               epwfile = EPW("epw file address")
+               dailyValues = epwfile.dryBulbTemperature.separateDataByDay(range(1, 30))
+               print dailyValues[2] # returns values for the second day of year
+        """
+        hourlyDataByDay = {}
+
+        if userDataList:
+            data = [LBData.fromLBData(d) for d in userDataList]
+        else:
+            data = self.__data
+
+        for d in data:
+            DOY = DateTimeLib.getDayOfYear(d.datetime.month, d.datetime.day)
+
+            if not DOY in dayRange: continue
+
+            if not hourlyDataByDay.has_key(DOY): hourlyDataByDay[DOY] = [] #create an empty list for month
+
+            hourlyDataByDay[DOY].append(d)
+
+        print "Found data for " + str(len(hourlyDataByDay.keys())) + " days."
+        return hourlyDataByDay
+
+    def separateDataByHour(self, hourRange = range(1, 25), userDataList = None):
+        """Return a dictionary of values where values are separated by each hour of day
+
+            key values are between 1-24
+
+           Parameters:
+               hourRange: A list of numbers for hours. Default is 1-24
+               userDataList: An optional data list of LBData to be processed
+
+           Usage:
+               epwfile = EPW("epw file address")
+               monthlyValues = epwfile.dryBulbTemperature.separateDataByMonth([1])
+               separatedHourlyData = epwfile.dryBulbTemperature.separateDataByHour(userDataList = monthlyValues[2])
+               for hour, data in separatedHourlyData.items():
+                   print "average temperature values for hour " + str(hour) + " during JAN is " + str(core.DataList.average(data)) + " " + DBT.header.unit
+        """
+        hourlyDataByHour = {}
+
+        if userDataList:
+            data = [LBData.fromLBData(d) for d in userDataList]
+        else:
+            data = self.__data
+
+        for d in data:
+
+            if not d.datetime.hour in hourRange: continue
+
+            if not hourlyDataByHour.has_key(d.datetime.hour): hourlyDataByHour[d.datetime.hour] = [] #create an empty list for month
+
+            hourlyDataByHour[d.datetime.hour].append(d)
+
+        print "Found data for hours " + str(hourlyDataByHour.keys())
+        return hourlyDataByHour
+
+    def updateDataForAnAnalysisPeriod(self, values, analysisPeriod = None):
+        """Replace current values in data list with new set of values
+            for a specific analysis period.
+
+            Length of values should be equal to number of hours in analysis period
+
+            Parameters:
+                values: A list of values to be replaced in the file
+                analysisPeriod: An analysis period for input the input values.
+                    Default is set to the whole year.
+        """
+        if not analysisPeriod:
+            analysisPeriod = AnalysisPeriod()
+
+        # check length of data vs length of analysis period
+        if len(values) != analysisPeriod.totalNumOfHours:
+            raise ValueError("Length of values %d is not equal to " + \
+                "number of hours in analysis period %d"%(len(values), \
+                                                        analysisPeriod.totalNumOfHours))
+        # get all time stamps
+        timeStamps = analysisPeriod.get_timestamps()
+
+        # map timeStamps and values
+        newValues = {}
+        for count, value in enumerate(values):
+            HOY = timeStamps[count].HOY
+            newValues[HOY] = value
+
+        # update values
+        updatedCount = 0
+        for counter, data in enumerate(self.__data):
+            try:
+                value = newValues[data.datetime.HOY]
+                data.updateValue(value)
+                updatedCount+=1
+            except KeyError:
+                pass
+
+        # return self for chaining methods
+        print "%s data are updated for %d hours."%(self.header.dataType, updatedCount)
+        # return self for chaining methods
+        return self
+
+    def updateDataForHoursOfYear(self, values, hoursOfYear):
+        """Replace current values in data list with new set of values
+            for a list of hours of year
+
+            Length of values should be equal to number of hours in hours of year
+
+            Parameters:
+                values: A list of values to be replaced in the file
+                hoursOfYear: A list of HOY between 1 and 8760
+        """
+        # check length of data vs length of analysis period
+        if len(values) != len(hoursOfYear):
+            raise ValueError("Length of values %d is not equal to " + \
+                "number of hours in analysis period %d"%(len(values), \
+                                                        len(hoursOfYear)))
+
+        # map hours and values
+        newValues = {}
+        for count, value in enumerate(values):
+            HOY = hoursOfYear[count]
+            newValues[HOY] = value
+
+        # update values
+        updatedCount = 0
+        for counter, data in enumerate(self.__data):
+            try:
+                value = newValues[data.datetime.HOY]
+                data.updateValue(value)
+                updatedCount+=1
+            except KeyError:
+                pass
+
+        print "%s data are updated for %d hour%s."%(self.header.dataType, \
+                updatedCount, 's' if len(values)>1 else '')
+
+        # return self for chaining methods
+        return self
+
+    def updateDataForAnHour(self, value, hourOfYear):
+        """Replace current value in data list with a new value
+            for a specific hour of the year
+
+            Parameters:
+                value: A single value
+                hoursOfYear: The hour of the year
+        """
+        return self.updateDataForHoursOfYear([value], [hourOfYear])
 
     def filterByConditionalStatement(self):
-        pass
+        raise NotImplemented
 
     def filterByPattern(self):
         raise NotImplemented
 
-    @property
-    def averageMonthly(self):
-        raise NotImplemented
+    def averageMonthly(self, userDataList = None):
+        """Return a dictionary of values for average values for available months"""
 
-    @property
-    def averageWeekly(self):
-        raise NotImplemented
+        # separate data for each month
+        monthlyValues = self.separateDataByMonth(userDataList= userDataList)
 
-    @property
-    def averageForAnHourEveryMonth(self):
-        raise NotImplemented
+        averageValues = dict()
 
-    @property
-    def toList(self):
-        return self.__header.toList + self.__data
+        # average values for each month
+        for month, values in monthlyValues.items():
+            averageValues[month] = self.average(values)
+
+        return averageValues
+
+    def averageMonthlyForEachHour(self, userDataList = None):
+        """Calculate average value for each hour during each month
+
+            This method returns a dictionary with nested dictionaries for each hour
+        """
+        # get monthy values
+        monthlyHourlyValues = self.separateDataByMonth(userDataList= userDataList)
+
+        # separate data for each hour in each month and collect them in a dictionary
+        averagedMonthlyValuesPerHour = {}
+        for month, monthlyValues in monthlyHourlyValues.items():
+            if month not in averagedMonthlyValuesPerHour: averagedMonthlyValuesPerHour[month] = {}
+
+            # separate data for each hour
+            separatedHourlyData = self.separateDataByHour(userDataList = monthlyValues)
+            for hour, data in separatedHourlyData.items():
+                averagedMonthlyValuesPerHour[month][hour] = self.average(data)
+
+        return averagedMonthlyValuesPerHour
