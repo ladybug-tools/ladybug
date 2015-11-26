@@ -41,8 +41,7 @@ class EPW:
     @property
     def dryBulbTemperature(self):
         """Return annaual Dry Bulb Temperature as a Ladybug Data List"""
-        if not self.isDataLoaded: self.importData()
-        return self.get_dataByField[6]
+        return self.get_dataByField(6)
 
 
     #TODO: import EPW header. Currently I just ignore header data
@@ -79,7 +78,17 @@ class EPW:
         # TODO: create empty Ladybug data list for all the fields
         # TODO: clean and modify methods - some of the methods will be moved to DataList
 
-        # create generic header
+        analysisPeriod = core.AnalysisPeriod()
+        fieldNumbers = [1] + range(6, 32) # 1 is year that data is collected
+        for fieldNumber in fieldNumbers:
+            # create header
+            field = EPWDataTypes.get_fieldByNumber(fieldNumber)
+            header = core.LBHeader(city = self.stationLocation.city, frequency ='Hourly', \
+                    analysisPeriod = analysisPeriod, \
+                    dataType = field.name, unit =field.units)
+
+            # create an empty data list with the header
+            self.__data[fieldNumber] = core.DataList(header =header)
 
         for line in epwlines[8:]:
             data = line.strip().split(',')
@@ -88,29 +97,13 @@ class EPW:
             # since I'm using this timestamp as the key and will be using it for sorting
             # I'm setting it up to 2000 - the real year will be collected under modelYear
             timestamp = core.LBDateTime(month, day, hour)
-            self.data[timestamp]['modelYear'] = year
-            try:
-                self.__data[6] = core.DataList()
-                self.__data[6] = core.LBData(float(data[6]), timestamp)
-                self.data[timestamp]['dewPoint'] = float(data[7])
-                self.data[timestamp]['RH'] = float(data[8])
-                self.data[timestamp]['windSpeed'] = float(data[21])
-                self.data[timestamp]['windDir'] = float(data[20])
-                self.data[timestamp]['dirRad'] = float(data[14])
-                self.data[timestamp]['difRad'] = float(data[15])
-                self.data[timestamp]['glbRad'] = float(data[13])
-                self.data[timestamp]['dirIll'] = float(data[17])
-                self.data[timestamp]['difIll' ] = float(data[18])
-                self.data[timestamp]['glbIll'] = float(data[16])
-                self.data[timestamp]['cloudCov'] = int(data[22])
-                self.data[timestamp]['rainDepth'] = float(data[33])
-                self.data[timestamp]['barPress'] = float(data[9])
-            except:
-                raise Exception("Failed to import data for " + str(timestamp))
+
+            for fieldNumber in fieldNumbers:
+                valueType = EPWDataTypes.get_fieldByNumber(fieldNumber).valueType
+                value = map(valueType, [data[fieldNumber]])[0]
+                self.__data[fieldNumber].append(core.LBData(value, timestamp))
 
         self.__isDataLoaded = True
-
-        self.sortedTimestamps = sorted(self.data.keys())
 
     # TODO: This should move under Ladybug data list
     def get_dataByTime(self, month, day, hour, dataType = None):
@@ -213,36 +206,28 @@ class EPW:
 
         return hourlyDataByMonth
 
+    def get_dataByField(self, fieldNumber):
+        if not self.isDataLoaded: self.importData()
+        return self.__data[fieldNumber]
+
     @classmethod
-    def get_dataByField(cls, epwFileAddress, fieldNumber):
+    def import_dataByField(cls, fieldNumber):
         """Return annual values for any fieldNumber in epw file.
 
         This is a useful method to get the values for fields that Ladybug currently
-        doesn't import by default. For full list of field numbers check EnergyPlus Auxilary Programs
+        doesn't import by default. You can find list of fields by typing EPWDataTypes.fields
 
         Args:
-            epwFile: Filepath to local epw file
             fieldNumber: a value between 1 to 31 for different available epw fields.
 
         Returns:
-            A list of 8760 values as string
-
-        TODO: Return should be changed to Ladybug list object
+            An annual Ladybug list
         """
-
         # check input data
-        cls.checkEpwFileAddress(epwFileAddress)
-        if not 0 < fieldNumber < 32:
+        if not 1 <= fieldNumber <= 31:
             raise ValueError("Field number should be between 1-31")
 
-        hourlyData = range(8760)
-        with open(epwFileAddress, 'rb') as epwin:
-            epwlines = epwin.readlines()
-
-        for HOY, line in enumerate(epwlines[8:]):
-            hourlyData[HOY] = line.strip().split(',')[fieldNumber]
-
-        return hourlyData
+        return cls.get_dataByField(fieldNumber)
 
     @classmethod
     def get_fieldInfo(cls,fieldNumber):
@@ -256,42 +241,50 @@ class EPW:
 
 class EPWDataTypes:
     """EPW weather file fields"""
-
     __fields = {
-        1 : { 'name'  : 'Year'
+        1 : { 'name'  : 'Year',
+                'type' : int
             },
 
-        2 : { 'name'  : 'Month'
+        2 : { 'name'  : 'Month',
+                'type' : int
             },
 
-        3 : { 'name'  : 'Day'
+        3 : { 'name'  : 'Day',
+                'type' : int
             },
 
-        4 : { 'name'  : 'Hour'
+        4 : { 'name'  : 'Hour',
+                'type' : int
             },
 
-        5 : { 'name'  : 'Minute'
+        5 : { 'name'  : 'Minute',
+                'type' : int
             },
 
         6 : { 'name'  : 'Dry Bulb Temperature',
+                'type' : float,
                 'units' : 'C',
                 'min'   : -70,
                 'max'   : 70
             },
 
         7 : { 'name' : 'Dew Point Temperature',
+                'type' : float,
                 'units' : 'C',
                 'min' : -70,
                 'max' : 70
             },
 
         8 : { 'name' : 'Relative Humidity',
+                'type' : float,
                 'missing' : 999,
                 'min' : 0,
                 'max' : 110
             },
 
         9 : { 'name' : 'Atmospheric Station Pressure',
+                'type' : float,
                 'units' : 'Pa',
                 'missing' : 999999,
                 'min' : 31000,
@@ -299,120 +292,155 @@ class EPWDataTypes:
             },
 
         10 : { 'name' : 'Extraterrestrial Horizontal Radiation',
-             'units' : 'Wh/m2',
-             'missing' :  9999
+                'type' : float,
+                'units' : 'Wh/m2',
+                'missing' :  9999
             },
 
         11 : { 'name' : 'Extraterrestrial Direct Normal Radiation',
-             'units' :  'Wh/m2',
-             'missing' : 9999
+                'type' : float,
+                'units' :  'Wh/m2',
+                'missing' : 9999
             },
 
         12 : { 'name' : 'Horizontal Infrared Radiation Intensity',
-             'units' : 'Wh/m2',
-             'missing' : 9999
+                'type' : float,
+                'units' : 'Wh/m2',
+                'missing' : 9999
             },
 
         13 : { 'name' : 'Global Horizontal Radiation',
-             'units' : 'Wh/m2',
-             'missing' : 9999
+                'type' : float,
+                'units' : 'Wh/m2',
+                'missing' : 9999
             },
 
         14 : { 'name' : 'Direct Normal Radiation',
-             'units' : 'Wh/m2',
-             'missing' : 9999,
-             'min' : 0
+                'type' : float,
+                'units' : 'Wh/m2',
+                'missing' : 9999,
+                'min' : 0
             },
 
         15 : { 'name' : 'Diffuse Horizontal Radiation',
-             'units' : 'Wh/m2',
-             'missing' : 9999,
-             'min' : 0
+                'type' : float,
+                'units' : 'Wh/m2',
+                'missing' : 9999,
+                'min' : 0
             },
 
         16 : { 'name' : 'Global Horizontal Illuminance',
-             'units' : 'lux',
-             'missing' : 999999
-             # note will be missing if >= 999900
+                'type' : float,
+                'units' : 'lux',
+                'missing' : 999999
+                # note will be missing if >= 999900
             },
 
         17 : { 'name' : 'Direct Normal Illuminance',
-             'units' : 'lux',
-             'missing' : 999999,
-             # note will be missing if >= 999900
+                'type' : float,
+                'units' : 'lux',
+                'missing' : 999999,
+                # note will be missing if >= 999900
             },
 
         18 : { 'name' : 'Diffuse Horizontal Illuminance',
-             'units' : 'lux',
-             'missing' : 999999
-             # note will be missing if >= 999900
+                'type' : float,
+                'units' : 'lux',
+                'missing' : 999999
+                # note will be missing if >= 999900
             },
 
         19 : { 'name' : 'Zenith Luminance',
-             'units' : 'Cd/m2',
-             'missing' : 9999,
-             # note will be missing if >= 9999
+                'type' : float,
+                'units' : 'Cd/m2',
+                'missing' : 9999,
+                # note will be missing if >= 9999
             },
 
         20 : { 'name' : 'Wind Direction',
-             'units' : 'degrees',
-             'missing' : 999,
-             'min' : 0,
-             'max' : 360
+                'type' : int,
+                'units' : 'degrees',
+                'missing' : 999,
+                'min' : 0,
+                'max' : 360
             },
 
         21 : { 'name' : 'Wind Speed',
-             'units' : 'm/s',
-             'missing' : 999,
-             'min' : 0,
-             'max' : 40
+                'type' : float,
+                'units' : 'm/s',
+                'missing' : 999,
+                'min' : 0,
+                'max' : 40
             },
 
         22 : { 'name' : 'Total Sky Cover', # (used if Horizontal IR Intensity missing)
-             'missing' : 99
+                'type' : float,
+                'missing' : 99
             },
 
         23 : { 'name' : 'Opaque Sky Cover', #(used if Horizontal IR Intensity missing)
-             'missing' : 99
+                'type' : float,
+                'missing' : 99
             },
 
         24 : { 'name' : 'Visibility',
-             'units' : 'km',
-             'missing' : 9999
+                'type' : float,
+                'units' : 'km',
+                'missing' : 9999
             },
 
         25 : { 'name' : 'Ceiling Height',
-             'units' : 'm',
-             'missing' : 99999
+                'type' : float,
+                'units' : 'm',
+                'missing' : 99999
             },
 
-        26 : { 'name' : 'Present Weather Observation'
+        26 : { 'name' : 'Present Weather Observation',
+                'type' : str
             },
 
-        27 : { 'name' : 'Present Weather Codes'
+        27 : { 'name' : 'Present Weather Codes',
+                'type' : str
             },
 
         28 : { 'name' : 'Precipitable Water',
-             'units' : 'mm',
-             'missing' : 999
+                'type' : float,
+                'units' : 'mm',
+                'missing' : 999
             },
 
         29 : { 'name' : 'Aerosol Optical Depth',
-             'units' : 'thousandths',
-             'missing' : 999
+                'type' : float,
+                'units' : 'thousandths',
+                'missing' : 999
             },
 
         30 : { 'name' : 'Snow Depth',
-             'units' : 'cm',
-             'missing' : 999
+                'type' : float,
+                'units' : 'cm',
+                'missing' : 999
             },
 
         31 : { 'name' :  'Days Since Last Snowfall',
-             'missing' : 99
+                'type' : int,
+                'missing' : 99
             }
         }
+
+    class EPWField:
+        def __init__(self, dataDict):
+            self.name = dataDict['name']
+            self.valueType = dataDict['type']
+            if 'units' in dataDict:
+                self.units = dataDict['units']
+            else:
+                self.units = 'N/A'
+
+    @classmethod
+    def fields(cls):
+        return cls.__fields
 
     @classmethod
     def get_fieldByNumber(cls, fieldNumber):
         """Return detailed field information based on field number"""
-        pass
+        return cls.EPWField(cls.fields()[fieldNumber])

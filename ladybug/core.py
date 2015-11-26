@@ -294,7 +294,7 @@ class LBData:
     # TODO: Change value to be an object from it's data type
     #       Check datatype.py for available datatypes
 
-    def __init__(value, dateTime):
+    def __init__(self, value, dateTime):
         self.datetime = dateTime
         self.value = value
 
@@ -315,7 +315,7 @@ class DataList:
     """
     def __init__(self, data = None, header = None):
 
-        self.__data = checkInputData(data)
+        self.__data = self.checkInputData(data)
         self.__header = LBHeader() if not header else header
 
     def checkInputData(self, data):
