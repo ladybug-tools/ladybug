@@ -7,24 +7,38 @@ Contains usage codes.It is NOT a unit test code.
 """
 _epwFile = r"C:\EnergyPlusV7-2-0\WeatherData\USA_CO_Golden-NREL.724666_TMY3.epw"
 
+
+statement = 'x>25 and x==0'
+
 ## create an analysis period
 analysisPeriod = lb.core.AnalysisPeriod(12, 30, 1, 2, 1, 24)
-# print len(analysisPeriod.get_timestamps())
-print analysisPeriod.totalNumOfHours
+## check length of analysis period
+print "Total number of hours in %s is %d"%(analysisPeriod, analysisPeriod.totalNumOfHours)
+# print analysisPeriod.isAnnual
 
+## get values based on field number
+f = lb.epw.EPWDataTypes.get_fieldByNumber(8)
+print f.name, f.units
+
+# create and epw object
 epwfile = lb.epw.EPW(_epwFile)
 
-# lb.epw.EPWDataTypes.fieldNumbers()
+d = epwfile.import_dataByField(8)
+filteredData = d.filterByAnalysisPeriod(analysisPeriod)
 
-#f = lb.epw.EPWDataTypes.get_fieldByNumber(6)
-#print f.name, f.units
+fDataByStatement = d.filterByConditionalStatement('x>90')
+print "Number of hours with Humidity more than 90 is %d "%len(fDataByStatement.timeStamps)
 
+# get annual dry bulb temperature
 DBT = epwfile.dryBulbTemperature
-# RH_values = epwfile.relativeHumidity.values
-#print DBT.header
-# print DBT
 
-#DBT.filterByAnalysisPeriod(analysisPeriod)
+## get header, values or both
+# print DBT.header
+# print DBT.values
+# print DBT.valuesWithHeader
+
+## filter data by analysis period
+# DBT.filterByAnalysisPeriod(analysisPeriod)
 
 #montlyData = DBT.separateDataByMonth()
 #dailyData = DBT.separateDataByDay(range(1, 30))
@@ -46,6 +60,7 @@ DBT.updateDataForAnAnalysisPeriod(newValues, analysisPeriod)
 DBT.updateDataForAnHour(20, 34)
 
 ## save the epw file as a new epw file
+# epwfile.save()
 
 # lb.windRose.getWindRoseData(epwFile)
 #windrose = lbg.calculateWindrose(windRoseData)

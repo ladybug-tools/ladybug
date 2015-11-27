@@ -80,6 +80,7 @@ class LBDateTime:
     def __repr__(self):
         return "%d %s at %d"%( self.day, DateTimeLib.monthList[self.month-1], self.hour)
 
+# TODO: Add NA analysis period
 class AnalysisPeriod:
     """Ladybug Analysis Period.
 
@@ -186,6 +187,11 @@ class AnalysisPeriod:
 
         return numberOfDays * numberOfHoursEachDay
 
+    @property
+    def isAnnual(self):
+        """Check if an analysis period is annual"""
+        return True if self.totalNumOfHours == 8760 else False
+
     def isTimeIncluded(self, time):
         """Check if time is included in analysis period.
 
@@ -248,6 +254,9 @@ class LBHeader:
         self.analysisPeriod = 'unknown' if not analysisPeriod \
                 else AnalysisPeriod.fromAnalysisPeriod(analysisPeriod)
 
+    def duplicate(self):
+        return copy.deepcopy(self)
+
     @property
     def __key(self):
         return 'location|dataType|units|frequency|dataPeriod'
@@ -301,6 +310,9 @@ class Location:
         except Exception, e:
             raise Exception ("Failed to import EP string!")
 
+    def duplicate(self):
+        return copy.deepcopy(self)
+
     @property
     def EPStyleLocationString(self):
         """Return EnergyPlus's location string"""
@@ -343,7 +355,6 @@ class DataList:
         A list of ladybug data with a LBHeader
     """
     def __init__(self, data = None, header = None):
-
         self.__data = self.checkInputData(data)
         self.header = LBHeader() if not header else header
 
@@ -351,6 +362,11 @@ class DataList:
     def values(self):
         """Return the list of values"""
         return self.__data
+
+    @property
+    def timeStamps(self):
+        "Return time stamps for current data"
+        return [value.datetime for value in self.__data]
 
     @property
     def valuesWithHeader(self):
@@ -378,32 +394,6 @@ class DataList:
     def average(data):
         values = [value.value for value in data]
         return sum(values)/len(data)
-
-    # I'm not sure about the best approach here
-    # I can duplicate data before filtering the values but then if someone
-    # does so many operations it can be very costly.
-    # Maybe I need to have two sets of methods for each of them
-    def filterByAnalysisPeriod(self, analysisPeriod):
-
-        """Filters the list of data based on analysis period
-
-            This method will also update the header based on the new analysis period
-
-           Parameters:
-               analysis period: A Ladybug analysis period
-
-           Usage:
-               analysisPeriod = AnalysisPeriod(2,1,1,3,31,24) #start of Feb to end of Mar
-               epw = EPW("c:\ladybug\weatherdata.epw")
-               epw.dryBulbTemperature.filterByAnalysisPeriod(analysisPeriod)
-        """
-        # There is no guarantee that data is continuous so I iterate through the
-        # each data point one by one
-        filteredData = [ d for d in self.__data if analysisPeriod.isTimeIncluded(d.datetime)]
-
-        self.header.analysisPeriod = analysisPeriod
-        self.__data = filteredData
-        return self #return self for chaining methods
 
     def separateDataByMonth(self, monthRange = range(1,13), userDataList = None):
         """Return a dictionary of values where values are separated for each month
@@ -501,6 +491,7 @@ class DataList:
         print "Found data for hours " + str(hourlyDataByHour.keys())
         return hourlyDataByHour
 
+    # TODO: Add validity check for input values
     def updateDataForAnAnalysisPeriod(self, values, analysisPeriod = None):
         """Replace current values in data list with new set of values
             for a specific analysis period.
@@ -576,8 +567,9 @@ class DataList:
             except KeyError:
                 pass
 
-        print "%s data are updated for %d hour%s."%(self.header.dataType, \
-                updatedCount, 's' if len(values)>1 else '')
+        print "%s data %s updated for %d hour%s."%(self.header.dataType, \
+                'are' if len(values)>1 else 'is', updatedCount,\
+                's' if len(values)>1 else '')
 
         # return self for chaining methods
         return self
@@ -592,8 +584,75 @@ class DataList:
         """
         return self.updateDataForHoursOfYear([value], [hourOfYear])
 
-    def filterByConditionalStatement(self):
-        raise NotImplemented
+    def filterByAnalysisPeriod(self, analysisPeriod):
+
+        """Filter the list based on an analysis period
+            Parameters:
+               analysis period: A Ladybug analysis period
+
+            Return:
+                A new DataList with filtered data
+
+            Usage:
+               analysisPeriod = AnalysisPeriod(2,1,1,3,31,24) #start of Feb to end of Mar
+               epw = EPW("c:\ladybug\weatherdata.epw")
+               DBT = epw.dryBulbTemperature
+               filteredDBT = DBT.filterByAnalysisPeriod(analysisPeriod)
+        """
+        if not analysisPeriod or analysisPeriod.isAnnual:
+            print "You need a valid analysis period to filter data."
+            return self
+
+        # There is no guarantee that data is continuous so I iterate through the
+        # each data point one by one
+        filteredData = [ d for d in self.__data if analysisPeriod.isTimeIncluded(d.datetime)]
+
+        # create a new filteredData
+        filteredHeader = self.header.duplicate()
+        filteredHeader.analysisPeriod = analysisPeriod
+        filteredDataList = DataList(filteredData, filteredHeader)
+
+        return filteredDataList #return self for chaining methods
+
+    def filterByConditionalStatement(self, statement):
+        """Filter the list based on an analysis period
+            Parameters:
+               statement: A conditional statement as a string (e.g. x>25 and x%5==0).
+                The variable should always be named as x
+
+            Return:
+                A new DataList with filtered data
+
+            Usage:
+               epw = EPW("c:\ladybug\weatherdata.epw")
+               DBT = epw.dryBulbTemperature
+               # filter data for when dry bulb temperature is more then 25
+               filteredDBT = DBT.filterByConditionalStatement('x > 25')
+               # get the list of time stamps that meet the conditional statement
+               print filteredDBT.timeStamps
+        """
+
+        def checkInputStatement(statement):
+            stStatement = statement.lower().replace("and", "").replace("or", "")\
+                    .replace("not", "").replace("in", "").replace("is", "")
+
+            l = [s for s in stStatement if s.isalpha()]
+            if list(set(l)) != ['x']:
+                statementErrorMsg = 'Invalid input statement. Statement should be a valid Python statement' + \
+                    ' and the variable should be named as x'
+                raise ValueError(statementErrorMsg)
+
+        checkInputStatement(statement)
+
+        statement = statement.replace('x', 'd.value')
+        filteredData = [d for d in self.__data if eval(statement)]
+
+        # create a new filteredData
+        filteredHeader = self.header.duplicate()
+        filteredHeader.analysisPeriod = 'N/A'
+        filteredDataList = DataList(filteredData, filteredHeader)
+
+        return filteredDataList #return self for chaining methods
 
     def filterByPattern(self):
         raise NotImplemented
