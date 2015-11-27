@@ -612,7 +612,7 @@ class DataList:
         filteredHeader.analysisPeriod = analysisPeriod
         filteredDataList = DataList(filteredData, filteredHeader)
 
-        return filteredDataList #return self for chaining methods
+        return filteredDataList
 
     def filterByConditionalStatement(self, statement):
         """Filter the list based on an analysis period
@@ -652,10 +652,34 @@ class DataList:
         filteredHeader.analysisPeriod = 'N/A'
         filteredDataList = DataList(filteredData, filteredHeader)
 
-        return filteredDataList #return self for chaining methods
+        return filteredDataList
 
-    def filterByPattern(self):
-        raise NotImplemented
+    def filterByPattern(self, patternList):
+        """Filter the list based on a list of Boolean
+
+            Length of Boolean should be equal to length of values in DataList
+
+            Parameters:
+                patternList: A list of True, False values
+
+            Return:
+                A new DataList with filtered data
+        """
+        # check length of data vs length of analysis period
+        if len(self.values) != len(patternList):
+            print len(self.values), len(patternList)
+            errMsg = "Length of values %d is not equal to number of patterns %d" \
+                    %(len(self.values), len(patternList))
+            raise ValueError(errMsg)
+
+        filteredData = [d for count, d in enumerate(self.__data) if patternList[count]]
+
+        # create a new filteredData
+        filteredHeader = self.header.duplicate()
+        filteredHeader.analysisPeriod = 'N/A'
+        filteredDataList = DataList(filteredData, filteredHeader)
+
+        return filteredDataList
 
     def averageMonthly(self, userDataList = None):
         """Return a dictionary of values for average values for available months"""

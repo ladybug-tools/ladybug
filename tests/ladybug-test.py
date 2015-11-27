@@ -32,6 +32,10 @@ print "Number of hours with Humidity more than 90 is %d "%len(fDataByStatement.t
 # get annual dry bulb temperature
 DBT = epwfile.dryBulbTemperature
 
+pattern  = 8760 / 2 * [True, False]
+fDataByPattern = d.filterByPattern(pattern)
+print "Number of selected dat should be 4380 and it is %d"%len(fDataByPattern.timeStamps)
+
 ## get header, values or both
 # print DBT.header
 # print DBT.values
