@@ -276,18 +276,19 @@ class LBHeader:
     def __repr__(self):
         return "%s for %s during %s"%(self.dataType, self.city, self.analysisPeriod)
 
+# TODO: write classes for latitude, longitude, etc
 class Location:
 
-    def __init__(self, city = '', country = '', latitude = '', \
-                longitude = '', timeZone = '', elevation ='', \
+    def __init__(self, city = '', country = '', latitude = '0.00', \
+                longitude = '0.00', timeZone = '0.00', elevation ='0.00', \
                 source = '', stationId = ''):
 
         self.city = str(city)
         self.country = str(country)
-        self.latitude = str(latitude)
-        self.longitude = str(longitude)
-        self.timeZone = str(timeZone)
-        self.elevation = str(elevation)
+        self.latitude = float(latitude)
+        self.longitude = float(longitude)
+        self.timeZone = float(timeZone)
+        self.elevation = float(elevation)
         self.source = str(source)
         self.stationId = str(stationId)
 
@@ -305,10 +306,15 @@ class Location:
         try:
             self.city, self.latitude, \
             self.longitude, self.timeZone, \
-            self.elevation = re.findall(r'\r*\n*([a-zA-Z0-9.:_ ]*)[,|;]', \
+            self.elevation = re.findall(r'\r*\n*([a-zA-Z0-9.:_-]*)[,|;]', \
                                     EPString, re.DOTALL)[1:]
+
+            self.latitude = float(self.latitude)
+            self.longitude = float(self.longitude)
+            self.timeZone = float(self.timeZone)
+            self.elevation = float(self.elevation)
         except Exception, e:
-            raise Exception ("Failed to import EP string!")
+            raise Exception ("Failed to import EP string! %s"%str(e))
 
     def duplicate(self):
         return copy.deepcopy(self)
@@ -318,10 +324,10 @@ class Location:
         """Return EnergyPlus's location string"""
         return "Site:Location,\n" + \
             self.city + ',\n' + \
-            self.latitude +',      !Latitude\n' + \
-            self.longitude +',     !Longitude\n' + \
-            self.timeZone +',     !Time Zone\n' + \
-            self.elevation + ';       !Elevation'
+            str(self.latitude) +',      !Latitude\n' + \
+            str(self.longitude) +',     !Longitude\n' + \
+            str(self.timeZone) +',     !Time Zone\n' + \
+            str(self.elevation) + ';       !Elevation'
 
     def __repr__(self):
         return "%s"%(self.EPStyleLocationString)
