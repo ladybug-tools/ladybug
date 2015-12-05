@@ -1,5 +1,5 @@
-__all__ = ["core", "epw"]
+__all__ = ["core", "epw", "sunpath"]
 
 # core contains Ladybug core objects such as Header, Location, AnalysisPeriod, DataList
 # epw contains EPW object
-import core, epw
+import core, epw, sunpath
