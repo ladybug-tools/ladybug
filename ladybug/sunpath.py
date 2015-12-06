@@ -38,18 +38,6 @@ class Sunpath:
         if not self.daylightSavingPeriod: return False
         return self.daylightSavingPeriod.isTimeIncluded(datetime.HOY)
 
-    def calulateSunFromHOY(self, HOY, isSolarTime = False):
-        """Get Sun data for an hour of the year
-
-            Args:
-                datetime: Ladybug datetime
-                isSolarTime: A boolean to indicate if the input hour is solar time. (Default: False)
-
-            Returns:
-                A sun object for this particular time
-        """
-        datetime = core.LBDateTime.fromHOY(HOY)
-        return self.calculateSunFromDataTime(datetime, isSolarTime)
 
     def calculateSun(self, month, day, hour, isSolarTime = False):
         """Get Sun data for an hour of the year
@@ -64,6 +52,19 @@ class Sunpath:
                 A sun object for this particular time
         """
         datetime = core.LBDateTime(month, day, hour)
+        return self.calculateSunFromDataTime(datetime, isSolarTime)
+
+    def calculateSunFromHOY(self, HOY, isSolarTime = False):
+        """Get Sun data for an hour of the year
+
+            Args:
+                datetime: Ladybug datetime
+                isSolarTime: A boolean to indicate if the input hour is solar time. (Default: False)
+
+            Returns:
+                A sun object for this particular time
+        """
+        datetime = core.LBDateTime.fromHOY(HOY)
         return self.calculateSunFromDataTime(datetime, isSolarTime)
 
     def calculateSunFromDataTime(self, datetime, isSolarTime = False):

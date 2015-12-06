@@ -1,5 +1,4 @@
 import re
-import datetime
 import copy
 
 class DateTimeLib:
@@ -12,10 +11,46 @@ class DateTimeLib:
     numOfHoursUntilMonth = [24 * numOfDay for numOfDay in numOfDaysUntilMonth]
 
     @classmethod
-    def getHourOfYear(cls, month, day, hour):
+    def checkDateTime(cls, month, day, hour, minute = None):
+        """Checks if time combination is a valid time."""
+        # check month
+        if not 1 <= month <= 12:
+            raise ValueError("month should be between 1-12")
+
+        if day < 1 or day > cls.numOfDaysEachMonth[month-1]:
+            raise ValueError("Number of days for %s should be \
+                    between 1-%d"%(cls.monthList[month-1], cls.numOfDaysEachMonth[month-1]))
+
+        if not 0 <= hour <= 24:
+            raise ValueError("hour should be between 0.0-24.0")
+
+        if not minute or minute == 0:
+            if hour == 0 and day == 1 and month == 1:
+                # last hour of the year
+                month = 12
+                day = 31
+                hour = 24
+
+            elif hour == 0 and day == 1:
+                # The last hour of the last day of the month before
+                month -= 1
+                day = cls.numOfDaysEachMonth[month-1]
+                hour = 24
+
+            elif hour==0:
+                # the last hour of the day before
+                hour = 24
+                day -= 1
+
+        hour, minute = cls.__getHourAndMinute(hour, minute)
+
+        return month, day, hour, minute
+
+    @classmethod
+    def getHourOfYear(cls, month, day, hour, minute = None):
         """Return hour of the year between 1 and 8760."""
         # make sure input values are correct
-        cls.checkDateTime(month, day, hour)
+        month, day, hour, minute = cls.checkDateTime(month, day, hour, minute)
 
         # fix the end day
         JD = cls.numOfDaysUntilMonth[month-1] + int(day)
@@ -25,24 +60,15 @@ class DateTimeLib:
     def getDayOfYear(cls, month, day):
         """Retuen day of the year between 1 and 365"""
         # make sure input values are correct
-        cls.checkDateTime(month, day, hour = 1)
+        month, day, hour, minute = cls.checkDateTime(month, day, hour = 1)
 
         # fix the end day
         return cls.numOfDaysUntilMonth[month-1] + int(day)
 
-    # TODO: remove dependencies to datetime libray
-    @staticmethod
-    def checkDateTime(month, day, hour):
-        """Checks if time combination is a valid time."""
-        try:
-            return datetime.datetime(2000, month, day, hour-1)
-        except ValueError, e:
-            raise e
-
     @classmethod
-    def getMonthDayAndHour(cls, hourOfYear):
+    def getMonthDayHourAndMinute(cls, hourOfYear):
         """Return month, day and hour for an hour of the year"""
-        if hourOfYear%8760==0: return 12, 31, 24
+        if hourOfYear == 8760: return 12, 31, 24, 0
 
         # find month
         for monthCount in range(12):
@@ -55,30 +81,89 @@ class DateTimeLib:
             # last hour of the day
             day = int((hourOfYear - cls.numOfHoursUntilMonth[month - 1])/24)
             hour = 24
+            minute = 0
         else:
             day = int((hourOfYear - cls.numOfHoursUntilMonth[month - 1])/24) + 1
-            hour = hourOfYear%24
+            hour = int(hourOfYear%24)
+            minute = cls.__getHourAndMinute(hourOfYear)[1]
 
-        return month, day, hour
+        return month, day, hour, minute
+
+    @staticmethod
+    def __getHourAndMinute(hour, minute = None):
+
+        """Calculate and return hour and minute
+
+            This method is mainly usefule for calculating minutes from float hours
+            if minute is missing. otherwise it will only check the inputs append
+            returns the checked values
+
+            Args:
+                hour: A float value between 0.0-24.0
+                minutes: An integer between 0-59. Default in None
+
+            Returns:
+                hour: An interger between 0-24
+                minute: An integer between 0-59
+        """
+        if not minute:
+            minute = (hour - int(hour)) * 60
+
+        # cast values to integer
+        hour = int(hour + int(minute/60))
+        minute = int(minute%60)
+
+        return hour, minute
 
 # TODO: add comparison methods (largerthan, smallerthan, ...)
-# TODO: add monthly, daily average datetime values
 class LBDateTime:
-    def __init__(self, month = 1, day = 1, hour = 1):
-        DateTimeLib.checkDateTime(month, day, hour)
-        self.month = month
-        self.day = day
-        self.hour = hour
-        self.HOY = DateTimeLib.getHourOfYear(self.month, self.day, self.hour)
+    """Ladybug Date time"""
+    def __init__(self, month = 1, day = 1, hour = 1, minute = None):
+        self.month, self.day, self.hour, \
+            self.minute = DateTimeLib.checkDateTime(month, day, hour, minute)
+
         self.DOY = DateTimeLib.getDayOfYear(self.month, self.day)
+        self.HOY = DateTimeLib.getHourOfYear(self.month, self.day, self.hour, self.minute)
+        self.MOY = self.HOY * 60  + self.minute # minute of the year
+        self.floatHOY = self.HOY + self.MOY/60
 
     @classmethod
     def fromHOY(cls, HOY):
-        month, day, hour = DateTimeLib.getMonthDayAndHour(HOY)
-        return LBDateTime(month, day, hour)
+        """Create Ladybug Datetime from an hour of the year
+
+            Args:
+                HOY: A float value between 0.0 to 8760.0
+        """
+        month, day, hour, minute = DateTimeLib.getMonthDayHourAndMinute(HOY)
+        return LBDateTime(month, day, hour, minute)
+
+    @classmethod
+    def fromMOY(cls, MOY):
+        """create Ladybug DateTime from Minute of the year"""
+        HOY = MOY/60.0
+        return cls.fromHOY(HOY)
+
+    @classmethod
+    def fromDateTimeString(cls, datetimeString):
+        day, month, hour, minute = datetimeString \
+                .replace(" at ", " ") \
+                .replace(":", " ") \
+                .split(" ")
+
+        month = DateTimeLib.monthList.index(month.upper()) + 1
+
+        return LBDateTime(month, int(day), int(hour), int(minute))
+
+    @property
+    def humanReadableHour(self):
+        """Return hours and minutes in a human readable way"""
+        minute = str(self.minute)
+        if len(minute) == 1: minute = "0" + minute
+        return "%d:%s"%(self.hour, minute)
 
     def __repr__(self):
-        return "%d %s at %d"%( self.day, DateTimeLib.monthList[self.month-1], self.hour)
+        return "%d %s at %s"%( self.day, DateTimeLib.monthList[self.month-1], self.humanReadableHour)
+
 
 # TODO: Add NA analysis period
 class AnalysisPeriod:
@@ -95,16 +180,21 @@ class AnalysisPeriod:
             endDay: An integer between 1-31 for ending day (default = 31)
                     Note that some months are shorter than 31 days.
             endHour: An integer between 1-24 for ending hour (default = 24)
-            timestep: An integer between 1-60 for timestep (default = 1)
+            timestep: An integer number 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
     """
+
+    validTimesteps = {1 : 60, 2 : 30, 3 : 20, 4 : 15, 5 : 12, \
+        6 : 10, 10 : 6, 12 : 5, 15 : 4, 20 : 3, 30 : 2, 60 : 1}
+
     #TODO: handle timestep between 1-60
     def __init__(self, stMonth = 1, stDay = 1, stHour = 1, endMonth = 12,
-                endDay = 31, endHour = 24):
+                endDay = 31, endHour = 24, timestep = 1):
+
         """Init an analysis period"""
 
-        self.stTime = LBDateTime(int(stMonth), int(stDay), int(stHour))
-        self.endTime = LBDateTime(int(endMonth), int(endDay), int(endHour))
-        self.timestep = 1
+        # calculate start time and end time
+        self.stTime = LBDateTime(int(stMonth), int(stDay), float(stHour))
+        self.endTime = LBDateTime(int(endMonth), int(endDay), float(endHour))
 
         if self.stTime.hour <= self.endTime.hour:
             self.overnight = False # each segments of hours will be in a single day
@@ -117,6 +207,18 @@ class AnalysisPeriod:
             self.reversed = True
         else:
             self.reversed = False
+
+        # check time step
+        if timestep not in self.validTimesteps:
+            raise ValueError("Invalid timestep. Valid values are %s"%str(self.validTimesteps))
+
+        # calculate time stamp
+        self.timestep = timestep
+        self.minuteIntervals = self.validTimesteps[timestep]
+
+        # calculate timestamps and hoursOfYear
+        self.timestamps = {} # A dictionary for timedates. Key values will be minute of year
+        self.calculateTimestamps()
 
     @classmethod
     def fromAnalysisPeriod(cls, analysisPeriod):
@@ -135,57 +237,45 @@ class AnalysisPeriod:
     @classmethod
     def __fromAnalysisPeriodString(cls, analysisPeriodString):
 
-        # %s/%s to %s/%s between %s to %s
+        # %s/%s to %s/%s between %s to %s @%s
         ap = analysisPeriodString.lower() \
-                        .replace(' to ', ' ') \
+                        .replace(' ', '') \
+                        .replace('to', ' ') \
                         .replace('/', ' ') \
-                        .replace(' between ', ' ')
-
+                        .replace('between', ' ') \
+                        .replace('@', ' ')
         try:
             stMonth, stDay, \
             endMonth, endDay, \
-            stHour, endHour =  ap.split(' ')
-            return AnalysisPeriod(stMonth, stDay, stHour, endMonth, endDay, endHour)
+            stHour, endHour, timestep =  ap.split(' ')
+            return AnalysisPeriod(stMonth, stDay, stHour, endMonth, endDay, endHour, int(timestep))
         except:
-            raise ValueError(analysisPeriodString + " is not a valid analysis period!")
+           raise ValueError(analysisPeriodString + " is not a valid analysis period!")
 
-    def get_timestamps(self):
+    def calculateTimestamps(self):
         """Return a list of Ladybug DateTime in this analysis period."""
-        timestamps = []
-        curr = self.stTime.HOY
+
+        # calculate based on minutes
+        curr = self.stTime.MOY - 60 + self.minuteIntervals
+
         if not self.reversed:
-            while curr <= self.endTime.HOY:
-                time = LBDateTime.fromHOY(curr)
-                if self.isTimeIncluded(time):
-                    timestamps.append(time)
-                curr += self.timestep
+            while curr <= self.endTime.MOY:
+                time = LBDateTime.fromMOY(curr)
+                if not self.isTimeIncluded(time):
+                    self.timestamps[time.MOY] = time
+                curr += self.minuteIntervals
         else:
-            while (1 <= curr <= self.endTime.HOY or self.stTime.HOY <= curr <= 8760):
-                time = LBDateTime.fromHOY(curr)
-                if self.isTimeIncluded(time):
-                    timestamps.append(time)
+            while (0 <= curr <= self.endTime.MOY or self.stTime.MOY <= curr < 8760 * 60):
+                time = LBDateTime.fromMOY(curr)
+                if not self.isTimeIncluded(time):
+                    self.timestamps[time.MOY] = time
 
-                if curr == 8759:
-                    curr = 8760
-                else:
-                    curr = (curr + self.timestep)%8760
-
-        return timestamps
+                curr = (curr + self.minuteIntervals)%(8760 * 60)
 
     @property
     def totalNumOfHours(self):
         """Total number of hours during this analysis period"""
-        if not self.reversed:
-            numberOfDays = self.endTime.DOY - self.stTime.DOY + 1
-        else:
-            numberOfDays = self.endTime.DOY + (365 - self.stTime.DOY) + 1
-
-        if not self.overnight:
-            numberOfHoursEachDay = self.endTime.hour - self.stTime.hour + 1
-        else:
-            numberOfHoursEachDay = self.endTime.hour + (24 - self.stTime.hour) + 1
-
-        return numberOfDays * numberOfHoursEachDay
+        return len(self.timestamps)/self.timestep
 
     @property
     def isAnnual(self):
@@ -206,30 +296,14 @@ class AnalysisPeriod:
         """
         # time filtering in Ladybug and honeybee is slightly different since start hour and end hour will be
         # applied for every day. For instance 2/20 9am to 2/22 5pm means hour between 9-17 during 20, 21 and 22 of Feb
-
-        # First check if the day is in range
-        if not self.reversed and not self.stTime.HOY<= time.HOY <= self.endTime.HOY:
-            return False
-        if self.reversed and \
-           not (self.stTime.HOY<= time.HOY <= 8760 or 1 <= time.HOY <= self.endTime.HOY):
-               return False
-
-        # The day is in range. Now check the hours to make sure it's between the range
-        hour = time.hour
-
-        if not self.overnight \
-            and self.stTime.hour <= hour <= self.endTime.hour: return True
-
-        if self.overnight and (self.stTime.hour <= hour <= 24 \
-                                or 1 <= hour <= self.endTime.hour): return True
-
-        return False
+        return time.MOY in self.timestamps
 
     def __repr__(self):
-        return "%s/%s to %s/%s between %s to %s"%\
+        return "%s/%s to %s/%s between %s to %s @%d"%\
             (self.stTime.month, self.stTime.day, \
              self.endTime.month, self.endTime.day, \
-             self.stTime.hour, self.endTime.hour)
+             self.stTime.hour, self.endTime.hour, \
+             self.timestep)
 
 class LBHeader:
     """Standard Ladybug header for lists.
