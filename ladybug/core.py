@@ -125,7 +125,7 @@ class LBDateTime:
         self.DOY = DateTimeLib.getDayOfYear(self.month, self.day)
         self.HOY = DateTimeLib.getHourOfYear(self.month, self.day, self.hour, self.minute)
         self.MOY = self.HOY * 60  + self.minute # minute of the year
-        self.floatHOY = self.HOY + self.MOY/60
+        self.floatHOY = self.HOY + self.minute/60.0
 
     @classmethod
     def fromHOY(cls, HOY):
@@ -180,10 +180,10 @@ class AnalysisPeriod:
             endDay: An integer between 1-31 for ending day (default = 31)
                     Note that some months are shorter than 31 days.
             endHour: An integer between 1-24 for ending hour (default = 24)
-            timestep: An integer number 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+            timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
     """
 
-    validTimesteps = {1 : 60, 2 : 30, 3 : 20, 4 : 15, 5 : 12, \
+    __validTimesteps = {1 : 60, 2 : 30, 3 : 20, 4 : 15, 5 : 12, \
         6 : 10, 10 : 6, 12 : 5, 15 : 4, 20 : 3, 30 : 2, 60 : 1}
 
     #TODO: handle timestep between 1-60
@@ -209,16 +209,16 @@ class AnalysisPeriod:
             self.reversed = False
 
         # check time step
-        if timestep not in self.validTimesteps:
-            raise ValueError("Invalid timestep. Valid values are %s"%str(self.validTimesteps))
+        if timestep not in self.__validTimesteps:
+            raise ValueError("Invalid timestep. Valid values are %s"%str(self.__validTimesteps))
 
         # calculate time stamp
         self.timestep = timestep
-        self.minuteIntervals = self.validTimesteps[timestep]
+        self.minuteIntervals = self.__validTimesteps[timestep]
 
         # calculate timestamps and hoursOfYear
-        self.timestamps = {} # A dictionary for timedates. Key values will be minute of year
-        self.calculateTimestamps()
+        self.__timestampsData = {} # A dictionary for timedates. Key values will be minute of year
+        self.__calculateTimestamps()
 
     @classmethod
     def fromAnalysisPeriod(cls, analysisPeriod):
@@ -252,7 +252,7 @@ class AnalysisPeriod:
         except:
            raise ValueError(analysisPeriodString + " is not a valid analysis period!")
 
-    def calculateTimestamps(self):
+    def __calculateTimestamps(self):
         """Return a list of Ladybug DateTime in this analysis period."""
 
         # calculate based on minutes
@@ -262,20 +262,37 @@ class AnalysisPeriod:
             while curr <= self.endTime.MOY:
                 time = LBDateTime.fromMOY(curr)
                 if not self.isTimeIncluded(time):
-                    self.timestamps[time.MOY] = time
+                    self.__timestampsData[time.MOY] = time
                 curr += self.minuteIntervals
         else:
             while (0 <= curr <= self.endTime.MOY or self.stTime.MOY <= curr < 8760 * 60):
                 time = LBDateTime.fromMOY(curr)
                 if not self.isTimeIncluded(time):
-                    self.timestamps[time.MOY] = time
+                    self.__timestampsData[time.MOY] = time
 
                 curr = (curr + self.minuteIntervals)%(8760 * 60)
 
     @property
+    def dates(self):
+        """A sorted list of dates in this analysis period"""
+        # sort dictionary based on key values (minute of the year)
+        sortedTimestamps = sorted(self.__timestampsData.items(), key= lambda x: x[0])
+        return [timestamp[1] for timestamp in sortedTimestamps]
+
+    @property
+    def  HOYs(self):
+        """A sorted list of hours of year in this analysis period"""
+        return [timestamp.HOY for timestamp in self.dates]
+
+    @property
+    def  floatHOYs(self):
+        """A sorted list of hours of year as float values in this analysis period"""
+        return [timestamp.floatHOY for timestamp in self.dates]
+
+    @property
     def totalNumOfHours(self):
         """Total number of hours during this analysis period"""
-        return len(self.timestamps)/self.timestep
+        return len(self.__timestampsData)/self.timestep
 
     @property
     def isAnnual(self):
@@ -296,7 +313,7 @@ class AnalysisPeriod:
         """
         # time filtering in Ladybug and honeybee is slightly different since start hour and end hour will be
         # applied for every day. For instance 2/20 9am to 2/22 5pm means hour between 9-17 during 20, 21 and 22 of Feb
-        return time.MOY in self.timestamps
+        return time.MOY in self.__timestampsData
 
     def __repr__(self):
         return "%s/%s to %s/%s between %s to %s @%d"%\
@@ -592,7 +609,7 @@ class DataList:
                 "number of hours in analysis period %d"%(len(values), \
                                                         analysisPeriod.totalNumOfHours))
         # get all time stamps
-        timeStamps = analysisPeriod.get_timestamps()
+        timeStamps = analysisPeriod.dates
 
         # map timeStamps and values
         newValues = {}
