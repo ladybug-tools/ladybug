@@ -30,7 +30,7 @@ class Sunpath:
         self.daylightSavingPeriod = daylightSavingPeriod
 
     @classmethod
-    def fromLocation(location, northAngle = 0, daylightSavingPeriod = None):
+    def fromLocation(self, location, northAngle = 0, daylightSavingPeriod = None):
         return Sunpath(location.latitude, northAngle, location.longitude, \
             location.timeZone, daylightSavingPeriod)
 
