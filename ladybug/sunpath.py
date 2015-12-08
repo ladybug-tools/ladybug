@@ -1,5 +1,6 @@
 import math
-import ladybug.core as core
+import core
+import euclid
 
 class Sunpath:
     """
@@ -161,13 +162,91 @@ class Sunpath:
                     - math.sin(solDec))/(math.cos(self.latitude)*math.sin(zenith)))) % (2*math.pi))
 
         # create the sun for this hour
-        return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving)
+        return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving, self.northAngle)
 
 
 class Sun:
-    def __init__(self, datetime, altitude, azimuth, isSolarTime, isDaylightSaving):
-        self.datetime = datetime
-        self.altitude = altitude
-        self.azimuth = azimuth
-        self.isSolarTime = isSolarTime
-        self.isDaylightSaving = isDaylightSaving
+    """Create a sun
+
+    Attributes:
+        datetime: A Ladybug datetime that represents the datetime for this sunVector
+        altitude: Solar Altitude in radians
+        azimuth: Solar Azimuth in radians
+        isSolarTime: A Boolean that indicates if datetime represents the solar time
+        isDaylightSaving: A Boolean that indicates if datetime is calculated for Daylight saving period
+        northAngle: North angle of the sunpath in Degrees. This will be only used to calculate the solar vector.
+
+    """
+    def __init__(self, datetime, altitude, azimuth, isSolarTime, isDaylightSaving, northAngle):
+        self.__datetime = datetime
+        self.__altitude = altitude
+        self.__azimuth = azimuth
+        self.__isSolarTime = isSolarTime
+        self.__isDaylightSaving = isDaylightSaving
+        self.__northAngle = northAngle # useful to calculate sun vector - sun angle is in degrees
+        self.__hourlyData = [] # Place holder for hourly data I'm not sure how it will work yet
+
+    @property
+    def datetime(self):
+        """Return datetime"""
+        return math.degrees(self.__datetime)
+
+    @property
+    def HOY(self):
+        """Return datetime"""
+        return math.degrees(self.__datetime.floatHOY)
+
+    @property
+    def altitude(self):
+        """Return solar altitude in degrees"""
+        return math.degrees(self.__altitude)
+
+    @property
+    def azimuth(self):
+        """Return solar azimuth in degrees"""
+        return math.degrees(self.__azimuth)
+
+    @property
+    def isSolarTime(self):
+        """Return a Boolean that indicates is datetime is solar time"""
+        return self.__isSolarTime
+
+    @property
+    def isDaylightSaving(self):
+        """Return a Boolean that indicates is datetime is solar time"""
+        return self.__isDaylightSaving
+
+    @property
+    def hourlyData(self):
+        return self.__hourlyData
+
+    def appendHourlyData(self, data):
+        """Append Ladybug hourly data to this sun"""
+        assert data.datetime.HOY == self.HOY
+        self.__hourlyData.append(data)
+        return True
+
+    @property
+    def isDuringDay(self):
+        # sun vector is flipped to look to the center
+        return self.sunVector.z <= 0
+
+    @property
+    def sunVector(self):
+        """Return sun vector for this sun
+            Sun vector will face
+        """
+        zAxis = euclid.Vector3(0., 0., -1.)
+        xAxis = euclid.Vector3(1., 0., 0.)
+        northVector = euclid.Vector3(0., 1., 0.)
+        # .rotate_around(zAxis, math.radians(self.__northAngle))
+
+        # rotate north vector based on azimuth, altitude, and north
+        sunvector = northVector \
+            .rotate_around(xAxis, self.__altitude) \
+            .rotate_around(zAxis, self.__azimuth) \
+            .rotate_around(zAxis, math.radians(-self.__northAngle))
+
+        sunvector.normalize().flip()
+
+        return sunvector

@@ -63,10 +63,10 @@ class EPW:
             self.stationLocation.country = locationData[3]
             self.stationLocation.source = locationData[4]
             self.stationLocation.stationId = locationData[5]
-            self.stationLocation.latitude = locationData[6]
-            self.stationLocation.longitude = locationData[7]
-            self.stationLocation.timeZone = locationData[8]
-            self.stationLocation.elevation = locationData[9]
+            self.stationLocation.latitude = float(locationData[6])
+            self.stationLocation.longitude = float(locationData[7])
+            self.stationLocation.timeZone = float(locationData[8])
+            self.stationLocation.elevation = float(locationData[9])
 
             self.__isLocationLoaded = True
             if onlyImportLocation: return
