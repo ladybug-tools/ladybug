@@ -24,8 +24,8 @@ class Sunpath:
     def __init__(self, latitude = 0, northAngle = 0, longitude = 0, timeZone = 0,
                 daylightSavingPeriod = None):
 
-        self.latitude = math.radians(float(latitude))
-        self.longitude = math.radians(float(longitude))
+        self.__latitude = math.radians(float(latitude))
+        self.__longitude = math.radians(float(longitude))
         self.northAngle = northAngle
         self.timeZone = timeZone
         self.daylightSavingPeriod = daylightSavingPeriod
@@ -34,6 +34,26 @@ class Sunpath:
     def fromLocation(self, location, northAngle = 0, daylightSavingPeriod = None):
         return Sunpath(location.latitude, northAngle, location.longitude, \
             location.timeZone, daylightSavingPeriod)
+
+    @property
+    def latitude(self):
+        """get latitude in degrees"""
+        return math.degrees(self.__latitude)
+
+    @latitude.setter
+    def latitude(self, value):
+        """set latitude value in degrees"""
+        self.__latitude = math.radians(float(value))
+
+    @property
+    def longitude(self):
+        """get latitude in degrees"""
+        return math.degrees(self.__latitude)
+
+    @longitude.setter
+    def longitude(self, value):
+        """set latitude value in degrees"""
+        self.__longitude = math.radians(float(value))
 
     def isDaylightSavingHour(self, datetime):
         if not self.daylightSavingPeriod: return False
@@ -80,11 +100,80 @@ class Sunpath:
             Returns:
                 A sun object for this particular time
         """
-        year = 2015
-        month, day, hour = datetime.month, datetime.day, datetime.hour
+        solDec, eqOfTime = self.__calculateSolarGeometry(datetime)
 
+        month, day, hour = datetime.month, datetime.day, datetime.floatHour
         isDaylightSaving = self.isDaylightSavingHour(datetime.HOY)
         if isDaylightSaving: hour += 1
+
+        #hours
+        solTime = self.__calculateSolarTime(hour, eqOfTime, isSolarTime)
+
+        #degrees
+        hourAngle = (solTime*15 + 180) if (solTime*15 < 0) else (solTime*15 - 180)
+
+        #RADIANS
+        zenith = math.acos(math.sin(self.__latitude)*math.sin(solDec) \
+            + math.cos(self.__latitude)*math.cos(solDec)*math.cos(math.radians(hourAngle)))
+
+        altitude = (math.pi/2) - zenith
+
+        if hourAngle == 0.0 or hourAngle == -180.0 or hourAngle == 180.0:
+            if solDec < self.__latitude: azimuth = math.pi
+            else: azimuth = 0.0
+        else:
+            azimuth = ((math.acos(((math.sin(self.__latitude)*math.cos(zenith)) \
+                - math.sin(solDec))/(math.cos(self.__latitude)*math.sin(zenith))) + math.pi) % (2*math.pi)) \
+                if (hourAngle > 0) else \
+                    ((3*math.pi - math.acos(((math.sin(self.__latitude)*math.cos(zenith)) \
+                    - math.sin(solDec))/(math.cos(self.__latitude)*math.sin(zenith)))) % (2*math.pi))
+
+        # create the sun for this hour
+        return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving, self.northAngle)
+
+    def calculateSunriseSunset(self, month, day, depression = 0.833, isSolarTime = False):
+        datetime = core.LBDateTime(month, day, hour = 12)
+        return self.calculateSunriseSunsetFromDateTime(datetime, depression, isSolarTime)
+
+    # TODO: implement solar time
+    def calculateSunriseSunsetFromDateTime(self, datetime, depression = 0.833, isSolarTime = False):
+        """Calculate sunrise, sunset and noon for a day of year"""
+
+        solDec, eqOfTime = self.__calculateSolarGeometry(datetime)
+
+        # calculate sunrise and sunset hour
+        #if isSolarTime:
+        #    noon = .5
+        #else:
+        noon = (720 - 4 * math.degrees(self.__longitude) - eqOfTime + self.timeZone * 60) / 1440
+
+        sunRiseHourAngle = self.__calculateSunriseHourAngle(solDec, depression)
+        sunrise  = noon - sunRiseHourAngle * 4 / 1440
+        sunset   = noon + sunRiseHourAngle * 4 / 1440
+
+        # convert demical hour to solar hour
+        # noon    = self.__calculateSolarTime(24*noon, eqOfTime, isSolarTime)
+        # sunrise = self.__calculateSolarTime(24*sunrise, eqOfTime, isSolarTime)
+        # sunset  = self.__calculateSolarTime(24*sunset, eqOfTime, isSolarTime)
+
+        return {
+                "sunrise"   : core.LBDateTime(datetime.month, datetime.day, 24 * sunrise),
+                "noon"      : core.LBDateTime(datetime.month, datetime.day, 24 * noon),
+                "sunset"    : core.LBDateTime(datetime.month, datetime.day, 24 * sunset)}
+
+    def __calculateSolarGeometry(self, datetime, year = 2015):
+
+        """Calculate Solar geometry for an hour of the year
+
+            Attributes:
+                datetime: A Ladybug datetime
+
+            Returns:
+                Solar declination: Solar declination in radians
+                eqOfTime: Equation of time as minutes
+        """
+
+        month, day, hour = datetime.month, datetime.day, datetime.floatHour
 
         a = 1 if (month < 3) else 0
         y = year + 4800 - a
@@ -130,40 +219,28 @@ class Sunpath:
         solDec = math.asin(math.sin(math.radians(obliqueCorr))*math.sin(math.radians(sunAppLong)))
 
         varY = math.tan(math.radians(obliqueCorr/2))*math.tan(math.radians(obliqueCorr/2))
+
         #minutes
         eqOfTime = 4*math.degrees(varY*math.sin(2*math.radians(geomMeanLongSun)) \
             - 2*eccentOrbit*math.sin(math.radians(geomMeanAnomSun)) \
             + 4*eccentOrbit*varY*math.sin(math.radians(geomMeanAnomSun))*math.cos(2*math.radians(geomMeanLongSun)) \
             - 0.5*(varY**2)*math.sin(4*math.radians(geomMeanLongSun)) \
             - 1.25*(eccentOrbit**2)*math.sin(2*math.radians(geomMeanAnomSun)))
-        #hours
-        if isSolarTime == False:
-            solTime = ((hour*60 + eqOfTime + 4*math.degrees(self.longitude) - 60*self.timeZone) % 1440)/60
-        else:
-            solTime = hour
 
-        #degrees
-        hourAngle = (solTime*15 + 180) if (solTime*15 < 0) else (solTime*15 - 180)
+        return solDec, eqOfTime
 
-        #RADIANS
-        zenith = math.acos(math.sin(self.latitude)*math.sin(solDec) \
-            + math.cos(self.latitude)*math.cos(solDec)*math.cos(math.radians(hourAngle)))
+    def __calculateSunriseHourAngle(self, solarDec, depression = 0.833):
+        """Calculate hour angle for sunrise time in degrees"""
+        hourAngleArg = math.cos(math.radians(90 + depression)) \
+            /(math.cos(self.__latitude) * math.cos(solarDec)) \
+            - math.tan(self.__latitude) * math.tan(solarDec)
 
-        altitude = (math.pi/2) - zenith
+        return math.degrees(math.acos(hourAngleArg))
 
-        if hourAngle == 0.0 or hourAngle == -180.0 or hourAngle == 180.0:
-            if solDec < self.latitude: azimuth = math.pi
-            else: azimuth = 0.0
-        else:
-            azimuth = ((math.acos(((math.sin(self.latitude)*math.cos(zenith)) \
-                - math.sin(solDec))/(math.cos(self.latitude)*math.sin(zenith))) + math.pi) % (2*math.pi)) \
-                if (hourAngle > 0) else \
-                    ((3*math.pi - math.acos(((math.sin(self.latitude)*math.cos(zenith)) \
-                    - math.sin(solDec))/(math.cos(self.latitude)*math.sin(zenith)))) % (2*math.pi))
-
-        # create the sun for this hour
-        return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving, self.northAngle)
-
+    def __calculateSolarTime(self, hour, eqOfTime, isSolarTime):
+        """Calculate Solar time for an hour"""
+        if isSolarTime: return hour
+        return ((hour*60 + eqOfTime + 4*math.degrees(self.__longitude) - 60*self.timeZone) % 1440)/60
 
 class Sun:
     """Create a sun
@@ -189,12 +266,12 @@ class Sun:
     @property
     def datetime(self):
         """Return datetime"""
-        return math.degrees(self.__datetime)
+        return self.__datetime
 
     @property
     def HOY(self):
-        """Return datetime"""
-        return math.degrees(self.__datetime.floatHOY)
+        """Return Hour of the year"""
+        return self.__datetime.floatHOY
 
     @property
     def altitude(self):

@@ -111,7 +111,7 @@ class DateTimeLib:
 
         # cast values to integer
         hour = int(hour + int(minute/60))
-        minute = int(minute%60)
+        minute = minute%60
 
         return hour, minute
 
@@ -122,6 +122,7 @@ class LBDateTime:
         self.month, self.day, self.hour, \
             self.minute = DateTimeLib.checkDateTime(month, day, hour, minute)
 
+        self.floatHour = self.hour + self.minute/60.0
         self.DOY = DateTimeLib.getDayOfYear(self.month, self.day)
         self.HOY = DateTimeLib.getHourOfYear(self.month, self.day, self.hour, self.minute)
         self.MOY = self.HOY * 60  + self.minute # minute of the year
