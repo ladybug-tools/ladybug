@@ -327,3 +327,26 @@ class Sun:
         sunvector.normalize().flip()
 
         return sunvector
+
+
+    # TODO: move this methods unde DSSun.
+    # I'm not still sure about the dependencies. I think I should move Ladybug library
+    # under Dynamo and Grasshopper libraries so I can use ladybug libraries in a more
+    # effective way and also name the classes in Dynamo and Grasshopper the same so the code
+    # that works in Dynamo can be copy-pasted to Grasshopper and work fine!
+    """
+    @property
+    def vector(self):
+        #place holder for sunvector in Grasshopper or Dynamo
+        raise NotImplementedError
+
+    @property
+    def position(self):
+        #place holder for point in Grasshopper or Dynamo
+        raise NotImplementedError
+
+    @property
+    def geometry(self):
+        #place holder for geometry in Grasshopper or Dynamo
+        raise NotImplementedError
+    """
