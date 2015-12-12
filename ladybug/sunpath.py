@@ -2,7 +2,13 @@ import math
 import core
 import euclid
 
-class Sunpath:
+# NOTE:
+# Dear developers,
+# If classes will be used as base class in geometries use LB in front of class names
+# This will avoid name confusions between the libraries and all the geometry libraries
+# can use the same class name (e.g Sunpath)
+
+class LBSunpath(object):
     """
     Calculates sun path
 
@@ -16,7 +22,7 @@ class Sunpath:
     Usage:
         import ladybug.sunpath as sunpath
         # initiate sunpath
-        sp = sunpath.Sunpath(50)
+        sp = sunpath.LBSunpath(50)
         sun = sp.calculateSun(1, 1, 12) # calculate sun data for Jan 1 at noon
         print sun.azimuth, sun.altitude
     """
@@ -31,8 +37,8 @@ class Sunpath:
         self.daylightSavingPeriod = daylightSavingPeriod
 
     @classmethod
-    def fromLocation(self, location, northAngle = 0, daylightSavingPeriod = None):
-        return Sunpath(location.latitude, northAngle, location.longitude, \
+    def fromLocation(cls, location, northAngle = 0, daylightSavingPeriod = None):
+        return cls(location.latitude, northAngle, location.longitude, \
             location.timeZone, daylightSavingPeriod)
 
     @property
@@ -129,7 +135,7 @@ class Sunpath:
                     - math.sin(solDec))/(math.cos(self.__latitude)*math.sin(zenith)))) % (2*math.pi))
 
         # create the sun for this hour
-        return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving, self.northAngle)
+        return LBSun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving, self.northAngle)
 
     def calculateSunriseSunset(self, month, day, depression = 0.833, isSolarTime = False):
         datetime = core.LBDateTime(month, day, hour = 12)
@@ -242,7 +248,9 @@ class Sunpath:
         if isSolarTime: return hour
         return ((hour*60 + eqOfTime + 4*math.degrees(self.__longitude) - 60*self.timeZone) % 1440)/60
 
-class Sun:
+
+
+class LBSun(object):
     """Create a sun
 
     Attributes:
@@ -269,6 +277,11 @@ class Sun:
         return self.__datetime
 
     @property
+    def northAngle(self):
+        """Return north angle for +YAxis"""
+        return self.__northAngle
+
+    @property
     def HOY(self):
         """Return Hour of the year"""
         return self.__datetime.floatHOY
@@ -282,6 +295,16 @@ class Sun:
     def azimuth(self):
         """Return solar azimuth in degrees"""
         return math.degrees(self.__azimuth)
+
+    @property
+    def altitudeInRadians(self):
+        """Return solar altitude in radians"""
+        return self.__altitude
+
+    @property
+    def azimuthInRadians(self):
+        """Return solar azimuth in radians"""
+        return self.__azimuth
 
     @property
     def isSolarTime(self):
@@ -316,7 +339,6 @@ class Sun:
         zAxis = euclid.Vector3(0., 0., -1.)
         xAxis = euclid.Vector3(1., 0., 0.)
         northVector = euclid.Vector3(0., 1., 0.)
-        # .rotate_around(zAxis, math.radians(self.__northAngle))
 
         # rotate north vector based on azimuth, altitude, and north
         sunvector = northVector \
@@ -327,26 +349,3 @@ class Sun:
         sunvector.normalize().flip()
 
         return sunvector
-
-
-    # TODO: move this methods unde DSSun.
-    # I'm not still sure about the dependencies. I think I should move Ladybug library
-    # under Dynamo and Grasshopper libraries so I can use ladybug libraries in a more
-    # effective way and also name the classes in Dynamo and Grasshopper the same so the code
-    # that works in Dynamo can be copy-pasted to Grasshopper and work fine!
-    """
-    @property
-    def vector(self):
-        #place holder for sunvector in Grasshopper or Dynamo
-        raise NotImplementedError
-
-    @property
-    def position(self):
-        #place holder for point in Grasshopper or Dynamo
-        raise NotImplementedError
-
-    @property
-    def geometry(self):
-        #place holder for geometry in Grasshopper or Dynamo
-        raise NotImplementedError
-    """

@@ -1,5 +1,4 @@
 ﻿import os
-import datetime
 import core
 
 class EPW:
@@ -104,19 +103,6 @@ class EPW:
 
         del(epwlines)
         self.__isDataLoaded = True
-
-    # TODO: This should move under Ladybug data list
-    def get_dataByTime(self, month, day, hour, dataType = None):
-        """
-        Get weather data for a specific hour of the year for a specific data type (e.g. dbTemp, RH)
-        If no type is provided all the available data will be returned
-        """
-        time = datetime.datetime(self.year, month, day, hour-1)
-
-        # if it's a valid key return data for the key
-        # otherwise return all the data available for that time
-        if dataType in self.keys.keys(): return self.data[time][dataType]
-        return self.data[time]
 
     def __get_dataByField(self, fieldNumber):
         """Return a data field by field number

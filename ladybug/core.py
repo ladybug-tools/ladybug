@@ -136,7 +136,7 @@ class LBDateTime:
                 HOY: A float value between 0.0 to 8760.0
         """
         month, day, hour, minute = DateTimeLib.getMonthDayHourAndMinute(HOY)
-        return LBDateTime(month, day, hour, minute)
+        return cls(month, day, hour, minute)
 
     @classmethod
     def fromMOY(cls, MOY):
@@ -153,7 +153,7 @@ class LBDateTime:
 
         month = DateTimeLib.monthList.index(month.upper()) + 1
 
-        return LBDateTime(month, int(day), int(hour), int(minute))
+        return cls(month, int(day), int(hour), int(minute))
 
     @property
     def humanReadableHour(self):
@@ -249,7 +249,7 @@ class AnalysisPeriod:
             stMonth, stDay, \
             endMonth, endDay, \
             stHour, endHour, timestep =  ap.split(' ')
-            return AnalysisPeriod(stMonth, stDay, stHour, endMonth, endDay, endHour, int(timestep))
+            return cls(stMonth, stDay, stHour, endMonth, endDay, endHour, int(timestep))
         except:
            raise ValueError(analysisPeriodString + " is not a valid analysis period!")
 
