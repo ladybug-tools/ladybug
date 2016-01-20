@@ -1,5 +1,6 @@
 import re
 import copy
+import euclid
 
 class DateTimeLib:
     """Ladybug DateTime Libray
@@ -164,7 +165,6 @@ class LBDateTime:
 
     def __repr__(self):
         return "%d %s at %s"%( self.day, DateTimeLib.monthList[self.month-1], self.humanReadableHour)
-
 
 # TODO: Add NA analysis period
 class AnalysisPeriod:
@@ -436,16 +436,91 @@ class LBData:
 
     @classmethod
     def fromLBData(cls, data):
-        if isinstance(data, LBData):
-            return data
-        else:
-            raise ValueError
+        assert isinstance(data, LBData), "Input is not a LBData."
+        return data
 
     def updateValue(self, newValue):
         self.value = newValue
 
-    def __repr__(self):
+    def __int__(self):
+        return int(self.value)
+
+    def __float__(self):
+        return float(self.value)
+
+    def __str__(self):
         return str(self.value)
+
+    def __eq__(self, other):
+        return  self.value == float(other)
+
+    def __ne__(self, other):
+        return  self.value != float(other)
+
+    def __lt__(self, other):
+        return self.value < other
+
+    def __gt__(self, other):
+        return self.value > other
+
+    def __le__(self, other):
+        return self.value <= other
+
+    def __ge__(self, other):
+        return self.value >= other
+
+    def __add__(self, other):
+        return self.value + other
+
+    def __sub__(self, other):
+        return self.value - other
+
+    def __mul__(self, other):
+        return self.value * other
+
+    def __floordiv__(self, other):
+        return self.value // other
+
+    def __div__(self, other):
+        return self.value / other
+
+    def __mod__(self, other):
+        return self.value%other
+
+    def __pow__(self, other):
+        return self.value**other
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __rsub__(self, other):
+        return other - self.value
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def __rfloordiv__(self, other):
+        return other//self.value
+
+    def __rdiv__(self, other):
+        return other/self.value
+
+    def __rmod__(self, other):
+        return other%self.value
+
+    def __rpow__(self, other):
+        return other**self.value
+
+    def __repr__(self):
+        return self.__str__()
+
+class LBPatchData(LBData):
+    """Ladybug sky patch data type"""
+    def __init__(self, value, vector):
+        # sky data doesn't have time
+        datetime = LBDateTime()
+        LBData.__init__(self, value, datetime)
+        self.vector = euclid.Vector3(*vector)
 
 class DataList:
     """Ladybug data list
@@ -712,6 +787,33 @@ class DataList:
 
         return filteredDataList
 
+    def filterByHOYs(self, HOYs):
+
+        """Filter the list based on an analysis period
+            Parameters:
+               HOYs: A List of hours of the year [1-8760]
+
+            Return:
+                A new DataList with filtered data
+
+            Usage:
+               HOYs = range(1,48) # The first two days of the year
+               epw = EPW("c:\ladybug\weatherdata.epw")
+               DBT = epw.dryBulbTemperature
+               filteredDBT = DBT.filterByHOYs(HOYs)
+        """
+
+        # There is no guarantee that data is continuous so I iterate through the
+        # each data point one by one
+        filteredData = [ d for d in self.__data if d.datetime.HOY in HOYs]
+
+        # create a new filteredData
+        filteredHeader = self.header.duplicate()
+        filteredHeader.analysisPeriod = "unknown"
+        filteredDataList = DataList(filteredData, filteredHeader)
+
+        return filteredDataList
+
     def filterByConditionalStatement(self, statement):
         """Filter the list based on an analysis period
             Parameters:
@@ -812,3 +914,25 @@ class DataList:
                 averagedMonthlyValuesPerHour[month][hour] = self.average(data)
 
         return averagedMonthlyValuesPerHour
+
+    def __len__(self):
+        return len(self.__data)
+
+    def __getitem__(self, key):
+        return self.__data[key]
+
+    def __setitem__(self, key, value):
+        self.__data[key] = value
+
+    def __delitem__(self, key):
+        del self.__data[key]
+
+    def __iter__(self):
+        return iter(self.__data)
+
+    # TODO: Reverse analysis period in header
+    def __reversed__(self):
+        return FunctionalList(reversed(self.__data))
+
+    def __repr__(self):
+        return "Ladybug.DataList#%s"%self.header.dataType

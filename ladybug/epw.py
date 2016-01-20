@@ -478,6 +478,31 @@ class EPW:
         """
         return self.__get_dataByField(34)
 
+    def __getWEAHeader(self):
+        return  "place %s\n"%self.location.city + \
+                "latitude %.2f\n"%self.location.latitude + \
+                "longitude %.2f\n"%-self.location.longitude + \
+                "time_zone %.1f\n"%(-self.location.timeZone * 15) + \
+                "site_elevation %d\n"%self.location.elevation + \
+                "weather_data_file_units 1\n"
+
+    def epw2wea(self, filePath = None):
+        """Write wea file from epw file
+            WEA carries radiation values from epw ans is what gendaymtx uses to generate the sky
+            I'm wrote my own implementation to avoid shipping epw2wea.exe file. Now epw2wea is
+            part of the Radiance distribution
+        """
+        if not filePath:
+            filePath = self.fileAddress[:-3] + "wea"
+
+        with open(filePath, "wb") as weaFile:
+            weaFile.write(self.__getWEAHeader())
+            for dirRad, difRad in zip(self.directNormalRadiation, self.diffuseHorizontalRadiation):
+                line = "%d %d %.1f %d %d\n"%(dirRad.datetime.month, dirRad.datetime.day, dirRad.datetime.hour, dirRad, difRad)
+                weaFile.write(line)
+
+        return filePath
+
     def __repr__(self):
         return "EPW Data [%s]"%self.stationLocation.city
 
