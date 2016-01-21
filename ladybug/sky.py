@@ -84,8 +84,9 @@ class CumulativeSkyMtx(object):
     def skyDiffuseRadiation(self):
         """Diffuse values for sky patches as a LBDataList"""
 
-        assert self.__isCalculated, "You need to calculate the materix first and" + \
-            "loading the results. Use skyMtx method."
+        assert self.__isCalculated, "You need to calculate the materix first before" + \
+            " loading the results. Use calculateMtx method. If you see this error from inside " + \
+            "Dynamo reconnect one of the inputs and re-run the file!"
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
 
@@ -95,8 +96,9 @@ class CumulativeSkyMtx(object):
     def skyDirectRadiation(self):
         """Direct values for sky patches as a LBDataList"""
 
-        assert self.__isCalculated, "You need to calculate the materix first and" + \
-            "loading the results. Use skyMtx method."
+        assert self.__isCalculated, "You need to calculate the materix first before" + \
+            " loading the results. Use calculateMtx method. If you see this error from inside " + \
+            "Dynamo reconnect one of the inputs and re-run the file!"
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
 
@@ -106,8 +108,9 @@ class CumulativeSkyMtx(object):
     def skyTotalRadiation(self):
         """Total values for sky patches as a LBDataList"""
 
-        assert self.__isCalculated, "You need to calculate the materix first and" + \
-            "loading the results. Use skyMtx method."
+        assert self.__isCalculated, "You need to calculate the materix first before" + \
+            " loading the results. Use calculateMtx method. If you see this error from inside " + \
+            "Dynamo reconnect one of the inputs and re-run the file!"
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
 
@@ -226,7 +229,6 @@ class CumulativeSkyMtx(object):
             genskymtxbatfile.write(batchFile)
 
         subprocess.Popen(batchFileAddress, shell = True)
-        self.__isCalculated == True
 
     def __calculateLuminanceFromRGB(self, R, G, B, patchNumber):
         return (.265074126 * float(R) + .670114631 * float(G) + .064811243 * float(B)) * self.steradianConversionFactor(patchNumber)
@@ -239,8 +241,9 @@ class CumulativeSkyMtx(object):
             print "Matrix has been already loaded!"
             return
 
-        assert self.__isCalculated, "You need to calculate the materix first and" + \
-            "loading the results. Use calculateMtx method."
+        assert self.__isCalculated, "You need to calculate the materix first before" + \
+            " loading the results. Use calculateMtx method. If you see this error from inside " + \
+            "Dynamo reconnect one of the inputs and re-run the file!"
 
         assert os.path.getsize(self.__diffuseMtxFileAddress) > 0 and \
             os.path.getsize(self.__directMtxFileAddress) > 0, \
@@ -315,7 +318,7 @@ class CumulativeSkyMtx(object):
 
         # calculate sky if it's not already calculated
         if not self.__isCalculated or recalculate:
-            self.calculateMtx(pathToRadianceBinaries, recalculate)
+            self.calculateMtx(pathToRadianceBinaries = pathToRadianceBinaries, recalculate = recalculate)
 
         # load matrix files if it's not loaded
         if not self.__isLoaded:
@@ -325,7 +328,9 @@ class CumulativeSkyMtx(object):
             HOYs = range(1, 8761)
         else:
             if isinstance(analysisPeriod, list):
-                HOYs = analysisPeriod
+                HOYs = [h if 0 < h < 8761 else -1 for h in analysisPeriod]
+                assert (not -1 in HOYs), "Hour should be between 1-8760"
+
             elif isinstance(analysisPeriod, core.AnalysisPeriod):
                 HOYs = analysisPeriod.HOYs
             else:
