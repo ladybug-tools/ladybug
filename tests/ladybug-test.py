@@ -38,8 +38,8 @@ print "Number of selected dat should be 4380 and it is %d"%len(fDataByPattern.ti
 
 ## get header, values or both
 # print DBT.header
-# print DBT.values
-# print DBT.valuesWithHeader
+# print DBT.values()
+# print DBT.values(header = True)
 
 ## filter data by analysis period
 # DBT.filterByAnalysisPeriod(analysisPeriod)

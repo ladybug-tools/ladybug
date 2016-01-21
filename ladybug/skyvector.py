@@ -16,7 +16,7 @@ class Skyvectors(object):
     """
 
     def __init__(self, skyDensity = 0):
-        __numberOfPatches = {0 : 146, 1 : 580}
+        __numberOfPatches = {0 : 146, 1 : 578}
         assert -1 < int(skyDensity) <= 1, "Sky density is should be 0: Tregenza sky, 1: Reinhart sky"
         self.__skyDensity = int(skyDensity)
         self.__loadVectors()

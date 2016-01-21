@@ -482,8 +482,8 @@ class EPW:
         return  "place %s\n"%self.location.city + \
                 "latitude %.2f\n"%self.location.latitude + \
                 "longitude %.2f\n"%-self.location.longitude + \
-                "time_zone %.1f\n"%(-self.location.timeZone * 15) + \
-                "site_elevation %d\n"%self.location.elevation + \
+                "time_zone %d\n"%(-self.location.timeZone * 15) + \
+                "site_elevation %.1f\n"%self.location.elevation + \
                 "weather_data_file_units 1\n"
 
     def epw2wea(self, filePath = None):
@@ -498,7 +498,7 @@ class EPW:
         with open(filePath, "wb") as weaFile:
             weaFile.write(self.__getWEAHeader())
             for dirRad, difRad in zip(self.directNormalRadiation, self.diffuseHorizontalRadiation):
-                line = "%d %d %.1f %d %d\n"%(dirRad.datetime.month, dirRad.datetime.day, dirRad.datetime.hour, dirRad, difRad)
+                line = "%d %d %.3f %d %d\n"%(dirRad.datetime.month, dirRad.datetime.day, dirRad.datetime.hour - 0.5, dirRad, difRad)
                 weaFile.write(line)
 
         return filePath

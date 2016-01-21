@@ -353,7 +353,6 @@ class LBHeader:
     def __key(self):
         return 'location|dataType|units|frequency|dataPeriod'
 
-    @property
     def toList(self):
         """Return Ladybug header as a list"""
         return [
@@ -531,20 +530,24 @@ class DataList:
         self.__data = self.checkInputData(data)
         self.header = LBHeader() if not header else header
 
-    @property
-    def values(self):
-        """Return the list of values"""
-        return self.__data
+    def values(self, header = False):
+        """Return the list of values
+
+            Args:
+                header: A boolean that indicates if values should include the headers
+
+            Return:
+                A list of values
+        """
+        if not header:
+            return self.__data
+        else:
+            return self.header.toList() + self.__data
 
     @property
     def timeStamps(self):
-        "Return time stamps for current data"
+        "List of time stamps for current data"
         return [value.datetime for value in self.__data]
-
-    @property
-    def valuesWithHeader(self):
-        """Return the list of values with ladybug header"""
-        return self.header.toList + self.__data
 
     def checkInputData(self, data):
         """Check input data"""
@@ -568,8 +571,8 @@ class DataList:
         values = [value.value for value in data]
         return sum(values)/len(data)
 
-    def separateDataByMonth(self, monthRange = range(1,13), userDataList = None):
-        """Return a dictionary of values where values are separated for each month
+    def groupDataByMonth(self, monthRange = range(1,13), userDataList = None):
+        """Return a dictionary of values where values are grouped for each month
 
             key values are between 1-12
 
@@ -579,7 +582,7 @@ class DataList:
 
            Usage:
                epwfile = EPW("epw file address")
-               monthlyValues = epwfile.dryBulbTemperature.separateValuesByMonth()
+               monthlyValues = epwfile.dryBulbTemperature.groupValuesByMonth()
                print monthlyValues[2] # returns values for the month of March
         """
         hourlyDataByMonth = {}
@@ -598,8 +601,8 @@ class DataList:
         print "Found data for months " + str(hourlyDataByMonth.keys())
         return hourlyDataByMonth
 
-    def separateDataByDay(self, dayRange = range(1, 366), userDataList = None):
-        """Return a dictionary of values where values are separated by each day of year
+    def groupDataByDay(self, dayRange = range(1, 366), userDataList = None):
+        """Return a dictionary of values where values are grouped by each day of year
 
             key values are between 1-365
 
@@ -608,7 +611,7 @@ class DataList:
                userDataList: An optional data list of LBData to be processed
            Usage:
                epwfile = EPW("epw file address")
-               dailyValues = epwfile.dryBulbTemperature.separateDataByDay(range(1, 30))
+               dailyValues = epwfile.dryBulbTemperature.groupDataByDay(range(1, 30))
                print dailyValues[2] # returns values for the second day of year
         """
         hourlyDataByDay = {}
@@ -630,8 +633,8 @@ class DataList:
         print "Found data for " + str(len(hourlyDataByDay.keys())) + " days."
         return hourlyDataByDay
 
-    def separateDataByHour(self, hourRange = range(1, 25), userDataList = None):
-        """Return a dictionary of values where values are separated by each hour of day
+    def groupDataByHour(self, hourRange = range(1, 25), userDataList = None):
+        """Return a dictionary of values where values are grouped by each hour of day
 
             key values are between 1-24
 
@@ -641,9 +644,9 @@ class DataList:
 
            Usage:
                epwfile = EPW("epw file address")
-               monthlyValues = epwfile.dryBulbTemperature.separateDataByMonth([1])
-               separatedHourlyData = epwfile.dryBulbTemperature.separateDataByHour(userDataList = monthlyValues[2])
-               for hour, data in separatedHourlyData.items():
+               monthlyValues = epwfile.dryBulbTemperature.groupDataByMonth([1])
+               groupedHourlyData = epwfile.dryBulbTemperature.groupDataByHour(userDataList = monthlyValues[2])
+               for hour, data in groupedHourlyData.items():
                    print "average temperature values for hour " + str(hour) + " during JAN is " + str(core.DataList.average(data)) + " " + DBT.header.unit
         """
         hourlyDataByHour = {}
@@ -884,8 +887,8 @@ class DataList:
     def averageMonthly(self, userDataList = None):
         """Return a dictionary of values for average values for available months"""
 
-        # separate data for each month
-        monthlyValues = self.separateDataByMonth(userDataList= userDataList)
+        # group data for each month
+        monthlyValues = self.groupDataByMonth(userDataList= userDataList)
 
         averageValues = dict()
 
@@ -901,16 +904,16 @@ class DataList:
             This method returns a dictionary with nested dictionaries for each hour
         """
         # get monthy values
-        monthlyHourlyValues = self.separateDataByMonth(userDataList= userDataList)
+        monthlyHourlyValues = self.groupDataByMonth(userDataList= userDataList)
 
-        # separate data for each hour in each month and collect them in a dictionary
+        # group data for each hour in each month and collect them in a dictionary
         averagedMonthlyValuesPerHour = {}
         for month, monthlyValues in monthlyHourlyValues.items():
             if month not in averagedMonthlyValuesPerHour: averagedMonthlyValuesPerHour[month] = {}
 
-            # separate data for each hour
-            separatedHourlyData = self.separateDataByHour(userDataList = monthlyValues)
-            for hour, data in separatedHourlyData.items():
+            # group data for each hour
+            groupedHourlyData = self.groupDataByHour(userDataList = monthlyValues)
+            for hour, data in groupedHourlyData.items():
                 averagedMonthlyValuesPerHour[month][hour] = self.average(data)
 
         return averagedMonthlyValuesPerHour
