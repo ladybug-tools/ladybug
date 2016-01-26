@@ -1,4 +1,5 @@
 from color import LBColorRange
+from listoperations import *
 
 class LBLegendParameters(object):
     """Ladybug lagend parameters
@@ -43,7 +44,31 @@ class LBLegendParameters(object):
     def domain(self, dom):
         self.colorRange.domain = dom
 
-    def color(self, value):
+    @property
+    def isDomainSet(self):
+        return self.colorRange.isDomainSet
+
+    def setDomain(self, values):
+        """Set domain of the colors based on min and max of a list of values"""
+        _flattenedList = list(flatten(values))
+        _flattenedList.sort()
+        self.domain = [_flattenedList[0] if d=='min' else d for d in self.domain]
+        self.domain = [_flattenedList[-1] if d=='max' else d for d in self.domain]
+        del(_flattenedList)
+
+    def calculateColors(self, values):
+        """Return a list (or list of lists) of colors based on input values"""
+        # set domain if it is not set
+        _flattenedList = list(flatten(values))
+        if not self.isDomainSet: self.setDomain(_flattenedList)
+
+        _flattenedColors = range(len(_flattenedList))
+        for count, value in enumerate(_flattenedList):
+            _flattenedColors[count] = self.calculateColor(value)
+
+        return unflatten(values, iter(_flattenedColors))
+
+    def calculateColor(self, value):
         "Return color for a specific value"
         return self.colorRange.color(value)
 
@@ -52,3 +77,6 @@ class LBLegendParameters(object):
 
     def text(self):
         raise NotImplementedError()
+
+    def __repr__(self):
+        return "ladybug.legendparameters"

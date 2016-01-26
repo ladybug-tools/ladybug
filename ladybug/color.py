@@ -129,7 +129,7 @@ class LBColorRange(object):
         Args:
             range:
             colors: A list of colors. Colors should be input as R, G, B values. Default: LBColorset[1]
-            domain: A list of numbers or strings. For numerical values it should be sorted from min to max. Default: [0, 1]
+            domain: A list of numbers or strings. For numerical values it should be sorted from min to max. Default: ['min', 'max']
             chartType: 0: continuous, 1: segmented, 2: ordinal. Default: 0
                 In segmented and ordinal mode number of values should match number of colors
                 Ordinal values can be strings and well as numericals
@@ -171,6 +171,10 @@ class LBColorRange(object):
         self.domain = domain
 
     @property
+    def isDomainSet(self):
+        return self.__isDomainSet
+
+    @property
     def domain(self):
         return self.__domain
 
@@ -182,7 +186,7 @@ class LBColorRange(object):
             self.__domain = dom
             self.__isDomainSet = False
         else:
-            assert isinstance(dom, list), "Domain should be a list"
+            assert hasattr(dom, "__iter__"), "Domain should be an iterable type"
             # if domain is numerical it should be sorted
             try:
                 dom = map(float, dom)
@@ -212,8 +216,8 @@ class LBColorRange(object):
                 assert len(self.__colors) > len(dom), "Length of colors " + \
                     "should be more than domain values for segmented colors"
 
-            self.__isDomainSet = True
             self.__domain = dom
+            self.__isDomainSet = True
 
     @property
     def colors(self):
@@ -224,11 +228,11 @@ class LBColorRange(object):
         if not cols:
             self.__colors = LBColorset()[1]
         else:
-            assert isinstance(cols, list), "Colors should be a list"
+            assert hasattr(cols, "__iter__"), "Colors should be an iterable type"
             try:
                 cols = [col if isinstance(col, LBColor) else LBColor(col.R, col.G, col.B) for col in cols]
             except:
-                raise ValueError("%s is not a vlid color"%str(col))
+                raise ValueError("%s is not a vlid color"%str(cols))
             self.__colors = cols
 
     @property
@@ -251,7 +255,8 @@ class LBColorRange(object):
             try:
                 return self.__colors[self.__domain.index(value)]
             except ValueError:
-                raise ValueError("%s is not a valid input."%str(value))
+                raise ValueError("%s is not a valid input for ordinal type.\n"%str(value) + \
+                    "List of valid values are %s"%";".join(map(str, self.__domain)))
 
         if value < self.__domain[0]: return self.__colors[0]
         if value > self.__domain[-1]: return self.__colors[-1]
