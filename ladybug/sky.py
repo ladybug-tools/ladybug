@@ -336,7 +336,7 @@ class CumulativeSkyMtx(object):
             HOYs = range(1, 8761)
         else:
             if isinstance(analysisPeriod, list):
-                HOYs = [h if 0 < h < 8761 else -1 for h in analysisPeriod]
+                HOYs = [int(h) if 0 < h < 8761 else -1 for h in analysisPeriod]
                 assert (not -1 in HOYs), "Hour should be between 1-8760"
 
             elif isinstance(analysisPeriod, core.AnalysisPeriod):
