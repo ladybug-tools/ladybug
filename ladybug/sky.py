@@ -11,7 +11,7 @@ class CumulativeSkyMtx(object):
     """Cumulative Sky
 
         Attributes:
-            EPW: A ladybug epw object. Use ladybug.epw.EPW to generate the file
+            epwFileAddress: Path to EPW file.
             skyDensity: Density of the sky. 0 generates a Tregenza sky, which will
                 divide up the sky dome with a coarse density of 145 sky patches.
                 Set to 1 to generate a Reinhart sky, which will divide up the sky dome
@@ -68,6 +68,13 @@ class CumulativeSkyMtx(object):
         if not self.__workingDir:
             self.__workingDir = self.__epw.filePath
 
+        # add name of city to path
+        if not self.__workingDir.endswith(self.__epw.location.city):
+            self.__workingDir = os.path.join(self.__workingDir, self.__epw.location.city.replace(" ", "_"))
+
+        # create the folder is it's not created
+        if not os.path.isdir(self.__workingDir):
+            os.mkdir(self.__workingDir)
         # update path for other files if it's a new workingDir
         # naming convention is weatherFileName_[diffuse/direct]_[skyDensity].mtx
         __name = self.__epw.fileName[:-4] + "_%s_%d.mtx"
@@ -85,8 +92,8 @@ class CumulativeSkyMtx(object):
         """Diffuse values for sky patches as a LBDataList"""
 
         assert self.__isCalculated, "You need to calculate the materix first before" + \
-            " loading the results. Use calculateMtx method. If you see this error from inside " + \
-            "Dynamo reconnect one of the inputs and re-run the file!"
+            " loading the results.\nUse calculateMtx method. If you see this error from inside " + \
+            "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s"%self.workingDir
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
 
@@ -97,8 +104,8 @@ class CumulativeSkyMtx(object):
         """Direct values for sky patches as a LBDataList"""
 
         assert self.__isCalculated, "You need to calculate the materix first before" + \
-            " loading the results. Use calculateMtx method. If you see this error from inside " + \
-            "Dynamo reconnect one of the inputs and re-run the file!"
+            " loading the results.\nUse calculateMtx method. If you see this error from inside " + \
+            "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s"%self.workingDir
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
 
@@ -109,8 +116,8 @@ class CumulativeSkyMtx(object):
         """Total values for sky patches as a LBDataList"""
 
         assert self.__isCalculated, "You need to calculate the materix first before" + \
-            " loading the results. Use calculateMtx method. If you see this error from inside " + \
-            "Dynamo reconnect one of the inputs and re-run the file!"
+            " loading the results.\nUse calculateMtx method. If you see this error from inside " + \
+            "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s"%self.workingDir
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
 
@@ -251,17 +258,13 @@ class CumulativeSkyMtx(object):
 
         try:
             # open files and read the lines
-            with open(self.__diffuseMtxFileAddress, "rb") as diffSkyFile, \
-                open(self.__directMtxFileAddress, "rb") as dirSkyFile:
+            diffSkyFile = open(self.__diffuseMtxFileAddress, "rb")
+            dirSkyFile = open(self.__directMtxFileAddress, "rb")
 
-                diffLines = diffSkyFile.readlines()
-                dirLines = dirSkyFile.readlines()
-
-            # check if file has a header and remove the header if there is any
-            if len(diffLines) == 8769:
-                __startLine = 9
-            else:
-                __startLine = 0
+            # pass header
+            for i in range(9):
+                diffSkyFile.readline()
+                dirSkyFile.readline()
 
             # import hourly data
             analysisPeriod = core.AnalysisPeriod()
@@ -280,7 +283,10 @@ class CumulativeSkyMtx(object):
                 self.__data['diffuse'][patchNumber] = core.DataList(header =difHeader)
                 self.__data['direct'][patchNumber] = core.DataList(header =dirHeader)
 
-            for HOY, (diffLine, dirLine) in enumerate(zip(diffLines[__startLine:], dirLines[__startLine:])):
+            for HOY in range(8760):
+
+                diffLine = diffSkyFile.readline()
+                dirLine = dirSkyFile.readline()
 
                 timestamp = core.LBDateTime.fromHOY(HOY + 1)
 
@@ -298,10 +304,12 @@ class CumulativeSkyMtx(object):
             self.__isLoaded = True
 
         except Exception, e:
-             print e
+            print e
         finally:
-             del(diffLines)
-             del(dirLines)
+            diffSkyFile.close()
+            dirSkyFile.close()
+            del(diffLine)
+            del(dirLine)
 
     # TODO: Analysis perios in headers should be adjusted based on the input
     def gendaymtx(self, pathToRadianceBinaries = None, diffuse = True, direct = True, \
@@ -311,7 +319,7 @@ class CumulativeSkyMtx(object):
             Args:
                 pathToRadianceBinaries: Path to Radiance libraries. Default is C:\radiance\bin.
                 diffuse: Set to True to include diffuse radiation
-                direct: Set to True to include direct radiation
+                direct: Set to True to iclude direct radiation
                 recalculate: Set to True if you want the sky to be recalculated even it has been calculated already
                 analysisPeriod: An analysis period or a list of integers between 1-8760 for hours of the year. Default is All the hours of the year
         """
