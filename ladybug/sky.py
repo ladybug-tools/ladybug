@@ -92,7 +92,7 @@ class CumulativeSkyMtx(object):
         """Diffuse values for sky patches as a LBDataList"""
 
         assert self.__isCalculated, "You need to calculate the materix first before" + \
-            " loading the results.\nUse calculateMtx method. If you see this error from inside " + \
+            " loading the results. Use calculateMtx method.\nIf you see this error from inside " + \
             "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s"%self.workingDir
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
@@ -104,7 +104,7 @@ class CumulativeSkyMtx(object):
         """Direct values for sky patches as a LBDataList"""
 
         assert self.__isCalculated, "You need to calculate the materix first before" + \
-            " loading the results.\nUse calculateMtx method. If you see this error from inside " + \
+            " loading the results. Use calculateMtx method.\nIf you see this error from inside " + \
             "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s"%self.workingDir
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
@@ -116,7 +116,7 @@ class CumulativeSkyMtx(object):
         """Total values for sky patches as a LBDataList"""
 
         assert self.__isCalculated, "You need to calculate the materix first before" + \
-            " loading the results.\nUse calculateMtx method. If you see this error from inside " + \
+            " loading the results. Use calculateMtx method.\nIf you see this error from inside " + \
             "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s"%self.workingDir
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
