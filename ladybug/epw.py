@@ -2,21 +2,22 @@
 import core
 
 class EPW:
-    def __init__(self, epwFileAddress = None):
+    def __init__(self, epwFileAddress=None):
         """
-        Import epw data from a local epw file
+        Import epw data from a local epw file.
 
         epwFileAddress: Local file address to an epw file
 
         """
-        if not epwFileAddress: return
+        if not epwFileAddress:
+            return
         self.fileAddress = self.checkEpwFileAddress(epwFileAddress)
         self.filePath, self.fileName = os.path.split(self.fileAddress)
         self.__isDataLoaded = False
         self.__isLocationLoaded = False
         self.__data = dict()
         self.epwHeader = None
-        self.numOfFields = 35 # it is 35 for TMY3 files
+        self.numOfFields = 35  # it is 35 for TMY3 files
 
     @property
     def isDataLoaded(self):
@@ -37,11 +38,12 @@ class EPW:
 
     @property
     def location(self):
-        if not self.isLocationLoaded: self.importData(True)
+        if not self.isLocationLoaded:
+            self.importData(True)
         return self.stationLocation
 
-    #TODO: import EPW header. Currently I just ignore header data
-    def importData(self, onlyImportLocation = False):
+    # TODO: import EPW header. Currently I just ignore header data
+    def importData(self, onlyImportLocation=False):
         """
         imports data from an epw file.
         Hourly data will be saved in self.data and location data
@@ -119,7 +121,7 @@ class EPW:
 
         # check input data
         if not 0 <= fieldNumber < self.numOfFields:
-            raise ValueError("Field number should be between 0-%d"%self.numOfFields)
+            raise ValueError("Field number should be between 0-%d" % self.numOfFields)
 
         return self.__data[fieldNumber]
 
@@ -141,10 +143,9 @@ class EPW:
         # write the file
         with open(fullPath, 'wb') as modEpwFile:
             modEpwFile.writelines(self.epwHeader)
-
+            lines = []
             try:
-                lines = []
-                for hour in range(0, 8760):
+                for hour in xrange(0, 8760):
                     line = []
                     for field in range(0, self.numOfFields):
                         line.append(str(self.__data[field].values[hour].value))
@@ -152,16 +153,15 @@ class EPW:
             except IndexError:
                 # cleaning up
                 modEpwFile.close()
-                del(lines)
-
                 lengthErrorMsg = "Data length is not 8760 hours! Data can't be saved to epw file. " + \
                     "Did you filtered the data by AnalysisPeriod or by ConditionalStatment?"
                 raise ValueError(lengthErrorMsg)
+            else:
+                modEpwFile.writelines(lines)
+            finally:
+                del(lines)
 
-            modEpwFile.writelines(lines)
-        del(lines)
-
-        print "New epw file is written to [%s]"%fullPath
+        print "New epw file is written to [%s]" % fullPath
 
     def import_dataByField(self, fieldNumber):
         """Return annual values for any fieldNumber in epw file.
@@ -221,89 +221,89 @@ class EPW:
     def dryBulbTemperature(self):
         """Return annual Dry Bulb Temperature as a Ladybug Data List
 
-            This is the dry bulb temperature in C at the time indicated. Note that this is a full numeric field (i.e. 23.6) and not an integer representation with tenths. Valid values range from -70°C to 70°C. Missing value for this field is 99.9
+            This is the dry bulb temperature in C at the time indicated. Note that this is a full numeric field (i.e. 23.6) and not an integer representation with tenths. Valid values range from -70C to 70 C. Missing value for this field is 99.9
             Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(6)
 
     @property
     def dewPointTemperature(self):
-        """Return annual Dew Point Temperature as a Ladybug Data List
+        """Return annual Dew Point Temperature as a Ladybug Data List.
 
-            This is the dew point temperature in C at the time indicated. Note that this is a full numeric field (i.e. 23.6) and not an integer representation with tenths. Valid values range from -70°C to 70°C. Missing value for this field is 99.9
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the dew point temperature in C at the time indicated. Note that this is a full numeric field (i.e. 23.6) and not an integer representation with tenths. Valid values range from -70 C to 70 C. Missing value for this field is 99.9
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(7)
 
     @property
     def relativeHumidity(self):
-        """Return annual Relative Humidity as a Ladybug Data List
+        """Return annual Relative Humidity as a Ladybug Data List.
 
-            This is the Relative Humidity in percent at the time indicated. Valid values range from 0% to 110%. Missing value for this field is 999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Relative Humidity in percent at the time indicated. Valid values range from 0% to 110%. Missing value for this field is 999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(8)
 
     @property
     def atmosphericStationPressure(self):
-        """Return annual Atmospheric Station Pressure as a Ladybug Data List
+        """Return annual Atmospheric Station Pressure as a Ladybug Data List.
 
-            This is the station pressure in Pa at the time indicated. Valid values range from 31,000 to 120,000. (These values were chosen from the standard barometric pressure for all elevations of the World). Missing value for this field is 999999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the station pressure in Pa at the time indicated. Valid values range from 31,000 to 120,000. (These values were chosen from the standard barometric pressure for all elevations of the World). Missing value for this field is 999999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(9)
 
     @property
     def extraterrestrialHorizontalRadiation(self):
-        """Return annual Extraterrestrial Horizontal Radiation as a Ladybug Data List
+        """Return annual Extraterrestrial Horizontal Radiation as a Ladybug Data List.
 
-            This is the Extraterrestrial Horizontal Radiation in Wh/m2. It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 9999
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Extraterrestrial Horizontal Radiation in Wh/m2. It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 9999
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(10)
 
     @property
     def extraterrestrialDirectNormalRadiation(self):
-        """Return annual Extraterrestrial Direct Normal Radiation as a Ladybug Data List
+        """Return annual Extraterrestrial Direct Normal Radiation as a Ladybug Data List.
 
-            This is the Extraterrestrial Direct Normal Radiation in Wh/m2. (Amount of solar radiation in Wh/m2 received on a surface normal to the rays of the sun at the top of the atmosphere during the number of minutes preceding the time indicated). It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 9999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Extraterrestrial Direct Normal Radiation in Wh/m2. (Amount of solar radiation in Wh/m2 received on a surface normal to the rays of the sun at the top of the atmosphere during the number of minutes preceding the time indicated). It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 9999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(11)
 
     @property
     def horizontalInfraredRadiationIntensity(self):
-        """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data List
+        """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data List.
 
-            This is the Horizontal Infrared Radiation Intensity in Wh/m2. If it is missing, it is calculated from the Opaque Sky Cover field as shown in the following explanation. It should have a minimum value of 0; missing value for this field is 9999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Horizontal Infrared Radiation Intensity in Wh/m2. If it is missing, it is calculated from the Opaque Sky Cover field as shown in the following explanation. It should have a minimum value of 0; missing value for this field is 9999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(12)
 
     @property
     def globalHorizontalRadiation(self):
-        """Return annual Global Horizontal Radiation as a Ladybug Data List
+        """Return annual Global Horizontal Radiation as a Ladybug Data List.
 
-            This is the Global Horizontal Radiation in Wh/m2. (Total amount of direct and diffuse solar radiation in Wh/m2 received on a horizontal surface during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 9999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Global Horizontal Radiation in Wh/m2. (Total amount of direct and diffuse solar radiation in Wh/m2 received on a horizontal surface during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 9999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(13)
 
     @property
     def directNormalRadiation(self):
-        """Return annual Direct Normal Radiation as a Ladybug Data List
+        """Return annual Direct Normal Radiation as a Ladybug Data List.
 
-            This is the Direct Normal Radiation in Wh/m2. (Amount of solar radiation in Wh/m2 received directly from the solar disk on a surface perpendicular to the sun's rays, during the number of minutes preceding the time indicated.) If the field is missing ( ≥ 9999) or invalid ( < 0), it is set to 0. Counts of such missing values are totaled and presented at the end of the runperiod.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Direct Normal Radiation in Wh/m2. (Amount of solar radiation in Wh/m2 received directly from the solar disk on a surface perpendicular to the sun's rays, during the number of minutes preceding the time indicated.) If the field is missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such missing values are totaled and presented at the end of the runperiod.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(14)
 
     @property
     def diffuseHorizontalRadiation(self):
-        """Return annual Diffuse Horizontal Radiation as a Ladybug Data List
+        """Return annual Diffuse Horizontal Radiation as a Ladybug Data List.
 
-            This is the Diffuse Horizontal Radiation in Wh/m2. (Amount of solar radiation in Wh/m2 received from the sky (excluding the solar disk) on a horizontal surface during the number of minutes preceding the time indicated.) If the field is missing ( ≥ 9999) or invalid ( < 0), it is set to 0. Counts of such missing values are totaled and presented at the end of the runperiod
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Diffuse Horizontal Radiation in Wh/m2. (Amount of solar radiation in Wh/m2 received from the sky (excluding the solar disk) on a horizontal surface during the number of minutes preceding the time indicated.) If the field is missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such missing values are totaled and presented at the end of the runperiod
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(15)
 
