@@ -1,5 +1,4 @@
 # ladybug-core
-Core functionalities of Ladybug with no geometry library dependencies
 
 ### [API Documentation](http://ladybug-analysis-tools.github.io/ladybug-core/doc/)
 
