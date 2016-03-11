@@ -9,6 +9,11 @@
 Documentation and tests are included in the file "euclid.txt", or onli..." />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
+
+  <!-- highlight.js for highlighting source code. -->
+  <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.2.0/styles/default.min.css">
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.2.0/highlight.min.js"></script>
+
   
   <style type="text/css">
   
@@ -244,7 +249,7 @@ pre,
 samp {
     font-family: monospace, serif;
     _font-family: 'courier new', monospace;
-    font-size: 1em;
+    font-size: 0.9em;
 }
 
 /**
@@ -568,7 +573,7 @@ table {
   #content {
     width: 70%;
     margin-left: 25%;
-    max-width: 850px;
+    max-width: 90%;
     float: left;
     padding: 30px 60px;
     border-left: 1px solid #ddd;
@@ -653,10 +658,6 @@ table {
   }
   .ident {
     color: #900;
-  }
-
-  code {
-    background: #f9f9f9;
   }
 
   pre {
@@ -799,7 +800,7 @@ table {
     .source {
       display: none;
       max-height: 600px;
-      overflow-y: scroll;
+      overflow-y: auto;
       margin-bottom: 15px;
     }
 
@@ -826,7 +827,7 @@ table {
         width: auto;
     }
     #content {
-      width: 65%;
+      width: 95%;
       margin-left: auto;
       border-left: none;
       padding: 30px;
@@ -11001,5 +11002,6 @@ class Plane:
     </p>
   </footer>
 </div>
+<script>hljs.initHighlightingOnLoad();</script>
 </body>
 </html>
