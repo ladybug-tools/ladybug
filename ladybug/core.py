@@ -2,25 +2,30 @@ import re
 import copy
 import euclid
 
+
 class DateTimeLib:
-    """Ladybug DateTime Libray
+    """
+    Ladybug DateTime Libray.
+
     This class includes useful data and methods for date and time
     """
+
     monthList = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
     numOfDaysEachMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     numOfDaysUntilMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
     numOfHoursUntilMonth = [24 * numOfDay for numOfDay in numOfDaysUntilMonth]
 
     @classmethod
-    def checkDateTime(cls, month, day, hour, minute = None):
-        """Checks if time combination is a valid time."""
+    def checkDateTime(cls, month, day, hour, minute=None):
+        """Check if time combination is a valid time."""
         # check month
         if not 1 <= month <= 12:
             raise ValueError("month should be between 1-12")
 
-        if day < 1 or day > cls.numOfDaysEachMonth[month-1]:
+        if day < 1 or day > cls.numOfDaysEachMonth[month - 1]:
             raise ValueError("Number of days for %s should be \
-                    between 1-%d"%(cls.monthList[month-1], cls.numOfDaysEachMonth[month-1]))
+                    between 1-%d" % (cls.monthList[month - 1],
+                                     cls.numOfDaysEachMonth[month - 1]))
 
         if not 0 <= hour <= 24:
             raise ValueError("hour should be between 0.0-24.0")
@@ -35,10 +40,10 @@ class DateTimeLib:
             elif hour == 0 and day == 1:
                 # The last hour of the last day of the month before
                 month -= 1
-                day = cls.numOfDaysEachMonth[month-1]
+                day = cls.numOfDaysEachMonth[month - 1]
                 hour = 24
 
-            elif hour==0:
+            elif hour == 0:
                 # the last hour of the day before
                 hour = 24
                 day -= 1
@@ -48,28 +53,29 @@ class DateTimeLib:
         return month, day, hour, minute
 
     @classmethod
-    def getHourOfYear(cls, month, day, hour, minute = None):
+    def getHourOfYear(cls, month, day, hour, minute=None):
         """Return hour of the year between 1 and 8760."""
         # make sure input values are correct
         month, day, hour, minute = cls.checkDateTime(month, day, hour, minute)
 
         # fix the end day
-        JD = cls.numOfDaysUntilMonth[month-1] + int(day)
+        JD = cls.numOfDaysUntilMonth[month - 1] + int(day)
         return (JD - 1) * 24 + hour
 
     @classmethod
     def getDayOfYear(cls, month, day):
-        """Retuen day of the year between 1 and 365"""
+        """Return day of the year between 1 and 365."""
         # make sure input values are correct
-        month, day, hour, minute = cls.checkDateTime(month, day, hour = 1)
+        month, day, hour, minute = cls.checkDateTime(month, day, hour=1)
 
         # fix the end day
-        return cls.numOfDaysUntilMonth[month-1] + int(day)
+        return cls.numOfDaysUntilMonth[month - 1] + int(day)
 
     @classmethod
     def getMonthDayHourAndMinute(cls, hourOfYear):
-        """Return month, day and hour for an hour of the year"""
-        if hourOfYear == 8760: return 12, 31, 24, 0
+        """Return month, day and hour for an hour of the year."""
+        if hourOfYear == 8760:
+            return 12, 31, 24, 0
 
         # find month
         for monthCount in range(12):
@@ -78,79 +84,81 @@ class DateTimeLib:
                 break
 
         # find day and hour
-        if hourOfYear%24 == 0:
+        if hourOfYear % 24 == 0:
             # last hour of the day
-            day = int((hourOfYear - cls.numOfHoursUntilMonth[month - 1])/24)
+            day = int((hourOfYear - cls.numOfHoursUntilMonth[month - 1]) / 24)
             hour = 24
             minute = 0
         else:
-            day = int((hourOfYear - cls.numOfHoursUntilMonth[month - 1])/24) + 1
-            hour = int(hourOfYear%24)
+            day = int((hourOfYear - cls.numOfHoursUntilMonth[month - 1]) / 24) + 1
+            hour = int(hourOfYear % 24)
             minute = cls.__getHourAndMinute(hourOfYear)[1]
 
         return month, day, hour, minute
 
     @staticmethod
-    def __getHourAndMinute(hour, minute = None):
+    def __getHourAndMinute(hour, minute=None):
+        """Calculate and return hour and minute.
 
-        """Calculate and return hour and minute
+        This method is mainly usefule for calculating minutes from float hours
+        if minute is missing. otherwise it will only check the inputs append
+        returns the checked values
 
-            This method is mainly usefule for calculating minutes from float hours
-            if minute is missing. otherwise it will only check the inputs append
-            returns the checked values
+        Args:
+            hour: A float value between 0.0-24.0
+            minutes: An integer between 0-59. Default in None
 
-            Args:
-                hour: A float value between 0.0-24.0
-                minutes: An integer between 0-59. Default in None
-
-            Returns:
-                hour: An interger between 0-24
-                minute: An integer between 0-59
+        Returns:
+            hour: An interger between 0-24
+            minute: An integer between 0-59
         """
         if not minute:
             minute = (hour - int(hour)) * 60
 
         # cast values to integer
-        hour = int(hour + int(minute/60))
-        minute = minute%60
+        hour = int(hour + int(minute / 60))
+        minute = minute % 60
 
         return hour, minute
 
-# TODO: add comparison methods (largerthan, smallerthan, ...)
+
+# TODO: implement LBDateTime on top of datetime library
 class LBDateTime:
-    """Ladybug Date time"""
-    def __init__(self, month = 1, day = 1, hour = 1, minute = None):
+    """Ladybug Date time."""
+
+    def __init__(self, month=1, day=1, hour=1, minute=None):
+        """Create Ladybug datetime."""
         self.month, self.day, self.hour, \
             self.minute = DateTimeLib.checkDateTime(month, day, hour, minute)
 
-        self.floatHour = self.hour + self.minute/60.0
+        self.floatHour = self.hour + self.minute / 60.0
         self.DOY = DateTimeLib.getDayOfYear(self.month, self.day)
         self.HOY = DateTimeLib.getHourOfYear(self.month, self.day, self.hour, self.minute)
-        self.MOY = self.HOY * 60  + self.minute # minute of the year
-        self.floatHOY = self.HOY + self.minute/60.0
+        self.MOY = self.HOY * 60 + self.minute  # minute of the year
+        self.floatHOY = self.HOY + self.minute / 60.0
 
     @classmethod
     def fromHOY(cls, HOY):
-        """Create Ladybug Datetime from an hour of the year
+        """Create Ladybug Datetime from an hour of the year.
 
-            Args:
-                HOY: A float value between 0.0 to 8760.0
+        Args:
+            HOY: A float value between 0.0 to 8760.0
         """
         month, day, hour, minute = DateTimeLib.getMonthDayHourAndMinute(HOY)
         return cls(month, day, hour, minute)
 
     @classmethod
     def fromMOY(cls, MOY):
-        """create Ladybug DateTime from Minute of the year"""
-        HOY = MOY/60.0
+        """Create Ladybug DateTime from Minute of the year."""
+        HOY = MOY / 60.0
         return cls.fromHOY(HOY)
 
     @classmethod
     def fromDateTimeString(cls, datetimeString):
-        day, month, hour, minute = datetimeString \
-                .replace(" at ", " ") \
-                .replace(":", " ") \
-                .split(" ")
+        """Create Ladybug DateTime from a string."""
+        day, month, hour, minute = datetimeString.replace(" at ", " ") \
+            .replace(":", " ") \
+            .split(" ")
 
         month = DateTimeLib.monthList.index(month.upper()) + 1
 
@@ -158,47 +166,45 @@ class LBDateTime:
 
     @property
     def humanReadableHour(self):
-        """Return hours and minutes in a human readable way"""
-        minute = str(self.minute)
-        if len(minute) == 1: minute = "0" + minute
-        return "%d:%s"%(self.hour, minute)
+        """Return hours and minutes in a human readable format."""
+        return "{}:{:02}".format(self.hour, self.minute)
 
     def __repr__(self):
-        return "%d %s at %s"%( self.day, DateTimeLib.monthList[self.month-1], self.humanReadableHour)
+        """Return date time as a string."""
+        return "%d %s at %s" % (self.day, DateTimeLib.monthList[self.month - 1], self.humanReadableHour)
+
 
 # TODO: Add NA analysis period
 class AnalysisPeriod:
     """Ladybug Analysis Period.
 
-        A continuous analysis period between two days of the year between certain hours
+    A continuous analysis period between two days of the year between certain hours
 
-        Attributes:
-            stMonth: An integer between 1-12 for starting month (default = 1)
-            stDay: An integer between 1-31 for starting day (default = 1).
-                    Note that some months are shorter than 31 days.
-            stHour: An integer between 1-24 for starting hour (default = 1)
-            endMonth: An integer between 1-12 for ending month (default = 12)
-            endDay: An integer between 1-31 for ending day (default = 31)
-                    Note that some months are shorter than 31 days.
-            endHour: An integer between 1-24 for ending hour (default = 24)
-            timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+    Attributes:
+        stMonth: An integer between 1-12 for starting month (default = 1)
+        stDay: An integer between 1-31 for starting day (default = 1).
+                Note that some months are shorter than 31 days.
+        stHour: An integer between 1-24 for starting hour (default = 1)
+        endMonth: An integer between 1-12 for ending month (default = 12)
+        endDay: An integer between 1-31 for ending day (default = 31)
+                Note that some months are shorter than 31 days.
+        endHour: An integer between 1-24 for ending hour (default = 24)
+        timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
     """
 
-    __validTimesteps = {1 : 60, 2 : 30, 3 : 20, 4 : 15, 5 : 12, \
-        6 : 10, 10 : 6, 12 : 5, 15 : 4, 20 : 3, 30 : 2, 60 : 1}
+    __validTimesteps = {1: 60, 2: 30, 3: 20, 4: 15, 5: 12,
+                        6: 10, 10: 6, 12: 5, 15: 4, 20: 3, 30: 2, 60: 1}
 
-    #TODO: handle timestep between 1-60
-    def __init__(self, stMonth = 1, stDay = 1, stHour = 1, endMonth = 12,
-                endDay = 31, endHour = 24, timestep = 1):
-
-        """Init an analysis period"""
-
+    # TODO: handle timestep between 1-60
+    def __init__(self, stMonth=1, stDay=1, stHour=1, endMonth=12,
+                 endDay=31, endHour=24, timestep=1):
+        """Init an analysis period."""
         # calculate start time and end time
         self.stTime = LBDateTime(int(stMonth), int(stDay), float(stHour))
         self.endTime = LBDateTime(int(endMonth), int(endDay), float(endHour))
 
         if self.stTime.hour <= self.endTime.hour:
-            self.overnight = False # each segments of hours will be in a single day
+            self.overnight = False  # each segments of hours will be in a single day
         else:
             self.overnight = True
 
@@ -211,24 +217,24 @@ class AnalysisPeriod:
 
         # check time step
         if timestep not in self.__validTimesteps:
-            raise ValueError("Invalid timestep. Valid values are %s"%str(self.__validTimesteps))
+            raise ValueError("Invalid timestep. Valid values are %s" % str(self.__validTimesteps))
 
         # calculate time stamp
         self.timestep = timestep
         self.minuteIntervals = self.__validTimesteps[timestep]
 
         # calculate timestamps and hoursOfYear
-        self.__timestampsData = {} # A dictionary for timedates. Key values will be minute of year
+        self.__timestampsData = {}  # A dictionary for timedates. Key values will be minute of year
         self.__calculateTimestamps()
 
     @classmethod
     def fromAnalysisPeriod(cls, analysisPeriod):
-        """Create and Analysis Period from an analysis period
+        """Create and Analysis Period from an analysis period.
 
-            This method is useful to be called from inside Grasshopper or Dynamo
+        This method is useful to be called from inside Grasshopper or Dynamo
         """
         if not analysisPeriod:
-            print "Analysis period is set to annual"
+            print "Analysis period is set to annual."
             return AnalysisPeriod()
         elif isinstance(analysisPeriod, AnalysisPeriod):
             return analysisPeriod
@@ -237,25 +243,20 @@ class AnalysisPeriod:
 
     @classmethod
     def __fromAnalysisPeriodString(cls, analysisPeriodString):
-
         # %s/%s to %s/%s between %s to %s @%s
-        ap = analysisPeriodString.lower() \
-                        .replace(' ', '') \
-                        .replace('to', ' ') \
-                        .replace('/', ' ') \
-                        .replace('between', ' ') \
-                        .replace('@', ' ')
+        ap = analysisPeriodString.lower().replace(' ', '') \
+            .replace('to', ' ') \
+            .replace('/', ' ') \
+            .replace('between', ' ') \
+            .replace('@', ' ')
         try:
-            stMonth, stDay, \
-            endMonth, endDay, \
-            stHour, endHour, timestep =  ap.split(' ')
+            stMonth, stDay, endMonth, endDay, stHour, endHour, timestep = ap.split(' ')
             return cls(stMonth, stDay, stHour, endMonth, endDay, endHour, int(timestep))
         except:
-           raise ValueError(analysisPeriodString + " is not a valid analysis period!")
+            raise ValueError(analysisPeriodString + " is not a valid analysis period!")
 
     def __calculateTimestamps(self):
         """Return a list of Ladybug DateTime in this analysis period."""
-
         # calculate based on minutes
         curr = self.stTime.MOY - 60 + self.minuteIntervals
 
@@ -271,82 +272,85 @@ class AnalysisPeriod:
                 if not self.isTimeIncluded(time):
                     self.__timestampsData[time.MOY] = time
 
-                curr = (curr + self.minuteIntervals)%(8760 * 60)
+                curr = (curr + self.minuteIntervals) % (8760 * 60)
 
     @property
     def dates(self):
-        """A sorted list of dates in this analysis period"""
+        """A sorted list of dates in this analysis period."""
         # sort dictionary based on key values (minute of the year)
-        sortedTimestamps = sorted(self.__timestampsData.items(), key= lambda x: x[0])
+        sortedTimestamps = sorted(self.__timestampsData.items(), key=lambda x: x[0])
         return [timestamp[1] for timestamp in sortedTimestamps]
 
     @property
-    def  HOYs(self):
-        """A sorted list of hours of year in this analysis period"""
+    def HOYs(self):
+        """A sorted list of hours of year in this analysis period."""
         return [timestamp.HOY for timestamp in self.dates]
 
     @property
-    def  floatHOYs(self):
-        """A sorted list of hours of year as float values in this analysis period"""
+    def floatHOYs(self):
+        """A sorted list of hours of year as float values in this analysis period."""
         return [timestamp.floatHOY for timestamp in self.dates]
 
     @property
     def totalNumOfHours(self):
-        """Total number of hours during this analysis period"""
-        return len(self.__timestampsData)/self.timestep
+        """Total number of hours during this analysis period."""
+        return len(self.__timestampsData) / self.timestep
 
     @property
     def isAnnual(self):
-        """Check if an analysis period is annual"""
+        """Check if an analysis period is annual."""
         return True if self.totalNumOfHours == 8760 else False
 
     def isTimeIncluded(self, time):
         """Check if time is included in analysis period.
 
-            Return True if time is inside this analysis period,
-            otherwise return False
+        Return True if time is inside this analysis period,
+        otherwise return False
 
-            Args:
-                time: A LBDateTime to be tested
+        Args:
+            time: A LBDateTime to be tested
 
-            Returns:
-                A boolean. True if time is included in analysis period
+        Returns:
+            A boolean. True if time is included in analysis period
         """
         # time filtering in Ladybug and honeybee is slightly different since start hour and end hour will be
         # applied for every day. For instance 2/20 9am to 2/22 5pm means hour between 9-17 during 20, 21 and 22 of Feb
         return time.MOY in self.__timestampsData
 
     def __repr__(self):
-        return "%s/%s to %s/%s between %s to %s @%d"%\
-            (self.stTime.month, self.stTime.day, \
-             self.endTime.month, self.endTime.day, \
-             self.stTime.hour, self.endTime.hour, \
+        """Return analysis period as a string."""
+        return "%s/%s to %s/%s between %s to %s @%d" % \
+            (self.stTime.month, self.stTime.day,
+             self.endTime.month, self.endTime.day,
+             self.stTime.hour, self.endTime.hour,
              self.timestep)
+
 
 class LBHeader:
     """Standard Ladybug header for lists.
 
-        The header carries data for city,
-        data type, unit, and analysis period
+    The header carries data for city, data type, unit, and analysis period
 
-        Attributes:
-            city: A string for the city name
-            dataType: A valid Ladybug data type. Try DataType.dataTypes to see list of data types
-            unit: dataType unit. If empty string it will be set based on dataType
-            timestep: Data timestep "Hourly", "Daily", "Monthly", "Annual", "N/A"
-            analysisPeriod: A Ladybug analysis period. (defualt: 1 Jan 1 to 31 Dec 24)
+    Attributes:
+        city: A string for the city name
+        dataType: A valid Ladybug data type. Try DataType.dataTypes to see list of data types
+        unit: dataType unit. If empty string it will be set based on dataType
+        timestep: Data timestep "Hourly", "Daily", "Monthly", "Annual", "N/A"
+        analysisPeriod: A Ladybug analysis period. (defualt: 1 Jan 1 to 31 Dec 24)
     """
 
-    def __init__(self, city = 'unknown', dataType = 'unknown', unit = 'unknown', frequency = 'unknown', analysisPeriod = None):
+    def __init__(self, city='unknown', dataType='unknown', unit='unknown',
+                 frequency='unknown', analysisPeriod=None):
         """Initiate Ladybug header for lists."""
         self.city = city
         self.dataType = dataType
         self.unit = unit
         self.frequency = frequency
         self.analysisPeriod = 'unknown' if not analysisPeriod \
-                else AnalysisPeriod.fromAnalysisPeriod(analysisPeriod)
+            else AnalysisPeriod.fromAnalysisPeriod(analysisPeriod)
 
     def duplicate(self):
+        """Duplicate header."""
         return copy.deepcopy(self)
 
     @property
@@ -354,26 +358,29 @@ class LBHeader:
         return 'location|dataType|units|frequency|dataPeriod'
 
     def toList(self):
-        """Return Ladybug header as a list"""
+        """Return Ladybug header as a list."""
         return [
-                 self.__key,
-                 self.city,
-                 self.dataType,
-                 self.unit,
-                 self.frequency,
-                 self.analysisPeriod
-               ]
+            self.__key,
+            self.city,
+            self.dataType,
+            self.unit,
+            self.frequency,
+            self.analysisPeriod
+        ]
 
     def __repr__(self):
-        return "%s for %s during %s"%(self.dataType, self.city, self.analysisPeriod)
+        """Return Ladybug header as a string."""
+        return "%s for %s during %s" % (self.dataType, self.city, self.analysisPeriod)
+
 
 # TODO: write classes for latitude, longitude, etc
 class Location:
+    """Ladybug Location class."""
 
-    def __init__(self, city = '', country = '', latitude = '0.00', \
-                longitude = '0.00', timeZone = '0.00', elevation ='0.00', \
-                source = '', stationId = ''):
-
+    def __init__(self, city='', country='', latitude='0.00',
+                 longitude='0.00', timeZone='0.00', elevation='0.00',
+                 source='', stationId=''):
+        """Create a Ladybug location."""
         self.city = str(city)
         self.country = str(country)
         self.latitude = float(latitude)
@@ -384,62 +391,74 @@ class Location:
         self.stationId = str(stationId)
 
     def createFromEPString(self, EPString):
-        """Create a Ladybug location from an EnergyPlus location string
-            Parameters:
-                EPString: Standard EP location string
+        """Create a Ladybug location from an EnergyPlus location string.
 
-            Usage:
-                l = Location() #initiate location
-                l.createFromEPString(EPString)
-                print "LAT:%s, LON:%s"%(l.latitude, l.longitude)
+        Args:
+            EPString: Standard EP location string
+
+        Usage:
+
+            l = Location() #initiate location
+            l.createFromEPString(EPString)
+            print "LAT:%s, LON:%s"%(l.latitude, l.longitude)
         """
-
         try:
-            self.city, self.latitude, \
-            self.longitude, self.timeZone, \
-            self.elevation = re.findall(r'\r*\n*([a-zA-Z0-9.:_-]*)[,|;]', \
-                                    EPString, re.DOTALL)[1:]
+            self.city, self.latitude, self.longitude, self.timeZone, \
+                self.elevation = re.findall(
+                    r'\r*\n*([a-zA-Z0-9.:_-]*)[,|;]', EPString, re.DOTALL
+                )[1:]
 
             self.latitude = float(self.latitude)
             self.longitude = float(self.longitude)
             self.timeZone = float(self.timeZone)
             self.elevation = float(self.elevation)
         except Exception, e:
-            raise Exception ("Failed to import EP string! %s"%str(e))
+            raise Exception("Failed to import EP string! %s" % str(e))
 
     def duplicate(self):
+        """Duplicate location."""
         return copy.deepcopy(self)
 
     @property
     def EPStyleLocationString(self):
-        """Return EnergyPlus's location string"""
+        """Return EnergyPlus's location string."""
         return "Site:Location,\n" + \
             self.city + ',\n' + \
-            str(self.latitude) +',      !Latitude\n' + \
-            str(self.longitude) +',     !Longitude\n' + \
-            str(self.timeZone) +',     !Time Zone\n' + \
+            str(self.latitude) + ',      !Latitude\n' + \
+            str(self.longitude) + ',     !Longitude\n' + \
+            str(self.timeZone) + ',     !Time Zone\n' + \
             str(self.elevation) + ';       !Elevation'
 
     def __repr__(self):
-        return "%s"%(self.EPStyleLocationString)
+        """Return location as a string."""
+        return "%s" % (self.EPStyleLocationString)
+
 
 class LBData:
-    """Ladybug data point"""
+    """Ladybug data point."""
 
     # TODO: Change value to be an object from it's data type
     #       Check datatype.py for available datatypes
-
     def __init__(self, value, dateTime):
+        """Create Ladybug data point."""
         self.datetime = dateTime
         self.value = value
 
     @classmethod
     def fromLBData(cls, data):
+        """Create Ladybug datapoint from a Ladybug datapoint."""
         assert isinstance(data, LBData), "Input is not a LBData."
         return data
 
-    def updateValue(self, newValue):
-        self.value = newValue
+    @property
+    def value(self):
+        """Get/set value of data."""
+        return self.__value
+
+    @value.setter
+    def value(self, newValue):
+        """Update value of LBData."""
+        self.__value = newValue
 
     def __int__(self):
         return int(self.value)
@@ -451,10 +470,10 @@ class LBData:
         return str(self.value)
 
     def __eq__(self, other):
-        return  self.value == float(other)
+        return self.value == float(other)
 
     def __ne__(self, other):
-        return  self.value != float(other)
+        return self.value != float(other)
 
     def __lt__(self, other):
         return self.value < other
@@ -484,7 +503,7 @@ class LBData:
         return self.value / other
 
     def __mod__(self, other):
-        return self.value%other
+        return self.value % other
 
     def __pow__(self, other):
         return self.value**other
@@ -499,13 +518,13 @@ class LBData:
         return self.__mul__(other)
 
     def __rfloordiv__(self, other):
-        return other//self.value
+        return other // self.value
 
     def __rdiv__(self, other):
-        return other/self.value
+        return other / self.value
 
     def __rmod__(self, other):
-        return other%self.value
+        return other % self.value
 
     def __rpow__(self, other):
         return other**self.value
@@ -513,31 +532,37 @@ class LBData:
     def __repr__(self):
         return self.__str__()
 
+
 class LBPatchData(LBData):
-    """Ladybug sky patch data type"""
+    """Ladybug sky patch data."""
+
     def __init__(self, value, vector):
+        """Create Ladybug sky patch data."""
         # sky data doesn't have time
         datetime = LBDateTime()
         LBData.__init__(self, value, datetime)
         self.vector = euclid.Vector3(*vector)
 
-class DataList:
-    """Ladybug data list
 
-        A list of ladybug data with a LBHeader
+class DataList:
+    """Ladybug data list.
+
+    A list of ladybug data with a LBHeader
     """
-    def __init__(self, data = None, header = None):
+
+    def __init__(self, data=None, header=None):
+        """Create a DataList."""
         self.__data = self.checkInputData(data)
         self.header = LBHeader() if not header else header
 
-    def values(self, header = False):
-        """Return the list of values
+    def values(self, header=False):
+        """Return the list of values.
 
-            Args:
-                header: A boolean that indicates if values should include the headers
+        Args:
+            header: A boolean that indicates if values should include the headers
 
-            Return:
-                A list of values
+        Return:
+            A list of values
         """
         if not header:
             return self.__data
@@ -546,44 +571,49 @@ class DataList:
 
     @property
     def timeStamps(self):
-        "List of time stamps for current data"
+        """Return list of time stamps for current data."""
         return [value.datetime for value in self.__data]
 
     def checkInputData(self, data):
-        """Check input data"""
-        if not data: return []
+        """Check input data."""
+        if not data:
+            return []
+
         return [LBData.fromLBData(d) for d in data]
 
     def append(self, data):
-        """Append LBData to current list"""
+        """Append LBData to current list."""
         self.extend([data])
 
     def extend(self, dataList):
-        """Extend a list of LBData to the end of current list"""
+        """Extend a list of LBData to the end of current list."""
         self.__data.extend(self.checkInputData(dataList))
 
     def duplicate(self):
-        """Duplicate current data list"""
+        """Duplicate current data list."""
         return copy.deepcopy(self)
 
     @staticmethod
     def average(data):
+        """Return average value for a list of values."""
         values = [value.value for value in data]
-        return sum(values)/len(data)
+        return sum(values) / len(data)
 
-    def groupDataByMonth(self, monthRange = range(1,13), userDataList = None):
-        """Return a dictionary of values where values are grouped for each month
+    def groupDataByMonth(self, monthRange=range(1, 13), userDataList=None):
+        """
+        Return a dictionary of values where values are grouped for each month.
 
-            key values are between 1-12
+        Key values are between 1-12
 
-           Parameters:
-               monthRange: A list of numbers for months. Default is 1-12
-               userDataList: An optional data list of LBData to be processed
+        Args:
+           monthRange: A list of numbers for months. Default is 1-12
+           userDataList: An optional data list of LBData to be processed
 
-           Usage:
-               epwfile = EPW("epw file address")
-               monthlyValues = epwfile.dryBulbTemperature.groupValuesByMonth()
-               print monthlyValues[2] # returns values for the month of March
+        Usage:
+
+           epwfile = EPW("epw file address")
+           monthlyValues = epwfile.dryBulbTemperature.groupValuesByMonth()
+           print monthlyValues[2] # returns values for the month of March
         """
         hourlyDataByMonth = {}
         if userDataList:
@@ -592,27 +622,32 @@ class DataList:
             data = self.__data
 
         for d in data:
-            if not d.datetime.month in monthRange: continue
+            if d.datetime.month not in monthRange:
+                continue
 
-            if not hourlyDataByMonth.has_key(d.datetime.month): hourlyDataByMonth[d.datetime.month] = [] #create an empty list for month
+            if d.datetime.month not in hourlyDataByMonth:
+                hourlyDataByMonth[d.datetime.month] = []  # create an empty list for month
 
             hourlyDataByMonth[d.datetime.month].append(d)
 
         print "Found data for months " + str(hourlyDataByMonth.keys())
         return hourlyDataByMonth
 
-    def groupDataByDay(self, dayRange = range(1, 366), userDataList = None):
-        """Return a dictionary of values where values are grouped by each day of year
+    def groupDataByDay(self, dayRange=range(1, 366), userDataList=None):
+        """
+        Return a dictionary of values where values are grouped by each day of year.
 
-            key values are between 1-365
+        Key values are between 1-365
 
-           Parameters:
-               dayRange: A list of numbers for days. Default is 1-365
-               userDataList: An optional data list of LBData to be processed
-           Usage:
-               epwfile = EPW("epw file address")
-               dailyValues = epwfile.dryBulbTemperature.groupDataByDay(range(1, 30))
-               print dailyValues[2] # returns values for the second day of year
+        Args:
+           dayRange: A list of numbers for days. Default is 1-365
+           userDataList: An optional data list of LBData to be processed
+
+        Usage:
+
+           epwfile = EPW("epw file address")
+           dailyValues = epwfile.dryBulbTemperature.groupDataByDay(range(1, 30))
+           print dailyValues[2] # returns values for the second day of year
         """
         hourlyDataByDay = {}
 
@@ -624,30 +659,34 @@ class DataList:
         for d in data:
             DOY = DateTimeLib.getDayOfYear(d.datetime.month, d.datetime.day)
 
-            if not DOY in dayRange: continue
+            if DOY not in dayRange:
+                continue
 
-            if not hourlyDataByDay.has_key(DOY): hourlyDataByDay[DOY] = [] #create an empty list for month
+            if DOY not in hourlyDataByDay:
+                hourlyDataByDay[DOY] = []  # create an empty list for month
 
             hourlyDataByDay[DOY].append(d)
 
         print "Found data for " + str(len(hourlyDataByDay.keys())) + " days."
         return hourlyDataByDay
 
-    def groupDataByHour(self, hourRange = range(1, 25), userDataList = None):
-        """Return a dictionary of values where values are grouped by each hour of day
+    def groupDataByHour(self, hourRange=range(1, 25), userDataList=None):
+        """Return a dictionary of values where values are grouped by each hour of day.
 
-            key values are between 1-24
+        Key values are between 1-24
 
-           Parameters:
-               hourRange: A list of numbers for hours. Default is 1-24
-               userDataList: An optional data list of LBData to be processed
+        Args:
+           hourRange: A list of numbers for hours. Default is 1-24
+           userDataList: An optional data list of LBData to be processed
 
-           Usage:
-               epwfile = EPW("epw file address")
-               monthlyValues = epwfile.dryBulbTemperature.groupDataByMonth([1])
-               groupedHourlyData = epwfile.dryBulbTemperature.groupDataByHour(userDataList = monthlyValues[2])
-               for hour, data in groupedHourlyData.items():
-                   print "average temperature values for hour " + str(hour) + " during JAN is " + str(core.DataList.average(data)) + " " + DBT.header.unit
+        Usage:
+
+           epwfile = EPW("epw file address")
+           monthlyValues = epwfile.dryBulbTemperature.groupDataByMonth([1])
+           groupedHourlyData = epwfile.dryBulbTemperature.groupDataByHour(userDataList = monthlyValues[2])
+           for hour, data in groupedHourlyData.items():
+               print "average temperature values for hour {} during JAN is {} {}".format(
+               hour, core.DataList.average(data), DBT.header.unit)
         """
         hourlyDataByHour = {}
 
@@ -658,9 +697,11 @@ class DataList:
 
         for d in data:
 
-            if not d.datetime.hour in hourRange: continue
+            if d.datetime.hour not in hourRange:
+                continue
 
-            if not hourlyDataByHour.has_key(d.datetime.hour): hourlyDataByHour[d.datetime.hour] = [] #create an empty list for month
+            if d.datetime.hour not in hourlyDataByHour:
+                hourlyDataByHour[d.datetime.hour] = []  # create an empty list for month
 
             hourlyDataByHour[d.datetime.hour].append(d)
 
@@ -668,25 +709,26 @@ class DataList:
         return hourlyDataByHour
 
     # TODO: Add validity check for input values
-    def updateDataForAnAnalysisPeriod(self, values, analysisPeriod = None):
-        """Replace current values in data list with new set of values
-            for a specific analysis period.
+    def updateDataForAnAnalysisPeriod(self, values, analysisPeriod=None):
+        """Replace current values in data list with new set of values.
 
-            Length of values should be equal to number of hours in analysis period
+        Length of values should be equal to number of hours in analysis period.
 
-            Parameters:
-                values: A list of values to be replaced in the file
-                analysisPeriod: An analysis period for input the input values.
-                    Default is set to the whole year.
+        Args:
+            values: A list of values to be replaced in the file
+            analysisPeriod: An analysis period for input the input values.
+                Default is set to the whole year.
         """
         if not analysisPeriod:
             analysisPeriod = AnalysisPeriod()
 
         # check length of data vs length of analysis period
         if len(values) != analysisPeriod.totalNumOfHours:
-            raise ValueError("Length of values %d is not equal to " + \
-                "number of hours in analysis period %d"%(len(values), \
-                                                        analysisPeriod.totalNumOfHours))
+            raise ValueError(
+                "Length of values %d is not equal to " +
+                "number of hours in analysis period %d." % (len(values), analysisPeriod.totalNumOfHours)
+            )
+
         # get all time stamps
         timeStamps = analysisPeriod.dates
 
@@ -702,30 +744,30 @@ class DataList:
             try:
                 value = newValues[data.datetime.HOY]
                 data.updateValue(value)
-                updatedCount+=1
+                updatedCount += 1
             except KeyError:
                 pass
 
         # return self for chaining methods
-        print "%s data are updated for %d hours."%(self.header.dataType, updatedCount)
+        print "%s data are updated for %d hours." % (self.header.dataType, updatedCount)
+
         # return self for chaining methods
         return self
 
     def updateDataForHoursOfYear(self, values, hoursOfYear):
-        """Replace current values in data list with new set of values
-            for a list of hours of year
+        """Replace current values in data list with new set of values for a list of hours of year.
 
-            Length of values should be equal to number of hours in hours of year
+        Length of values should be equal to number of hours in hours of year
 
-            Parameters:
-                values: A list of values to be replaced in the file
-                hoursOfYear: A list of HOY between 1 and 8760
+        Args:
+            values: A list of values to be replaced in the file
+            hoursOfYear: A list of HOY between 1 and 8760
         """
         # check length of data vs length of analysis period
         if len(values) != len(hoursOfYear):
-            raise ValueError("Length of values %d is not equal to " + \
-                "number of hours in analysis period %d"%(len(values), \
-                                                        len(hoursOfYear)))
+            raise ValueError("Length of values %d is not equal to " +
+                             "number of hours in analysis period %d" %
+                             (len(values), len(hoursOfYear)))
 
         # map hours and values
         newValues = {}
@@ -739,41 +781,46 @@ class DataList:
             try:
                 value = newValues[data.datetime.HOY]
                 data.updateValue(value)
-                updatedCount+=1
+                updatedCount += 1
             except KeyError:
                 pass
 
-        print "%s data %s updated for %d hour%s."%(self.header.dataType, \
-                'are' if len(values)>1 else 'is', updatedCount,\
-                's' if len(values)>1 else '')
+        print "%s data %s updated for %d hour%s." % \
+            (self.header.dataType,
+             'are' if len(values) > 1 else 'is',
+             updatedCount,
+             's' if len(values) > 1 else '')
 
         # return self for chaining methods
         return self
 
     def updateDataForAnHour(self, value, hourOfYear):
-        """Replace current value in data list with a new value
-            for a specific hour of the year
+        """
+        Replace current value in data list with a new value for a specific HOY.
 
-            Parameters:
-                value: A single value
-                hoursOfYear: The hour of the year
+        Args:
+            value: A single value
+            hoursOfYear: The hour of the year
         """
         return self.updateDataForHoursOfYear([value], [hourOfYear])
 
     def filterByAnalysisPeriod(self, analysisPeriod):
+        """
+        Filter a list based on an analysis period.
 
-        """Filter the list based on an analysis period
-            Parameters:
-               analysis period: A Ladybug analysis period
+        Args:
+           analysis period: A Ladybug analysis period
 
-            Return:
-                A new DataList with filtered data
+        Return:
+            A new DataList with filtered data
 
-            Usage:
-               analysisPeriod = AnalysisPeriod(2,1,1,3,31,24) #start of Feb to end of Mar
-               epw = EPW("c:\ladybug\weatherdata.epw")
-               DBT = epw.dryBulbTemperature
-               filteredDBT = DBT.filterByAnalysisPeriod(analysisPeriod)
+        Usage:
+
+           # start of Feb to end of Mar
+           analysisPeriod = AnalysisPeriod(2,1,1,3,31,24)
+           epw = EPW("c:/ladybug/weatherdata.epw")
+           DBT = epw.dryBulbTemperature
+           filteredDBT = DBT.filterByAnalysisPeriod(analysisPeriod)
         """
         if not analysisPeriod or analysisPeriod.isAnnual:
             print "You need a valid analysis period to filter data."
@@ -781,7 +828,7 @@ class DataList:
 
         # There is no guarantee that data is continuous so I iterate through the
         # each data point one by one
-        filteredData = [ d for d in self.__data if analysisPeriod.isTimeIncluded(d.datetime)]
+        filteredData = [d for d in self.__data if analysisPeriod.isTimeIncluded(d.datetime)]
 
         # create a new filteredData
         filteredHeader = self.header.duplicate()
@@ -791,24 +838,24 @@ class DataList:
         return filteredDataList
 
     def filterByHOYs(self, HOYs):
+        """Filter the list based on an analysis period.
 
-        """Filter the list based on an analysis period
-            Parameters:
-               HOYs: A List of hours of the year [1-8760]
+        Args:
+           HOYs: A List of hours of the year [1-8760]
 
-            Return:
-                A new DataList with filtered data
+        Return:
+            A new DataList with filtered data
 
-            Usage:
-               HOYs = range(1,48) # The first two days of the year
-               epw = EPW("c:\ladybug\weatherdata.epw")
-               DBT = epw.dryBulbTemperature
-               filteredDBT = DBT.filterByHOYs(HOYs)
+        Usage:
+
+           HOYs = range(1,48)  # The first two days of the year
+           epw = EPW("c:/ladybug/weatherdata.epw")
+           DBT = epw.dryBulbTemperature
+           filteredDBT = DBT.filterByHOYs(HOYs)
         """
-
         # There is no guarantee that data is continuous so I iterate through the
         # each data point one by one
-        filteredData = [ d for d in self.__data if d.datetime.HOY in HOYs]
+        filteredData = [d for d in self.__data if d.datetime.HOY in HOYs]
 
         # create a new filteredData
         filteredHeader = self.header.duplicate()
@@ -818,30 +865,33 @@ class DataList:
         return filteredDataList
 
     def filterByConditionalStatement(self, statement):
-        """Filter the list based on an analysis period
-            Parameters:
-               statement: A conditional statement as a string (e.g. x>25 and x%5==0).
-                The variable should always be named as x
+        """Filter the list based on an analysis period.
 
-            Return:
-                A new DataList with filtered data
+        Args:
+           statement: A conditional statement as a string (e.g. x>25 and x%5==0).
+            The variable should always be named as x
 
-            Usage:
-               epw = EPW("c:\ladybug\weatherdata.epw")
-               DBT = epw.dryBulbTemperature
-               # filter data for when dry bulb temperature is more then 25
-               filteredDBT = DBT.filterByConditionalStatement('x > 25')
-               # get the list of time stamps that meet the conditional statement
-               print filteredDBT.timeStamps
+        Return:
+            A new DataList with filtered data
+
+        Usage:
+
+           epw = EPW("c:/ladybug/weatherdata.epw")
+           DBT = epw.dryBulbTemperature
+           # filter data for when dry bulb temperature is more then 25
+           filteredDBT = DBT.filterByConditionalStatement('x > 25')
+           # get the list of time stamps that meet the conditional statement
+           print filteredDBT.timeStamps
         """
-
         def checkInputStatement(statement):
-            stStatement = statement.lower().replace("and", "").replace("or", "")\
-                    .replace("not", "").replace("in", "").replace("is", "")
+            stStatement = statement.lower() \
+                .replace("and", "").replace("or", "") \
+                .replace("not", "").replace("in", "").replace("is", "")
 
             l = [s for s in stStatement if s.isalpha()]
             if list(set(l)) != ['x']:
-                statementErrorMsg = 'Invalid input statement. Statement should be a valid Python statement' + \
+                statementErrorMsg = 'Invalid input statement. ' + \
+                    'Statement should be a valid Python statement' + \
                     ' and the variable should be named as x'
                 raise ValueError(statementErrorMsg)
 
@@ -858,21 +908,24 @@ class DataList:
         return filteredDataList
 
     def filterByPattern(self, patternList):
-        """Filter the list based on a list of Boolean
+        """Filter the list based on a list of Boolean.
 
-            Length of Boolean should be equal to length of values in DataList
+        Length of Boolean should be equal to length of values in DataList
 
-            Parameters:
-                patternList: A list of True, False values
+        Args:
+            patternList: A list of True, False values
 
-            Return:
-                A new DataList with filtered data
+        Return:
+            A new DataList with filtered data
         """
         # check length of data vs length of analysis period
         if len(self.values) != len(patternList):
+
             print len(self.values), len(patternList)
+
             errMsg = "Length of values %d is not equal to number of patterns %d" \
-                    %(len(self.values), len(patternList))
+                % AnalysisPeriod(len(self.values), len(patternList))
+
             raise ValueError(errMsg)
 
         filteredData = [d for count, d in enumerate(self.__data) if patternList[count]]
@@ -884,11 +937,10 @@ class DataList:
 
         return filteredDataList
 
-    def averageMonthly(self, userDataList = None):
-        """Return a dictionary of values for average values for available months"""
-
+    def averageMonthly(self, userDataList=None):
+        """Return a dictionary of values for average values for available months."""
         # group data for each month
-        monthlyValues = self.groupDataByMonth(userDataList= userDataList)
+        monthlyValues = self.groupDataByMonth(userDataList=userDataList)
 
         averageValues = dict()
 
@@ -898,21 +950,22 @@ class DataList:
 
         return averageValues
 
-    def averageMonthlyForEachHour(self, userDataList = None):
-        """Calculate average value for each hour during each month
+    def averageMonthlyForEachHour(self, userDataList=None):
+        """Calculate average value for each hour during each month.
 
-            This method returns a dictionary with nested dictionaries for each hour
+        This method returns a dictionary with nested dictionaries for each hour
         """
         # get monthy values
-        monthlyHourlyValues = self.groupDataByMonth(userDataList= userDataList)
+        monthlyHourlyValues = self.groupDataByMonth(userDataList=userDataList)
 
         # group data for each hour in each month and collect them in a dictionary
         averagedMonthlyValuesPerHour = {}
         for month, monthlyValues in monthlyHourlyValues.items():
-            if month not in averagedMonthlyValuesPerHour: averagedMonthlyValuesPerHour[month] = {}
+            if month not in averagedMonthlyValuesPerHour:
+                averagedMonthlyValuesPerHour[month] = {}
 
             # group data for each hour
-            groupedHourlyData = self.groupDataByHour(userDataList = monthlyValues)
+            groupedHourlyData = self.groupDataByHour(userDataList=monthlyValues)
             for hour, data in groupedHourlyData.items():
                 averagedMonthlyValuesPerHour[month][hour] = self.average(data)
 
@@ -935,7 +988,7 @@ class DataList:
 
     # TODO: Reverse analysis period in header
     def __reversed__(self):
-        return FunctionalList(reversed(self.__data))
+        return list(reversed(self.__data))
 
     def __repr__(self):
-        return "Ladybug.DataList#%s"%self.header.dataType
+        return "Ladybug.DataList#%s" % self.header.dataType
