@@ -28,3 +28,18 @@ def unflatten(guide, falttenedInput):
             >> [[0], [1, 2, 3], [[4]], [5]]
     """
     return [unflatten(subList, falttenedInput) if isinstance(subList, list) else next(falttenedInput) for subList in guide]
+
+def duplicate(value, listLength):
+    """Take a single value and duplicate it a certain number of times.
+        value: A value that you want to duplicate
+        listLength: The number of times to duplicate the object.
+
+        Usage:
+            value = 1.2
+            listLength = 5
+            duplicate(value, listLength)
+            >> [ 1.2, 1.2, 1.2, 1.2, 1.2]
+    """
+    dupList = []
+    for val in range(listLength): dupList.append(value)
+    return dupList
