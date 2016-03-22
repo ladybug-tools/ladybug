@@ -3,8 +3,8 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
-    <title>ladybug API documentation</title>
-    <meta name="description" content="" />
+    <title>ladybug.comfort.util API documentation</title>
+    <meta name="description" content="A list of useful functions for fast guess-and-test iteration" />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
 
@@ -985,25 +985,16 @@ table {
     <h1>Index</h1>
     <ul id="index">
 
+    <li class="set"><h3><a href="#header-functions">Functions</a></h3>
+      
+  <ul>
+    <li class="mono"><a href="#ladybug.comfort.util.bisect">bisect</a></li>
+    <li class="mono"><a href="#ladybug.comfort.util.secant">secant</a></li>
+  </ul>
 
-
-    <li class="set"><h3><a href="#header-submodules">Sub-modules</a></h3>
-      <ul>
-        <li class="mono"><a href="color.m.html">ladybug.color</a></li>
-        <li class="mono"><a href="comfort/index.html">ladybug.comfort</a></li>
-        <li class="mono"><a href="core.m.html">ladybug.core</a></li>
-        <li class="mono"><a href="datatype.m.html">ladybug.datatype</a></li>
-        <li class="mono"><a href="epw.m.html">ladybug.epw</a></li>
-        <li class="mono"><a href="euclid.m.html">ladybug.euclid</a></li>
-        <li class="mono"><a href="legendparameters.m.html">ladybug.legendparameters</a></li>
-        <li class="mono"><a href="listoperations.m.html">ladybug.listoperations</a></li>
-        <li class="mono"><a href="sky.m.html">ladybug.sky</a></li>
-        <li class="mono"><a href="skyvector.m.html">ladybug.skyvector</a></li>
-        <li class="mono"><a href="sunlighthours.m.html">ladybug.sunlighthours</a></li>
-        <li class="mono"><a href="sunpath.m.html">ladybug.sunpath</a></li>
-        <li class="mono"><a href="wrapper.m.html">ladybug.wrapper</a></li>
-      </ul>
     </li>
+
+
     </ul>
   </div>
 
@@ -1015,17 +1006,47 @@ table {
 
 
   <header id="section-intro">
-  <h1 class="title"><span class="name">ladybug</span> module</h1>
+  <h1 class="title"><span class="name">ladybug.comfort.util</span> module</h1>
+  <p>A list of useful functions for fast guess-and-test iteration</p>
   
-  
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-ladybug', this);">Show source &equiv;</a></p>
-  <div id="source-ladybug" class="source">
-    <pre><code>__all__ = ["core", "epw", "sunpath", "sky", "color", "legendparameters", \
-    "wrapper", "listoperations", "comfort"]
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-ladybug.comfort.util', this);">Show source &equiv;</a></p>
+  <div id="source-ladybug.comfort.util" class="source">
+    <pre><code>"""A list of useful functions for fast guess-and-test iteration"""
 
-# core contains Ladybug core objects such as Header, Location, AnalysisPeriod, DataList
-# epw contains EPW object
-import core, epw, sunpath, sky, color, legendparameters, wrapper, listoperations, comfort
+import math
+
+# This function is taken from the util.js script of the CBE comfort tool page.
+def bisect(a, b, fn, epsilon, target):
+
+    while (math.abs(b - a) > 2 * epsilon):
+        midpoint = (b + a) / 2
+        a_T = fn(a)
+        b_T = fn(b)
+        midpoint_T = fn(midpoint)
+        if (a_T - target) * (midpoint_T - target) < 0: b = midpoint
+        elif (b_T - target) * (midpoint_T - target) < 0: a = midpoint
+        else: return -999
+
+    return midpoint
+
+# This function is taken from the util.js script of the CBE comfort tool page.
+def secant(a, b, fn, epsilon):
+    # root-finding only
+    f1 = fn(a)
+    if math.abs(f1) <= epsilon: return a
+    f2 = fn(b)
+    if math.abs(f2) <= epsilon: return b
+    for i in range(100):
+        slope = (f2 - f1) / (b - a)
+        c = b - f2 / slope
+        f3 = fn(c)
+        if math.abs(f3) < epsilon: return c
+        a = b
+        b = c
+        f1 = f2
+        f2 = f3
+
+    return 'NaN'
 </code></pre>
   </div>
 
@@ -1033,93 +1054,74 @@ import core, epw, sunpath, sky, color, legendparameters, wrapper, listoperations
 
   <section id="section-items">
 
-
-
-    <h2 class="section-title" id="header-submodules">Sub-modules</h2>
-      <div class="item">
-      <p class="name"><a href="color.m.html">ladybug.color</a></p>
+    <h2 class="section-title" id="header-functions">Functions</h2>
       
+  <div class="item">
+    <div class="name def" id="ladybug.comfort.util.bisect">
+    <p>def <span class="ident">bisect</span>(</p><p>a, b, fn, epsilon, target)</p>
+    </div>
+    
+
+    
   
-    <div class="desc"><p>Ladybug color, colorsets and colorrange.</p></div>
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-ladybug.comfort.util.bisect', this);">Show source &equiv;</a></p>
+  <div id="source-ladybug.comfort.util.bisect" class="source">
+    <pre><code>def bisect(a, b, fn, epsilon, target):
 
-      </div>
-      <div class="item">
-      <p class="name"><a href="comfort/index.html">ladybug.comfort</a></p>
-      
+    while (math.abs(b - a) > 2 * epsilon):
+        midpoint = (b + a) / 2
+        a_T = fn(a)
+        b_T = fn(b)
+        midpoint_T = fn(midpoint)
+        if (a_T - target) * (midpoint_T - target) < 0: b = midpoint
+        elif (b_T - target) * (midpoint_T - target) < 0: a = midpoint
+        else: return -999
+
+    return midpoint
+</code></pre>
+  </div>
+</div>
+
+  </div>
   
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="core.m.html">ladybug.core</a></p>
       
+  <div class="item">
+    <div class="name def" id="ladybug.comfort.util.secant">
+    <p>def <span class="ident">secant</span>(</p><p>a, b, fn, epsilon)</p>
+    </div>
+    
+
+    
   
+  <div class="source_cont">
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-ladybug.comfort.util.secant', this);">Show source &equiv;</a></p>
+  <div id="source-ladybug.comfort.util.secant" class="source">
+    <pre><code>def secant(a, b, fn, epsilon):
+    # root-finding only
+    f1 = fn(a)
+    if math.abs(f1) <= epsilon: return a
+    f2 = fn(b)
+    if math.abs(f2) <= epsilon: return b
+    for i in range(100):
+        slope = (f2 - f1) / (b - a)
+        c = b - f2 / slope
+        f3 = fn(c)
+        if math.abs(f3) < epsilon: return c
+        a = b
+        b = c
+        f1 = f2
+        f2 = f3
 
-      </div>
-      <div class="item">
-      <p class="name"><a href="datatype.m.html">ladybug.datatype</a></p>
-      
-  
+    return 'NaN'
+</code></pre>
+  </div>
+</div>
 
-      </div>
-      <div class="item">
-      <p class="name"><a href="epw.m.html">ladybug.epw</a></p>
-      
-  
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="euclid.m.html">ladybug.euclid</a></p>
-      
-  
-    <div class="desc"><p>euclid graphics maths module</p>
-<p>Documentation and tests are included in the file "euclid.txt", or online
-at http://code.google.com/p/pyeuclid</p></div>
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="legendparameters.m.html">ladybug.legendparameters</a></p>
-      
-  
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="listoperations.m.html">ladybug.listoperations</a></p>
-      
-  
-    <div class="desc"><p>Useful functions for list operations.</p></div>
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="sky.m.html">ladybug.sky</a></p>
-      
-  
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="skyvector.m.html">ladybug.skyvector</a></p>
-      
-  
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="sunlighthours.m.html">ladybug.sunlighthours</a></p>
-      
-  
-    <div class="desc"><p>Sunlight hours library for ladybug</p></div>
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="sunpath.m.html">ladybug.sunpath</a></p>
-      
+  </div>
   
 
-      </div>
-      <div class="item">
-      <p class="name"><a href="wrapper.m.html">ladybug.wrapper</a></p>
-      
-  
 
-      </div>
   </section>
 
     </article>

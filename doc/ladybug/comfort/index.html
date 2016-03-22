@@ -3,7 +3,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 
-    <title>ladybug API documentation</title>
+    <title>ladybug.comfort API documentation</title>
     <meta name="description" content="" />
 
   <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
@@ -989,19 +989,10 @@ table {
 
     <li class="set"><h3><a href="#header-submodules">Sub-modules</a></h3>
       <ul>
-        <li class="mono"><a href="color.m.html">ladybug.color</a></li>
-        <li class="mono"><a href="comfort/index.html">ladybug.comfort</a></li>
-        <li class="mono"><a href="core.m.html">ladybug.core</a></li>
-        <li class="mono"><a href="datatype.m.html">ladybug.datatype</a></li>
-        <li class="mono"><a href="epw.m.html">ladybug.epw</a></li>
-        <li class="mono"><a href="euclid.m.html">ladybug.euclid</a></li>
-        <li class="mono"><a href="legendparameters.m.html">ladybug.legendparameters</a></li>
-        <li class="mono"><a href="listoperations.m.html">ladybug.listoperations</a></li>
-        <li class="mono"><a href="sky.m.html">ladybug.sky</a></li>
-        <li class="mono"><a href="skyvector.m.html">ladybug.skyvector</a></li>
-        <li class="mono"><a href="sunlighthours.m.html">ladybug.sunlighthours</a></li>
-        <li class="mono"><a href="sunpath.m.html">ladybug.sunpath</a></li>
-        <li class="mono"><a href="wrapper.m.html">ladybug.wrapper</a></li>
+        <li class="mono"><a href="comfortBase.m.html">ladybug.comfort.comfortBase</a></li>
+        <li class="mono"><a href="pmv.m.html">ladybug.comfort.pmv</a></li>
+        <li class="mono"><a href="psychrometrics.m.html">ladybug.comfort.psychrometrics</a></li>
+        <li class="mono"><a href="util.m.html">ladybug.comfort.util</a></li>
       </ul>
     </li>
     </ul>
@@ -1015,17 +1006,14 @@ table {
 
 
   <header id="section-intro">
-  <h1 class="title"><span class="name">ladybug</span> module</h1>
+  <h1 class="title"><span class="name">ladybug.comfort</span> module</h1>
   
   
-  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-ladybug', this);">Show source &equiv;</a></p>
-  <div id="source-ladybug" class="source">
-    <pre><code>__all__ = ["core", "epw", "sunpath", "sky", "color", "legendparameters", \
-    "wrapper", "listoperations", "comfort"]
+  <p class="source_link"><a href="javascript:void(0);" onclick="toggle('source-ladybug.comfort', this);">Show source &equiv;</a></p>
+  <div id="source-ladybug.comfort" class="source">
+    <pre><code>__all__ = ["pmv", "psychrometrics"]
 
-# core contains Ladybug core objects such as Header, Location, AnalysisPeriod, DataList
-# epw contains EPW object
-import core, epw, sunpath, sky, color, legendparameters, wrapper, listoperations, comfort
+import pmv, psychrometrics
 </code></pre>
   </div>
 
@@ -1037,87 +1025,30 @@ import core, epw, sunpath, sky, color, legendparameters, wrapper, listoperations
 
     <h2 class="section-title" id="header-submodules">Sub-modules</h2>
       <div class="item">
-      <p class="name"><a href="color.m.html">ladybug.color</a></p>
-      
-  
-    <div class="desc"><p>Ladybug color, colorsets and colorrange.</p></div>
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="comfort/index.html">ladybug.comfort</a></p>
+      <p class="name"><a href="comfortBase.m.html">ladybug.comfort.comfortBase</a></p>
       
   
 
       </div>
       <div class="item">
-      <p class="name"><a href="core.m.html">ladybug.core</a></p>
+      <p class="name"><a href="pmv.m.html">ladybug.comfort.pmv</a></p>
       
   
+    <div class="desc"><p>PMV Comfort object.</p></div>
 
       </div>
       <div class="item">
-      <p class="name"><a href="datatype.m.html">ladybug.datatype</a></p>
+      <p class="name"><a href="psychrometrics.m.html">ladybug.comfort.psychrometrics</a></p>
       
   
+    <div class="desc"><p>A list of useful functions for psychrometrics</p></div>
 
       </div>
       <div class="item">
-      <p class="name"><a href="epw.m.html">ladybug.epw</a></p>
+      <p class="name"><a href="util.m.html">ladybug.comfort.util</a></p>
       
   
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="euclid.m.html">ladybug.euclid</a></p>
-      
-  
-    <div class="desc"><p>euclid graphics maths module</p>
-<p>Documentation and tests are included in the file "euclid.txt", or online
-at http://code.google.com/p/pyeuclid</p></div>
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="legendparameters.m.html">ladybug.legendparameters</a></p>
-      
-  
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="listoperations.m.html">ladybug.listoperations</a></p>
-      
-  
-    <div class="desc"><p>Useful functions for list operations.</p></div>
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="sky.m.html">ladybug.sky</a></p>
-      
-  
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="skyvector.m.html">ladybug.skyvector</a></p>
-      
-  
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="sunlighthours.m.html">ladybug.sunlighthours</a></p>
-      
-  
-    <div class="desc"><p>Sunlight hours library for ladybug</p></div>
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="sunpath.m.html">ladybug.sunpath</a></p>
-      
-  
-
-      </div>
-      <div class="item">
-      <p class="name"><a href="wrapper.m.html">ladybug.wrapper</a></p>
-      
-  
+    <div class="desc"><p>A list of useful functions for fast guess-and-test iteration</p></div>
 
       </div>
   </section>
