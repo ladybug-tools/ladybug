@@ -5,8 +5,8 @@ import math
 import psychrometrics
 import util
 import comfortBase
-import epw
-import listoperations
+from ..epw import EPW
+from ..listoperations import duplicate
 
 class PMV(object):
     """PMV Comfort Object
@@ -128,11 +128,11 @@ class PMV(object):
         externalWork: A value representing the work done by the human subject in met.
             1 met = resting seated. If list is empty, default is set to 0 met.
         """
-        metRates = listoperations.duplicate(metRate, 8760)
-        cloValues = listoperations.duplicate(cloValue, 8760)
-        externalWorks = listoperations.duplicate(externalWork, 8760)
+        metRates = duplicate(metRate, 8760)
+        cloValues = duplicate(cloValue, 8760)
+        externalWorks = duplicate(externalWork, 8760)
 
-        epwData = epw.EPW(epwFileAddress)
+        epwData = EPW(epwFileAddress)
         return cls(epwData.dryBulbTemperature.values(header=True), epwData.dryBulbTemperature.values(header=True), epwData.windSpeed.values(header=True), epwData.relativeHumidity.values(header=True), metRates, cloValues, externalWorks, True)
 
 
@@ -325,13 +325,13 @@ class PMV(object):
                     calcLength = listLenCheck[0]
 
 
-                    if airMultVal == False: airTemp = listoperations.duplicate(airTemp, calcLength)
-                    if radMultVal == False: radTemp = listoperations.duplicate(radTemp, calcLength)
-                    if windMultVal == False: windSpeed = listoperations.duplicate(windSpeed, calcLength)
-                    if humidMultVal == False: relHumid = listoperations.duplicate(relHumid, calcLength)
-                    if metMultVal == False: metRate = listoperations.duplicate(metRate, calcLength)
-                    if cloMultVal == False: cloLevel = listoperations.duplicatea(cloLevel, calcLength)
-                    if exMultVal == False: exWork = listoperations.duplicate(exWork, calcLength)
+                    if airMultVal == False: airTemp = duplicate(airTemp, calcLength)
+                    if radMultVal == False: radTemp = duplicate(radTemp, calcLength)
+                    if windMultVal == False: windSpeed = duplicate(windSpeed, calcLength)
+                    if humidMultVal == False: relHumid = duplicate(relHumid, calcLength)
+                    if metMultVal == False: metRate = duplicate(metRate, calcLength)
+                    if cloMultVal == False: cloLevel = duplicatea(cloLevel, calcLength)
+                    if exMultVal == False: exWork = duplicate(exWork, calcLength)
 
                 else:
                     calcLength = None
