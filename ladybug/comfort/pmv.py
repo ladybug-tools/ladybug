@@ -1,12 +1,10 @@
-"""PMV Comfort object.
-
-"""
+"""PMV Comfort object."""
 import math
+import comfortBase
 import psychrometrics
 import util
-import comfortBase
-from ..epw import EPW
 from ..listoperations import duplicate
+from ..epw import EPW
 
 class PMV(object):
     """PMV Comfort Object
@@ -115,7 +113,7 @@ class PMV(object):
         """
         if radTemperature == None: radTemperature = airTemperature
 
-        return cls(airTemperature, radTemperature, windSpeed, relHumidity, metRate, cloValues, externalWork, False)
+        return cls([airTemperature], [radTemperature], [windSpeed], [relHumidity], [metRate], [cloValues], [externalWork], False)
 
     @classmethod
     def fromEPWFile(cls, epwFileAddress, metRate=1, cloValue=1, externalWork=0):
@@ -136,8 +134,7 @@ class PMV(object):
         return cls(epwData.dryBulbTemperature.values(header=True), epwData.dryBulbTemperature.values(header=True), epwData.windSpeed.values(header=True), epwData.relativeHumidity.values(header=True), metRates, cloValues, externalWorks, True)
 
 
-    @staticmethod
-    def checkAndAlignLists(self, airTemperature, radTemperature, windSpeeds, relHumidity, metabolicRate, clothingValues, externalWork):
+    def __checkAndAlignLists__(self, airTemperature, radTemperature, windSpeeds, relHumidity, metabolicRate, clothingValues, externalWork):
         """ Checks to be sure that the lists of PMV input variables are aligned and fills in defaults where possible."""
         # Check lenth of the airTemperature list and evaluate the contents.
         checkData1 = False
@@ -330,7 +327,7 @@ class PMV(object):
                     if windMultVal == False: windSpeed = duplicate(windSpeed, calcLength)
                     if humidMultVal == False: relHumid = duplicate(relHumid, calcLength)
                     if metMultVal == False: metRate = duplicate(metRate, calcLength)
-                    if cloMultVal == False: cloLevel = duplicatea(cloLevel, calcLength)
+                    if cloMultVal == False: cloLevel = duplicate(cloLevel, calcLength)
                     if exMultVal == False: exWork = duplicate(exWork, calcLength)
 
                 else:
@@ -378,11 +375,13 @@ class PMV(object):
 
 
     # Functions that returns the PPD for a given PMV.
+    @staticmethod
     def findPPD(pmv):
         return 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
 
     # Original Fanger function to compute PMV.
-    def comfPMV(self, ta, tr, vel, rh, met, clo, wme):
+    @staticmethod
+    def comfPMV(ta, tr, vel, rh, met, clo, wme):
         # returns [pmv, ppd]
         # ta, air temperature (C)
         # tr, mean radiant temperature (C)
@@ -451,7 +450,7 @@ class PMV(object):
 
         ts = 0.303 * math.exp(-0.036 * m) + 0.028
         pmv = ts * (mw - hl1 - hl2 - hl3 - hl4 - hl5 - hl6)
-        ppd = self.findPPD(pmv)
+        ppd = 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
 
         r = []
         r.append(pmv)
@@ -460,7 +459,8 @@ class PMV(object):
         return r
 
     # Function to compute standard effective temperature (SET).
-    def comfPierceSET(self, ta, tr, vel, rh, met, clo, wme):
+    @staticmethod
+    def comfPierceSET(ta, tr, vel, rh, met, clo, wme):
         # returns standard effective temperature
 
         # Key initial variables.
@@ -694,7 +694,7 @@ class PMV(object):
 
         # Check the data to make sure that all lists are aligned.
         if self.__isDataAligned == False:
-            self.checkAndAlignLists(self.airTemperature, self.radTemperature, self.windSpeed, self.relHumidity, self.metRate, self.cloValues, self.externalWork)
+            self.__checkAndAlignLists__(self.airTemperature, self.radTemperature, self.windSpeed, self.relHumidity, self.metRate, self.cloValues, self.externalWork)
 
         # If the incoming data has a header on it, add headers to the final lists.
 
@@ -740,7 +740,7 @@ class PMV(object):
         """
         Boolean value that states wether the input data is aligned.
             True = aligned
-            False = not aligned (run the checkAndAlignLists function to align the data)
+            False = not aligned (run the __checkAndAlignLists__ function to align the data)
         """
         return self.__isDataAligned
 
