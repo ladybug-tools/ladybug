@@ -90,7 +90,7 @@ class PMV(object):
             self.__isDataAligned = False
 
         # Set default comfort parameters.
-        self.comfortPar = {
+        self.__comfortPar = {
             'PPDComfortThresh': 10.0,
             'humidRatioUp': 0.03,
             'humidRatioLow': 0,
@@ -98,13 +98,13 @@ class PMV(object):
         }
 
         # Set blank values for PMV, PPD, and SET.
-        self._pmv = []
-        self._ppd = []
-        self._set = []
-        self._isComfortable = []
-        self._discomfReason = []
-        self._ta_adj = []
-        self._cooling_effect = []
+        self.__pmv = []
+        self.__ppd = []
+        self.__set = []
+        self.__isComfortable = []
+        self.__discomfReason = []
+        self.__ta_adj = []
+        self.__cooling_effect = []
 
 
     @classmethod
@@ -759,10 +759,10 @@ class PMV(object):
                 Temperature (SET) is used to dtermine PMV/PPD (as opposed to Fanger's original equation).
                 The default is set to 0.1 m/s.
         """
-        return self.comfortPar
+        return self.__comfortPar
 
     @property
-    def _pmv(self):
+    def pmv(self):
         """
         List of predicted mean vote (PMV) values for the input conditions.
         PMV is a seven-point scale from cold (-3) to hot (+3) that was used in comfort surveys of P.O. Fanger.
@@ -778,7 +778,7 @@ class PMV(object):
         For detailed information on the PMV scale, see P.O. Fanger's original paper:
         Fanger, P Ole (1970). Thermal Comfort: Analysis and applications in environmental engineering.
         """
-        return self._pmv
+        return self.__pmv
 
     @property
     def _ppd(self):
