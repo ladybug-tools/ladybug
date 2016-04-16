@@ -4,8 +4,10 @@
 
 from ladybug.comfort.pmv import PMV
 
-airTemp = [10, 12, 15, 18, 19]
+airTemp = [20, 21, 22, 23, 24]
 relHumid = [75, 70, 60, 50, 75]
 myPmvComf = PMV(airTemp, [], [], relHumid)
+print myPmvComf.pmv
 
+myPmvComf = PMV.fromIndividualValues(26, 26, 0.5, 80, 1.1, 0.5)
 print myPmvComf.pmv

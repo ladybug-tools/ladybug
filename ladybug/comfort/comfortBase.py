@@ -12,6 +12,6 @@ class ComfortModel(object):
         self.__isDataAligned = False
         self.__isRelacNeeded = True
 
-        self.__headerIncl = None
+        self.__headerIncl = False
         self.__headerStr = []
         self.__singleVals = False
