@@ -33,8 +33,8 @@ class PMV(ComfortModel):
         #Compute PMV for a list of data.
         airTemp = [10, 12, 15, 18, 19]
         relHumid = [75, 70, 60, 50, 45]
-        myPmvComf = pmv.PMV(airTemp, [], [], relHumid)
-        myPMV, myPPD, mySET, myComf, myReason = myPmvComf.GetFullPMV()
+        myPmvComf = PMV(airTemp, [], [], relHumid)
+        pmv = myPmvComf.pmv
 
     """
 
@@ -431,22 +431,28 @@ class PMV(ComfortModel):
 
         self.__isRelacNeeded = True
 
-    # Functions that returns the PPD for a given PMV.
     @staticmethod
     def findPPD(pmv):
+        """
+        Function that returns the PPD for a given PMV.
+        """
         return 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
 
-    # Original Fanger function to compute PMV.
     @staticmethod
     def comfPMV(ta, tr, vel, rh, met, clo, wme):
-        # returns [pmv, ppd]
-        # ta, air temperature (C)
-        # tr, mean radiant temperature (C)
-        # vel, relative air velocity (m/s)
-        # rh, relative humidity (%) Used only this way to input humidity level
-        # met, metabolic rate (met)
-        # clo, clothing (clo)
-        # wme, external work, normally around 0 (met)
+        """
+        Original Fanger function to compute PMV.
+        Args:
+            ta, air temperature (C)
+            tr, mean radiant temperature (C)
+            vel, relative air velocity (m/s)
+            rh, relative humidity (%) Used only this way to input humidity level
+            met, metabolic rate (met)
+            clo, clothing (clo)
+            wme, external work, normally around 0 (met)
+        Returns:
+            [pmv, ppd]
+        """
 
         pa = rh * 10 * math.exp(16.6536 - 4030.183 / (ta + 235))
 
@@ -516,10 +522,12 @@ class PMV(ComfortModel):
 
         return r
 
-    # Function to compute standard effective temperature (SET).
+
     @staticmethod
     def comfPierceSET(ta, tr, vel, rh, met, clo, wme):
-        # returns standard effective temperature
+        """
+        Returns standard effective temperature
+        """
 
         # Key initial variables.
         VaporPressure = (rh * psychrometrics.findSaturatedVaporPressureTorr(ta)) / 100
@@ -699,13 +707,15 @@ class PMV(ComfortModel):
         return X
 
     def _comfPMVElevatedAirspeed(self, ta, tr, vel, rh, met, clo, wme):
-        # This function accepts any input conditions (including low air speeds) but will return accurate values if the airspeed is above (>0.15m/s).
-        # The function will return the following:
-        # pmv : Predicted mean vote
-        # ppd : Percent predicted dissatisfied [%]
-        # ta_adj: Air temperature adjusted for air speed [C]
-        # cooling_effect : The difference between the air temperature and adjusted air temperature [C]
-        # set: The Standard Effective Temperature [C] (see below)
+        """
+        This function accepts any input conditions (including low air speeds) but will return accurate values if the airspeed is above sillAirThreshold.
+        The function will return the following:
+        pmv : Predicted mean vote
+        ppd : Percent predicted dissatisfied [%]
+        ta_adj: Air temperature adjusted for air speed [C]
+        cooling_effect : The difference between the air temperature and adjusted air temperature [C]
+        set: The Standard Effective Temperature [C] (see below)
+        """
 
         r = {}
         set = self.comfPierceSET(ta, tr, vel, rh, met, clo, wme)
