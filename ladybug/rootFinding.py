@@ -11,9 +11,24 @@ https://en.wikipedia.org/wiki/Root-finding_algorithm
 def secant(a, b, fn, epsilon):
     """
      One of the fasest root-finding algorithms.
-     The method calculates a finite difference slope of the function fn and this enables it to converge to a solution very fast.
-     However, if started too far away from a root, the method may not converge (returning a 'Nan').
-     For this reason, it is recommended that this function be used first and, if it fails to find a root, the bisect() method should be used.
+     The method calculates the slope of the function fn and this enables it to converge to a solution very fast.
+     However, if started too far away from a root, the method may not converge (returning a 'NaN').
+     For this reason, it is recommended that this function be used first in any guess-and-check workflow
+     and, if it fails to find a root, the bisect() method should be used.
+
+     Args:
+        a: The lowest possible boundary of the value you are tying to find.
+        b: The highest possible boundary of the value you are tying to find.
+        fn: A function representing the relationship between the value you are
+            trying to find and the target condition you are trying to satisfy.
+            It should be structured in the following way:
+            def fn(valueTryingToFind):
+                functWResult(valueTryingToFind) - targetDesiredFromfunctWResult
+        epsilon: The acceptable error in the targetDesiredFromfunctWResult.
+
+    Returns:
+        root: The value that gives the targetDesiredFromfunctWResult.
+
     """
     f1 = fn(a)
     if abs(f1) <= epsilon:
@@ -41,6 +56,20 @@ def bisect(a, b, fn, epsilon, target):
     It is extremely reliable and is gauranteed to converge to a solution as long as a solution exists.
     However, it converges slowly and, for this reason, it is recommended that this only be used
     after the secant() method has returned a 'NaN'.
+
+    Args:
+       a: A lower guess of the value you are tying to find.
+       b: A higher guess of the value you are tying to find.
+       fn: A function representing the relationship between the value you are
+           trying to find and the target condition you are trying to satisfy.
+           It should be structured in the following way:
+           def fn(valueTryingToFind):
+               functWResult(valueTryingToFind) - targetDesiredFromfunctWResult
+       epsilon: The acceptable error in the targetDesiredFromfunctWResult.
+
+   Returns:
+       root: The value that gives the targetDesiredFromfunctWResult.
+
     """
     while (abs(b - a) > 2 * epsilon):
         midpoint = (b + a) / 2

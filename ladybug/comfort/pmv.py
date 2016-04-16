@@ -22,11 +22,11 @@ class PMV(ComfortModel):
         relHumidity: A list of numbers representing relative humidities in %. This list can have a LB header on it.
             If list is empty, default is set to 50%.
         metRate: A list of numbers representing the metabolic rate of the
-            human subject in met. 1 met = resting seated. This list can have a LB header on it. If list is empty, default
-            is set to 1 met.
+            human subject in met. 1 met = resting seated. This list can have a LB header on it.
+            If list is empty, default is set to 1.1 met.
         cloValues: A list of numbers representing the clothing level of the
             human subject in clo. 1 clo = three-piece suit. This list can have a LB header on it. If list is empty,
-            default is set to 1 clo.
+            default is set to 0.85 clo.
         externalWork: A list of numbers representing the work done by the
             human subject in met. This list can have a LB header on it. If list is empty,
             default is set to 0 met.
@@ -34,14 +34,19 @@ class PMV(ComfortModel):
     Usage:
         from ladybug.comfort.pmv import PMV
 
-        #Compute PMV for a single set of values.
+        # Compute PMV for a single set of values.
         myPmvComf = PMV.fromIndividualValues(26, 26, 0.75, 80, 1.1, 0.5)
         pmv = myPmvComf.pmv
 
-        #Compute PMV for a list of data.
+        # Compute PMV for a list of data.
         airTemp = [10, 12, 15, 18, 19]
         relHumid = [75, 70, 60, 50, 45]
         myPmvComf = PMV(airTemp, [], [], relHumid)
+        pmv = myPmvComf.pmv
+
+        # Compute PMV for all hours of an EPW file.
+        epwFileAddress = "C:\ladybug\New_York_J_F_Kennedy_IntL_Ar_NY_USA\New_York_J_F_Kennedy_IntL_Ar_NY_USA.epw"
+        myPmvComf = PMV.fromEPWFile(epwFileAddress)
         pmv = myPmvComf.pmv
 
     """
@@ -72,11 +77,11 @@ class PMV(ComfortModel):
         if metRate != []:
             self.metRate = metRate
         else:
-            self.metRate = [1]
+            self.metRate = [1.1]
         if cloValues != []:
             self.cloValues = cloValues
         else:
-            self.cloValues = [1]
+            self.cloValues = [0.85]
         if externalWork != []:
             self.externalWork = externalWork
         else:
@@ -85,7 +90,7 @@ class PMV(ComfortModel):
         # Default variables that all comfort models have.
         self.__calcLength = None
         self.__isDataAligned = False
-        self.__isRelacNeeded = True
+        self.__isRecalcNeeded = True
 
         self.__headerIncl = False
         self.__headerStr = []
@@ -107,7 +112,7 @@ class PMV(ComfortModel):
         self.__cooling_effect = []
 
     @classmethod
-    def fromIndividualValues(cls, airTemperature=20.0, radTemperature=None, windSpeed=0.0, relHumidity=50.0, metRate=1.0, cloValues=1.0, externalWork=0.0):
+    def fromIndividualValues(cls, airTemperature=20.0, radTemperature=None, windSpeed=0.0, relHumidity=50.0, metRate=1.1, cloValues=0.85, externalWork=0.0):
         """
         Creates a PMV comfort object from individual values instead of listis of values.
         """
@@ -128,7 +133,7 @@ class PMV(ComfortModel):
         return pmvModel
 
     @classmethod
-    def fromEPWFile(cls, epwFileAddress, metRate=1, cloValue=1, externalWork=0):
+    def fromEPWFile(cls, epwFileAddress, metRate=1.1, cloValue=0.85, externalWork=0.0):
         """
         Create and PMV comfort object from the conditions within an EPW file.
         metRate: A value representing the metabolic rate of the human subject in met.
@@ -138,211 +143,57 @@ class PMV(ComfortModel):
         externalWork: A value representing the work done by the human subject in met.
             1 met = resting seated. If list is empty, default is set to 0 met.
         """
-        metRates = duplicate(metRate, 8760)
-        cloValues = duplicate(cloValue, 8760)
-        externalWorks = duplicate(externalWork, 8760)
 
         epwData = EPW(epwFileAddress)
-        return cls(epwData.dryBulbTemperature.values(header=True), epwData.dryBulbTemperature.values(header=True), epwData.windSpeed.values(header=True), epwData.relativeHumidity.values(header=True), metRates, cloValues, externalWorks)
+        return cls(epwData.dryBulbTemperature.values(header=True), epwData.dryBulbTemperature.values(header=True), epwData.windSpeed.values(header=True), epwData.relativeHumidity.values(header=True), [metRate], [cloValue], [externalWork])
+
+    def checkInputList(self, inputValue, defaultValue, inputValName, headerValName):
+        """
+        Check length of the inputValue list and evaluate the contents.
+        """
+        checkData = False
+        finalVals = []
+        multVal = False
+        if len(inputValue) != 0:
+            try:
+                if headerValName in inputValue[2]:
+                    finalVals = inputValue[7:]
+                    checkData = True
+                    self.__headerIncl = True
+                    self.__headerStr = inputValue[0:7]
+            except:
+                pass
+            if checkData is False:
+                for item in inputValue:
+                    try:
+                        finalVals.append(float(item))
+                        checkData = True
+                    except:
+                        checkData = False
+            if len(finalVals) > 1:
+                multVal = True
+            if checkData is False:
+                raise Exception(inputValName + " input is not of a valid input type.")
+        else:
+            checkData = True
+            finalVals = defaultValue
+            if len(finalVals) > 1:
+                multVal = True
+
+        return checkData, finalVals, multVal
 
     def _checkAndAlignLists(self, airTemperature, radTemperature, windSpeeds, relHumidity, metabolicRate, clothingValues, externalWork):
-        """ Checks to be sure that the lists of PMV input variables are aligned and fills in defaults where possible."""
-        # Check lenth of the airTemperature list and evaluate the contents.
-        checkData1 = False
-        airTemp = []
-        airMultVal = False
-        if len(airTemperature) != 0:
-            try:
-                if "Temperature" in airTemperature[2]:
-                    airTemp = airTemperature[7:]
-                    checkData1 = True
-                    self.__headerIncl = True
-                    self.__headerStr = airTemperature[0:7]
-            except:
-                pass
-            if checkData1 is False:
-                for item in airTemperature:
-                    try:
-                        airTemp.append(float(item))
-                        checkData1 = True
-                    except:
-                        checkData1 = False
-            if len(airTemp) > 1:
-                airMultVal = True
-            if checkData1 is False:
-                raise Exception("airTemperature input does not contain valid temperature values in degrees Celcius.")
-
-        # Check lenth of the radTemperature list and evaluate the contents.
-        checkData2 = False
-        radTemp = []
-        radMultVal = False
-        if len(radTemperature) != 0:
-            try:
-                if "Temperature" in radTemperature[2]:
-                    radTemp = radTemperature[7:]
-                    checkData2 = True
-                    self.__headerIncl = True
-                    self.__headerStr = radTemperature[0:7]
-            except:
-                pass
-            if checkData2 is False:
-                for item in radTemperature:
-                    try:
-                        radTemp.append(float(item))
-                        checkData2 = True
-                    except:
-                        checkData2 = False
-            if len(radTemp) > 1:
-                radMultVal = True
-            if checkData2 is False:
-                raise Exception("radTemperature input does not contain valid temperature values in degrees Celcius.")
-        else:
-            checkData2 = True
-            radTemp = airTemp
-            if len(radTemp) > 1:
-                radMultVal = True
-
-        # Check lenth of the windSpeeds list and evaluate the contents.
-        checkData3 = False
-        windSpeed = []
-        windMultVal = False
-        nonPositive = True
-        if len(windSpeeds) != 0:
-            try:
-                if windSpeeds[2] == 'Wind Speed':
-                    windSpeed = windSpeeds[7:]
-                    checkData3 = True
-                    self.__headerIncl = True
-                    self.__headerStr = windSpeeds[0:7]
-            except:
-                pass
-            if checkData3 is False:
-                for item in windSpeeds:
-                    try:
-                        if float(item) >= 0:
-                            windSpeed.append(float(item))
-                            checkData3 = True
-                        else:
-                            nonPositive = False
-                    except:
-                        checkData3 = False
-            if nonPositive is False:
-                checkData3 = False
-            if len(windSpeed) > 1:
-                windMultVal = True
-            if checkData3 is False:
-                raise Exception('windSpeeds input does not contain valid wind speed in meters per second.  Note that wind speed must be positive.')
-        else:
-            checkData3 = True
-            windSpeed = [0]
-
-        # Check lenth of the relHumidity list and evaluate the contents.
-        checkData4 = False
-        relHumid = []
-        humidMultVal = False
-        nonValue = True
-        if len(relHumidity) != 0:
-            try:
-                if "Humidity" in relHumidity[2]:
-                    relHumid = relHumidity[7:]
-                    checkData4 = True
-                    self.__headerIncl = True
-                    self.__headerStr = relHumidity[0:7]
-            except:
-                pass
-            if checkData4 is False:
-                for item in relHumidity:
-                    try:
-                        if 0 <= float(item) <= 100:
-                            relHumid.append(float(item))
-                            checkData4 = True
-                        else:
-                            nonValue = False
-                    except:
-                        checkData4 = False
-            if nonValue is False:
-                checkData4 = False
-            if len(relHumid) > 1:
-                humidMultVal = True
-            if checkData4 is False:
-                raise Exception('relHumidity input does not contain valid value.')
-
-        # Check lenth of the metabolicRate list and evaluate the contents.
-        checkData5 = False
-        metRate = []
-        metMultVal = False
-        nonVal = True
-        if len(metabolicRate) != 0:
-            for item in metabolicRate:
-                try:
-                    if 0.5 <= float(item) <= 10:
-                        metRate.append(float(item))
-                        checkData5 = True
-                    else:
-                        nonVal = False
-                except:
-                    checkData5 = False
-            if len(metRate) > 0:
-                checkData5 = True
-            if nonVal is False:
-                checkData5 = False
-            if len(metRate) > 1:
-                metMultVal = True
-            if checkData5 is False:
-                raise Exception('metabolicRate input does not contain valid value. Note that metabolicRate must be a value between 0.5 and 10. Any thing outside of that is frankly not human.')
-        else:
-            checkData5 = True
-            metRate = [1]
-
-        # Check lenth of the clothingValues list and evaluate the contents.
-        checkData6 = False
-        cloLevel = []
-        cloMultVal = False
-        noVal = True
-        if len(clothingValues) != 0:
-            for item in clothingValues:
-                try:
-                    if 0 <= float(item):
-                        cloLevel.append(float(item))
-                        checkData6 = True
-                    else:
-                        noVal = False
-                except:
-                    checkData6 = False
-            if noVal is False:
-                checkData6 = False
-            if len(cloLevel) > 1:
-                cloMultVal = True
-            if checkData6 is False:
-                raise Exception('clothingValues input does not contain valid value. Note that clothingValues must be greater than 0.')
-        else:
-            checkData6 = True
-            cloLevel = [1]
-
-        # Check lenth of the externalWork list and evaluate the contents.
-        checkData7 = False
-        exWork = []
-        exMultVal = False
-        noVal = True
-        if len(externalWork) != 0:
-            for item in externalWork:
-                try:
-                    if 0 <= float(item):
-                        exWork.append(float(item))
-                        checkData7 = True
-                    else:
-                        noVal = False
-                except:
-                    checkData7 = False
-            if noVal is False:
-                checkData7 = False
-            if len(cloLevel) > 1:
-                exMultVal = True
-            if checkData7 is False:
-                raise Exception('externalWork input does not contain valid value. Note that externalWork must be greater than 0.')
-        else:
-            checkData6 = True
-            exWork = [0]
+        """
+        Checks to be sure that the lists of PMV input variables are aligned and fills in defaults where possible.
+        """
+        # Check each list to be sure that the contents are what we want.
+        checkData1, airTemp, airMultVal = self.checkInputList(airTemperature, [20], "airTemperature", "Temperature")
+        checkData2, radTemp, radMultVal = self.checkInputList(radTemperature, airTemp, "radTemperature", "Temperature")
+        checkData3, windSpeed, windMultVal = self.checkInputList(windSpeeds, [0.0], "windSpeed", "Wind Speed")
+        checkData4, relHumid, humidMultVal = self.checkInputList(relHumidity, [50.0], "relHumidity", "Humidity")
+        checkData5, metRate, metMultVal = self.checkInputList(metabolicRate, [1.1], "metabolicRate", "Metabolic")
+        checkData6, cloLevel, cloMultVal = self.checkInputList(clothingValues, [0.85], "clothingValue", "Clothing")
+        checkData7, exWork, exMultVal = self.checkInputList(externalWork, [0.0], "externalWork", "Work")
 
         # Finally, for those lists of length greater than 1, check to make sure that they are all the same length.
         checkData = False
@@ -402,7 +253,7 @@ class PMV(ComfortModel):
             self.externalWork = exWork
             # Set the alighed data value to true.
             self.__isDataAligned = True
-            self.__isRelacNeeded = True
+            self.__isRecalcNeeded = True
 
     def setComfortPar(self, PPDComfortThresh=10, humidRatioUp=0.03, humidRatioLow=0, stillAirThreshold=0.1):
         """
@@ -422,7 +273,7 @@ class PMV(ComfortModel):
         self.humidRatioLow = humidRatioLow
         self.stillAirThreshold = stillAirThreshold
 
-        self.__isRelacNeeded = True
+        self.__isRecalcNeeded = True
 
     @staticmethod
     def findPPD(pmv):
@@ -761,11 +612,14 @@ class PMV(ComfortModel):
         if not self.__isDataAligned:
             self._checkAndAlignLists(self.airTemperature, self.radTemperature, self.windSpeed, self.relHumidity, self.metRate, self.cloValues, self.externalWork)
 
-        if self.__isRelacNeeded:
+        if self.__isRecalcNeeded:
             # If the input data has a header, put a header on the output.
             self.__pmv = []
             if self.__headerIncl is True:
-                self.__pmv.extend(self.__headerStr)
+                pmvHeadStr = self.__headerStr
+                pmvHeadStr[2] = 'Prediced Mean Vote'
+                pmvHeadStr[3] = 'PMV'
+                self.__pmv.extend(pmvHeadStr)
             # calculate the pmv values.
             for count in range(self.__calcLength):
                 self.__pmv.append(self._comfPMVElevatedAirspeed(self.airTemperature[count], self.radTemperature[count], self.windSpeed[count], self.relHumidity[count], self.metRate[count], self.cloValues[count], self.externalWork[count])['pmv'])

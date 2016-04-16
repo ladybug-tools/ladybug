@@ -11,3 +11,7 @@ print myPmvComf.pmv
 
 myPmvComf = PMV.fromIndividualValues(26, 26, 0.5, 80, 1.1, 0.5)
 print myPmvComf.pmv
+
+epwFileAddress = "C:\ladybug\New_York_J_F_Kennedy_IntL_Ar_NY_USA\New_York_J_F_Kennedy_IntL_Ar_NY_USA.epw"
+myPmvComf = PMV.fromEPWFile(epwFileAddress)
+print myPmvComf.pmv

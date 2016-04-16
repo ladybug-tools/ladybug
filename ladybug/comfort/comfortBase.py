@@ -4,7 +4,7 @@ from abc import abstractmethod
 
 class ComfortModel(object):
     """
-    Thermal Comfort Models.
+    Thermal Comfort Model base class.
     """
 
     def __init__(self):
