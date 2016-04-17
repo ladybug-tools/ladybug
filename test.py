@@ -14,6 +14,7 @@ print myPmvComf.pmv
 myAirTemp = myPmvComf.calcMissingPMVInput(0.5, 0)
 print myAirTemp
 print myPmvComf.pmv
+print myPmvComf.findPMV(10)
 
 
 # epwFileAddress = "C:\ladybug\New_York_J_F_Kennedy_IntL_Ar_NY_USA\New_York_J_F_Kennedy_IntL_Ar_NY_USA.epw"

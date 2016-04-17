@@ -442,6 +442,37 @@ class PMV(ComfortModel):
         return 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
 
     @staticmethod
+    def findPMV(ppd, ppdError=0.001):
+        """
+        Args:
+            ppd: The percentage of people dissatisfied (PPD) for which you want to know the possible PMV.
+            ppdError: The acceptable error in meeting the target PPD.  The default is set to 0.001.
+
+        Returns:
+            pmv: A list with the two predicted mean vote (PMV) values that produces the input PPD.
+        """
+        if not ppd < 5:
+            pmvLow = -3
+            pmvMid = 0
+            pmvHi = 3
+
+            def fn(pmv):
+                return ((100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))) - ppd)
+
+            # Solve for the missing lower PMV value.
+            pmvLowSolution = secant(pmvLow, pmvMid, fn, ppdError)
+            if pmvLowSolution == 'NaN':
+                pmvLowSolution = bisect(pmvLow, pmvMid, fn, ppdError)
+            # Solve for the missing higher PMV value.
+            pmvHiSolution = secant(pmvMid, pmvHi, fn, ppdError)
+            if pmvHiSolution == 'NaN':
+                pmvHiSolution = bisect(pmvMid, pmvHi, fn, ppdError)
+
+            return [pmvLowSolution, pmvHiSolution]
+        else:
+            raise Exception('A ppd lower than 5% is not achievable with the PMV model.')
+
+    @staticmethod
     def comfPMV(ta, tr, vel, rh, met, clo, wme):
         """
         Original Fanger function to compute PMV.  Only intended for use with low air speeds (<0.1 m/s).
