@@ -132,6 +132,42 @@ class PMV(ComfortModel):
         return cls(epwData.dryBulbTemperature.values(header=inclHeader), epwData.dryBulbTemperature.values(header=inclHeader), epwData.windSpeed.values(header=inclHeader), epwData.relativeHumidity.values(header=inclHeader), [metRate], [cloValue], [externalWork])
 
     @property
+    def isReCalculationNeeded(self):
+        """
+        Boolean value that indicates whether the comfort values need to be re-computed.
+            True = re-calculation is needed before comfort values can be output.
+            False = no re-calculation is needed.
+        """
+        return self.__isRecalcNeeded
+
+    @property
+    def isDataAligned(self):
+        """
+        Boolean value that indicates whether the input data is aligned.
+            True = aligned
+            False = not aligned (run the _checkAndAlignLists function to align the data)
+        """
+        return self.__isDataAligned
+
+    @property
+    def isHeaderIncluded(self):
+        """
+        Boolean value that indicates whether a header will be output on the results.
+            True = header included.
+            False = header not included.
+        """
+        return self.__headerIncl
+
+    @property
+    def singleValues(self):
+        """
+        Boolean value that indicates whether single values or a list of values will be output.
+            True = single values output.
+            False = lists of values output.
+        """
+        return self.__singleVals
+
+    @property
     def airTemperature(self):
         """
         A number or list of numbers representing dry bulb temperatures in degrees Celcius.
@@ -397,25 +433,31 @@ class PMV(ComfortModel):
     @staticmethod
     def findPPD(pmv):
         """
-        Function that returns the PPD for a given PMV.
+        Args:
+            pmv: The predicted mean vote (PMV) for which you want to know the PPD.
+
+        Returns:
+            ppd: The percentage of people dissatisfied (PPD) for the input PMV.
         """
         return 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
 
     @staticmethod
     def comfPMV(ta, tr, vel, rh, met, clo, wme):
         """
-        Original Fanger function to compute PMV.  Only intended for use with low air speeds (<0.1 m/s)
+        Original Fanger function to compute PMV.  Only intended for use with low air speeds (<0.1 m/s).
+
         Args:
-            ta, air temperature (C)
-            tr, mean radiant temperature (C)
-            vel, relative air velocity (m/s)
-            rh, relative humidity (%) Used only this way to input humidity level
-            met, metabolic rate (met)
-            clo, clothing (clo)
-            wme, external work, normally around 0 (met)
+            ta: air temperature (C)
+            tr: mean radiant temperature (C)
+            vel: relative air velocity (m/s)
+            rh: relative humidity (%) Used only this way to input humidity level
+            met: metabolic rate (met)
+            clo: clothing (clo)
+            wme: external work, normally around 0 (met)
+
         Returns:
-            pmv, predicted mean vote
-            ppd, percentage of people dissatisfied.
+            pmv: predicted mean vote
+            ppd: percentage of people dissatisfied.
         """
 
         pa = rh * 10 * math.exp(16.6536 - 4030.183 / (ta + 235))
@@ -497,6 +539,7 @@ class PMV(ComfortModel):
             met, metabolic rate (met)
             clo, clothing (clo)
             wme, external work, normally around 0 (met)
+
         Returns:
             set, standard effective temperature
         """
@@ -680,13 +723,23 @@ class PMV(ComfortModel):
 
     def _comfPMVElevatedAirspeed(self, ta, tr, vel, rh, met, clo, wme):
         """
-        This function accepts any input conditions (including low air speeds) but will return accurate values if the airspeed is above sillAirThreshold.
-        The function will return the following:
-        pmv : Predicted mean vote
-        ppd : Percent predicted dissatisfied [%]
-        taAdj: Air temperature adjusted for air speed [C]
-        coolingEffect : Difference between the air temperature and adjusted air temperature [C]
-        set: The Standard Effective Temperature [C] (see below)
+        This function will return accurate values if the airspeed is above the sillAirThreshold.
+
+        Args:
+            ta, air temperature (C)
+            tr, mean radiant temperature (C)
+            vel, relative air velocity (m/s)
+            rh, relative humidity (%) Used only this way to input humidity level
+            met, metabolic rate (met)
+            clo, clothing (clo)
+            wme, external work, normally around 0 (met)
+
+        Returns:
+            pmv : Predicted mean vote
+            ppd : Percent predicted dissatisfied [%]
+            taAdj: Air temperature adjusted for air speed [C]
+            coolingEffect : Difference between the air temperature and adjusted air temperature [C]
+            set: The Standard Effective Temperature [C] (see below)
         """
 
         r = {}
@@ -721,7 +774,7 @@ class PMV(ComfortModel):
 
     def _calculatePMVParams(self):
         """
-        Runs the inputs through the PMV model to get pmv, ppd, and set.
+        Runs the input conditions through the PMV model to get pmv, ppd, and set.
         """
         # Clear any existing values from the memory.
         self.__pmv = []
@@ -918,38 +971,89 @@ class PMV(ComfortModel):
         else:
             return self.__coolingEffect
 
-    @property
-    def isReCalculationNeeded(self):
+    def calcMissingPMVInput(self, targetPMV, missingInput=0, lowBound=0, upBound=100, error=0.001):
         """
-        Boolean value that indicates whether the comfort values need to be re-computed.
-            True = re-calculation is needed before comfort values can be output.
-            False = no re-calculation is needed.
-        """
-        return self.__isRecalcNeeded
+        Sets the comfort model to return a deisred target PMV given a missingInput (out of the seven total PMV model inputs), which will be adjusted to meet this targetPMV.
+        Returns the value(s) of the missingInput that makes the model obey the targetPMV.
 
-    @property
-    def isDataAligned(self):
-        """
-        Boolean value that indicates whether the input data is aligned.
-            True = aligned
-            False = not aligned (run the _checkAndAlignLists function to align the data)
-        """
-        return self.__isDataAligned
+        Args:
+            targetPMV: The target pmv that you are trying to produce from the inputs to this pmv object.
+            missingInput: An integer that denotes which of the 6 inputs to the PMV model you want to
+            adjust to produce the targetPMV.  Choose from the following options:
+                0 = airTemperature
+                1 = radTemperature
+                2 = windSpeed
+                3 = relHumidity
+                4 = metRate
+                5 = cloValue
+                6 = externalWork
+            lowBound: The lowest possible value of the missingInput you are tying to find.
+                Putting in a good value here will help the model converge to a solution faster.
+            upBound: The highest possible value of the missingInput you are tying to find.
+                Putting in a good value here will help the model converge to a solution faster.
+            error: The acceptable error in the targetPMV. The default is set to 0.001
 
-    @property
-    def isHeaderIncluded(self):
-        """
-        Boolean value that indicates whether a header will be output on the results.
-            True = header included.
-            False = header not included.
-        """
-        return self.__headerIncl
+        Returns:
+            missingVal: The value of the missingInput that will produce the targetPMV.
 
-    @property
-    def singleValues(self):
         """
-        Boolean value that indicates whether single values or a list of values will be output.
-            True = single values output.
-            False = lists of values output.
-        """
-        return self.__singleVals
+
+        if not self.__isDataAligned:
+            self._checkAndAlignLists()
+
+        missingVal = []
+        for i in range(self.__calcLength):
+
+            # Determine the function that should be used given the requested missingInput.
+            if missingInput == 0:
+                def fn(x):
+                    return (self._comfPMVElevatedAirspeed(x, self.__radTemperature[i], self.__windSpeed[i], self.__relHumidity[i], self.__metRate[i], self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
+            elif missingInput == 1:
+                def fn(x):
+                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], x, self.__windSpeed[i], self.__relHumidity[i], self.__metRate[i], self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
+            elif missingInput == 2:
+                def fn(x):
+                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], x, self.__relHumidity[i], self.__metRate[i], self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
+            elif missingInput == 3:
+                def fn(x):
+                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], self.__windSpeed[i], x, self.__metRate[i], self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
+            elif missingInput == 4:
+                def fn(x):
+                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], self.__windSpeed[i], self.__relHumidity[i], x, self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
+            elif missingInput == 5:
+                def fn(x):
+                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], self.__windSpeed[i], self.__relHumidity[i], self.__metRate[i], x, self.__externalWork[i])['pmv'] - targetPMV)
+            elif missingInput == 6:
+                def fn(x):
+                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], self.__windSpeed[i], self.__relHumidity[i], self.__metRate[i], self.__cloValue[i], x)['pmv'] - targetPMV)
+
+            # Solve for the missing input using the function.
+            xMissing = secant(lowBound, upBound, fn, error)
+            if xMissing == 'NaN':
+                xMissing = bisect(lowBound, upBound, fn, error)
+
+            missingVal.append(xMissing)
+
+        # Set the conditions of the comfort model to have the new missingVal.
+        if missingInput == 0:
+            self.__airTemperature = missingVal
+        elif missingInput == 1:
+            self.__radTemperature = missingVal
+        elif missingInput == 2:
+            self.__windSpeed = missingVal
+        elif missingInput == 3:
+            self.__relHumidity = missingVal
+        elif missingInput == 4:
+            self.__metRate = missingVal
+        elif missingInput == 5:
+            self.__cloValue = missingVal
+        elif missingInput == 6:
+            self.__externalWork = missingVal
+
+        # Tell the comfort model to recompute now that the new values have been set.
+        self.__isRecalcNeeded = True
+
+        if self.__singleVals is True:
+            return missingVal[0]
+        else:
+            return missingVal
