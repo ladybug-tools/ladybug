@@ -1,3 +1,3 @@
-__all__ = ["pmv", "psychrometrics"]
+__all__ = ["pmv"]
 
-import pmv, psychrometrics
+import pmv

@@ -1,7 +1,8 @@
 """PMV Comfort object."""
 import math
 from comfortBase import ComfortModel
-import psychrometrics
+from ..psychrometrics import findHumidRatio
+from ..psychrometrics import findSaturatedVaporPressureTorr
 from ..rootFinding import secant
 from ..rootFinding import bisect
 from ..listoperations import duplicate
@@ -24,7 +25,7 @@ class PMV(ComfortModel):
         metRate: A list of numbers representing the metabolic rate of the
             human subject in met. 1 met = resting seated. This list can have a LB header on it.
             If list is empty, default is set to 1.1 met.
-        cloValues: A list of numbers representing the clothing level of the
+        cloValue: A list of numbers representing the clothing level of the
             human subject in clo. 1 clo = three-piece suit. This list can have a LB header on it. If list is empty,
             default is set to 0.85 clo.
         externalWork: A list of numbers representing the work done by the
@@ -51,7 +52,7 @@ class PMV(ComfortModel):
 
     """
 
-    def __init__(self, airTemperature=[], radTemperature=[], windSpeed=[], relHumidity=[], metRate=[], cloValues=[], externalWork=[]):
+    def __init__(self, airTemperature=[], radTemperature=[], windSpeed=[], relHumidity=[], metRate=[], cloValue=[], externalWork=[]):
         """
         Initialize a PMV comfort object from lists of PMV inputs.
         """
@@ -78,10 +79,10 @@ class PMV(ComfortModel):
             self.metRate = metRate
         else:
             self.metRate = [1.1]
-        if cloValues != []:
-            self.cloValues = cloValues
+        if cloValue != []:
+            self.cloValue = cloValue
         else:
-            self.cloValues = [0.85]
+            self.cloValue = [0.85]
         if externalWork != []:
             self.externalWork = externalWork
         else:
@@ -108,11 +109,11 @@ class PMV(ComfortModel):
         self.__set = []
         self.__isComfortable = []
         self.__discomfReason = []
-        self.__ta_adj = []
-        self.__cooling_effect = []
+        self.__taAdj = []
+        self.__coolingEffect = []
 
     @classmethod
-    def fromIndividualValues(cls, airTemperature=20.0, radTemperature=None, windSpeed=0.0, relHumidity=50.0, metRate=1.1, cloValues=0.85, externalWork=0.0):
+    def fromIndividualValues(cls, airTemperature=20.0, radTemperature=None, windSpeed=0.0, relHumidity=50.0, metRate=1.1, cloValue=0.85, externalWork=0.0):
         """
         Creates a PMV comfort object from individual values instead of listis of values.
         """
@@ -125,7 +126,7 @@ class PMV(ComfortModel):
         if relHumidity is None:
             relHumidity = 0.0
 
-        pmvModel = cls([float(airTemperature)], [float(radTemperature)], [float(windSpeed)], [float(relHumidity)], [float(metRate)], [float(cloValues)], [float(externalWork)])
+        pmvModel = cls([float(airTemperature)], [float(radTemperature)], [float(windSpeed)], [float(relHumidity)], [float(metRate)], [float(cloValue)], [float(externalWork)])
         pmvModel.__singleVals = True
         pmvModel.__isDataAligned = True
         pmvModel.__calcLength = 1
@@ -133,7 +134,7 @@ class PMV(ComfortModel):
         return pmvModel
 
     @classmethod
-    def fromEPWFile(cls, epwFileAddress, metRate=1.1, cloValue=0.85, externalWork=0.0):
+    def fromEPWFile(cls, epwFileAddress, metRate=1.1, cloValue=0.85, externalWork=0.0, inclHeader=True):
         """
         Create and PMV comfort object from the conditions within an EPW file.
         metRate: A value representing the metabolic rate of the human subject in met.
@@ -142,58 +143,25 @@ class PMV(ComfortModel):
             1 clo = three-piece suit. If list is empty, default is set to 1 clo.
         externalWork: A value representing the work done by the human subject in met.
             1 met = resting seated. If list is empty, default is set to 0 met.
+        header: set to "True" to have a ladybug header included in the output and set to
+            "False" to remove the header.  The default is set to "True."
         """
 
         epwData = EPW(epwFileAddress)
-        return cls(epwData.dryBulbTemperature.values(header=True), epwData.dryBulbTemperature.values(header=True), epwData.windSpeed.values(header=True), epwData.relativeHumidity.values(header=True), [metRate], [cloValue], [externalWork])
+        return cls(epwData.dryBulbTemperature.values(header=inclHeader), epwData.dryBulbTemperature.values(header=inclHeader), epwData.windSpeed.values(header=inclHeader), epwData.relativeHumidity.values(header=inclHeader), [metRate], [cloValue], [externalWork])
 
-    def checkInputList(self, inputValue, defaultValue, inputValName, headerValName):
-        """
-        Check length of the inputValue list and evaluate the contents.
-        """
-        checkData = False
-        finalVals = []
-        multVal = False
-        if len(inputValue) != 0:
-            try:
-                if headerValName in inputValue[2]:
-                    finalVals = inputValue[7:]
-                    checkData = True
-                    self.__headerIncl = True
-                    self.__headerStr = inputValue[0:7]
-            except:
-                pass
-            if checkData is False:
-                for item in inputValue:
-                    try:
-                        finalVals.append(float(item))
-                        checkData = True
-                    except:
-                        checkData = False
-            if len(finalVals) > 1:
-                multVal = True
-            if checkData is False:
-                raise Exception(inputValName + " input is not of a valid input type.")
-        else:
-            checkData = True
-            finalVals = defaultValue
-            if len(finalVals) > 1:
-                multVal = True
-
-        return checkData, finalVals, multVal
-
-    def _checkAndAlignLists(self, airTemperature, radTemperature, windSpeeds, relHumidity, metabolicRate, clothingValues, externalWork):
+    def _checkAndAlignLists(self):
         """
         Checks to be sure that the lists of PMV input variables are aligned and fills in defaults where possible.
         """
         # Check each list to be sure that the contents are what we want.
-        checkData1, airTemp, airMultVal = self.checkInputList(airTemperature, [20], "airTemperature", "Temperature")
-        checkData2, radTemp, radMultVal = self.checkInputList(radTemperature, airTemp, "radTemperature", "Temperature")
-        checkData3, windSpeed, windMultVal = self.checkInputList(windSpeeds, [0.0], "windSpeed", "Wind Speed")
-        checkData4, relHumid, humidMultVal = self.checkInputList(relHumidity, [50.0], "relHumidity", "Humidity")
-        checkData5, metRate, metMultVal = self.checkInputList(metabolicRate, [1.1], "metabolicRate", "Metabolic")
-        checkData6, cloLevel, cloMultVal = self.checkInputList(clothingValues, [0.85], "clothingValue", "Clothing")
-        checkData7, exWork, exMultVal = self.checkInputList(externalWork, [0.0], "externalWork", "Work")
+        checkData1, airTemp, airMultVal = self._checkInputList(self.airTemperature, [20], "airTemperature", "Temperature")
+        checkData2, radTemp, radMultVal = self._checkInputList(self.radTemperature, airTemp, "radTemperature", "Temperature")
+        checkData3, windSpeed, windMultVal = self._checkInputList(self.windSpeed, [0.0], "windSpeed", "Wind Speed")
+        checkData4, relHumid, humidMultVal = self._checkInputList(self.relHumidity, [50.0], "relHumidity", "Humidity")
+        checkData5, metRate, metMultVal = self._checkInputList(self.metRate, [1.1], "metabolicRate", "Metabolic")
+        checkData6, cloLevel, cloMultVal = self._checkInputList(self.cloValue, [0.85], "clothingValue", "Clothing")
+        checkData7, exWork, exMultVal = self._checkInputList(self.externalWork, [0.0], "externalWork", "Work")
 
         # Finally, for those lists of length greater than 1, check to make sure that they are all the same length.
         checkData = False
@@ -249,7 +217,7 @@ class PMV(ComfortModel):
             self.windSpeed = windSpeed
             self.relHumidity = relHumid
             self.metRate = metRate
-            self.cloValues = cloLevel
+            self.cloValue = cloLevel
             self.externalWork = exWork
             # Set the alighed data value to true.
             self.__isDataAligned = True
@@ -373,7 +341,7 @@ class PMV(ComfortModel):
         """
 
         # Key initial variables.
-        VaporPressure = (rh * psychrometrics.findSaturatedVaporPressureTorr(ta)) / 100
+        VaporPressure = (rh * findSaturatedVaporPressureTorr(ta)) / 100
         AirVelocity = max(vel, 0.1)
         KCLO = 0.25
         BODYWEIGHT = 69.9
@@ -480,7 +448,7 @@ class PMV(ComfortModel):
             ERSW = 0.68 * REGSW
             REA = 1.0 / (LR * FACL * CHC)  # evaporative resistance of air layer
             RECL = RCL / (LR * ICL)  # evaporative resistance of clothing (icl=.45)
-            EMAX = (psychrometrics.findSaturatedVaporPressureTorr(TempSkin) - VaporPressure) / (REA + RECL)
+            EMAX = (findSaturatedVaporPressureTorr(TempSkin) - VaporPressure) / (REA + RECL)
             PRSW = ERSW / EMAX
             PWET = 0.06 + 0.94 * PRSW
             EDIF = PWET * EMAX - ERSW
@@ -510,7 +478,7 @@ class PMV(ComfortModel):
             ECOMF = 0.0  # from Fanger
         EMAX = EMAX * WCRIT
         W = PWET
-        PSSK = psychrometrics.findSaturatedVaporPressureTorr(TempSkin)
+        PSSK = findSaturatedVaporPressureTorr(TempSkin)
         # Definition of ASHRAE standard environment... denoted "S"
         CHRS = CHR
         if met < 0.85:
@@ -541,8 +509,8 @@ class PMV(ComfortModel):
         dx = 100.0
         X_OLD = TempSkin - HSK / HD_S  # lower bound for SET
         while abs(dx) > .01:
-            ERR1 = (HSK - HD_S * (TempSkin - X_OLD) - W * HE_S * (PSSK - 0.5 * psychrometrics.findSaturatedVaporPressureTorr(X_OLD)))
-            ERR2 = (HSK - HD_S * (TempSkin - (X_OLD + DELTA)) - W * HE_S * (PSSK - 0.5 * psychrometrics.findSaturatedVaporPressureTorr((X_OLD + DELTA))))
+            ERR1 = (HSK - HD_S * (TempSkin - X_OLD) - W * HE_S * (PSSK - 0.5 * findSaturatedVaporPressureTorr(X_OLD)))
+            ERR2 = (HSK - HD_S * (TempSkin - (X_OLD + DELTA)) - W * HE_S * (PSSK - 0.5 * findSaturatedVaporPressureTorr((X_OLD + DELTA))))
             X = X_OLD - DELTA * ERR1 / (ERR2 - ERR1)
             dx = X - X_OLD
             X_OLD = X
@@ -555,8 +523,8 @@ class PMV(ComfortModel):
         The function will return the following:
         pmv : Predicted mean vote
         ppd : Percent predicted dissatisfied [%]
-        ta_adj: Air temperature adjusted for air speed [C]
-        cooling_effect : The difference between the air temperature and adjusted air temperature [C]
+        taAdj: Air temperature adjusted for air speed [C]
+        coolingEffect : Difference between the air temperature and adjusted air temperature [C]
         set: The Standard Effective Temperature [C] (see below)
         """
 
@@ -565,7 +533,7 @@ class PMV(ComfortModel):
 
         if vel <= self.stillAirThreshold:
             pmv, ppd = self.comfPMV(ta, tr, vel, rh, met, clo, wme)
-            ta_adj = ta
+            taAdj = ta
             ce = 0
         else:
             ce_l = 0
@@ -580,15 +548,68 @@ class PMV(ComfortModel):
                 ce = bisect(ce_l, ce_r, fn, eps, 0)
 
             pmv, ppd = self.comfPMV(ta - ce, tr - ce, self.stillAirThreshold, rh, met, clo, wme)
-            ta_adj = ta - ce
+            taAdj = ta - ce
 
         r['pmv'] = pmv
         r['ppd'] = ppd
         r['set'] = set
-        r['taAdj'] = ta_adj
+        r['taAdj'] = taAdj
         r['ce'] = ce
 
         return r
+
+    def _calculatePMVParams(self):
+        """
+        Runs the inputs through the PMV model to get pmv, ppd, and set.
+        """
+        # Clear any existing values from the memory.
+        self.__pmv = []
+        self.__ppd = []
+        self.__set = []
+        self.__isComfortable = []
+        self.__discomfReason = []
+        self.__taAdj = []
+        self.__coolingEffect = []
+
+        # If the input data has a header, put a header on the output.
+        if self.__headerIncl is True:
+            self.__pmv.extend(self.buildCustomHeader("Predicted Mean Vote", "PMV"))
+            self.__ppd.extend(self.buildCustomHeader("Percentage of People Dissatisfied", "%"))
+            self.__set.extend(self.buildCustomHeader("Standard Effective Temperature", "C"))
+            self.__isComfortable.extend(self.buildCustomHeader("Comfortable Or Not", "0/1"))
+            self.__discomfReason.extend(self.buildCustomHeader("Reason For Discomfort", "-2(cold), -1(dry), 0(comf), 1(humid), 2(hot)"))
+            self.__taAdj.extend(self.buildCustomHeader("Perceived Air Temperature With Air Speed", "C"))
+            self.__coolingEffect.extend(self.buildCustomHeader("Cooling Effect of air speed", "C"))
+
+        # calculate the pmv, ppd, and set values.
+        for i in range(self.__calcLength):
+            pmvResult = self._comfPMVElevatedAirspeed(self.airTemperature[i], self.radTemperature[i], self.windSpeed[i], self.relHumidity[i], self.metRate[i], self.cloValue[i], self.externalWork[i])
+            self.__pmv.append(pmvResult['pmv'])
+            self.__ppd.append(pmvResult['ppd'])
+            self.__set.append(pmvResult['set'])
+            self.__taAdj.append(pmvResult['taAdj'])
+            self.__coolingEffect.append(pmvResult['ce'])
+
+            # determine whether conditions meet the comfort criteria.
+            HR, vapPress, satPress = findHumidRatio(self.airTemperature[i], self.relHumidity[i])
+            if pmvResult['pmv'] > self.PPDComfortThresh:
+                self.__isComfortable.append(0)
+                if pmvResult['pmv'] > 0:
+                    self.__discomfReason.append(2)
+                else:
+                    self.__discomfReason.append(-2)
+            elif HR > self.humidRatioUp:
+                self.__isComfortable.append(0)
+                self.__discomfReason.append(1)
+            elif HR < self.humidRatioLow:
+                self.__isComfortable.append(0)
+                self.__discomfReason.append(-1)
+            else:
+                self.__isComfortable.append(1)
+                self.__discomfReason.append(0)
+
+        # Let the class know that we don't need to re-run things unless something changes.
+        self.__isRecalcNeeded = False
 
     @property
     def pmv(self):
@@ -608,21 +629,11 @@ class PMV(ComfortModel):
         Fanger, P Ole (1970). Thermal Comfort: Analysis and applications in environmental engineering.
         """
 
-        # If the data has to be checked, check it.
         if not self.__isDataAligned:
-            self._checkAndAlignLists(self.airTemperature, self.radTemperature, self.windSpeed, self.relHumidity, self.metRate, self.cloValues, self.externalWork)
+            self._checkAndAlignLists()
 
         if self.__isRecalcNeeded:
-            # If the input data has a header, put a header on the output.
-            self.__pmv = []
-            if self.__headerIncl is True:
-                pmvHeadStr = self.__headerStr
-                pmvHeadStr[2] = 'Prediced Mean Vote'
-                pmvHeadStr[3] = 'PMV'
-                self.__pmv.extend(pmvHeadStr)
-            # calculate the pmv values.
-            for count in range(self.__calcLength):
-                self.__pmv.append(self._comfPMVElevatedAirspeed(self.airTemperature[count], self.radTemperature[count], self.windSpeed[count], self.relHumidity[count], self.metRate[count], self.cloValues[count], self.externalWork[count])['pmv'])
+            self._calculatePMVParams()
 
         if self.__singleVals is True:
             return self.__pmv[0]
