@@ -1,6 +1,7 @@
 """PMV Comfort object."""
 import math
-from comfortBase import ComfortModel
+from collections import Iterable
+from .comfortBase import ComfortModel
 from ..psychrometrics import findHumidRatio
 from ..psychrometrics import findSaturatedVaporPressureTorr
 from ..rootFinding import secant
@@ -11,7 +12,7 @@ from ..epw import EPW
 
 class PMV(ComfortModel):
     """
-    PMV Comfort Object
+    PMV Comfort Object.
 
     Usage:
         from ladybug.comfort.pmv import PMV
@@ -27,27 +28,24 @@ class PMV(ComfortModel):
         pmv = myPmvComf.pmv
 
         # Compute PMV for all hours of an EPW file.
-        epwFileAddress = "C:\ladybug\New_York_J_F_Kennedy_IntL_Ar_NY_USA\New_York_J_F_Kennedy_IntL_Ar_NY_USA.epw"
+        epwFileAddress = "C:/ladybug/New_York_J_F_Kennedy_IntL_Ar_NY_USA/New_York_J_F_Kennedy_IntL_Ar_NY_USA.epw"
         myPmvComf = PMV.fromEPWFile(epwFileAddress, 1.4, 1.0)
         pmv = myPmvComf.pmv
 
     """
 
-    def __init__(self, airTemperature=[], radTemperature=[], windSpeed=[], relHumidity=[], metRate=[], cloValue=[], externalWork=[]):
-        """
-        Initialize a PMV comfort object from lists of PMV inputs.
-        """
-
+    def __init__(self, airTemperature=None, radTemperature=[], windSpeed=[],
+                 relHumidity=[], metRate=[], cloValue=[], externalWork=[]):
+        """Initialize a PMV comfort object from lists of PMV inputs."""
         # Assign all of the input values to the PMV comfort model object.
         # And assign defaults if nothing has been connected.
-        if airTemperature != []:
-            self.__airTemperature = airTemperature
-        else:
-            self.airTemperature = [20]
+        self.airTemperature = airTemperature
+
         if radTemperature != []:
             self.__radTemperature = radTemperature
         else:
             self.__radTemperature = self.__airTemperature
+
         if windSpeed != []:
             self.__windSpeed = windSpeed
         else:
@@ -94,10 +92,10 @@ class PMV(ComfortModel):
         self.__coolingEffect = []
 
     @classmethod
-    def fromIndividualValues(cls, airTemperature=20.0, radTemperature=None, windSpeed=0.0, relHumidity=50.0, metRate=1.1, cloValue=0.85, externalWork=0.0):
-        """
-        Creates a PMV comfort object from individual values instead of listis of values.
-        """
+    def fromIndividualValues(cls, airTemperature=20.0, radTemperature=None,
+                             windSpeed=0.0, relHumidity=50.0, metRate=1.1,
+                             cloValue=0.85, externalWork=0.0):
+        """Create a PMV comfort object from individual values."""
         if airTemperature is None:
             airTemperature = 20.0
         if radTemperature is None:
@@ -115,26 +113,28 @@ class PMV(ComfortModel):
         return pmvModel
 
     @classmethod
-    def fromEPWFile(cls, epwFileAddress, metRate=1.1, cloValue=0.85, externalWork=0.0, inclHeader=True):
-        """
-        Create and PMV comfort object from the conditions within an EPW file.
-        metRate: A value representing the metabolic rate of the human subject in met.
-            1 met = resting seated. If list is empty, default is set to 1 met.
-        cloValue: A lvalue representing the clothing level of the human subject in clo.
-            1 clo = three-piece suit. If list is empty, default is set to 1 clo.
-        externalWork: A value representing the work done by the human subject in met.
-            1 met = resting seated. If list is empty, default is set to 0 met.
-        header: set to "True" to have a ladybug header included in the output and set to
-            "False" to remove the header.  The default is set to "True."
-        """
+    def fromEPWFile(cls, epwFileAddress, metRate=1.1, cloValue=0.85,
+                    externalWork=0.0, inclHeader=True):
+        """Create a PMV comfort object from the conditions within an EPW file.
 
+        Args:
+            metRate: A value representing the metabolic rate of the human subject in met.
+                1 met = resting seated. If list is empty, default is set to 1 met.
+            cloValue: A lvalue representing the clothing level of the human subject in clo.
+                1 clo = three-piece suit. If list is empty, default is set to 1 clo.
+            externalWork: A value representing the work done by the human subject in met.
+                1 met = resting seated. If list is empty, default is set to 0 met.
+            header: set to "True" to have a ladybug header included in the output and set to
+                "False" to remove the header.  The default is set to "True."
+        """
         epwData = EPW(epwFileAddress)
         return cls(epwData.dryBulbTemperature.values(header=inclHeader), epwData.dryBulbTemperature.values(header=inclHeader), epwData.windSpeed.values(header=inclHeader), epwData.relativeHumidity.values(header=inclHeader), [metRate], [cloValue], [externalWork])
 
     @property
     def isReCalculationNeeded(self):
-        """
-        Boolean value that indicates whether the comfort values need to be re-computed.
+        """Boolean value that indicates whether the comfort values need to be re-computed.
+
+        Returns:
             True = re-calculation is needed before comfort values can be output.
             False = no re-calculation is needed.
         """
@@ -177,10 +177,12 @@ class PMV(ComfortModel):
 
     @airTemperature.setter
     def airTemperature(self, value):
-        try:
-            self.__airTemperature = [float(value)]
-        except:
-            self.__airTemperature = value
+
+        self.__airTemperature = [20] if not value else value
+
+        if not isinstance(self.__airTemperature, Iterable):
+            self.__airTemperature = [self.__airTemperature]
+
         self.__isDataAligned = False
         self.__isRecalcNeeded = True
 
