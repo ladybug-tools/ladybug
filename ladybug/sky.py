@@ -3,34 +3,33 @@ import core
 import skyvector
 
 import os
-import json
 import subprocess
-import sys
+
 
 class CumulativeSkyMtx(object):
-    """Cumulative Sky
+    """Cumulative Sky.
 
-        Attributes:
-            epwFileAddress: Path to EPW file.
-            skyDensity: Density of the sky. 0 generates a Tregenza sky, which will
-                divide up the sky dome with a coarse density of 145 sky patches.
-                Set to 1 to generate a Reinhart sky, which will divide up the sky dome
-                using a density of 580 sky patches.
-            workingDir: A local directory to run the study and write the results
+    Attributes:
+        epwFileAddress: Path to EPW file.
+        skyDensity: Density of the sky. 0 generates a Tregenza sky, which will
+            divide up the sky dome with a coarse density of 145 sky patches.
+            Set to 1 to generate a Reinhart sky, which will divide up the sky dome
+            using a density of 580 sky patches.
+        workingDir: A local directory to run the study and write the results
 
-        Usage:
-            epwfile = r"C:\EnergyPlusV8-3-0\WeatherData\USA_CO_Golden-NREL.724666_TMY3.epw"
-            cumSky = CumulativeSkyMtx(epwfile) #calculate the sky
-            # annual results
-            cumSky.annualResults()
+    Usage:
+        epwfile = r"C:/EnergyPlusV8-3-0/WeatherData/USA_CO_Golden-NREL.724666_TMY3.epw"
+        cumSky = CumulativeSkyMtx(epwfile) #calculate the sky
+        # annual results
+        cumSky.annualResults()
 
-            # results for an anlysis period
-            ap = AnalysisPeriod(startMonth = 2, endMonth = 12)
-            results = cumSky.filterByAnalysisPeriod(ap)
-            print results.diffuseValues
+        # results for an anlysis period
+        ap = AnalysisPeriod(startMonth = 2, endMonth = 12)
+        results = cumSky.filterByAnalysisPeriod(ap)
+        print results.diffuseValues
     """
 
-    def __init__(self, epwFileAddress, skyDensity = 0, workingDir = None):
+    def __init__(self, epwFileAddress, skyDensity=0, workingDir=None):
         self.__epw = epw.EPW(epwFileAddress)
         self.__data = {"diffuse": {}, "direct": {}}
         self.__results = {}
@@ -48,7 +47,7 @@ class CumulativeSkyMtx(object):
     def skyDensity(self, density):
         assert int(density) <= 1, "Sky density is should be 0: Tregenza sky, 1: Reinhart sky"
         self.__skyDensity = int(density)
-        #prepare place holder for patches
+        # prepare place holder for patches
         for patch in range(self.numberOfPatches):
             self.__data['diffuse'] = {}
             self.__data['direct'] = {}
@@ -78,13 +77,19 @@ class CumulativeSkyMtx(object):
         # update path for other files if it's a new workingDir
         # naming convention is weatherFileName_[diffuse/direct]_[skyDensity].mtx
         __name = self.__epw.fileName[:-4] + "_%s_%d.mtx"
-        self.__diffuseMtxFileAddress = os.path.join(self.__workingDir, __name%("dif", self.__skyDensity))
-        self.__directMtxFileAddress = os.path.join(self.__workingDir, __name%("dir", self.__skyDensity))
-        self.__jsonFileAddress= os.path.join(self.__workingDir, self.__epw.fileName[:-4] + \
-            "_" + str(self.__skyDensity) + ".json")
+
+        self.__diffuseMtxFileAddress = os.path.join(self.__workingDir, __name % ("dif", self.__skyDensity))
+
+        self.__directMtxFileAddress = os.path.join(self.__workingDir, __name % ("dir", self.__skyDensity))
+
+        self.__jsonFileAddress = os.path.join(
+            self.__workingDir,
+            self.__epw.fileName[:-4] + "_" + str(self.__skyDensity) + ".json"
+        )
 
     @property
     def numberOfPatches(self):
+        """Return number of patches."""
         return self.__patchData("numberOfPatches")
 
     @property
@@ -163,87 +168,104 @@ class CumulativeSkyMtx(object):
     def __calculateRowNumber(self, patchNumber):
         """Calculate number of row for sky patch"""
 
-        if patchNumber ==0 : return 0
-        __numOfPatchesInEachRow = self.__patchData(key = "numOfPatchesInEachRow")
+        if patchNumber == 0:
+            return 0
+        __numOfPatchesInEachRow = self.__patchData(key="numOfPatchesInEachRow")
 
         for rowCount, patchCountInRow in enumerate(__numOfPatchesInEachRow):
-            if patchNumber < sum(__numOfPatchesInEachRow[:rowCount+1]):
+            if patchNumber < sum(__numOfPatchesInEachRow[:rowCount + 1]):
                 return rowCount
 
-    def epw2wea(self, filePath = None):
+    def epw2wea(self, filePath=None):
         if not filePath:
             filePath = os.path.join(self.__workingDir, self.__epw.fileName[:-4] + ".wea")
         self.__weaFileAddress = self.__epw.epw2wea(filePath)
 
-    def calculateMtx(self, pathToRadianceBinaries = r"c:\radiance\bin", recalculate = False):
-        """use Radiance gendaymtx to generate the sky
+    def calculateMtx(self, pathToRadianceBinaries=r"c:\radiance\bin",
+                     recalculate=False):
+        """use Radiance gendaymtx to generate the sky.
 
-            Args:
-                pathToRadianceBinaries: Path to Radiance libraries. Default is C:\radiance\bin.
-                recalculate: Set to True if you want the sky to be recalculated even it has been calculated already
+        Args:
+            pathToRadianceBinaries: Path to Radiance libraries. Default is C:/radiance/bin.
+            recalculate: Set to True if you want the sky to be recalculated even it has been calculated already
         """
-
-        #check if the result is already calculated
+        # check if the result is already calculated
         if not recalculate:
-            if os.path.isfile(self.__diffuseMtxFileAddress) \
-                and os.path.isfile(self.__directMtxFileAddress):
+            if os.path.isfile(self.__diffuseMtxFileAddress) and \
+                    os.path.isfile(self.__directMtxFileAddress):
                 self.__isCalculated = True
                 return
 
-        if not pathToRadianceBinaries: pathToRadianceBinaries = r"c:\radiance\bin"
+        if not pathToRadianceBinaries:
+            pathToRadianceBinaries = r"c:\radiance\bin"
 
         assert os.path.isfile(os.path.join(pathToRadianceBinaries, "gendaymtx.exe")) \
             and os.path.isfile(os.path.join(pathToRadianceBinaries, "rcollate.exe")), \
             "Can't find gendaymtx.exe or rcollate.exe in radiance binary folder."
 
         # make sure daymtx and rcollate can be executed
-        assert os.access(os.path.join(pathToRadianceBinaries, "gendaymtx.exe"), os.X_OK), \
-            "%s is blocked by system! Right click on the file,"%os.path.join(pathToRadianceBinaries, "gendaymtx.exe") + \
+        gendaymtxPath = os.path.join(pathToRadianceBinaries, "gendaymtx.exe")
+        assert os.access(gendaymtxPath, os.X_OK), \
+            "%s is blocked by system! Right click on the file," % gendaymtxPath + \
             " select properties and unblock it."
 
-        assert os.access(os.path.join(pathToRadianceBinaries, "rcollate.exe"), os.X_OK), \
-            "%s is blocked by system! Right click on the file,"%os.path.join(pathToRadianceBinaries, "rcollate.exe") + \
+        rcollatePath = os.path.join(pathToRadianceBinaries, "rcollate.exe")
+        assert os.access(rcollatePath, os.X_OK), \
+            "%s is blocked by system! Right click on the file," % rcollatePath + \
             " select properties and unblock it."
 
         # assure wea file is calculated
-        if not hasattr(self, "__weaFileAddress"): self.epw2wea()
+        if not hasattr(self, "__weaFileAddress"):
+            self.epw2wea()
 
         __name = self.__epw.fileName[:-4] + "_calculate_sky_mtx.bat"
         batchFileAddress = os.path.join(self.__workingDir, __name)
 
-        batchFile = """
-        @echo off
-        echo.
-        echo HELLO #username! DO NOT CLOSE THIS WINDOW.
-        echo.
-        echo IT WILL BE CLOSED AUTOMATICALLY WHEN THE CALCULATION IS OVER!
-        echo.
-        echo AND MAY TAKE FEW MINUTES...
-        echo.
-        echo CALCULATING DIFFUSE COMPONENT OF THE SKY...
-        #pathToRadianceBinaries\\gendaymtx -m #skyDensity -s -O1 #weaFileAddress | #pathToRadianceBinaries\\rcollate -t > #diffuseMtxFileAddress
-        echo.
-        echo CALCULATING DIRECT COMPONENT OF THE SKY...
-        #pathToRadianceBinaries\\gendaymtx -m #skyDensity -d -O1 #weaFileAddress | #pathToRadianceBinaries\\rcollate -t > #directMtxFileAddress
-        """.replace("#pathToRadianceBinaries", pathToRadianceBinaries) \
-           .replace("#skyDensity", str(self.skyDensity + 1)) \
-           .replace("#weaFileAddress", self.__weaFileAddress) \
-           .replace("#diffuseMtxFileAddress", self.__diffuseMtxFileAddress) \
-           .replace("#directMtxFileAddress", self.__directMtxFileAddress)
+        batchFile = "@echo off\n" \
+            "echo.\n" \
+            "echo HELLO! DO NOT CLOSE THIS WINDOW.\n" \
+            "echo IT WILL BE CLOSED AUTOMATICALLY WHEN THE CALCULATION IS OVER!\n" \
+            "echo.\n" \
+            "echo.\n" \
+            "echo AND MAY TAKE FEW MINUTES...\n" \
+            "echo.\n" \
+            "PATH={6};\n" \
+            "echo CALCULATING DIFFUSE COMPONENT OF THE SKY...\n" \
+            "{0} -m {2} -s -O1 {3} | {1} -t > {4}\n" \
+            "echo.\n" \
+            "{0} -m {2} -d -O1 {3} | {1} -t > {5}\n" \
+            "echo CALCULATING DIRECT COMPONENT OF THE SKY...".format(
+                "gendaymtx",
+                "rcollate",
+                self.skyDensity + 1,
+                self._normspace(self.__weaFileAddress),
+                self._normspace(self.__diffuseMtxFileAddress),
+                self._normspace(self.__directMtxFileAddress),
+                self._normspace(pathToRadianceBinaries)
+            )
 
         # write batch file
         with open(batchFileAddress, "w") as genskymtxbatfile:
             genskymtxbatfile.write(batchFile)
 
-        subprocess.Popen(batchFileAddress, shell = True)
+        p = subprocess.Popen(batchFileAddress, shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        for line in p.stdout.readlines():
+            print line,
+        p.wait()
+
+    def _normspace(self, path):
+        return path if path.find(" ") == -1 else '"%s"' % path
 
     def __calculateLuminanceFromRGB(self, R, G, B, patchNumber):
         return (.265074126 * float(R) + .670114631 * float(G) + .064811243 * float(B)) * self.steradianConversionFactor(patchNumber)
 
     def __loadMtxFiles(self):
-        """load the values from .mtx files. use self.skyMtx to get the results
-        """
+        """load the values from .mtx files.
 
+        use self.skyMtx to get the results
+        """
         if self.__isLoaded:
             print "Matrix has been already loaded!"
             return
@@ -271,17 +293,21 @@ class CumulativeSkyMtx(object):
 
             for patchNumber in range(self.numberOfPatches):
                 # create header for each patch
-                difHeader = core.LBHeader(city = self.__epw.location.city, frequency ='Hourly', \
-                        analysisPeriod = analysisPeriod, \
-                        dataType = "Patch #%d diffuse radiation"%patchNumber, unit = "Wh")
+                difHeader = core.LBHeader(city=self.__epw.location.city,
+                                          frequency='Hourly',
+                                          analysisPeriod=analysisPeriod,
+                                          dataType="Patch #%d diffuse radiation" % patchNumber,
+                                          unit="Wh")
 
-                dirHeader = core.LBHeader(city = self.__epw.location.city, frequency ='Hourly', \
-                        analysisPeriod = analysisPeriod, \
-                        dataType = "Patch #%d direct radiation"%patchNumber, unit = "Wh")
+                dirHeader = core.LBHeader(city=self.__epw.location.city,
+                                          frequency='Hourly',
+                                          analysisPeriod=analysisPeriod,
+                                          dataType="Patch #%d direct radiation" % patchNumber,
+                                          unit="Wh")
 
                 # create an empty data list with the header
-                self.__data['diffuse'][patchNumber] = core.DataList(header =difHeader)
-                self.__data['direct'][patchNumber] = core.DataList(header =dirHeader)
+                self.__data['diffuse'][patchNumber] = core.DataList(header=difHeader)
+                self.__data['direct'][patchNumber] = core.DataList(header=dirHeader)
 
             for HOY in range(8760):
 
@@ -292,8 +318,8 @@ class CumulativeSkyMtx(object):
 
                 for patchNumber, (diffData, dirData) in enumerate(zip(diffLine.split("\t"), dirLine.split("\t"))):
 
-                    _difR, _difG, _difB =  diffData.split(" ")
-                    _dirR, _dirG, _dirB =  dirData.split(" ")
+                    _difR, _difG, _difB = diffData.split(" ")
+                    _dirR, _dirG, _dirB = dirData.split(" ")
 
                     _difValue = self.__calculateLuminanceFromRGB(_difR, _difG, _difB, patchNumber)
                     _dirValue = self.__calculateLuminanceFromRGB(_dirR, _dirG, _dirB, patchNumber)
@@ -311,22 +337,22 @@ class CumulativeSkyMtx(object):
             del(diffLine)
             del(dirLine)
 
-    # TODO: Analysis perios in headers should be adjusted based on the input
-    def gendaymtx(self, pathToRadianceBinaries = None, diffuse = True, direct = True, \
-        recalculate = False, analysisPeriod = None):
-        """Get sky matrix for direct, diffuse and total radiation as three separate lists
+    # TODO: Analysis periods in headers should be adjusted based on the input
+    def gendaymtx(self, pathToRadianceBinaries=None, diffuse=True, direct=True,
+                  recalculate=False, analysisPeriod=None):
+        """Get sky matrix for direct, diffuse and total radiation as three separate lists.
 
-            Args:
-                pathToRadianceBinaries: Path to Radiance libraries. Default is C:\radiance\bin.
-                diffuse: Set to True to include diffuse radiation
-                direct: Set to True to iclude direct radiation
-                recalculate: Set to True if you want the sky to be recalculated even it has been calculated already
-                analysisPeriod: An analysis period or a list of integers between 1-8760 for hours of the year. Default is All the hours of the year
+        Args:
+            pathToRadianceBinaries: Path to Radiance libraries. Default is C:/radiance/bin.
+            diffuse: Set to True to include diffuse radiation
+            direct: Set to True to iclude direct radiation
+            recalculate: Set to True if you want the sky to be recalculated even it has been calculated already
+            analysisPeriod: An analysis period or a list of integers between 1-8760 for hours of the year. Default is All the hours of the year
         """
-
         # calculate sky if it's not already calculated
         if not self.__isCalculated or recalculate:
-            self.calculateMtx(pathToRadianceBinaries = pathToRadianceBinaries, recalculate = recalculate)
+            self.calculateMtx(pathToRadianceBinaries=pathToRadianceBinaries,
+                              recalculate=recalculate)
 
         # load matrix files if it's not loaded
         if not self.__isLoaded:
@@ -337,7 +363,7 @@ class CumulativeSkyMtx(object):
         else:
             if isinstance(analysisPeriod, list):
                 HOYs = [int(h) if 0 < h < 8761 else -1 for h in analysisPeriod]
-                assert (not -1 in HOYs), "Hour should be between 1-8760"
+                assert (-1 not in HOYs), "Hour should be between 1-8760"
 
             elif isinstance(analysisPeriod, core.AnalysisPeriod):
                 HOYs = analysisPeriod.HOYs
@@ -346,8 +372,10 @@ class CumulativeSkyMtx(object):
 
         # calculate values and return them as 3 lists
         # put 0 value for all the patches
-        __cumulativeRaditionValues = {"diffuse": [0] * self.numberOfPatches, \
-                "direct": [0] * self.numberOfPatches}
+        __cumulativeRaditionValues = {
+            "diffuse": [0] * self.numberOfPatches,
+            "direct": [0] * self.numberOfPatches
+        }
 
         for patchNumber in range(self.numberOfPatches):
             for HOY in HOYs:
@@ -355,43 +383,47 @@ class CumulativeSkyMtx(object):
                 __cumulativeRaditionValues["direct"][patchNumber] += self.__data["direct"][patchNumber][HOY - 1]
 
         # create header for each patch
-        difHeader = core.LBHeader(city = self.__epw.location.city, frequency ='NA', \
-                analysisPeriod = None, \
-                dataType = "Sky Patches' Diffues Radiation", unit = "Wh")
+        difHeader = core.LBHeader(city=self.__epw.location.city, frequency='NA',
+                                  analysisPeriod=None,
+                                  dataType="Sky Patches' Diffues Radiation",
+                                  unit="Wh")
 
-        dirHeader = core.LBHeader(city = self.__epw.location.city, frequency ='NA', \
-                analysisPeriod = None, \
-                dataType = "Sky Patches' Direct Radiation", unit = "Wh")
+        dirHeader = core.LBHeader(city=self.__epw.location.city, frequency='NA',
+                                  analysisPeriod=None,
+                                  dataType="Sky Patches' Direct Radiation",
+                                  unit="Wh")
 
-        totalHeader = core.LBHeader(city = self.__epw.location.city, frequency ='NA', \
-                analysisPeriod = None, \
-                dataType = "Sky Patches' Total Radiation", unit = "Wh")
+        totalHeader = core.LBHeader(city=self.__epw.location.city,
+                                    frequency='NA', analysisPeriod=None,
+                                    dataType="Sky Patches' Total Radiation",
+                                    unit="Wh")
 
         # create an empty data list with the header
         __skyVectors = skyvector.Skyvectors(self.__skyDensity)
 
         self.__results = {}
 
-        self.__results['diffuse'] = core.DataList(header =difHeader)
-        self.__results['direct'] = core.DataList(header =dirHeader)
-        self.__results['total'] = core.DataList(header =totalHeader)
+        self.__results['diffuse'] = core.DataList(header=difHeader)
+        self.__results['direct'] = core.DataList(header=dirHeader)
+        self.__results['total'] = core.DataList(header=totalHeader)
 
         for patchNumber in range(self.numberOfPatches):
 
             __diff = __cumulativeRaditionValues["diffuse"][patchNumber] if diffuse else 0
             __dir = __cumulativeRaditionValues["direct"][patchNumber] if direct else 0
 
-            self.__results['diffuse'].append(core.LBPatchData( __diff, __skyVectors[patchNumber]))
+            self.__results['diffuse'].append(core.LBPatchData(__diff, __skyVectors[patchNumber]))
 
-            self.__results['direct'].append(core.LBPatchData( __dir, __skyVectors[patchNumber]))
+            self.__results['direct'].append(core.LBPatchData(__dir, __skyVectors[patchNumber]))
 
-            self.__results['total'].append(core.LBPatchData( __diff + __dir, __skyVectors[patchNumber]))
+            self.__results['total'].append(core.LBPatchData(__diff + __dir, __skyVectors[patchNumber]))
 
         del(__cumulativeRaditionValues)
 
-    def mtx2json(self):
-        "convert sky matrix files to json object"
-        raise NotImplementedError()
+    def toJson(self):
+        """Convert sky matrix files to json object."""
+        raise NotImplementedError
 
     def __repr__(self):
-        return "Ladybug.SkyMatrix > %s"%self.__epw.location.city
+        """Sky matrix representation."""
+        return "Ladybug.SkyMatrix > %s" % self.__epw.location.city
