@@ -437,8 +437,10 @@ class Location:
 class LBData:
     """Ladybug data point."""
 
+    __slots__ = ("value", "datetime")
+
     # TODO: Change value to be an object from it's data type
-    #       Check datatype.py for available datatypes
+    # Check datatype.py for available datatypes
     def __init__(self, value, dateTime):
         """Create Ladybug data point."""
         self.datetime = dateTime

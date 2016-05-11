@@ -2,21 +2,26 @@
 # changes to this file will be ignored and won't be synced with github
 # write your testunits under .\tests folder
 
-from ladybug.comfort.pmv import PMV
+import time
+from ladybug.epw import EPW
 
-airTemp = [20, 21, 22, 23, 24]
-relHumid = [75, 70, 60, 50, 75]
-myPmvComf = PMV(airTemp, [], [], relHumid)
-print myPmvComf.ppd
-
-myPmvComf = PMV.fromIndividualValues(24, 24, 0.5, 80, 1.1, 0.5)
-print myPmvComf.pmv
-myAirTemp = myPmvComf.calcMissingPMVInput(0.5, 0)
-print myAirTemp
-print myPmvComf.pmv
-print myPmvComf.findPMV(10)
-
-
-# epwFileAddress = "C:\ladybug\New_York_J_F_Kennedy_IntL_Ar_NY_USA\New_York_J_F_Kennedy_IntL_Ar_NY_USA.epw"
-# myPmvComf = PMV.fromEPWFile(epwFileAddress)
-# print myPmvComf.ppd
+st = time.time()
+print "loading the weather file..."
+epwData = EPW(epwFileAddress=r"c:\EnergyPlusV8-3-0\WeatherData\USA_CA_San.Francisco.Intl.AP.724940_TMY3.epw")
+epwData.location
+epwData.dryBulbTemperature.values(header=True)
+epwData.dewPointTemperature.values(header=True)
+epwData.relativeHumidity.values(header=True)
+epwData.windDirection.values(header=True)
+epwData.windSpeed.values(header=True)
+epwData.directNormalRadiation.values(header=True)
+epwData.diffuseHorizontalRadiation.values(header=True)
+epwData.globalHorizontalRadiation.values(header=True)
+epwData.directNormalIlluminance.values(header=True)
+epwData.diffuseHorizontalIlluminance.values(header=True)
+epwData.globalHorizontalIlluminance.values(header=True)
+epwData.totalSkyCover.values(header=True)
+epwData.liquidPrecipitationDepth.values(header=True)
+epwData.atmosphericStationPressure.values(header=True)
+epwData.years.values(header=True)
+print time.time() - st

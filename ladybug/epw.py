@@ -46,10 +46,10 @@ class EPW:
     def importData(self, onlyImportLocation=False):
         """
         imports data from an epw file.
+
         Hourly data will be saved in self.data and location data
         will be saved in self.location
         """
-
         with open(self.fileAddress, 'rb') as epwin:
             epwlines = epwin.readlines()
 
@@ -70,7 +70,9 @@ class EPW:
             self.stationLocation.elevation = float(locationData[9])
 
             self.__isLocationLoaded = True
-            if onlyImportLocation: return
+
+        if onlyImportLocation:
+            return
 
         # TODO: create an object from the header and analyze data
         # get epw header
@@ -82,9 +84,10 @@ class EPW:
         for fieldNumber in range(0, self.numOfFields):
             # create header
             field = EPWDataTypes.get_fieldByNumber(fieldNumber)
-            header = core.LBHeader(city = self.stationLocation.city, frequency ='Hourly', \
-                    analysisPeriod = analysisPeriod, \
-                    dataType = field.name, unit =field.units)
+            header = core.LBHeader(city=self.stationLocation.city,
+                                   frequency='Hourly',
+                                   analysisPeriod=analysisPeriod,
+                                   dataType=field.name, unit=field.units)
 
             # create an empty data list with the header
             self.__data[fieldNumber] = core.DataList(header =header)
@@ -107,7 +110,8 @@ class EPW:
         self.__isDataLoaded = True
 
     def __get_dataByField(self, fieldNumber):
-        """Return a data field by field number
+        """Return a data field by field number.
+
         This is a useful method to get the values for fields that Ladybug currently
         doesn't import by default. You can find list of fields by typing EPWDataTypes.fields
 
@@ -117,7 +121,8 @@ class EPW:
         Returns:
             An annual Ladybug list
         """
-        if not self.isDataLoaded: self.importData()
+        if not self.isDataLoaded:
+            self.importData()
 
         # check input data
         if not 0 <= fieldNumber < self.numOfFields:
@@ -126,8 +131,8 @@ class EPW:
         return self.__data[fieldNumber]
 
     # TODO: Add utility library to check file path, filename, etc
-    def save(self, filePath = None, fileName = None):
-        """Save epw object as an epw file"""
+    def save(self, filePath=None, fileName=None):
+        """Save epw object as an epw file."""
         # check filePath
         if not filePath:
             filePath = self.filePath
@@ -138,7 +143,8 @@ class EPW:
         fullPath = os.path.join(filePath, fileName)
 
         # load data if it's  not loaded
-        if not self.isDataLoaded: self.importData()
+        if not self.isDataLoaded:
+            self.importData()
 
         # write the file
         with open(fullPath, 'wb') as modEpwFile:
@@ -211,18 +217,22 @@ class EPW:
         """
         return self.__get_dataByField(fieldNumber)
 
-    # TODO: Copy proper descriptions from epw documentation
     @property
     def years(self):
-        """Return years as a Ladybug Data List"""
+        """Return years as a Ladybug Data List."""
         return self.__get_dataByField(0)
 
     @property
     def dryBulbTemperature(self):
-        """Return annual Dry Bulb Temperature as a Ladybug Data List
+        """Return annual Dry Bulb Temperature as a Ladybug Data List.
 
-            This is the dry bulb temperature in C at the time indicated. Note that this is a full numeric field (i.e. 23.6) and not an integer representation with tenths. Valid values range from -70C to 70 C. Missing value for this field is 99.9
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the dry bulb temperature in C at the time indicated. Note that
+        this is a full numeric field (i.e. 23.6) and not an integer representation
+        with tenths. Valid values range from -70C to 70 C. Missing value for this
+        field is 99.9
+
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
+            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(6)
 
@@ -471,45 +481,58 @@ class EPW:
 
     @property
     def liquidPrecipitationQuantity(self):
-        """Return annual Liquid Precipitation Quantity as a Ladybug Data List
+        """Return annual Liquid Precipitation Quantity as a Ladybug Data List.
 
-            The period of accumulation (hr) for the liquid precipitation depth field. It is not currently used in EnergyPlus
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        The period of accumulation (hr) for the liquid precipitation depth field.
+        It is not currently used in EnergyPlus.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/
+            pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(34)
 
     def __getWEAHeader(self):
-        return  "place %s\n"%self.location.city + \
-                "latitude %.2f\n"%self.location.latitude + \
-                "longitude %.2f\n"%-self.location.longitude + \
-                "time_zone %d\n"%(-self.location.timeZone * 15) + \
-                "site_elevation %.1f\n"%self.location.elevation + \
-                "weather_data_file_units 1\n"
+        return "place %s\n" % self.location.city + \
+            "latitude %.2f\n" % self.location.latitude + \
+            "longitude %.2f\n" % -self.location.longitude + \
+            "time_zone %d\n" % (-self.location.timeZone * 15) + \
+            "site_elevation %.1f\n" % self.location.elevation + \
+            "weather_data_file_units 1\n"
 
-    def epw2wea(self, filePath = None):
-        """Write wea file from epw file
-            WEA carries radiation values from epw ans is what gendaymtx uses to generate the sky
-            I'm wrote my own implementation to avoid shipping epw2wea.exe file. Now epw2wea is
-            part of the Radiance distribution
+    def epw2wea(self, filePath=None):
+        """Write wea file from epw file.
+
+        WEA carries radiation values from epw ans is what gendaymtx uses to
+        generate the sky. I wrote my own implementation to avoid shipping
+        epw2wea.exe file. Now epw2wea is part of the Radiance distribution
         """
         if not filePath:
             filePath = self.fileAddress[:-3] + "wea"
 
         with open(filePath, "wb") as weaFile:
+            # write header
             weaFile.write(self.__getWEAHeader())
-            for dirRad, difRad in zip(self.directNormalRadiation, self.diffuseHorizontalRadiation):
-                line = "%d %d %.3f %d %d\n"%(dirRad.datetime.month, dirRad.datetime.day, dirRad.datetime.hour - 0.5, dirRad, difRad)
+            # write values
+            for dirRad, difRad in zip(self.directNormalRadiation,
+                                      self.diffuseHorizontalRadiation):
+                line = "%d %d %.3f %d %d\n" \
+                    % (dirRad.datetime.month,
+                       dirRad.datetime.day,
+                       dirRad.datetime.hour - 0.5,
+                       dirRad, difRad)
+
                 weaFile.write(line)
 
         return filePath
 
     def __repr__(self):
-        return "EPW Data [%s]"%self.stationLocation.city
+        """epw file representation."""
+        return "EPW file Data for [%s]" % self.location.city
+
 
 class EPWDataTypes:
-    """EPW weather file fields
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+    """EPW weather file fields.
 
+    Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
     """
     __fields = {
         0 : { 'name'  : 'Year',
