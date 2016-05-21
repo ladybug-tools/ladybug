@@ -1,233 +1,180 @@
+"""Ladybug data types."""
+from abc import ABCMeta, abstractmethod
 
-class DataPoint(object):
-    """ A Ladybug data point
 
-        Attributes:
-            value :<flot>, <integer>, <string> based on type
-            isEpwData: A boolean that indicates if the data is from an epw
-                file. Valid range for epw file can be differnt. For example
-                Temperature range in an ewp file is -70 C - 70 C (Default: False)
-            standard: class of SI or IP. (Default is SI)
-    """
+class DataTypeBase(object):
+    """Base type for data."""
 
-    def __init__(self, value, isEpwData = False, standard = None):
-        if not standard: standard = SI
-        self.value = value
+    __metaclass__ = ABCMeta
+    __slots__ = ('standard',)
+
+    def __init__(self, standard=None):
+        """Init DataType."""
         self.standard = standard
-        self.isEpwData = isEpwData
-
-        self.__typeErrorMsg = "%s is not a valid input type. " + \
-            "Input should be from %s"
-        self.__valueErrorMsg = "%s is not a valid input type. " + \
-            "Input should be between %s and %s"
-        self.__standardErrorMsg = "%s is not a valid standard type. " + \
-            "Valid standards are SI and IP"
-
-        #check validity of input
-        self.isValid(raiseException = True)
-
-    def isValid(self, raiseException = False):
-        """Check validity of input"""
-        if not(self.standard is IP or self.standard is SI):
-            raise Exception(self.__standardErrorMsg%self.standard)
-
-        if self.valueType:
-            try:
-                self.value = map(self.valueType, [self.value])[0]
-            except:
-                if raiseException:
-                    raise TypeError(self.__typeErrorMsg%(self.value, self.valueType))
-                return False #not a valid standard
-
-        #check if the valus is in range
-        if self.valueType is str: return True # if not a number return True
-
-        isValid = self.__isInRange
-        if not isValid and raiseException:
-            raise ValueError(self.__valueErrorMsg%(self.value, self.minimum, self.maximum))
-        else:
-            return isValid
 
     @property
-    def __isInRange(self):
-        """Retuen True is value is in range"""
-        return self.minimum <= self.value <= self.maximum
+    def unit(self):
+        """Return current Unit."""
+        if not self.standard:
+            return None
+        return self.unitSI if self.standard == 'SI' else \
+            self.unitIP
 
-    def get_valueBasedOnCurrentStandard(self, value, valueStandard):
-        """Return the value based on the current standard IP/SI
+    @abstractmethod
+    def toIP(self):
+        """Write a static method that converts a value from SI to IP."""
+        pass
 
-            This method makes it possible to set minimum and maximum values
-            with a single number in SI or IP
-        """
-        if valueStandard is self.standard:
-            return value # the standard is the same so return the same value
-        elif self.standard is SI:
-            #The value is in IP and should be converted to SI
-            return self.get_valueInSI(value)
-        elif self.standard is IP:
-            #The value is in SI and should be converted to IP
-            return self.get_valueInIP(value)
-
-    def convertToIP(self):
-        """Change to IP system
-
-            Warning: convertToIP only and only changes this value to IP
-        """
-        if self.standard is IP: return True
-        # If it's in SI change system and value
-        self.standard = IP
-        self.value = self.get_valueBasedOnCurrentStandard(self.value, SI)
-        return True
+    @abstractmethod
+    def toSI(self):
+        """Write a static method that converts a value from IP to SI."""
+        pass
 
     def convertToSI(self):
-        """Change to SI system
+        """Change value to SI."""
+        if self.standard == 'SI':
+            return
+        else:
+            self.standard = 'SI'
+            self.value = self.toSI(self.value)
 
-            Warning: convertToSI only and only changes this value to SI
-        """
-        if self.standard is SI: return True
-        # If it's in IP change system and value
-        self.standard = SI
-        self.value = self.get_valueBasedOnCurrentStandard(self.value, IP)
-        return True
+    def convertToIP(self):
+        """change value to IP."""
+        if self.standard == 'IP':
+            return
+        else:
+            self.standard = 'IP'
+            self.value = self.toIP(self.value)
 
-    def unit(self):
-        raise NotImplementedError
+    def isInRange(self, value, raiseException=False):
+        """check if the value is in range."""
+        _isInRange = self.minimum <= value <= self.maximum \
+            if self.standard == 'SI' \
+            else self.toIP(self.minimum) <= value <= self.toIP(self.maximum)
 
-    def valueType(self):
-        raise NotImplementedError
+        if _isInRange or not raiseException:
+            return _isInRange
+        else:
+            raise ValueError(
+                'Input should be between {0} and {1}'.format(self.minimum,
+                                                             self.maximum)
+            )
 
-    def minimum(self):
-        raise NotImplementedError
+    def fullString(self):
+        """Return value and units."""
+        return "{0} {1}".format(self.__repr__(),
+                                self.unit if self.unit else "")
 
-    def maximum(self):
-        raise NotImplementedError
+    def ToString(self):
+        """Overwrite .NET representation."""
+        return self.__repr__()
+
+    def __str__(self):
+        """Return string representation."""
+        return self.__repr__()
 
     def __repr__(self):
+        """Return string representation."""
         return str(self.value)
 
-class GenericData(DataPoint):
-    """Generic Data Point
 
-        Attributes:
-            value :<flot>, <integer>, <string> based on type
-            isEpwData: A boolean that indicates if the data is from an epw
-                file. Valid range for epw file can be differnt. For example
-                Temperature range in an ewp file is -70 C - 70 C (Default: False)
-            standard: SI or IP. (Default is SI)
-            def __init__(self, value, isEpwData = False, standard= None):
-                DataPoint.__init__(self, value, isEpwData, standard)
-                #check validity of input
-                self.isValid(valueType = self.valueType, raiseException = True)
+# TODO: Add methods for toKelvin
+class Temperature(DataTypeBase):
+    """Base type for temperature.
+
+    Attributes:
+        value: Input value
+        standard: 'SI' or 'IP' (Default: 'SI')
     """
-    def __init__(self, value, isEpwData = False, standard= None):
-        DataPoint.__init__(self, value, isEpwData, standard)
+
+    minimum = float('-inf')
+    maximum = float('inf')
+    valueType = float
+    unitSI = 'C'
+    unitIP = 'F'
+    __slots__ = ('__value',)
+
+    def __init__(self, value, standard='SI'):
+        """Init class."""
+        DataTypeBase.__init__(self, standard)
+        self.value = value
 
     @property
-    def unit(self):
-        return ""
+    def value(self):
+        """Get/set value."""
+        return self.__value
 
-    @property
-    def valueType(self):
-        return str
-
-    @property
-    def minimum(self):
-        """Return minimum valid value"""
-        return float("-inf")
-
-    @property
-    def maximum(self):
-        return float("inf")
+    @value.setter
+    def value(self, v):
+        """Set value."""
+        self.isInRange(map(self.valueType, (v,))[0], True)
+        self.__value = v
 
     @staticmethod
-    def get_valueInIP(value):
-        """return the value in IP assuming input value is in SI"""
-        return value
-
-    @staticmethod
-    def get_valueInSI(value):
-        """return the value in SI assuming input value is in IP"""
-        return value
-
-class Temperature(DataPoint):
-    """Base type for temperature"""
-
-    def __init__(self, value, isEpwData = False, standard= None):
-        DataPoint.__init__(self, value, isEpwData, standard)
-
-    @property
-    def unit(self):
-        if self.standard is SI: return "C"
-        elif self.standard is IP: return "F"
-
-    @property
-    def valueType(self):
-        return float
-
-    @property
-    def minimum(self):
-        """Return minimum valid value"""
-        if self.isEpwData:
-            return self.get_valueBasedOnCurrentStandard(-70, SI)
-        else:
-            return float("-inf")
-
-    @property
-    def maximum(self):
-        """Return maximum valid value"""
-        if self.isEpwData:
-            return self.get_valueBasedOnCurrentStandard(70, SI)
-        else:
-            return float("inf")
-
-    @staticmethod
-    def get_valueInIP(value):
-        """return the value in F assuming input value is in C"""
+    def toIP(value):
+        """Return the value in F assuming input value is in C."""
         return value * 9 / 5 + 32
 
     @staticmethod
-    def get_valueInSI(value):
-        """return the value in C assuming input value is in F"""
+    def toSI(value):
+        """Return the value in C assuming input value is in F."""
         return (value - 32) * 5 / 9
 
-class RelativeHumidity(DataPoint):
-    """Base type for Relative Humidity"""
 
-    def __init__(self, value, isEpwData = False, standard= None):
-        DataPoint.__init__(self, value, isEpwData, standard)
+class DryBulbTemperature(Temperature):
+    """Dry bulb temperature.
+
+    Attributes:
+        value: Input value
+        standard: 'SI' or 'IP' (Default: 'SI')
+    """
+
+    minimum = -70
+    maximum = 70
+    __slots__ = ()
+
+    def __init__(self, value, standard='SI'):
+        """Init class."""
+        Temperature.__init__(self, value, standard)
+
+
+class RelativeHumidity(DataTypeBase):
+    """Relative Humidity.
+
+    Attributes:
+        value: Input value
+        standard: 'SI' or 'IP' (Default: 'SI')
+    """
+
+    minimum = 0
+    maximum = 100
+    valueType = float
+    unitSI = '%'
+    unitIP = '%'
+    __slots__ = ('__value',)
+
+    def __init__(self, value, standard='SI'):
+        """Init class."""
+        DataTypeBase.__init__(self, standard)
+        self.value = value
 
     @property
-    def unit(self):
-        return "%"
+    def value(self):
+        """Get/set value."""
+        return self.__value
 
-    @property
-    def valueType(self):
-        return float
-
-    @property
-    def minimum(self):
-        """Return minimum valid value"""
-        return 0
-
-    @property
-    def maximum(self):
-        """Return maximum valid value"""
-        return 100
+    @value.setter
+    def value(self, v):
+        """Set value."""
+        self.isInRange(map(self.valueType, (v,))[0], True)
+        self.__value = v
 
     @staticmethod
-    def get_valueInIP(value):
-        """return the value in IP assuming input value is in SI"""
+    def toIP(value):
+        """Return the value in IP assuming input value is in SI."""
         return value
 
     @staticmethod
-    def get_valueInSI(value):
-        """return the value in SI assuming input value is in IP"""
+    def toSI(value):
+        """Return the value in SI assuming input value is in IP."""
         return value
-
-class SI(object):
-    def __repr__():
-        return "SI"
-
-class IP(object):
-    def __repr__():
-        return "IP"

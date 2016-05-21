@@ -1,13 +1,12 @@
 ﻿import os
 import core
 
-class EPW:
+
+class EPW(object):
     def __init__(self, epwFileAddress=None):
-        """
-        Import epw data from a local epw file.
+        """Import epw data from a local epw file.
 
         epwFileAddress: Local file address to an epw file
-
         """
         if not epwFileAddress:
             return
@@ -21,15 +20,17 @@ class EPW:
 
     @property
     def isDataLoaded(self):
+        """Return True if weather data is loaded."""
         return self.__isDataLoaded
 
     @property
     def isLocationLoaded(self):
+        """Return True if location data is loaded."""
         return self.__isLocationLoaded
 
     @staticmethod
     def checkEpwFileAddress(epwFileAddress):
-        """ Checks the path and checks the type for an epw file"""
+        """Check path and type for an epw file."""
         if not os.path.isfile(epwFileAddress):
             raise Exception(epwFileAddress + ' is not a valid address.')
         if not epwFileAddress.lower().endswith('epw'):
@@ -38,14 +39,14 @@ class EPW:
 
     @property
     def location(self):
+        """Return location data."""
         if not self.isLocationLoaded:
-            self.importData(True)
+            self.importData(onlyImportLocation=True)
         return self.stationLocation
 
     # TODO: import EPW header. Currently I just ignore header data
     def importData(self, onlyImportLocation=False):
-        """
-        imports data from an epw file.
+        """Import data from an epw file.
 
         Hourly data will be saved in self.data and location data
         will be saved in self.location
@@ -90,7 +91,7 @@ class EPW:
                                    dataType=field.name, unit=field.units)
 
             # create an empty data list with the header
-            self.__data[fieldNumber] = core.DataList(header =header)
+            self.__data[fieldNumber] = core.DataList(header=header)
 
         for line in epwlines[8:]:
             data = line.strip().split(',')
@@ -319,163 +320,163 @@ class EPW:
 
     @property
     def globalHorizontalIlluminance(self):
-        """Return annual Global Horizontal Illuminance as a Ladybug Data List
+        """Return annual Global Horizontal Illuminance as a Ladybug Data List.
 
-            This is the Global Horizontal Illuminance in lux. (Average total amount of direct and diffuse illuminance in hundreds of lux received on a horizontal surface during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 999999 and will be considered missing if greater than or equal to 999900.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Global Horizontal Illuminance in lux. (Average total amount of direct and diffuse illuminance in hundreds of lux received on a horizontal surface during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 999999 and will be considered missing if greater than or equal to 999900.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(16)
 
     @property
     def directNormalIlluminance(self):
-        """Return annual Direct Normal Illuminance as a Ladybug Data List
+        """Return annual Direct Normal Illuminance as a Ladybug Data List.
 
-            This is the Direct Normal Illuminance in lux. (Average amount of illuminance in hundreds of lux received directly from the solar disk on a surface perpendicular to the sun's rays, during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 999999 and will be considered missing if greater than or equal to 999900.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Direct Normal Illuminance in lux. (Average amount of illuminance in hundreds of lux received directly from the solar disk on a surface perpendicular to the sun's rays, during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 999999 and will be considered missing if greater than or equal to 999900.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(17)
 
     @property
     def diffuseHorizontalIlluminance(self):
-        """Return annual Diffuse Horizontal Illuminance as a Ladybug Data List
+        """Return annual Diffuse Horizontal Illuminance as a Ladybug Data List.
 
-            This is the Diffuse Horizontal Illuminance in lux. (Average amount of illuminance in hundreds of lux received from the sky (excluding the solar disk) on a horizontal surface during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 999999 and will be considered missing if greater than or equal to 999900.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Diffuse Horizontal Illuminance in lux. (Average amount of illuminance in hundreds of lux received from the sky (excluding the solar disk) on a horizontal surface during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 999999 and will be considered missing if greater than or equal to 999900.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(18)
 
     @property
     def zenithLuminance(self):
-        """Return annual Zenith Luminance as a Ladybug Data List
+        """Return annual Zenith Luminance as a Ladybug Data List.
 
-            This is the Zenith Illuminance in Cd/m2. (Average amount of luminance at the sky's zenith in tens of Cd/m2 during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 9999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Zenith Illuminance in Cd/m2. (Average amount of luminance at the sky's zenith in tens of Cd/m2 during the number of minutes preceding the time indicated.) It is not currently used in EnergyPlus calculations. It should have a minimum value of 0; missing value for this field is 9999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(19)
 
     @property
     def windDirection(self):
-        """Return annual Wind Direction as a Ladybug Data List
+        """Return annual Wind Direction as a Ladybug Data List.
 
-            This is the Wind Direction in degrees where the convention is that North=0.0, East=90.0, South=180.0, West=270.0. (Wind direction in degrees at the time indicated. If calm, direction equals zero.) Values can range from 0 to 360. Missing value is 999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the Wind Direction in degrees where the convention is that North=0.0, East=90.0, South=180.0, West=270.0. (Wind direction in degrees at the time indicated. If calm, direction equals zero.) Values can range from 0 to 360. Missing value is 999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(20)
 
     @property
     def windSpeed(self):
-        """Return annual Wind Speed as a Ladybug Data List
+        """Return annual Wind Speed as a Ladybug Data List.
 
-            This is the wind speed in m/sec. (Wind speed at time indicated.) Values can range from 0 to 40. Missing value is 999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the wind speed in m/sec. (Wind speed at time indicated.) Values can range from 0 to 40. Missing value is 999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(21)
 
     @property
     def totalSkyCover(self):
-        """Return annual Total Sky Cover as a Ladybug Data List
+        """Return annual Total Sky Cover as a Ladybug Data List.
 
-            This is the value for total sky cover (tenths of coverage). (i.e. 1 is 1/10 covered. 10 is total coverage). (Amount of sky dome in tenths covered by clouds or obscuring phenomena at the hour indicated at the time indicated.) Minimum value is 0; maximum value is 10; missing value is 99.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the value for total sky cover (tenths of coverage). (i.e. 1 is 1/10 covered. 10 is total coverage). (Amount of sky dome in tenths covered by clouds or obscuring phenomena at the hour indicated at the time indicated.) Minimum value is 0; maximum value is 10; missing value is 99.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(22)
 
     @property
     def opaqueSkyCover(self):
-        """Return annual Opaque Sky Cover as a Ladybug Data List
+        """Return annual Opaque Sky Cover as a Ladybug Data List.
 
-            This is the value for opaque sky cover (tenths of coverage). (i.e. 1 is 1/10 covered. 10 is total coverage). (Amount of sky dome in tenths covered by clouds or obscuring phenomena that prevent observing the sky or higher cloud layers at the time indicated.) This is not used unless the field for Horizontal Infrared Radiation Intensity is missing and then it is used to calculate Horizontal Infrared Radiation Intensity. Minimum value is 0; maximum value is 10; missing value is 99.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the value for opaque sky cover (tenths of coverage). (i.e. 1 is 1/10 covered. 10 is total coverage). (Amount of sky dome in tenths covered by clouds or obscuring phenomena that prevent observing the sky or higher cloud layers at the time indicated.) This is not used unless the field for Horizontal Infrared Radiation Intensity is missing and then it is used to calculate Horizontal Infrared Radiation Intensity. Minimum value is 0; maximum value is 10; missing value is 99.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(23)
 
     @property
     def visibility(self):
-        """Return annual Visibility as a Ladybug Data List
+        """Return annual Visibility as a Ladybug Data List.
 
-            This is the value for visibility in km. (Horizontal visibility at the time indicated.) It is not currently used in EnergyPlus calculations. Missing value is 9999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the value for visibility in km. (Horizontal visibility at the time indicated.) It is not currently used in EnergyPlus calculations. Missing value is 9999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(24)
 
     @property
     def ceilingHeight(self):
-        """Return annual Ceiling Height as a Ladybug Data List
+        """Return annual Ceiling Height as a Ladybug Data List.
 
-            This is the value for ceiling height in m. (77777 is unlimited ceiling height. 88888 is cirroform ceiling.) It is not currently used in EnergyPlus calculations. Missing value is 99999
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the value for ceiling height in m. (77777 is unlimited ceiling height. 88888 is cirroform ceiling.) It is not currently used in EnergyPlus calculations. Missing value is 99999
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(25)
 
     @property
     def presentWeatherObservation(self):
-        """Return annual Present Weather Observation as a Ladybug Data List
+        """Return annual Present Weather Observation as a Ladybug Data List.
 
-            If the value of the field is 0, then the observed weather codes are taken from the following field. If the value of the field is 9, then "missing" weather is assumed. Since the primary use of these fields (Present Weather Observation and Present Weather Codes) is for rain/wet surfaces, a missing observation field or a missing weather code implies no rain.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        If the value of the field is 0, then the observed weather codes are taken from the following field. If the value of the field is 9, then "missing" weather is assumed. Since the primary use of these fields (Present Weather Observation and Present Weather Codes) is for rain/wet surfaces, a missing observation field or a missing weather code implies no rain.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(26)
 
     @property
     def presentWeatherCodes(self):
-        """Return annual Present Weather Codes as a Ladybug Data List
+        """Return annual Present Weather Codes as a Ladybug Data List.
 
-            The present weather codes field is assumed to follow the TMY2 conventions for this field. Note that though this field may be represented as numeric (e.g. in the CSV format), it is really a text field of 9 single digits. This convention along with values for each "column" (left to right) is presented in Table 16. Note that some formats (e.g. TMY) does not follow this convention - as much as possible, the present weather codes are converted to this convention during WeatherConverter processing. Also note that the most important fields are those representing liquid precipitation - where the surfaces of the building would be wet. EnergyPlus uses "Snow Depth" to determine if snow is on the ground.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        The present weather codes field is assumed to follow the TMY2 conventions for this field. Note that though this field may be represented as numeric (e.g. in the CSV format), it is really a text field of 9 single digits. This convention along with values for each "column" (left to right) is presented in Table 16. Note that some formats (e.g. TMY) does not follow this convention - as much as possible, the present weather codes are converted to this convention during WeatherConverter processing. Also note that the most important fields are those representing liquid precipitation - where the surfaces of the building would be wet. EnergyPlus uses "Snow Depth" to determine if snow is on the ground.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(27)
 
     @property
     def precipitableWater(self):
-        """Return annual Precipitable Water as a Ladybug Data List
+        """Return annual Precipitable Water as a Ladybug Data List.
 
-            This is the value for Precipitable Water in mm. (This is not rain - rain is inferred from the PresWeathObs field but a better result is from the Liquid Precipitation Depth field)). It is not currently used in EnergyPlus calculations (primarily due to the unreliability of the reporting of this value). Missing value is 999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the value for Precipitable Water in mm. (This is not rain - rain is inferred from the PresWeathObs field but a better result is from the Liquid Precipitation Depth field)). It is not currently used in EnergyPlus calculations (primarily due to the unreliability of the reporting of this value). Missing value is 999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(28)
 
     @property
     def aerosolOpticalDepth(self):
-        """Return annual Aerosol Optical Depth as a Ladybug Data List
+        """Return annual Aerosol Optical Depth as a Ladybug Data List.
 
-            This is the value for Aerosol Optical Depth in thousandths. It is not currently used in EnergyPlus calculations. Missing value is .999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the value for Aerosol Optical Depth in thousandths. It is not currently used in EnergyPlus calculations. Missing value is .999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(29)
 
     @property
     def snowDepth(self):
-        """Return annual Snow Depth as a Ladybug Data List
+        """Return annual Snow Depth as a Ladybug Data List.
 
-            This is the value for Snow Depth in cm. This field is used to tell when snow is on the ground and, thus, the ground reflectance may change. Missing value is 999.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the value for Snow Depth in cm. This field is used to tell when snow is on the ground and, thus, the ground reflectance may change. Missing value is 999.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(30)
 
     @property
     def daysSinceLastSnowfall(self):
-        """Return annual Days Since Last Snow Fall as a Ladybug Data List
+        """Return annual Days Since Last Snow Fall as a Ladybug Data List.
 
-            This is the value for Days Since Last Snowfall. It is not currently used in EnergyPlus calculations. Missing value is 99.
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        This is the value for Days Since Last Snowfall. It is not currently used in EnergyPlus calculations. Missing value is 99.
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(31)
 
     @property
     def albedo(self):
-        """Return annual Albedo values as a Ladybug Data List
+        """Return annual Albedo values as a Ladybug Data List.
 
-            The ratio (unitless) of reflected solar irradiance to global horizontal irradiance. It is not currently used in EnergyPlus
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        The ratio (unitless) of reflected solar irradiance to global horizontal irradiance. It is not currently used in EnergyPlus
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(32)
 
     @property
     def liquidPrecipitationDepth(self):
-        """Return annual liquid precipitation depth as a Ladybug Data List
+        """Return annual liquid precipitation depth as a Ladybug Data List.
 
-            The amount of liquid precipitation (mm) observed at the indicated time for the period indicated in the liquid precipitation quantity field. If this value is not missing, then it is used and overrides the "precipitation" flag as rainfall. Conversely, if the precipitation flag shows rain and this field is missing or zero, it is set to 1.5 (mm).
-            Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        The amount of liquid precipitation (mm) observed at the indicated time for the period indicated in the liquid precipitation quantity field. If this value is not missing, then it is used and overrides the "precipitation" flag as rainfall. Conversely, if the precipitation flag shows rain and this field is missing or zero, it is set to 1.5 (mm).
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self.__get_dataByField(33)
 
@@ -524,6 +525,10 @@ class EPW:
 
         return filePath
 
+    def ToString(self):
+        """Overwrite .NET ToString."""
+        return self.__repr__()
+
     def __repr__(self):
         """epw file representation."""
         return "EPW file Data for [%s]" % self.location.city
@@ -532,222 +537,226 @@ class EPW:
 class EPWDataTypes:
     """EPW weather file fields.
 
-    Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+    Read more at:
+    https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/
+        pdfs_v8.4.0/AuxiliaryPrograms.pdf
+    (Chapter 2.9.1)
     """
+
     __fields = {
-        0 : { 'name'  : 'Year',
-                'type' : int
+        0: {'name': 'Year',
+            'type': int
             },
 
-        1 : { 'name'  : 'Month',
-                'type' : int
+        1: {'name': 'Month',
+            'type': int
             },
 
-        2 : { 'name'  : 'Day',
-                'type' : int
+        2: {'name': 'Day',
+            'type': int
             },
 
-        3 : { 'name'  : 'Hour',
-                'type' : int
+        3: {'name': 'Hour',
+            'type': int
             },
 
-        4 : { 'name'  : 'Minute',
-                'type' : int
+        4: {'name': 'Minute',
+            'type': int
             },
 
-        5 : { 'name'  : 'Uncertainty Flags',
-                'type' : str
+        5: {'name': 'Uncertainty Flags',
+            'type': str
             },
 
-        6 : { 'name'  : 'Dry Bulb Temperature',
-                'type' : float,
-                'units' : 'C',
-                'min'   : -70,
-                'max'   : 70,
-                'missing' : 99.9
+        6: {'name': 'Dry Bulb Temperature',
+            'type': float,
+            'units': 'C',
+            'min': -70,
+            'max': 70,
+            'missing': 99.9
             },
 
-        7 : { 'name' : 'Dew Point Temperature',
-                'type' : float,
-                'units' : 'C',
-                'min' : -70,
-                'max' : 70,
-                'missing' : 99.9
+        7: {'name': 'Dew Point Temperature',
+            'type': float,
+            'units': 'C',
+            'min': -70,
+            'max': 70,
+            'missing': 99.9
             },
 
-        8 : { 'name' : 'Relative Humidity',
-                'type' : int,
-                'missing' : 999,
-                'min' : 0,
-                'max' : 110
+        8: {'name': 'Relative Humidity',
+            'type': int,
+            'missing': 999,
+            'min': 0,
+            'max': 110
             },
 
-        9 : { 'name' : 'Atmospheric Station Pressure',
-                'type' : int,
-                'units' : 'Pa',
-                'missing' : 999999,
-                'min' : 31000,
-                'max' : 120000
+        9: {'name': 'Atmospheric Station Pressure',
+            'type': int,
+            'units': 'Pa',
+            'missing': 999999,
+            'min': 31000,
+            'max': 120000
             },
 
-        10 : { 'name' : 'Extraterrestrial Horizontal Radiation',
-                'type' : int,
-                'units' : 'Wh/m2',
-                'missing' :  9999,
-                'min' : 0
-            },
+        10: {'name': 'Extraterrestrial Horizontal Radiation',
+             'type': int,
+             'units': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
+             },
 
-        11 : { 'name' : 'Extraterrestrial Direct Normal Radiation',
-                'type' : int,
-                'units' :  'Wh/m2',
-                'missing' : 9999,
-                'min' : 0
-            },
+        11: {'name': 'Extraterrestrial Direct Normal Radiation',
+             'type': int,
+             'units': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
+             },
 
-        12 : { 'name' : 'Horizontal Infrared Radiation Intensity',
-                'type' : int,
-                'units' : 'Wh/m2',
-                'missing' : 9999,
-                'min' : 0
-            },
+        12: {'name': 'Horizontal Infrared Radiation Intensity',
+             'type': int,
+             'units': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
+             },
 
-        13 : { 'name' : 'Global Horizontal Radiation',
-                'type' : int,
-                'units' : 'Wh/m2',
-                'missing' : 9999,
-                'min' : 0
-            },
+        13: {'name': 'Global Horizontal Radiation',
+             'type': int,
+             'units': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
+             },
 
-        14 : { 'name' : 'Direct Normal Radiation',
-                'type' : int,
-                'units' : 'Wh/m2',
-                'missing' : 9999,
-                'min' : 0
-            },
+        14: {'name': 'Direct Normal Radiation',
+             'type': int,
+             'units': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
+             },
 
-        15 : { 'name' : 'Diffuse Horizontal Radiation',
-                'type' : int,
-                'units' : 'Wh/m2',
-                'missing' : 9999,
-                'min' : 0
-            },
+        15: {'name': 'Diffuse Horizontal Radiation',
+             'type': int,
+             'units': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
+             },
 
-        16 : { 'name' : 'Global Horizontal Illuminance',
-                'type' : int,
-                'units' : 'lux',
-                'missing' : 999999, # note will be missing if >= 999900
-                'min' : 0
-            },
+        16: {'name': 'Global Horizontal Illuminance',
+             'type': int,
+             'units': 'lux',
+             'missing': 999999,  # note will be missing if >= 999900
+             'min': 0
+             },
 
-        17 : { 'name' : 'Direct Normal Illuminance',
-                'type' : int,
-                'units' : 'lux',
-                'missing' : 999999, # note will be missing if >= 999900
-                'min' : 0
-            },
+        17: {'name': 'Direct Normal Illuminance',
+             'type': int,
+             'units': 'lux',
+             'missing': 999999,  # note will be missing if >= 999900
+             'min': 0
+             },
 
-        18 : { 'name' : 'Diffuse Horizontal Illuminance',
-                'type' : int,
-                'units' : 'lux',
-                'missing' : 999999, # note will be missing if >= 999900
-                'min' : 0
-            },
+        18: {'name': 'Diffuse Horizontal Illuminance',
+             'type': int,
+             'units': 'lux',
+             'missing': 999999,  # note will be missing if >= 999900
+             'min': 0
+             },
 
-        19 : { 'name' : 'Zenith Luminance',
-                'type' : int,
-                'units' : 'Cd/m2',
-                'missing' : 9999, # note will be missing if >= 9999
-                'min' : 0
-            },
+        19: {'name': 'Zenith Luminance',
+             'type': int,
+             'units': 'Cd/m2',
+             'missing': 9999,  # note will be missing if >= 9999
+             'min': 0
+             },
 
-        20 : { 'name' : 'Wind Direction',
-                'type' : int,
-                'units' : 'degrees',
-                'missing' : 999,
-                'min' : 0,
-                'max' : 360
-            },
+        20: {'name': 'Wind Direction',
+             'type': int,
+             'units': 'degrees',
+             'missing': 999,
+             'min': 0,
+             'max': 360
+             },
 
-        21 : { 'name' : 'Wind Speed',
-                'type' : float,
-                'units' : 'm/s',
-                'missing' : 999,
-                'min' : 0,
-                'max' : 40
-            },
+        21: {'name': 'Wind Speed',
+             'type': float,
+             'units': 'm/s',
+             'missing': 999,
+             'min': 0,
+             'max': 40
+             },
 
-        22 : { 'name' : 'Total Sky Cover', # (used if Horizontal IR Intensity missing)
-                'type' : int,
-                'missing' : 99,
-                'min' : 0,
-                'max' : 10
-            },
+        22: {'name': 'Total Sky Cover',  # (used if Horizontal IR Intensity missing)
+             'type': int,
+             'missing': 99,
+             'min': 0,
+             'max': 10
+             },
 
-        23 : { 'name' : 'Opaque Sky Cover', #(used if Horizontal IR Intensity missing)
-                'type' : int,
-                'missing' : 99
-            },
+        23: {'name': 'Opaque Sky Cover',  # (used if Horizontal IR Intensity missing)
+             'type': int,
+             'missing': 99
+             },
 
-        24 : { 'name' : 'Visibility',
-                'type' : float,
-                'units' : 'km',
-                'missing' : 9999
-            },
+        24: {'name': 'Visibility',
+             'type': float,
+             'units': 'km',
+             'missing': 9999
+             },
 
-        25 : { 'name' : 'Ceiling Height',
-                'type' : int,
-                'units' : 'm',
-                'missing' : 99999
-            },
+        25: {'name': 'Ceiling Height',
+             'type': int,
+             'units': 'm',
+             'missing': 99999
+             },
 
-        26 : { 'name' : 'Present Weather Observation',
-                'type' : int
-            },
+        26: {'name': 'Present Weather Observation',
+             'type': int
+             },
 
-        27 : { 'name' : 'Present Weather Codes',
-                'type' : int
-            },
+        27: {'name': 'Present Weather Codes',
+             'type': int
+             },
 
-        28 : { 'name' : 'Precipitable Water',
-                'type' : int,
-                'units' : 'mm',
-                'missing' : 999
-            },
+        28: {'name': 'Precipitable Water',
+             'type': int,
+             'units': 'mm',
+             'missing': 999
+             },
 
-        29 : { 'name' : 'Aerosol Optical Depth',
-                'type' : float,
-                'units' : 'thousandths',
-                'missing' : 999
-            },
+        29: {'name': 'Aerosol Optical Depth',
+             'type': float,
+             'units': 'thousandths',
+             'missing': 999
+             },
 
-        30 : { 'name' : 'Snow Depth',
-                'type' : int,
-                'units' : 'cm',
-                'missing' : 999
-            },
+        30: {'name': 'Snow Depth',
+             'type': int,
+             'units': 'cm',
+             'missing': 999
+             },
 
-        31 : { 'name' :  'Days Since Last Snowfall',
-                'type' : int,
-                'missing' : 99
-            },
+        31: {'name': 'Days Since Last Snowfall',
+             'type': int,
+             'missing': 99
+             },
 
-        32 : { 'name' :  'Albedo',
-                'type' : float,
-                'missing': 999
-            },
+        32: {'name': 'Albedo',
+             'type': float,
+             'missing': 999
+             },
 
-        33 : { 'name' :  'Liquid Precipitation Depth',
-                'type' : float,
-                'units': 'mm',
-                'missing': 999
-            },
+        33: {'name': 'Liquid Precipitation Depth',
+             'type': float,
+             'units': 'mm',
+             'missing': 999
+             },
 
-        34 : { 'name' :  'Liquid Precipitation Quantity',
-                'type' : float,
-                'units': 'hr',
-                'missing': 99
-            }
-        }
+        34: {'name': 'Liquid Precipitation Quantity',
+             'type': float,
+             'units': 'hr',
+             'missing': 99
+             }
+    }
 
     class EPWField:
         def __init__(self, dataDict):
@@ -759,54 +768,57 @@ class EPWDataTypes:
                 self.units = 'N/A'
 
     @classmethod
-    def fieldNumbers(cls):
+    def fields(cls):
+        """Print fields."""
         for key, value in cls.__fields.items():
             print key, value['name']
 
     @classmethod
-    def fields(cls):
-        """Return fields as a dictionary
-            If you are looking for field numbers try fieldNumbers method instead
+    def fieldsDictionary(cls):
+        """Return fields as a dictionary.
+
+        If you are looking for field numbers try fieldNumbers method instead
         """
         return cls.__fields
 
     @classmethod
-    def get_fieldByNumber(cls, fieldNumber):
-        """Return an EPWField based on field number
-            0 Year
-            1 Month
-            2 Day
-            3 Hour
-            4 Minute
-            -
-            6 Dry Bulb Temperature
-            7 Dew Point Temperature
-            8 Relative Humidity
-            9 Atmospheric Station Pressure
-            10 Extraterrestrial Horizontal Radiation
-            11 Extraterrestrial Direct Normal Radiation
-            12 Horizontal Infrared Radiation Intensity
-            13 Global Horizontal Radiation
-            14 Direct Normal Radiation
-            15 Diffuse Horizontal Radiation
-            16 Global Horizontal Illuminance
-            17 Direct Normal Illuminance
-            18 Diffuse Horizontal Illuminance
-            19 Zenith Luminance
-            20 Wind Direction
-            21 Wind Speed
-            22 Total Sky Cover
-            23 Opaque Sky Cover
-            24 Visibility
-            25 Ceiling Height
-            26 Present Weather Observation
-            27 Present Weather Codes
-            28 Precipitable Water
-            29 Aerosol Optical Depth
-            30 Snow Depth
-            31 Days Since Last Snowfall
-            32 Albedo
-            33 Liquid Precipitation Depth
-            34 Liquid Precipitation Quantity
+    def getFieldByNumber(cls, fieldNumber):
+        """Return an EPWField based on field number.
+
+        0 Year
+        1 Month
+        2 Day
+        3 Hour
+        4 Minute
+        -
+        6 Dry Bulb Temperature
+        7 Dew Point Temperature
+        8 Relative Humidity
+        9 Atmospheric Station Pressure
+        10 Extraterrestrial Horizontal Radiation
+        11 Extraterrestrial Direct Normal Radiation
+        12 Horizontal Infrared Radiation Intensity
+        13 Global Horizontal Radiation
+        14 Direct Normal Radiation
+        15 Diffuse Horizontal Radiation
+        16 Global Horizontal Illuminance
+        17 Direct Normal Illuminance
+        18 Diffuse Horizontal Illuminance
+        19 Zenith Luminance
+        20 Wind Direction
+        21 Wind Speed
+        22 Total Sky Cover
+        23 Opaque Sky Cover
+        24 Visibility
+        25 Ceiling Height
+        26 Present Weather Observation
+        27 Present Weather Codes
+        28 Precipitable Water
+        29 Aerosol Optical Depth
+        30 Snow Depth
+        31 Days Since Last Snowfall
+        32 Albedo
+        33 Liquid Precipitation Depth
+        34 Liquid Precipitation Quantity
         """
         return cls.EPWField(cls.__fields[fieldNumber])
