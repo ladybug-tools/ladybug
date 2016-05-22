@@ -1,6 +1,5 @@
 import re
 import copy
-import euclid
 
 from analysisperiod import AnalysisPeriod
 
@@ -111,118 +110,6 @@ class Location:
     def __repr__(self):
         """Return location as a string."""
         return "%s" % (self.EPStyleLocationString)
-
-
-class LBData(object):
-    """Ladybug data point."""
-
-    __slots__ = ("__value", "datetime")
-
-    # TODO: Change value to be an object from it's data type
-    # Check datatype.py for available datatypes
-    def __init__(self, value, dateTime):
-        """Create Ladybug data point."""
-        self.datetime = dateTime
-        self.value = value
-
-    @classmethod
-    def fromLBData(cls, data):
-        """Create Ladybug datapoint from a Ladybug datapoint."""
-        assert isinstance(data, LBData), "Input is not a LBData."
-        return data
-
-    @property
-    def value(self):
-        """Get/set value of data."""
-        return self.__value
-
-    @value.setter
-    def value(self, newValue):
-        """Update value of LBData."""
-        self.__value = newValue
-
-    def __int__(self):
-        return int(self.value)
-
-    def __float__(self):
-        return float(self.value)
-
-    def __str__(self):
-        return str(self.value)
-
-    def __eq__(self, other):
-        return self.value == float(other)
-
-    def __ne__(self, other):
-        return self.value != float(other)
-
-    def __lt__(self, other):
-        return self.value < other
-
-    def __gt__(self, other):
-        return self.value > other
-
-    def __le__(self, other):
-        return self.value <= other
-
-    def __ge__(self, other):
-        return self.value >= other
-
-    def __add__(self, other):
-        return self.value + other
-
-    def __sub__(self, other):
-        return self.value - other
-
-    def __mul__(self, other):
-        return self.value * other
-
-    def __floordiv__(self, other):
-        return self.value // other
-
-    def __div__(self, other):
-        return self.value / other
-
-    def __mod__(self, other):
-        return self.value % other
-
-    def __pow__(self, other):
-        return self.value**other
-
-    def __radd__(self, other):
-        return self.__add__(other)
-
-    def __rsub__(self, other):
-        return other - self.value
-
-    def __rmul__(self, other):
-        return self.__mul__(other)
-
-    def __rfloordiv__(self, other):
-        return other // self.value
-
-    def __rdiv__(self, other):
-        return other / self.value
-
-    def __rmod__(self, other):
-        return other % self.value
-
-    def __rpow__(self, other):
-        return other**self.value
-
-    def __repr__(self):
-        return self.__str__()
-
-
-class LBPatchData(LBData):
-    """Ladybug sky patch data."""
-
-    def __init__(self, value, vector):
-        """Create Ladybug sky patch data."""
-        # sky data doesn't have time
-        datetime = LBDateTime()
-        LBData.__init__(self, value, datetime)
-        self.vector = euclid.Vector3(*vector)
 
 
 class DataList:
