@@ -126,31 +126,35 @@ class DataTypeBase(object):
                 )
             )
 
-    def fullString(self):
-        """Return value and units."""
-        return "{0} {1}".format(self.__repr__(),
-                                self.unit if self.unit else "")
-
     def ToString(self):
         """Overwrite .NET representation."""
         return self.__repr__()
 
     def __str__(self):
-        """Return string representation."""
-        return self.__repr__()
+        """Return full information."""
+        # Temperature: 21C
+        return "{0}: {1}{2}{3}".format(
+            self.__class__.__name__,
+            self.__repr__(),
+            self.unit if self.unit else "",
+            " at %s" % self.datetime if self.datetime else "")
 
     def __repr__(self):
         """Return string representation."""
         return str(self.value)
 
     def __int__(self):
-        return int(self.value)
+        """Return integer value."""
+        try:
+            return int(self.value)
+        except ValueError:
+            raise ValueError(
+                "Failed to convert {} to an integer.".format(self.value)
+            )
 
     def __float__(self):
+        """Return float value."""
         return float(self.value)
-
-    def __str__(self):
-        return str(self.value)
 
     def __eq__(self, other):
         return self.value == float(other)
@@ -234,6 +238,11 @@ class LBData(DataTypeBase):
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
         DataTypeBase.__init__(self, value, datetime, standard, nickname)
+
+    @property
+    def isLBData(self):
+        """Return True if Ladybug data."""
+        return True
 
     @staticmethod
     def toIP(value):
@@ -514,7 +523,15 @@ class Speed(LBData):
 
 
 class WindSpeed(Speed):
-    __doc__ = Speed.__doc__
+    """Wind Speed.
+
+    Attributes:
+        value: Input value
+        datetime: Date time data for this value (Default: None)
+        standard: 'SI' or 'IP' (Default: 'SI')
+        nickname: Optional nickname for data (e.g. Dew Point Temperature)
+    """
+
     __slots__ = ()
     maximum = 40
 

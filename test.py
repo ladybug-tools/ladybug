@@ -4,19 +4,13 @@
 # from ladybug import dt
 # from datetime import timedelta as td
 #
-from ladybug.datatype import DryBulbTemperature, RelativeHumidity, Radiation, WindSpeed
+from ladybug.location import Location
 
-print DryBulbTemperature.mute
+l = Location()
 
-t = DryBulbTemperature(20)
-t.convertToIP()
-print t
+print l
+lo = repr(l)
 
-rh = RelativeHumidity(25)
-print rh.unit
+l2 = Location.fromString("Tehran")
 
-r = Radiation(9999, nickname='Extraterrestrial Horizontal Radiation')
-
-w = WindSpeed(35)
-
-print w.fullString()
+print repr(l2)

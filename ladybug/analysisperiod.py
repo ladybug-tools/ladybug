@@ -5,7 +5,6 @@ from datetime import timedelta
 from collections import OrderedDict
 
 
-# TODO: Add NA analysis period
 class AnalysisPeriod(object):
     """Ladybug Analysis Period.
 
@@ -71,8 +70,7 @@ class AnalysisPeriod(object):
         This method is useful to be called from inside Grasshopper or Dynamo
         """
         if not analysisPeriod:
-            print "Analysis period is set to annual."
-            return AnalysisPeriod()
+            return
         elif isinstance(analysisPeriod, cls):
             return analysisPeriod
         elif isinstance(analysisPeriod, str):
