@@ -19,7 +19,7 @@ class DataTypeBase(object):
 
     minimum = float('-inf')
     maximum = float('+inf')
-    valueType = float
+    valueType = None
     unitSI = None
     unitIP = None
     missing = None
@@ -40,17 +40,19 @@ class DataTypeBase(object):
     @value.setter
     def value(self, v):
         """Set value."""
-        try:
-            if self.valueType is str:
-                _v = str(v)
-            else:
-                _v = map(self.valueType, (v,))[0]
-        except:
-            raise ValueError("Failed to convert {} to {}".format(_v,
-                                                                 self.valueType))
+        if not self.valueType:
+            self.__value = v
+        else:
+            try:
+                if self.valueType is str:
+                    _v = str(v)
+                else:
+                    _v = map(self.valueType, (v,))[0]
+            except:
+                raise ValueError("Failed to convert {} to {}".format(v,
+                                                                     self.valueType))
 
-        self.isInRange(_v, True)
-        self.__value = _v
+            self.isInRange(_v, True)
 
     @property
     def unit(self):
@@ -230,7 +232,7 @@ class LBData(DataTypeBase):
     __slots__ = ()
     minimum = float('-inf')
     maximum = float('+inf')
-    valueType = float
+    valueType = None
     unitSI = None
     unitIP = None
     missing = None

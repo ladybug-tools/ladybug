@@ -21,7 +21,7 @@ class Header(object):
 
     def __init__(self, location=None, dataType=None, unit=None, analysisPeriod=None):
         """Initiate Ladybug header for lists."""
-        self.location = Location.fromString(location)
+        self.location = Location.fromLocation(location)
         self.dataType = dataType if dataType else "unknown"
         self.unit = unit if unit else "unknown"
         self.analysisPeriod = AnalysisPeriod.fromAnalysisPeriod(analysisPeriod)

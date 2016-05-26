@@ -15,7 +15,7 @@ class Location(object):
         stationId: Id of the location if the location is represnting a weather station.
     """
 
-    __slots__ = ("city", "country", "__lat", "__lon", "__tz", "elevation",
+    __slots__ = ("city", "country", "__lat", "__lon", "__tz", "__elev",
                  "stationId")
 
     def __init__(self, city=None, country=None, latitude=0, longitude=0,
@@ -40,6 +40,8 @@ class Location(object):
 
             l = Location.fromString(locationString)
         """
+        if not location:
+            return cls()
         try:
             if hasattr(location, 'isLocation'):
                 return location
@@ -100,6 +102,18 @@ class Location(object):
     def timezone(self, tz):
         self.__tz = 0 if not tz else float(tz)
         assert -12 <= self.__tz <= 12, "Time zone should be between -12.0..12.0"
+
+    @property
+    def elevation(self):
+        """Location latitude."""
+        return self.__elev
+
+    @elevation.setter
+    def elevation(self, elev):
+        try:
+            self.__elev = float(elev)
+        except:
+            raise ValueError("Failed to convert {} to an elevation".format(elev))
 
     def duplicate(self):
         """Duplicate location."""

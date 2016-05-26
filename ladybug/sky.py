@@ -1,7 +1,10 @@
 import epw
-import core
 import skyvector
-
+from .dt import LBDateTime
+from .analysisperiod import AnalysisPeriod
+from .datacollection import LBDataCollection
+from .header import Header
+from .datatype import LBData
 import os
 import subprocess
 
@@ -289,17 +292,17 @@ class CumulativeSkyMtx(object):
                 dirSkyFile.readline()
 
             # import hourly data
-            analysisPeriod = core.AnalysisPeriod()
+            analysisPeriod = AnalysisPeriod()
 
             for patchNumber in range(self.numberOfPatches):
                 # create header for each patch
-                difHeader = core.LBHeader(city=self.__epw.location.city,
+                difHeader = LBHeader(city=self.__epw.location.city,
                                           frequency='Hourly',
                                           analysisPeriod=analysisPeriod,
                                           dataType="Patch #%d diffuse radiation" % patchNumber,
                                           unit="Wh")
 
-                dirHeader = core.LBHeader(city=self.__epw.location.city,
+                dirHeader = LBHeader(city=self.__epw.location.city,
                                           frequency='Hourly',
                                           analysisPeriod=analysisPeriod,
                                           dataType="Patch #%d direct radiation" % patchNumber,
@@ -314,7 +317,7 @@ class CumulativeSkyMtx(object):
                 diffLine = diffSkyFile.readline()
                 dirLine = dirSkyFile.readline()
 
-                timestamp = core.LBDateTime.fromHOY(HOY + 1)
+                timestamp = LBDateTime.fromHOY(HOY + 1)
 
                 for patchNumber, (diffData, dirData) in enumerate(zip(diffLine.split("\t"), dirLine.split("\t"))):
 
@@ -324,8 +327,8 @@ class CumulativeSkyMtx(object):
                     _difValue = self.__calculateLuminanceFromRGB(_difR, _difG, _difB, patchNumber)
                     _dirValue = self.__calculateLuminanceFromRGB(_dirR, _dirG, _dirB, patchNumber)
 
-                    self.__data["diffuse"][patchNumber].append(core.LBData(_difValue, timestamp))
-                    self.__data["direct"][patchNumber].append(core.LBData(_dirValue, timestamp))
+                    self.__data["diffuse"][patchNumber].append(LBData(_difValue, timestamp))
+                    self.__data["direct"][patchNumber].append(LBData(_dirValue, timestamp))
 
             self.__isLoaded = True
 
@@ -365,7 +368,7 @@ class CumulativeSkyMtx(object):
                 HOYs = [int(h) if 0 < h < 8761 else -1 for h in analysisPeriod]
                 assert (-1 not in HOYs), "Hour should be between 1-8760"
 
-            elif isinstance(analysisPeriod, core.AnalysisPeriod):
+            elif isinstance(analysisPeriod, AnalysisPeriod):
                 HOYs = analysisPeriod.HOYs
             else:
                 raise ValueError("Analysis period should be a list of integers or an analysis period.")

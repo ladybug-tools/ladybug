@@ -2,6 +2,8 @@
 from .header import Header
 from .datatype import LBData
 
+from collections import OrderedDict
+
 
 class LBDataCollection(list):
     """A list of LadybugData with a header.
@@ -30,7 +32,7 @@ class LBDataCollection(list):
                 lst = lst[1:]
             except ValueError:
                 pass
-        _d = [LBData.fromLBData(d) for d in lst]
+        _d = (LBData.fromLBData(d) for d in lst)
         return cls(_d, header)
 
     @classmethod
@@ -55,15 +57,14 @@ class LBDataCollection(list):
 
     def _setInitialData(self, newData):
         if not newData:
-            newData = []
+            newData = ()
         elif not hasattr(newData, '__iter__'):
-            newData = [newData]
+            newData = (newData,)
 
         for d in newData:
             assert self._checkLBData(d), \
                 'Expected LadybugData got {}'.format(type(d))
-
-        self.extend(newData)
+            self.append(d)
 
     def append(self, d):
         """Append a single item to the list."""
@@ -81,7 +82,7 @@ class LBDataCollection(list):
     @property
     def datetimes(self):
         """Return list of datetimes for this list."""
-        return [value.datetime for value in self.__data]
+        return tuple(value.datetime for value in self.__data)
 
     def values(self, header=False):
         """Return the list of values.
@@ -120,7 +121,7 @@ class LBDataCollection(list):
             data: A list of LBData to be processed
             monthRange: A list of numbers for months. Default is 1-12
         """
-        hourlyDataByMonth = {}
+        hourlyDataByMonth = OrderedDict()
         for m in monthRange:
             hourlyDataByMonth[m] = []
 
@@ -161,7 +162,7 @@ class LBDataCollection(list):
             data: A list of LBData to be processed
             dayRange: A list of numbers for days. Default is 1-365
         """
-        hourlyDataByDay = {}
+        hourlyDataByDay = OrderedDict()
         for d in dayRange:
             hourlyDataByDay[d] = []
 
@@ -202,7 +203,7 @@ class LBDataCollection(list):
             data: A list of LBData to be processed
             hourRange: A list of numbers for hours. Default is 1-24
         """
-        hourlyDataByHour = {}
+        hourlyDataByHour = OrderedDict()
         for h in hourRange:
             hourlyDataByHour[h] = []
 
@@ -406,7 +407,7 @@ class LBDataCollection(list):
         except TypeError:
             raise ValueError("pattern should be a list of values.")
 
-        _filteredData = [d for count, d in enumerate(self.values)
+        _filteredData = [d for count, d in enumerate(self.values(False))
                          if pattern[count % _len]]
 
         # create a new filteredData
@@ -423,7 +424,7 @@ class LBDataCollection(list):
         # group data for each month
         monthlyValues = self.groupLBDataByMonth(data)
 
-        averageValues = dict()
+        averageValues = OrderedDict()
 
         # average values for each month
         for month, values in monthlyValues.iteritems():
@@ -445,10 +446,10 @@ class LBDataCollection(list):
         monthlyHourlyValues = self.groupLBDataByMonth(data)
 
         # group data for each hour in each month and collect them in a dictionary
-        averagedMonthlyValuesPerHour = {}
+        averagedMonthlyValuesPerHour = OrderedDict()
         for month, monthlyValues in monthlyHourlyValues.iteritems():
             if month not in averagedMonthlyValuesPerHour:
-                averagedMonthlyValuesPerHour[month] = {}
+                averagedMonthlyValuesPerHour[month] = OrderedDict()
 
             # group data for each hour
             groupedHourlyData = self.groupLBDataByHour(monthlyValues)

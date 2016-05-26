@@ -1,5 +1,5 @@
 import math
-import core
+from .dt import LBDateTime
 import euclid
 
 # NOTE:
@@ -78,7 +78,7 @@ class LBSunpath(object):
             Returns:
                 A sun object for this particular time
         """
-        datetime = core.LBDateTime(month, day, hour)
+        datetime = LBDateTime(month, day, hour)
         return self.calculateSunFromDataTime(datetime, isSolarTime)
 
     def calculateSunFromHOY(self, HOY, isSolarTime = False):
@@ -91,7 +91,7 @@ class LBSunpath(object):
             Returns:
                 A sun object for this particular time
         """
-        datetime = core.LBDateTime.fromHOY(HOY)
+        datetime = LBDateTime.fromHOY(HOY)
         return self.calculateSunFromDataTime(datetime, isSolarTime)
 
     def calculateSunFromDataTime(self, datetime, isSolarTime = False):
@@ -138,7 +138,7 @@ class LBSunpath(object):
         return LBSun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving, self.northAngle)
 
     def calculateSunriseSunset(self, month, day, depression = 0.833, isSolarTime = False):
-        datetime = core.LBDateTime(month, day, hour = 12)
+        datetime = LBDateTime(month, day, hour = 12)
         return self.calculateSunriseSunsetFromDateTime(datetime, depression, isSolarTime)
 
     # TODO: implement solar time
@@ -163,9 +163,9 @@ class LBSunpath(object):
         # sunset  = self.__calculateSolarTime(24*sunset, eqOfTime, isSolarTime)
 
         return {
-                "sunrise"   : core.LBDateTime(datetime.month, datetime.day, 24 * sunrise),
-                "noon"      : core.LBDateTime(datetime.month, datetime.day, 24 * noon),
-                "sunset"    : core.LBDateTime(datetime.month, datetime.day, 24 * sunset)}
+                "sunrise"   : LBDateTime(datetime.month, datetime.day, 24 * sunrise),
+                "noon"      : LBDateTime(datetime.month, datetime.day, 24 * noon),
+                "sunset"    : LBDateTime(datetime.month, datetime.day, 24 * sunset)}
 
     def __calculateSolarGeometry(self, datetime, year = 2015):
 

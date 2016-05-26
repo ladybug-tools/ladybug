@@ -1,22 +1,40 @@
-﻿import os
-import core
+from .location import Location
+from .analysisperiod import AnalysisPeriod
+from .datatype import LBData, Temperature, RelativeHumidity, Radiation, Illuminance
+from .header import Header
+from .datacollection import LBDataCollection
+from .dt import LBDateTime
+
+import os
 
 
 class EPW(object):
-    def __init__(self, epwFileAddress=None):
+    def __init__(self, epwPath=None):
         """Import epw data from a local epw file.
 
         epwFileAddress: Local file address to an epw file
         """
-        if not epwFileAddress:
-            return
-        self.fileAddress = self.checkEpwFileAddress(epwFileAddress)
-        self.filePath, self.fileName = os.path.split(self.fileAddress)
+        self.epwPath = epwPath
         self.__isDataLoaded = False
         self.__isLocationLoaded = False
         self.__data = dict()
         self.epwHeader = None
-        self.numOfFields = 35  # it is 35 for TMY3 files
+        self._numOfFields = 35  # it is 35 for TMY3 files
+
+    @property
+    def epwPath(self):
+        """Get or set path to epw file."""
+        return self.__epwPath
+
+    @epwPath.setter
+    def epwPath(self, epwFilepath):
+        if not os.path.isfile(epwFilepath):
+            raise ValueError('{} is not a valid address.'.format(epwFilepath))
+        elif not epwFilepath.lower().endswith('epw'):
+            raise TypeError(epwFilepath + ' is not an .epw file.')
+
+        self.__epwPath = epwFilepath
+        self.filePath, self.fileName = os.path.split(self.epwPath)
 
     @property
     def isDataLoaded(self):
@@ -28,21 +46,12 @@ class EPW(object):
         """Return True if location data is loaded."""
         return self.__isLocationLoaded
 
-    @staticmethod
-    def checkEpwFileAddress(epwFileAddress):
-        """Check path and type for an epw file."""
-        if not os.path.isfile(epwFileAddress):
-            raise Exception(epwFileAddress + ' is not a valid address.')
-        if not epwFileAddress.lower().endswith('epw'):
-            raise Exception(epwFileAddress + ' is not an .epw file.')
-        return epwFileAddress
-
     @property
     def location(self):
         """Return location data."""
         if not self.isLocationLoaded:
             self.importData(onlyImportLocation=True)
-        return self.stationLocation
+        return self.__location
 
     # TODO: import EPW header. Currently I just ignore header data
     def importData(self, onlyImportLocation=False):
@@ -51,64 +60,65 @@ class EPW(object):
         Hourly data will be saved in self.data and location data
         will be saved in self.location
         """
-        with open(self.fileAddress, 'rb') as epwin:
-            epwlines = epwin.readlines()
+        with open(self.epwPath, 'rb') as epwin:
+            line = epwin.readline()
 
-        # import location data
-        # first line has location data - Here is an example
-        # LOCATION,Denver Centennial  Golden   Nr,CO,USA,TMY3,724666,39.74,-105.18,-7.0,1829.0
-        if not self.__isLocationLoaded:
-            locationData = epwlines[0].strip().split(',')
-            self.stationLocation = core.Location()
-            self.stationLocation.city = locationData[1]
-            self.stationLocation.state = locationData[2]
-            self.stationLocation.country = locationData[3]
-            self.stationLocation.source = locationData[4]
-            self.stationLocation.stationId = locationData[5]
-            self.stationLocation.latitude = float(locationData[6])
-            self.stationLocation.longitude = float(locationData[7])
-            self.stationLocation.timeZone = float(locationData[8])
-            self.stationLocation.elevation = float(locationData[9])
+            # import location data
+            # first line has location data - Here is an example
+            # LOCATION,Denver Centennial  Golden   Nr,CO,USA,TMY3,724666,39.74,-105.18,-7.0,1829.0
+            if not self.__isLocationLoaded:
+                locationData = line.strip().split(',')
+                self.__location = Location()
+                self.__location.city = locationData[1]
+                self.__location.country = locationData[3]
+                self.__location.stationId = locationData[5]
+                self.__location.latitude = locationData[6]
+                self.__location.longitude = locationData[7]
+                self.__location.timezone = locationData[8]
+                self.__location.elevation = locationData[9]
 
-            self.__isLocationLoaded = True
+                self.__isLocationLoaded = True
 
-        if onlyImportLocation:
-            return
+            if onlyImportLocation:
+                return
 
-        # TODO: create an object from the header and analyze data
-        # get epw header
-        self.epwHeader = epwlines[:8]
+            # TODO: add parsing for header
+            self.epwHeader = [epwin.readline() for i in xrange(7)]
 
-        self.numOfFields = len(epwlines[8].strip().split(','))
-        # import hourly data
-        analysisPeriod = core.AnalysisPeriod()
-        for fieldNumber in range(0, self.numOfFields):
-            # create header
-            field = EPWDataTypes.get_fieldByNumber(fieldNumber)
-            header = core.LBHeader(city=self.stationLocation.city,
-                                   frequency='Hourly',
-                                   analysisPeriod=analysisPeriod,
-                                   dataType=field.name, unit=field.units)
+            line = epwin.readline()
+            self._numOfFields = len(line.strip().split(','))
 
-            # create an empty data list with the header
-            self.__data[fieldNumber] = core.DataList(header=header)
+            # create an annual analysis period
+            analysisPeriod = AnalysisPeriod()
 
-        for line in epwlines[8:]:
-            data = line.strip().split(',')
+            # create an empty collection for each field in epw file
+            for fieldNumber in range(self._numOfFields):
+                # create header
+                field = EPWDataTypes.fieldByNumber(fieldNumber)
+                header = Header(location=self.location,
+                                analysisPeriod=analysisPeriod,
+                                dataType=field.name, unit=field.units)
 
-            year, month, day, hour = map(int, data[:4])
-            # in an epw file year can be different for each month
-            # since I'm using this timestamp as the key and will be using it for sorting
-            # I'm setting it up to 2000 - the real year will be collected under modelYear
-            timestamp = core.LBDateTime(month, day, hour)
+                # create an empty data list with the header
+                self.__data[fieldNumber] = LBDataCollection(header=header)
 
-            for fieldNumber in range(0, self.numOfFields):
-                valueType = EPWDataTypes.get_fieldByNumber(fieldNumber).valueType
-                value = map(valueType, [data[fieldNumber]])[0]
-                self.__data[fieldNumber].append(core.LBData(value, timestamp))
+            while line:
+                data = line.strip().split(',')
+                year, month, day, hour = map(int, data[:4])
 
-        del(epwlines)
-        self.__isDataLoaded = True
+                # in an epw file year can be different for each month
+                # since I'm using this timestamp as the key and will be using it for sorting
+                # I'm setting it up to 2015 - the real year will be collected under modelYear
+                timestamp = LBDateTime(month, day, hour - 1)
+
+                for fieldNumber in xrange(self._numOfFields):
+                    valueType = EPWDataTypes.fieldByNumber(fieldNumber).valueType
+                    value = valueType(data[fieldNumber])
+                    self.__data[fieldNumber].append(LBData(value, timestamp))
+
+                line = epwin.readline()
+
+            self.__isDataLoaded = True
 
     def __get_dataByField(self, fieldNumber):
         """Return a data field by field number.
@@ -126,8 +136,8 @@ class EPW(object):
             self.importData()
 
         # check input data
-        if not 0 <= fieldNumber < self.numOfFields:
-            raise ValueError("Field number should be between 0-%d" % self.numOfFields)
+        if not 0 <= fieldNumber < self._numOfFields:
+            raise ValueError("Field number should be between 0-%d" % self._numOfFields)
 
         return self.__data[fieldNumber]
 
@@ -154,7 +164,7 @@ class EPW(object):
             try:
                 for hour in xrange(0, 8760):
                     line = []
-                    for field in range(0, self.numOfFields):
+                    for field in range(0, self._numOfFields):
                         line.append(str(self.__data[field].values[hour].value))
                     lines.append(",".join(line) + "\n")
             except IndexError:
@@ -507,7 +517,7 @@ class EPW(object):
         epw2wea.exe file. Now epw2wea is part of the Radiance distribution
         """
         if not filePath:
-            filePath = self.fileAddress[:-3] + "wea"
+            filePath = self.epwPath[:-3] + "wea"
 
         with open(filePath, "wb") as weaFile:
             # write header
@@ -782,7 +792,7 @@ class EPWDataTypes:
         return cls.__fields
 
     @classmethod
-    def getFieldByNumber(cls, fieldNumber):
+    def fieldByNumber(cls, fieldNumber):
         """Return an EPWField based on field number.
 
         0 Year

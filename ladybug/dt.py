@@ -25,20 +25,32 @@ class LBDateTime(datetime):
         Args:
             HOY: A float value between 0..8760
         """
-        numOfDaysUntilMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
-        numOfHoursUntilMonth = [24 * numOfDay for numOfDay in numOfDaysUntilMonth]
+        # numOfDaysUntilMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
+        numOfHoursUntilMonth = [0, 744, 1416, 2160, 2880, 3624, 4344, 5088,
+                                5832, 6552, 7296, 8016, 8760]
+
+        HOY += 1
 
         # find month
         for monthCount in range(12):
             if HOY <= numOfHoursUntilMonth[monthCount + 1]:
                 month = monthCount + 1
                 break
+        try:
+            day = int((HOY - numOfHoursUntilMonth[month - 1]) / 24) + 1
+        except UnboundLocalError:
+            raise ValueError(
+                "HOY must be between 0..8759. Invalid input %d" % (HOY - 1)
+            )
+        else:
+            hour = HOY % 24 - 1
 
-        day = int((HOY - numOfHoursUntilMonth[month - 1]) / 24) + 1
-        hour = int(HOY % 24)
-        minute = (hour - int(hour)) * 60
+            if HOY % 24 == 0:
+                hour = 23
+                day -= 1
 
-        return cls(month, day, hour, minute)
+            minute = int((hour - int(hour)) * 60)
+            return cls(month, day, int(hour), minute)
 
     @classmethod
     def fromDateTimeString(cls, datetimeString):
@@ -64,7 +76,7 @@ class LBDateTime(datetime):
     @property
     def MOY(self):
         """Calculate minute of the year for this date time."""
-        return self.intHOY * 60 + self.minute
+        return self.intHOY * 60 + self.minute  # minute of the year
 
     @property
     def floatHour(self):
@@ -78,11 +90,6 @@ class LBDateTime(datetime):
         This output assumes the minute is 0.
         """
         return (self.DOY - 1) * 24 + self.hour
-
-    @property
-    def MOY(self):
-        """Calculate minute of the year for this date time."""
-        return self.intHOY * 60 + self.minute  # minute of the year
 
     def __str__(self):
         """Return date time as a string."""
