@@ -47,8 +47,8 @@ class Header(object):
 
     def duplicate(self):
         """Duplicate header."""
-        return self(self.location, self.dataType, self.unit,
-                    self.analysisPeriod)
+        return self.__class__(self.location, self.dataType, self.unit,
+                              self.analysisPeriod)
 
     def toTuple(self):
         """Return Ladybug header as a list."""

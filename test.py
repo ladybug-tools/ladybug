@@ -4,13 +4,11 @@
 # from ladybug import dt
 # from datetime import timedelta as td
 #
-from ladybug.location import Location
+from ladybug.datacollection import LBDataCollection
 
-l = Location()
+l = LBDataCollection.fromList(range(10))
+l2 = l.duplicate()
 
-print l
-lo = repr(l)
-
-l2 = Location.fromString("Tehran")
-
-print repr(l2)
+#
+# l.append(15)
+# print l

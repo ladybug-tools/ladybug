@@ -59,7 +59,7 @@ class AnalysisPeriod(object):
         self.minuteIntervals = timedelta(1 / (24.0 * self.timestep))
 
         # calculate timestamps and hoursOfYear
-        # A dictionary for timedates. Key values will be minute of year
+        # A dictionary for datetimes. Key values will be minute of year
         self.__timestampsData = OrderedDict()
         self.__calculateTimestamps()
 
@@ -134,20 +134,20 @@ class AnalysisPeriod(object):
             self.__calcTimestamps(LBDateTime.fromHOY(0), self.endTime)
 
     @property
-    def dates(self):
-        """A sorted list of dates in this analysis period."""
+    def datetimes(self):
+        """A sorted list of datetimes in this analysis period."""
         # sort dictionary based on key values (minute of the year)
         return self.__timestampsData.itervalues()
 
     @property
     def HOYs(self):
         """A sorted list of hours of year in this analysis period."""
-        return (timestamp.HOY for timestamp in self.dates)
+        return (datetime.HOY for datetime in self.datetimes)
 
     @property
     def intHOYs(self):
         """A sorted list of hours of year as float values in this analysis period."""
-        return (timestamp.intHOY for timestamp in self.dates)
+        return (datetime.intHOY for datetime in self.datetimes)
 
     @property
     def isAnnual(self):

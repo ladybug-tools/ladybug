@@ -239,6 +239,18 @@ class LBData(DataTypeBase):
         """Init class."""
         DataTypeBase.__init__(self, value, datetime, standard, nickname)
 
+    @classmethod
+    def fromLBData(cls, value):
+        """Try to create a LBData from input data."""
+        if hasattr(value, 'isLBData'):
+            return value
+
+        try:
+            return cls(value)
+        except Exception, e:
+            raise ValueError(
+                "Failed to create a LBData from %s!\n%s" % (value, e))
+
     @property
     def isLBData(self):
         """Return True if Ladybug data."""

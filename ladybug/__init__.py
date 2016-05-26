@@ -1,4 +1,5 @@
-__all__ = ["core", "epw", "sunpath", "sky", "color", "legendparameters", \
-    "wrapper", "listoperations", "rootFinding", "psychrometrics", "comfort"]
+__all__ = ["epw", "sunpath", "sky", "color", "legendparameters",
+           "wrapper", "listoperations", "rootFinding", "psychrometrics", "comfort"]
 
-import core, epw, sunpath, sky, color, legendparameters, wrapper, listoperations, rootFinding, psychrometrics, comfort
+import epw, sunpath, sky, color, legendparameters, wrapper
+import listoperations, rootFinding, psychrometrics, comfort
