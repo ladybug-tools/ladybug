@@ -2,8 +2,6 @@
 from dt import LBDateTime
 from datetime import timedelta
 
-from collections import OrderedDict
-
 
 class AnalysisPeriod(object):
     """Ladybug Analysis Period.
@@ -60,7 +58,7 @@ class AnalysisPeriod(object):
 
         # calculate timestamps and hoursOfYear
         # A dictionary for datetimes. Key values will be minute of year
-        self.__timestampsData = OrderedDict()
+        self.__timestampsData = list()
         self.__calculateTimestamps()
 
     @classmethod
@@ -115,7 +113,7 @@ class AnalysisPeriod(object):
         while curr <= endTime:
             if self.__isPossibleHour(curr.hour):
                 time = LBDateTime(curr.month, curr.day, curr.hour, curr.minute)
-                self.__timestampsData[time.MOY] = time
+                self.__timestampsData.append(time.MOY)
             curr += self.minuteIntervals
 
         if self.timestep != 1:
@@ -123,7 +121,7 @@ class AnalysisPeriod(object):
             for i in range(self.timestep)[1:]:
                 curr += self.minuteIntervals
                 time = LBDateTime(curr.month, curr.day, curr.hour, curr.minute)
-                self.__timestampsData[time.MOY] = time
+                self.__timestampsData.append(time.MOY)
 
     def __calculateTimestamps(self):
         """Return a list of Ladybug DateTime in this analysis period."""
@@ -137,17 +135,17 @@ class AnalysisPeriod(object):
     def datetimes(self):
         """A sorted list of datetimes in this analysis period."""
         # sort dictionary based on key values (minute of the year)
-        return self.__timestampsData.itervalues()
+        return tuple(LBDateTime.fromMOY(MOY) for MOY in self.__timestampsData)
 
     @property
     def HOYs(self):
         """A sorted list of hours of year in this analysis period."""
-        return (datetime.HOY for datetime in self.datetimes)
+        return tuple(MOY / 60.0 for MOY in self.__timestampsData)
 
     @property
     def intHOYs(self):
         """A sorted list of hours of year as float values in this analysis period."""
-        return (datetime.intHOY for datetime in self.datetimes)
+        return tuple(int(MOY / 60) for MOY in self.__timestampsData)
 
     @property
     def isAnnual(self):

@@ -4,7 +4,7 @@ from .dt import LBDateTime
 from .analysisperiod import AnalysisPeriod
 from .datacollection import LBDataCollection
 from .header import Header
-from .datatype import LBData
+from .datatype import LBData, SkyPatch
 import os
 import subprocess
 
@@ -309,8 +309,8 @@ class CumulativeSkyMtx(object):
                                           unit="Wh")
 
                 # create an empty data list with the header
-                self.__data['diffuse'][patchNumber] = core.DataList(header=difHeader)
-                self.__data['direct'][patchNumber] = core.DataList(header=dirHeader)
+                self.__data['diffuse'][patchNumber] = LBDataCollection(header=difHeader)
+                self.__data['direct'][patchNumber] = LBDataCollection(header=dirHeader)
 
             for HOY in range(8760):
 
@@ -386,17 +386,17 @@ class CumulativeSkyMtx(object):
                 __cumulativeRaditionValues["direct"][patchNumber] += self.__data["direct"][patchNumber][HOY - 1]
 
         # create header for each patch
-        difHeader = core.LBHeader(city=self.__epw.location.city, frequency='NA',
+        difHeader = Header(city=self.__epw.location.city, frequency='NA',
                                   analysisPeriod=None,
                                   dataType="Sky Patches' Diffues Radiation",
                                   unit="Wh")
 
-        dirHeader = core.LBHeader(city=self.__epw.location.city, frequency='NA',
+        dirHeader = Header(city=self.__epw.location.city, frequency='NA',
                                   analysisPeriod=None,
                                   dataType="Sky Patches' Direct Radiation",
                                   unit="Wh")
 
-        totalHeader = core.LBHeader(city=self.__epw.location.city,
+        totalHeader = Header(city=self.__epw.location.city,
                                     frequency='NA', analysisPeriod=None,
                                     dataType="Sky Patches' Total Radiation",
                                     unit="Wh")
@@ -406,20 +406,20 @@ class CumulativeSkyMtx(object):
 
         self.__results = {}
 
-        self.__results['diffuse'] = core.DataList(header=difHeader)
-        self.__results['direct'] = core.DataList(header=dirHeader)
-        self.__results['total'] = core.DataList(header=totalHeader)
+        self.__results['diffuse'] = LBDataCollection(header=difHeader)
+        self.__results['direct'] = LBDataCollection(header=dirHeader)
+        self.__results['total'] = LBDataCollection(header=totalHeader)
 
         for patchNumber in range(self.numberOfPatches):
 
             __diff = __cumulativeRaditionValues["diffuse"][patchNumber] if diffuse else 0
             __dir = __cumulativeRaditionValues["direct"][patchNumber] if direct else 0
 
-            self.__results['diffuse'].append(core.LBPatchData(__diff, __skyVectors[patchNumber]))
+            self.__results['diffuse'].append(SkyPatch(__diff, __skyVectors[patchNumber]))
 
-            self.__results['direct'].append(core.LBPatchData(__dir, __skyVectors[patchNumber]))
+            self.__results['direct'].append(SkyPatch(__dir, __skyVectors[patchNumber]))
 
-            self.__results['total'].append(core.LBPatchData(__diff + __dir, __skyVectors[patchNumber]))
+            self.__results['total'].append(SkyPatch(__diff + __dir, __skyVectors[patchNumber]))
 
         del(__cumulativeRaditionValues)
 

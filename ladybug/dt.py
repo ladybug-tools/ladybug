@@ -23,7 +23,7 @@ class LBDateTime(datetime):
         """Create Ladybug Datetime from an hour of the year.
 
         Args:
-            HOY: A float value between 0..8760
+            HOY: A float value 0 <= and < 8760
         """
         # numOfDaysUntilMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
         numOfHoursUntilMonth = [0, 744, 1416, 2160, 2880, 3624, 4344, 5088,
@@ -53,12 +53,21 @@ class LBDateTime(datetime):
             return cls(month, day, int(hour), minute)
 
     @classmethod
+    def fromMOY(cls, MOY):
+        """Create Ladybug Datetime from a minute of the year.
+
+        Args:
+            MOY: An integer value 0 <= and < 525600
+        """
+        return cls.fromHOY(MOY / 60.0)
+
+    @classmethod
     def fromDateTimeString(cls, datetimeString):
         """Create Ladybug DateTime from a LBDateTime string.
 
         Usage:
 
-            dt = ("31 Dec 2015 at 12:00")
+            dt = LBDateTime.fromDateTimeString("31 Dec 2015 at 12:00")
         """
         dt = datetime.strptime(datetimeString, '%d %b %Y at %H:%M')
         return cls(dt.month, dt.day, dt.hour, dt.minute)

@@ -81,7 +81,7 @@ class LBDataCollection(list):
 
     @property
     def datetimes(self):
-        """Return list of datetimes for this list."""
+        """Return datetimes for this collection as a tuple."""
         return tuple(value.datetime for value in self.__data)
 
     def values(self, header=False):
@@ -108,7 +108,7 @@ class LBDataCollection(list):
     @staticmethod
     def average(data):
         """Return average value for a list of values."""
-        values = [value.value for value in data]
+        values = (value.value for value in data)
         return sum(values) / len(data)
 
     @staticmethod
