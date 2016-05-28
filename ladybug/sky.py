@@ -21,6 +21,7 @@ class CumulativeSkyMtx(object):
         workingDir: A local directory to run the study and write the results
 
     Usage:
+
         epwfile = r"C:/EnergyPlusV8-3-0/WeatherData/USA_CO_Golden-NREL.724666_TMY3.epw"
         cumSky = CumulativeSkyMtx(epwfile) #calculate the sky
         # annual results
@@ -33,6 +34,7 @@ class CumulativeSkyMtx(object):
     """
 
     def __init__(self, epwFileAddress, skyDensity=0, workingDir=None):
+        """Init class."""
         self.__epw = epw.EPW(epwFileAddress)
         self.__data = {"diffuse": {}, "direct": {}}
         self.__results = {}
@@ -43,13 +45,19 @@ class CumulativeSkyMtx(object):
 
     @property
     def skyDensity(self):
-        "Return sky density. 0: Tregenza, 1: Reinhart"
+        """Return sky density.
+
+        0: Tregenza, 1: Reinhart
+        """
         return self.__skyDensity
 
     @skyDensity.setter
     def skyDensity(self, density):
-        assert int(density) <= 1, "Sky density is should be 0: Tregenza sky, 1: Reinhart sky"
+        assert int(density) <= 1, \
+            "Sky density is should be 0: Tregenza sky, 1: Reinhart sky"
+
         self.__skyDensity = int(density)
+
         # prepare place holder for patches
         for patch in range(self.numberOfPatches):
             self.__data['diffuse'] = {}
@@ -57,7 +65,7 @@ class CumulativeSkyMtx(object):
 
     @property
     def workingDir(self):
-        "A local directory to run the study and write the results"
+        """A local directory to run the study and write the results."""
         return self.__workingDir
 
     @workingDir.setter
@@ -72,18 +80,24 @@ class CumulativeSkyMtx(object):
 
         # add name of city to path
         if not self.__workingDir.endswith(self.__epw.location.city):
-            self.__workingDir = os.path.join(self.__workingDir, self.__epw.location.city.replace(" ", "_"))
+            self.__workingDir = os.path.join(self.__workingDir,
+                                             self.__epw.location.city.replace(" ", "_"))
 
         # create the folder is it's not created
         if not os.path.isdir(self.__workingDir):
             os.mkdir(self.__workingDir)
+
         # update path for other files if it's a new workingDir
         # naming convention is weatherFileName_[diffuse/direct]_[skyDensity].mtx
         __name = self.__epw.fileName[:-4] + "_%s_%d.mtx"
 
-        self.__diffuseMtxFileAddress = os.path.join(self.__workingDir, __name % ("dif", self.__skyDensity))
+        self.__diffuseMtxFileAddress = os.path.join(
+            self.__workingDir, __name % ("dif", self.__skyDensity)
+        )
 
-        self.__directMtxFileAddress = os.path.join(self.__workingDir, __name % ("dir", self.__skyDensity))
+        self.__directMtxFileAddress = os.path.join(
+            self.__workingDir, __name % ("dir", self.__skyDensity)
+        )
 
         self.__jsonFileAddress = os.path.join(
             self.__workingDir,
@@ -97,11 +111,10 @@ class CumulativeSkyMtx(object):
 
     @property
     def skyDiffuseRadiation(self):
-        """Diffuse values for sky patches as a LBDataList"""
-
+        """Diffuse values for sky patches as a LBDataList."""
         assert self.__isCalculated, "You need to calculate the materix first before" + \
             " loading the results. Use calculateMtx method.\nIf you see this error from inside " + \
-            "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s"%self.workingDir
+            "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s" % self.workingDir
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
 
@@ -109,11 +122,10 @@ class CumulativeSkyMtx(object):
 
     @property
     def skyDirectRadiation(self):
-        """Direct values for sky patches as a LBDataList"""
-
+        """Direct values for sky patches as a LBDataList."""
         assert self.__isCalculated, "You need to calculate the materix first before" + \
             " loading the results. Use calculateMtx method.\nIf you see this error from inside " + \
-            "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s"%self.workingDir
+            "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s" % self.workingDir
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
 
@@ -121,56 +133,64 @@ class CumulativeSkyMtx(object):
 
     @property
     def skyTotalRadiation(self):
-        """Total values for sky patches as a LBDataList"""
-
+        """Total values for sky patches as a LBDataList."""
         assert self.__isCalculated, "You need to calculate the materix first before" + \
             " loading the results. Use calculateMtx method.\nIf you see this error from inside " + \
-            "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s"%self.workingDir
+            "Dynamo reconnect one of the inputs and re-run the file!\nFiles are created under %s" % self.workingDir
 
         assert self.__isLoaded, "The values are not loaded. Use skyMtx method."
 
         return self.__results["total"]
 
     def steradianConversionFactor(self, patchNumber):
-        "Steradian Conversion Factor"
+        """Steradian Conversion Factor."""
         rowNumber = self.__calculateRowNumber(patchNumber)
         strConv = self.__patchData("steradianConversionFactor")[rowNumber]
         return strConv
 
     def __patchData(self, key):
         """
-            Return data for sky patches based on key
+        Return data for sky patches based on key.
 
-            Args:
-                key: valid keys are numberOfPatches, numberOfPatchesInEachRow and steradianConversionFactor.
+        Args:
+            key: valid keys are numberOfPatches, numberOfPatchesInEachRow and steradianConversionFactor.
 
-            Return:
-                Data for this sky based on the sky density. Depending on the key it can be a number or a list of numbers
+        Return:
+            Data for this sky based on the sky density. Depending on the key it can be a number or a list of numbers
 
-            Usage:
-                self.__patchesData("numberOfPatches")
-                >> 146
+        Usage:
+
+            self.__patchesData(0)
+            >> 146
         """
-
         # first row is horizon and last row is values for the zenith
         # first patch is the ground. I put 0 on conversion
         __data = {
-            "numberOfPatches": {0 : 146, 1 : 578},
-            "numOfPatchesInEachRow": {0: [1, 30, 30, 24, 24, 18, 12, 6, 1], \
-                        1: [1, 60, 60, 60, 60, 48, 48, 48, 48, 36, 36, 24, 24, 12, 12, 1]},
-            "steradianConversionFactor": {0 : [0, 0.0435449227, 0.0416418006, 0.0473984151, \
-                0.0406730411, 0.0428934136, 0.0445221864, 0.0455168385, 0.0344199465],
-                1: [0, 0.0113221971, 0.0111894547, 0.0109255262, 0.0105335058, 0.0125224872, \
-                    0.0117312774, 0.0108025291, 0.00974713106, 0.011436609, 0.00974295956, \
-                    0.0119026242, 0.00905126163, 0.0121875626, 0.00612971396, 0.00921483254]}
+            "numberOfPatches": {0: 146, 1: 578},
+
+            "numOfPatchesInEachRow": {
+                0: [1, 30, 30, 24, 24, 18, 12, 6, 1],
+                1: [1, 60, 60, 60, 60, 48, 48, 48, 48, 36, 36, 24, 24, 12, 12, 1]
+            },
+
+            "steradianConversionFactor": {
+
+                0: [0, 0.0435449227, 0.0416418006, 0.0473984151,
+                    0.0406730411, 0.0428934136, 0.0445221864, 0.0455168385, 0.0344199465],
+
+                1: [0, 0.0113221971, 0.0111894547, 0.0109255262, 0.0105335058, 0.0125224872,
+                    0.0117312774, 0.0108025291, 0.00974713106, 0.011436609, 0.00974295956,
+                    0.0119026242, 0.00905126163, 0.0121875626, 0.00612971396, 0.00921483254]
+            }
         }
 
-        assert key in __data, "Invalid key: %s"%key
-        return __data[key][self.__skyDensity]
+        try:
+            __data[key][self.__skyDensity]
+        except KeyError:
+            raise KeyError("Invalid key: %s." % key)
 
     def __calculateRowNumber(self, patchNumber):
-        """Calculate number of row for sky patch"""
-
+        """Calculate number of row for sky patch."""
         if patchNumber == 0:
             return 0
         __numOfPatchesInEachRow = self.__patchData(key="numOfPatchesInEachRow")
@@ -180,8 +200,14 @@ class CumulativeSkyMtx(object):
                 return rowCount
 
     def epw2wea(self, filePath=None):
+        """Convert epw file to wea file.
+
+        filePath: Optional filepath to an epw file. If not self.__epw will be
+            used.
+        """
         if not filePath:
             filePath = os.path.join(self.__workingDir, self.__epw.fileName[:-4] + ".wea")
+
         self.__weaFileAddress = self.__epw.epw2wea(filePath)
 
     def calculateMtx(self, pathToRadianceBinaries=r"c:\radiance\bin",
@@ -189,8 +215,10 @@ class CumulativeSkyMtx(object):
         """use Radiance gendaymtx to generate the sky.
 
         Args:
-            pathToRadianceBinaries: Path to Radiance libraries. Default is C:/radiance/bin.
-            recalculate: Set to True if you want the sky to be recalculated even it has been calculated already
+            pathToRadianceBinaries: Path to Radiance libraries. Default is
+                C:/radiance/bin.
+            recalculate: Set to True if you want the sky to be recalculated
+                even it has been calculated already
         """
         # check if the result is already calculated
         if not recalculate:
@@ -259,10 +287,13 @@ class CumulativeSkyMtx(object):
         p.wait()
 
     def _normspace(self, path):
+        """Norm filepath with white space."""
         return path if path.find(" ") == -1 else '"%s"' % path
 
     def __calculateLuminanceFromRGB(self, R, G, B, patchNumber):
-        return (.265074126 * float(R) + .670114631 * float(G) + .064811243 * float(B)) * self.steradianConversionFactor(patchNumber)
+        return (.265074126 * float(R) +
+                .670114631 * float(G) +
+                .064811243 * float(B)) * self.steradianConversionFactor(patchNumber)
 
     def __loadMtxFiles(self):
         """load the values from .mtx files.
@@ -296,24 +327,21 @@ class CumulativeSkyMtx(object):
 
             for patchNumber in range(self.numberOfPatches):
                 # create header for each patch
-                difHeader = LBHeader(city=self.__epw.location.city,
-                                          frequency='Hourly',
-                                          analysisPeriod=analysisPeriod,
-                                          dataType="Patch #%d diffuse radiation" % patchNumber,
-                                          unit="Wh")
+                difHeader = Header(location=self.__epw.location,
+                                   dataType="Patch #%d diffuse radiation" % patchNumber,
+                                   unit="Wh",
+                                   analysisPeriod=analysisPeriod)
 
-                dirHeader = LBHeader(city=self.__epw.location.city,
-                                          frequency='Hourly',
-                                          analysisPeriod=analysisPeriod,
-                                          dataType="Patch #%d direct radiation" % patchNumber,
-                                          unit="Wh")
+                dirHeader = Header(location=self.__epw.location,
+                                   dataType="Patch #%d direct radiation" % patchNumber,
+                                   unit="Wh",
+                                   analysisPeriod=analysisPeriod)
 
                 # create an empty data list with the header
                 self.__data['diffuse'][patchNumber] = LBDataCollection(header=difHeader)
                 self.__data['direct'][patchNumber] = LBDataCollection(header=dirHeader)
 
             for HOY in range(8760):
-
                 diffLine = diffSkyFile.readline()
                 dirLine = dirSkyFile.readline()
 
@@ -333,7 +361,7 @@ class CumulativeSkyMtx(object):
             self.__isLoaded = True
 
         except Exception, e:
-            print e
+            raise Exception(e)
         finally:
             diffSkyFile.close()
             dirSkyFile.close()
@@ -346,11 +374,15 @@ class CumulativeSkyMtx(object):
         """Get sky matrix for direct, diffuse and total radiation as three separate lists.
 
         Args:
-            pathToRadianceBinaries: Path to Radiance libraries. Default is C:/radiance/bin.
+            pathToRadianceBinaries: Path to Radiance libraries. Default is
+                C:/radiance/bin.
             diffuse: Set to True to include diffuse radiation
             direct: Set to True to iclude direct radiation
-            recalculate: Set to True if you want the sky to be recalculated even it has been calculated already
-            analysisPeriod: An analysis period or a list of integers between 1-8760 for hours of the year. Default is All the hours of the year
+            recalculate: Set to True if you want the sky to be recalculated even
+                it has been calculated already.
+            analysisPeriod: An analysis period or a list of integers between
+                1-8760 for hours of the year. Default is All the hours of the
+                year.
         """
         # calculate sky if it's not already calculated
         if not self.__isCalculated or recalculate:
@@ -371,7 +403,9 @@ class CumulativeSkyMtx(object):
             elif isinstance(analysisPeriod, AnalysisPeriod):
                 HOYs = analysisPeriod.HOYs
             else:
-                raise ValueError("Analysis period should be a list of integers or an analysis period.")
+                raise ValueError(
+                    "Analysis period should be a list of integers or an analysis period."
+                )
 
         # calculate values and return them as 3 lists
         # put 0 value for all the patches
@@ -386,20 +420,20 @@ class CumulativeSkyMtx(object):
                 __cumulativeRaditionValues["direct"][patchNumber] += self.__data["direct"][patchNumber][HOY - 1]
 
         # create header for each patch
-        difHeader = Header(city=self.__epw.location.city, frequency='NA',
-                                  analysisPeriod=None,
-                                  dataType="Sky Patches' Diffues Radiation",
-                                  unit="Wh")
+        difHeader = Header(location=self.__epw.location,
+                           analysisPeriod=None,
+                           dataType="Sky Patches' Diffues Radiation",
+                           unit="Wh")
 
-        dirHeader = Header(city=self.__epw.location.city, frequency='NA',
-                                  analysisPeriod=None,
-                                  dataType="Sky Patches' Direct Radiation",
-                                  unit="Wh")
+        dirHeader = Header(location=self.__epw.location,
+                           analysisPeriod=None,
+                           dataType="Sky Patches' Direct Radiation",
+                           unit="Wh")
 
-        totalHeader = Header(city=self.__epw.location.city,
-                                    frequency='NA', analysisPeriod=None,
-                                    dataType="Sky Patches' Total Radiation",
-                                    unit="Wh")
+        totalHeader = Header(location=self.__epw.location,
+                             analysisPeriod=None,
+                             dataType="Sky Patches' Total Radiation",
+                             unit="Wh")
 
         # create an empty data list with the header
         __skyVectors = skyvector.Skyvectors(self.__skyDensity)
@@ -412,20 +446,30 @@ class CumulativeSkyMtx(object):
 
         for patchNumber in range(self.numberOfPatches):
 
-            __diff = __cumulativeRaditionValues["diffuse"][patchNumber] if diffuse else 0
-            __dir = __cumulativeRaditionValues["direct"][patchNumber] if direct else 0
+            __diff = __cumulativeRaditionValues["diffuse"][patchNumber] \
+                if diffuse else 0
 
-            self.__results['diffuse'].append(SkyPatch(__diff, __skyVectors[patchNumber]))
+            __dir = __cumulativeRaditionValues["direct"][patchNumber] \
+                if direct else 0
 
-            self.__results['direct'].append(SkyPatch(__dir, __skyVectors[patchNumber]))
+            self.__results['diffuse'].append(SkyPatch(__diff,
+                                                      __skyVectors[patchNumber]))
 
-            self.__results['total'].append(SkyPatch(__diff + __dir, __skyVectors[patchNumber]))
+            self.__results['direct'].append(SkyPatch(__dir,
+                                                     __skyVectors[patchNumber]))
+
+            self.__results['total'].append(SkyPatch(__diff + __dir,
+                                                    __skyVectors[patchNumber]))
 
         del(__cumulativeRaditionValues)
 
     def toJson(self):
         """Convert sky matrix files to json object."""
         raise NotImplementedError
+
+    def ToString(self):
+        """Overwrite .NET ToString."""
+        return self.__repr__()
 
     def __repr__(self):
         """Sky matrix representation."""
