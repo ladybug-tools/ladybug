@@ -82,7 +82,7 @@ class LBDataCollection(list):
     @property
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
-        return tuple(value.datetime for value in self.__data)
+        return tuple(value.datetime for value in self)
 
     def values(self, header=False):
         """Return the list of values.
@@ -290,6 +290,37 @@ class LBDataCollection(list):
         """
         return self.updateDataForHoursOfYear(values, analysisPeriod.HOYs)
 
+    def interpolateData(self, timestep):
+        """Interpolate data for a finer timestep.
+
+        Args:
+            timestep: Target timestep as an integer. Target timestep must be
+                divisable by current timestep.
+        """
+        assert timestep % self.header.analysisPeriod.timestep == 0, \
+            'Target timestep({}) must be divisable by current timestep({})' \
+            .format(timestep, self.header.analysisPeriod.timestep)
+
+        _minutesStep = int(60 / int(timestep / self.header.analysisPeriod.timestep))
+
+        # create a new header
+        _hea = self.header.duplicate()
+        _hea.analysisPeriod.timestep = timestep
+
+        # generate new data
+        _data = (self[d].__class__(_v, self[d].datetime.addminutes(step * _minutesStep))
+                 for d in xrange(len(self.values(header=False)) - 1)
+                 for _v, step in zip(self.xxrange(self[d], self[d + 1], timestep), xrange(timestep))
+                 )
+
+        return self.__class__(_data, _hea)
+
+    @staticmethod
+    def xxrange(start, end, stepCount):
+        """Generate n values between start and end."""
+        _step = (end - start) / float(stepCount)
+        return (start + (i * _step) for i in xrange(int(stepCount)))
+
     def filterByAnalysisPeriod(self, analysisPeriod=None):
         """
         Filter a list based on an analysis period.
@@ -308,21 +339,56 @@ class LBDataCollection(list):
            DBT = epw.dryBulbTemperature
            filteredDBT = DBT.filterByAnalysisPeriod(analysisPeriod)
         """
-        if not analysisPeriod or analysisPeriod.isAnnual:
-            return self
+        if analysisPeriod.timestep != 1:
+            # interpolate data for smaller timestep
+            _data = self.interpolateData(timestep=analysisPeriod.timestep)
+        else:
+            _data = self.duplicate()
 
-        _filteredData = self.filterByHOYs(analysisPeriod.HOYs)
+        if not analysisPeriod or analysisPeriod.isAnnual:
+            return _data.duplicate()
+
         # create a new filteredData
+        _filteredData = _data.filterByHOYs(analysisPeriod.HOYs)
         if self.header:
             _filteredData.header.analysisPeriod = analysisPeriod
 
         return _filteredData
 
+    def filterByMOYs(self, MOYs):
+        """Filter the list based on a list of minutes of the year.
+
+        Args:
+           MOYs: A List of minutes of the year [0..8759 * 60]
+
+        Return:
+            A new DataList with filtered data
+
+        Usage:
+
+           MOYs = range(0, 48 * 60)  # The first two days of the year
+           epw = EPW("c:/ladybug/weatherdata.epw")
+           DBT = epw.dryBulbTemperature
+           filteredDBT = DBT.filterByMOYs(MOYs)
+        """
+        # There is no guarantee that data is continuous so I iterate through the
+        # each data point one by one
+        _filteredData = [d for d in self.values(header=False)
+                         if d.datetime.MOY in MOYs]
+
+        # create a new filteredData
+        if self.header:
+            _filteredHeader = self.header.duplicate()
+            _filteredHeader.analysisPeriod = None
+            return self.__class__(_filteredData, _filteredHeader)
+        else:
+            return self.__class__(_filteredData)
+
     def filterByHOYs(self, HOYs):
         """Filter the list based on an analysis period.
 
         Args:
-           HOYs: A List of hours of the year [1-8760]
+           HOYs: A List of hours of the year 0..8759
 
         Return:
             A new DataList with filtered data
@@ -334,18 +400,10 @@ class LBDataCollection(list):
            DBT = epw.dryBulbTemperature
            filteredDBT = DBT.filterByHOYs(HOYs)
         """
-        # There is no guarantee that data is continuous so I iterate through the
-        # each data point one by one
-        _filteredData = [d for d in self.values(header=False)
-                         if d.datetime.HOY in HOYs]
+        _moys = tuple((int(hour) + int(round((hour - int(hour))) * 60))
+                      for hour in HOYs)
 
-        # create a new filteredData
-        if self.header:
-            _filteredHeader = self.header.duplicate()
-            _filteredHeader.analysisPeriod = None
-            return self.__class__(_filteredData, _filteredHeader)
-        else:
-            return self.__class__(_filteredData)
+        return self.filterByMOYs(_moys)
 
     def filterByConditionalStatement(self, statement):
         """Filter the list based on an analysis period.

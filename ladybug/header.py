@@ -70,4 +70,4 @@ class Header(object):
     def __repr__(self):
         """Return Ladybug header as a string."""
         return "%s|%s(%s)|%s" % (
-            self.location, self.dataType, self.unit, self.analysisPeriod)
+            repr(self.location), self.dataType, self.unit, self.analysisPeriod)

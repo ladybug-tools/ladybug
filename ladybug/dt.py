@@ -33,7 +33,7 @@ class LBDateTime(datetime):
 
         # find month
         for monthCount in range(12):
-            if HOY <= numOfHoursUntilMonth[monthCount + 1]:
+            if int(HOY) <= numOfHoursUntilMonth[monthCount + 1]:
                 month = monthCount + 1
                 break
         try:
@@ -49,9 +49,17 @@ class LBDateTime(datetime):
                 hour = 23
                 day -= 1
 
-            minute = int((hour - int(hour)) * 60)
+            minute = int(round((hour - int(hour)) * 60))
+
+            if minute < 0:
+                minute += 60
+                hour = 23
+                day -= 1
+
             return cls(month, day, int(hour), minute)
 
+    # TODO: Calculation should be based on MOY and HOY should use it
+    # Current implementation is reversed.
     @classmethod
     def fromMOY(cls, MOY):
         """Create Ladybug Datetime from a minute of the year.
@@ -99,6 +107,35 @@ class LBDateTime(datetime):
         This output assumes the minute is 0.
         """
         return (self.DOY - 1) * 24 + self.hour
+
+    def addminutes(self, minutes):
+        """Create a new LBDateTime after the minutes are added.
+
+        minutes: An integer value for the number of minutes.
+        """
+        _moy = self.MOY + int(minutes)
+        return self.__class__.fromMOY(_moy)
+
+    def subminutes(self, minutes):
+        """Create a new LBDateTime after the minutes are subtracted.
+
+        minutes: An integer value for the number of minutes.
+        """
+        return self.addminutes(-minutes)
+
+    def addhour(self, hour):
+        """Create a new LBDateTime from this time + timedelta.
+
+        hours: A float value in hours (e.g. .5 = half an hour)
+        """
+        return self.addminutes((self.HOY + hour) * 60)
+
+    def subhour(self, hour):
+        """Create a new LBDateTime from this time - timedelta.
+
+        hour: A float value in hours (e.g. .5 is half an hour and 2 is two hours).
+        """
+        return self.addhour(-hour)
 
     def __str__(self):
         """Return date time as a string."""

@@ -1,6 +1,6 @@
 from .location import Location
 from .analysisperiod import AnalysisPeriod
-from .datatype import LBData, Temperature, RelativeHumidity, Radiation, Illuminance
+from .datatype import LBData  # , Temperature, RelativeHumidity, Radiation, Illuminance
 from .header import Header
 from .datacollection import LBDataCollection
 from .dt import LBDateTime
@@ -9,11 +9,13 @@ import os
 
 
 class EPW(object):
-    def __init__(self, epwPath=None):
-        """Import epw data from a local epw file.
+    """Import epw data from a local epw file.
 
-        epwFileAddress: Local file address to an epw file
-        """
+    epwPath: Local file address to an epw file
+    """
+
+    def __init__(self, epwPath=None):
+        """Init class."""
         self.epwPath = epwPath
         self.__isDataLoaded = False
         self.__isLocationLoaded = False

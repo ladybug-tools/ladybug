@@ -30,10 +30,12 @@ class AnalysisPeriod(object):
         """Init an analysis period."""
         # calculate start time and end time
         self.stTime = LBDateTime(int(stMonth), int(stDay), int(stHour))
-        if endDay > self.__numOfDaysEachMonth[endMonth - 1]:
+
+        if int(endDay) > self.__numOfDaysEachMonth[int(endMonth) - 1]:
             end = self.__numOfDaysEachMonth[endMonth - 1]
             print "Updated endDay from {} to {}".format(endDay, end)
             endDay = end
+
         self.endTime = LBDateTime(int(endMonth), int(endDay), int(endHour))
 
         if self.stTime.hour <= self.endTime.hour:
@@ -92,8 +94,8 @@ class AnalysisPeriod(object):
         try:
             stMonth, stDay, endMonth, endDay, stHour, endHour, timestep = ap.split(' ')
             return cls(stMonth, stDay, stHour, endMonth, endDay, endHour, int(timestep))
-        except:
-            raise ValueError(analysisPeriodString + " is not a valid analysis period!")
+        except Exception as e:
+            raise ValueError(str(e))
 
     def __isPossibleHour(self, hour):
         if not self.overnight:
