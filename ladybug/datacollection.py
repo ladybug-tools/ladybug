@@ -400,8 +400,7 @@ class LBDataCollection(list):
            DBT = epw.dryBulbTemperature
            filteredDBT = DBT.filterByHOYs(HOYs)
         """
-        _moys = tuple((int(hour) + int(round((hour - int(hour))) * 60))
-                      for hour in HOYs)
+        _moys = tuple(int(hour * 60) for hour in HOYs)
 
         return self.filterByMOYs(_moys)
 
