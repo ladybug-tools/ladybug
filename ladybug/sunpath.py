@@ -83,8 +83,9 @@ class LBSunpath(object):
         Args:
             month: An integer between 1-12
             day: An integer between 1-31
-            hour: A positive number <= 24
-            isSolarTime: A boolean to indicate if the input hour is solar time. (Default: False)
+            hour: A positive number between 0..23
+            isSolarTime: A boolean to indicate if the input hour is solar time.
+                (Default: False)
 
         Returns:
             A sun object for this particular time
@@ -341,22 +342,27 @@ class LBSun(object):
     """
 
     __slots__ = ('__datetime', '__altitude', '__azimuth', '__isSolarTime',
-                 '__isDaylightSaving', '__northAngle', '__hourlyData')
+                 '__isDaylightSaving', '__northAngle', '__hourlyData', '__data',
+                 '__sunVector')
     PI = math.pi
 
     def __init__(self, datetime, altitude, azimuth, isSolarTime,
                  isDaylightSaving, northAngle, data=None):
         """Init sun."""
         assert hasattr(datetime, 'isLBDateTime'), \
-            "datetime should be a LBDateTime (not {})".format(type(datetime))
+            "datetime must be a LBDateTime (not {})".format(type(datetime))
         self.__datetime = datetime  # read-only
+
         assert -self.PI <= altitude <= self.PI, \
-            "altitude should be between {} and {}.".format(-self.PI, self.PI)
+            "altitude({}) must be between {} and {}." \
+            .format(altitude, -self.PI, self.PI)
+
         self.__altitude = altitude  # read-only
-        assert -self.PI / 2 <= azimuth <= self.PI / 2, \
-            "azimuth should be between {} and {}.".format(
-                -self.PI / 2, self.PI / 2
-            )
+
+        assert -2 * self.PI <= azimuth <= 2 * self.PI, \
+            "azimuth({}) should be between {} and {}." \
+            .format(azimuth, -self.PI, self.PI)
+
         self.__azimuth = azimuth  # read-only
         self.__isSolarTime = isSolarTime
         self.__isDaylightSaving = isDaylightSaving
@@ -448,7 +454,7 @@ class LBSun(object):
 
         _sunvector.normalize().flip()
 
-        self.__sunvector = _sunvector
+        self.__sunVector = _sunvector
 
     def ToString(self):
         """Overwrite .NET ToString method."""
@@ -457,7 +463,7 @@ class LBSun(object):
     def __repr__(self):
         """Sun representation."""
         # sun at datetime (X, Y, Z)
-        return "Sun at {} ({}, {}, {})".format(
+        return "Sun at {} (x:{}, y:{}, z:{})".format(
             self.datetime,
             self.sunVector.x,
             self.sunVector.y,

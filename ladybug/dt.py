@@ -81,6 +81,11 @@ class LBDateTime(datetime):
         return cls(dt.month, dt.day, dt.hour, dt.minute)
 
     @property
+    def isLBDateTime(self):
+        """Check if data is ladybug data."""
+        return True
+
+    @property
     def DOY(self):
         """Calculate day of the year for this date time."""
         return self.timetuple().tm_yday
