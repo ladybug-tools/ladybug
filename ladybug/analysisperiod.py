@@ -1,6 +1,6 @@
 """Ladybug analysis period class."""
-from dt import LBDateTime
-from datetime import timedelta
+from .dt import LBDateTime
+from datetime import datetime, timedelta
 
 
 class AnalysisPeriod(object):
@@ -70,8 +70,8 @@ class AnalysisPeriod(object):
         This method is useful to be called from inside Grasshopper or Dynamo
         """
         if not analysisPeriod:
-            return
-        elif isinstance(analysisPeriod, cls):
+            return cls()
+        elif hasattr(analysisPeriod, 'isAnalysisPeriod'):
             return analysisPeriod
         elif isinstance(analysisPeriod, str):
             try:
@@ -97,6 +97,11 @@ class AnalysisPeriod(object):
         except Exception as e:
             raise ValueError(str(e))
 
+    @property
+    def isAnalysisPeriod(self):
+        """Return True."""
+        return True
+
     def __isPossibleHour(self, hour):
         if not self.overnight:
             return self.stTime.hour <= hour <= self.endTime.hour
@@ -110,7 +115,13 @@ class AnalysisPeriod(object):
         Use this method only when start time month is before end time month.
         """
         # calculate based on minutes
-        curr = stTime
+        # I have to convert the object to LBDateTime because of how Dynamo
+        # works: https://github.com/DynamoDS/Dynamo/issues/6683
+        # Do not modify this line to datetime
+        curr = datetime(stTime.year, stTime.month, stTime.day, stTime.hour,
+                        stTime.minute)
+        endTime = datetime(endTime.year, endTime.month, endTime.day,
+                           endTime.hour, endTime.minute)
 
         while curr <= endTime:
             if self.__isPossibleHour(curr.hour):
@@ -152,8 +163,7 @@ class AnalysisPeriod(object):
     @property
     def isAnnual(self):
         """Check if an analysis period is annual."""
-        return True if (abs(self.endTime.DOY - self.stTime.DOY) == 364 and
-                        abs(self.endTime.hour - self.stTime.hour) == 23) \
+        return True if len(self.__timestampsData) / self.timestep == 8760 \
             else False
 
     def isTimeIncluded(self, time):

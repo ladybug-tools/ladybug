@@ -25,41 +25,8 @@ class LBDateTime(datetime):
         Args:
             HOY: A float value 0 <= and < 8760
         """
-        # numOfDaysUntilMonth = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365]
-        numOfHoursUntilMonth = [0, 744, 1416, 2160, 2880, 3624, 4344, 5088,
-                                5832, 6552, 7296, 8016, 8760]
+        return cls.fromMOY(round(HOY * 60))
 
-        HOY += 1
-
-        # find month
-        for monthCount in range(12):
-            if int(HOY) <= numOfHoursUntilMonth[monthCount + 1]:
-                month = monthCount + 1
-                break
-        try:
-            day = int((HOY - numOfHoursUntilMonth[month - 1]) / 24) + 1
-        except UnboundLocalError:
-            raise ValueError(
-                "HOY must be between 0..8759. Invalid input %d" % (HOY - 1)
-            )
-        else:
-            hour = HOY % 24 - 1
-
-            if HOY % 24 == 0:
-                hour = 23
-                day -= 1
-
-            minute = int(round((hour - int(hour)) * 60))
-
-            if minute < 0:
-                minute += 60
-                hour = 23
-                day -= 1
-
-            return cls(month, day, int(hour), minute)
-
-    # TODO: Calculation should be based on MOY and HOY should use it
-    # Current implementation is reversed.
     @classmethod
     def fromMOY(cls, MOY):
         """Create Ladybug Datetime from a minute of the year.
@@ -67,7 +34,26 @@ class LBDateTime(datetime):
         Args:
             MOY: An integer value 0 <= and < 525600
         """
-        return cls.fromHOY(MOY / 60.0)
+        numOfMinutesUntilMonth = (0, 44640, 84960, 129600, 172800, 217440,
+                                  260640, 305280, 349920, 393120, 437760,
+                                  480960, 525600)
+
+        # find month
+        for monthCount in range(12):
+            if int(MOY) < numOfMinutesUntilMonth[monthCount + 1]:
+                month = monthCount + 1
+                break
+        try:
+            day = int((MOY - numOfMinutesUntilMonth[month - 1]) / (60 * 24)) + 1
+        except UnboundLocalError:
+            raise ValueError(
+                "MOY must be positive and smaller than 525600. Invalid input %d" % (MOY)
+            )
+        else:
+            hour = int((MOY / 60) % 24)
+            minute = int(MOY % 60)
+
+            return cls(month, day, hour, minute)
 
     @classmethod
     def fromDateTimeString(cls, datetimeString):
@@ -84,6 +70,15 @@ class LBDateTime(datetime):
     def isLBDateTime(self):
         """Check if data is ladybug data."""
         return True
+
+    @property
+    def id(self):
+        """Return date id.
+
+        This is a value that I use to overcome Dynamo's limitations:
+        https://github.com/DynamoDS/Dynamo/issues/6683
+        """
+        return self.year + self.month + self.hour + self.minute
 
     @property
     def DOY(self):
@@ -148,8 +143,8 @@ class LBDateTime(datetime):
 
     def ToString(self):
         """Overwrite .NET ToString."""
-        self.__str__()
+        return self.__str__()
 
     def __repr__(self):
         """Return date time as a string."""
-        self.__str__()
+        return self.__str__()

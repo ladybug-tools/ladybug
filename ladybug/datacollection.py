@@ -302,18 +302,18 @@ class LBDataCollection(list):
             .format(timestep, self.header.analysisPeriod.timestep)
 
         _minutesStep = int(60 / int(timestep / self.header.analysisPeriod.timestep))
-
-        # create a new header
-        _hea = self.header.duplicate()
-        _hea.analysisPeriod.timestep = timestep
-
+        _dataLength = len(self.values(header=False))
         # generate new data
-        _data = (self[d].__class__(_v, self[d].datetime.addminutes(step * _minutesStep))
-                 for d in xrange(len(self.values(header=False)) - 1)
-                 for _v, step in zip(self.xxrange(self[d], self[d + 1], timestep), xrange(timestep))
-                 )
-
-        return self.__class__(_data, _hea)
+        _data = tuple(
+            self[d].__class__(_v, self[d].datetime.addminutes(step * _minutesStep))
+            for d in xrange(_dataLength)
+            for _v, step in zip(self.xxrange(self[d],
+                                             self[(d + 1) % _dataLength],
+                                             timestep),
+                                xrange(timestep))
+        )
+        # generate data for last hour
+        return _data
 
     @staticmethod
     def xxrange(start, end, stepCount):
@@ -341,9 +341,13 @@ class LBDataCollection(list):
         """
         if analysisPeriod.timestep != 1:
             # interpolate data for smaller timestep
-            _data = self.interpolateData(timestep=analysisPeriod.timestep)
+            _intData = self.interpolateData(timestep=analysisPeriod.timestep)
+            # create a new header
+            _hea = self.header.duplicate()
+            _hea.analysisPeriod = analysisPeriod
+            _data = self.__class__(_intData, _hea)
         else:
-            _data = self.duplicate()
+            _data = self
 
         if not analysisPeriod or analysisPeriod.isAnnual:
             return _data.duplicate()

@@ -30,12 +30,15 @@ class EPW(object):
 
     @epwPath.setter
     def epwPath(self, epwFilepath):
-        if not os.path.isfile(epwFilepath):
-            raise ValueError('{} is not a valid address.'.format(epwFilepath))
+        self.__epwPath = os.path.normpath(epwFilepath)
+
+        if not os.path.isfile(self.__epwPath):
+            raise ValueError('{} is not a valid address.'.format(self.__epwPath) +
+                             '\nIs there a whitesapce in file path?'
+                             )
         elif not epwFilepath.lower().endswith('epw'):
             raise TypeError(epwFilepath + ' is not an .epw file.')
 
-        self.__epwPath = epwFilepath
         self.filePath, self.fileName = os.path.split(self.epwPath)
 
     @property
@@ -507,7 +510,7 @@ class EPW(object):
         return "place %s\n" % self.location.city + \
             "latitude %.2f\n" % self.location.latitude + \
             "longitude %.2f\n" % -self.location.longitude + \
-            "time_zone %d\n" % (-self.location.timeZone * 15) + \
+            "time_zone %d\n" % (-self.location.timezone * 15) + \
             "site_elevation %.1f\n" % self.location.elevation + \
             "weather_data_file_units 1\n"
 

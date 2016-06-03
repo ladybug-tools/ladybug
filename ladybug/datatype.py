@@ -1,5 +1,5 @@
 """Ladybug data types."""
-from abc import ABCMeta, abstractmethod
+# from abc import ABCMeta, abstractmethod
 from math import pi as PI
 from euclid import Vector3
 
@@ -14,7 +14,7 @@ class DataTypeBase(object):
         nickname: Optional nickname for data (e.g. Dew Point Temperature)
     """
 
-    __metaclass__ = ABCMeta
+    # __metaclass__ = ABCMeta
     __slots__ = ('standard', '__value', 'datetime', 'nickname')
 
     minimum = float('-inf')
@@ -51,8 +51,9 @@ class DataTypeBase(object):
             except:
                 raise ValueError("Failed to convert {} to {}".format(v,
                                                                      self.valueType))
-
-            self.isInRange(_v, True)
+            else:
+                self.isInRange(_v, True)
+                self.__value = _v
 
     @property
     def unit(self):
@@ -62,12 +63,12 @@ class DataTypeBase(object):
         return self.unitSI if self.standard == 'SI' else \
             self.unitIP
 
-    @abstractmethod
+    # @abstractmethod
     def toIP(self):
         """Write a static method that converts a value from SI to IP."""
         pass
 
-    @abstractmethod
+    # @abstractmethod
     def toSI(self):
         """Write a static method that converts a value from IP to SI."""
         pass
@@ -660,7 +661,7 @@ class SkyPatch(LBData):
         id: patch number
     """
 
-    __slots__ = ()
+    __slots__ = ('vector',)
     minimum = 0
     valueType = float
     unitSI = 'steradian'

@@ -39,6 +39,8 @@ class LBLegendParameters(object):
 
     """
 
+    _cType = {0: 'continuous', 1: 'segmented', 2: 'ordinal'}
+
     # TODO: Add textual and geometry parts
     def __init__(self, legendRange=['min', 'max'], numberOfSegments=11,
                  colors=None, chartType=0):
@@ -74,16 +76,8 @@ class LBLegendParameters(object):
         """Set domain of the colors based on min and max of a list of values."""
         _flattenedList = list(flatten(values))
         _flattenedList.sort()
-
-        try:
-            self.domain[self.domain.index('min')] = _flattenedList[0]
-        except ValueError:
-            pass
-        try:
-            self.domain[self.domain.index('max')] = _flattenedList[-1]
-        except ValueError:
-            pass
-        del(_flattenedList)
+        self.domain = tuple(_flattenedList[0] if d == 'min' else d for d in self.domain)
+        self.domain = tuple(_flattenedList[-1] if d == 'max' else d for d in self.domain)
 
     def calculateColors(self, values):
         """Return a list (or list of lists) of colors based on input values."""
@@ -110,6 +104,10 @@ class LBLegendParameters(object):
         """Return legend text."""
         raise NotImplementedError()
 
+    def ToString(self):
+        """Overwrite .NET ToString."""
+        return self.__repr__()
+
     def __repr__(self):
         """Legend representation."""
-        return "ladybug.legendparameters"
+        return "{} legend parameters".format(self._cType[self.colorRange.ctype])

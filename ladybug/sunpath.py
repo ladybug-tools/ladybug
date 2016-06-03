@@ -1,6 +1,6 @@
 import math
 from .dt import LBDateTime
-from euclid import Vector3
+from .euclid import Vector3
 
 
 class LBSunpath(object):
@@ -90,7 +90,7 @@ class LBSunpath(object):
         Returns:
             A sun object for this particular time
         """
-        datetime = LBDateTime(month, day, hour)
+        datetime = LBDateTime(month, day, *self.__calculateHourAndMinute(hour))
         return self.calculateSunFromDataTime(datetime, isSolarTime)
 
     def calculateSunFromHOY(self, HOY, isSolarTime=False):
@@ -207,10 +207,18 @@ class LBSunpath(object):
         # sunrise = self.__calculateSolarTime(24*sunrise, eqOfTime, isSolarTime)
         # sunset  = self.__calculateSolarTime(24*sunset, eqOfTime, isSolarTime)
 
+        # convert to hours
+        sunrise *= 24
+        sunset *= 24
+        noon *= 24
+
         return {
-            "sunrise": LBDateTime(datetime.month, datetime.day, 24 * sunrise),
-            "noon": LBDateTime(datetime.month, datetime.day, 24 * noon),
-            "sunset": LBDateTime(datetime.month, datetime.day, 24 * sunset)
+            "sunrise": LBDateTime(datetime.month, datetime.day,
+                                  *self.__calculateHourAndMinute(sunrise)),
+            "noon": LBDateTime(datetime.month, datetime.day,
+                               *self.__calculateHourAndMinute(noon)),
+            "sunset": LBDateTime(datetime.month, datetime.day,
+                                 *self.__calculateHourAndMinute(sunset))
         }
 
     def __calculateSolarGeometry(self, datetime, year=2015):
@@ -324,6 +332,11 @@ class LBSunpath(object):
         return (
             (hour * 60 + eqOfTime + 4 * math.degrees(self.__longitude) -
              60 * self.timezone) % 1440) / 60
+
+    @staticmethod
+    def __calculateHourAndMinute(floatHour):
+        """Calculate hour and minutes as integers from a float hour."""
+        return int(floatHour), int(round((floatHour - int(floatHour)) * 60))
 
 
 class LBSun(object):
