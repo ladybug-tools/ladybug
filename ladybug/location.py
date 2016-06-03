@@ -44,9 +44,16 @@ class Location(object):
             return cls()
         try:
             if hasattr(location, 'isLocation'):
+                # Ladybug location
                 return location
 
-            if location.startswith('Site:'):
+            elif hasattr(location, 'Latitude'):
+                # Revit's location
+                return cls(city=str(location.Name.replace(",", " ")),
+                           latitude=location.Latitude,
+                           longitude=location.Longitude)
+
+            elif location.startswith('Site:'):
                 loc, city, latitude, longitude, timezone, elevation = \
                     re.findall(r'\r*\n*([a-zA-Z0-9.:_-]*)[,|;]',
                                location,

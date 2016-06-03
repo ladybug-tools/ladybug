@@ -16,7 +16,12 @@ class LBDateTime(datetime):
 
     def __new__(cls, month=1, day=1, hour=0, minute=0):
         """Create Ladybug datetime."""
-        return datetime.__new__(cls, 2015, month, day, hour, minute)
+        try:
+            return datetime.__new__(cls, 2015, month, day, hour, minute)
+        except ValueError as e:
+            raise ValueError("{} > ({}/{}@{}:{})(m/d@h:m)".format(
+                e, month, day, hour, minute
+            ))
 
     @classmethod
     def fromHOY(cls, HOY):

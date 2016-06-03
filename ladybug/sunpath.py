@@ -1,4 +1,5 @@
 import math
+from .location import Location
 from .dt import LBDateTime
 from .euclid import Vector3
 
@@ -37,15 +38,16 @@ class LBSunpath(object):
     def __init__(self, latitude=0, northAngle=0, longitude=0, timezone=0,
                  daylightSavingPeriod=None):
         """Init sunpath."""
+        self.timezone = timezone
         self.latitude = latitude
         self.longitude = longitude
         self.northAngle = northAngle
-        self.timezone = timezone
         self.daylightSavingPeriod = daylightSavingPeriod
 
     @classmethod
     def fromLocation(cls, location, northAngle=0, daylightSavingPeriod=None):
         """Create a sun path from a LBlocation."""
+        location = Location.fromLocation(location)
         return cls(location.latitude, northAngle, location.longitude,
                    location.timezone, daylightSavingPeriod)
 
@@ -70,6 +72,11 @@ class LBSunpath(object):
     def longitude(self, value):
         """Set longitude value in degrees."""
         self.__longitude = math.radians(float(value))
+
+        # update timezone
+        if abs((value / 15.0) - self.timezone) > 1:
+            # if timezone doesn't match the longitude update the timezone
+            self.timezone = value / 15.0
 
     def isDaylightSavingHour(self, datetime):
         """Check if a datetime is a daylight saving time."""
@@ -461,9 +468,9 @@ class LBSun(object):
 
         # rotate north vector based on azimuth, altitude, and north
         _sunvector = northVector \
-            .rotate_around(xAxis, self.__altitude) \
-            .rotate_around(zAxis, self.__azimuth) \
-            .rotate_around(zAxis, math.radians(-self.__northAngle))
+            .rotate_around(xAxis, self.altitudeInRadians) \
+            .rotate_around(zAxis, self.azimuthInRadians) \
+            .rotate_around(zAxis, math.radians(-self.northAngle))
 
         _sunvector.normalize().flip()
 
