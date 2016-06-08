@@ -103,6 +103,9 @@ class AnalysisPeriod(object):
         return True
 
     def __isPossibleHour(self, hour):
+        """Check if a float hour is a possible hour for this analysis period."""
+        if hour > 23 and self.__isPossibleHour(0):
+            hour = int(hour)
         if not self.overnight:
             return self.stTime.hour <= hour <= self.endTime.hour
         else:
@@ -124,12 +127,14 @@ class AnalysisPeriod(object):
                            endTime.hour, endTime.minute)
 
         while curr <= endTime:
-            if self.__isPossibleHour(curr.hour):
+            if self.__isPossibleHour(curr.hour + (curr.minute / 60.0)):
                 time = LBDateTime(curr.month, curr.day, curr.hour, curr.minute)
                 self.__timestampsData.append(time.MOY)
             curr += self.minuteIntervals
 
-        if self.timestep != 1:
+        if self.timestep != 1 and curr.hour == 23 and self.__isPossibleHour(0):
+            # This is for cases that timestep is more than one
+            # and last hour of the day is part of the calculation
             curr = endTime
             for i in range(self.timestep)[1:]:
                 curr += self.minuteIntervals
