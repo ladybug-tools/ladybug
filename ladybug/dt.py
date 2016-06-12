@@ -66,24 +66,15 @@ class LBDateTime(datetime):
 
         Usage:
 
-            dt = LBDateTime.fromDateTimeString("31 Dec 2015 at 12:00")
+            dt = LBDateTime.fromDateTimeString("31 Dec 12:00")
         """
-        dt = datetime.strptime(datetimeString, '%d %b %Y at %H:%M')
+        dt = datetime.strptime(datetimeString, '%d %b %H:%M')
         return cls(dt.month, dt.day, dt.hour, dt.minute)
 
     @property
     def isLBDateTime(self):
         """Check if data is ladybug data."""
         return True
-
-    @property
-    def id(self):
-        """Return date id.
-
-        This is a value that I use to overcome Dynamo's limitations:
-        https://github.com/DynamoDS/Dynamo/issues/6683
-        """
-        return self.year + self.month + self.hour + self.minute
 
     @property
     def DOY(self):
@@ -142,9 +133,13 @@ class LBDateTime(datetime):
         """
         return self.addhour(-hour)
 
+    def toSimpleString(self, separator="_"):
+        """Return a simplified string."""
+        return self.strftime('%d_%b_%H_%M').replace("_", separator)
+
     def __str__(self):
         """Return date time as a string."""
-        return self.strftime('%d %b at %H:%M')
+        return self.strftime('%d %b %H:%M')
 
     def ToString(self):
         """Overwrite .NET ToString."""

@@ -533,7 +533,7 @@ class EPW(object):
                 line = "%d %d %.3f %d %d\n" \
                     % (dirRad.datetime.month,
                        dirRad.datetime.day,
-                       dirRad.datetime.hour - 0.5,
+                       dirRad.datetime.hour + 0.5,
                        dirRad, difRad)
 
                 weaFile.write(line)
