@@ -1,8 +1,9 @@
 """Useful functions for list operations."""
 import collections
 
+
 def flatten(inputList):
-    """Return a flattened genertor from an input list
+    """Return a flattened genertor from an input list.
 
     Usage:
 
@@ -11,11 +12,12 @@ def flatten(inputList):
         >> ['a', 'b', 'c', 'd', 'e', 'f']
     """
     for el in inputList:
-        if isinstance(el, collections.Iterable) and not isinstance(el, basestring):
+        if isinstance(el, collections.Iterable) \
+                and not isinstance(el, basestring):
             for sub in flatten(el):
                 yield sub
         else:
-            yield el
+                yield el
 
 
 def unflatten(guide, falttenedInput):
@@ -32,7 +34,8 @@ def unflatten(guide, falttenedInput):
         unflatten(guide, iter(inputList))
         >> [[0], [1, 2, 3], [[4]], [5]]
     """
-    return [unflatten(subList, falttenedInput) if isinstance(subList, list) else next(falttenedInput) for subList in guide]
+    return [unflatten(subList, falttenedInput) if isinstance(subList, list)
+            else next(falttenedInput) for subList in guide]
 
 
 def duplicate(value, listLength):

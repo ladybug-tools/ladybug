@@ -3,8 +3,6 @@
 import math
 
 
-
-
 def findSaturatedVaporPressureTorr(T):
     """
     Calculates Saturated Vapor Pressure (Torr) at Temperature T (C)
