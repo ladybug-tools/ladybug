@@ -514,13 +514,14 @@ class EPW(object):
             "site_elevation %.1f\n" % self.location.elevation + \
             "weather_data_file_units 1\n"
 
-    def epw2wea(self, filePath=None):
-        """Write wea file from epw file.
+    def toWea(self, filePath=None, hoys=None):
+        """Write an wea file from the epw file.
 
         WEA carries radiation values from epw ans is what gendaymtx uses to
         generate the sky. I wrote my own implementation to avoid shipping
         epw2wea.exe file. Now epw2wea is part of the Radiance distribution
         """
+        hoys = hoys or xrange(8760)
         if not filePath:
             filePath = self.epwPath[:-3] + "wea"
 
@@ -528,8 +529,9 @@ class EPW(object):
             # write header
             weaFile.write(self.__getWEAHeader())
             # write values
-            for dirRad, difRad in zip(self.directNormalRadiation,
-                                      self.diffuseHorizontalRadiation):
+            for hoy in hoys:
+                dirRad = self.directNormalRadiation[hoy]
+                difRad = self.diffuseHorizontalRadiation[hoy]
                 line = "%d %d %.3f %d %d\n" \
                     % (dirRad.datetime.month,
                        dirRad.datetime.day,
