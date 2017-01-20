@@ -74,7 +74,7 @@ class EPW(object):
             if not self.__isLocationLoaded:
                 locationData = line.strip().split(',')
                 self.__location = Location()
-                self.__location.city = locationData[1]
+                self.__location.city = locationData[1].replace('\\', ' ').replace('/', ' ')
                 self.__location.country = locationData[3]
                 self.__location.stationId = locationData[5]
                 self.__location.latitude = locationData[6]
