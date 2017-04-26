@@ -4,7 +4,7 @@
 
 ##### [ladybug.analysisperiod](http://ladybug-tools.github.io/ladybug/doc/analysisperiod.m.html)
 ##### [ladybug.color](http://ladybug-tools.github.io/ladybug/doc/color.m.html)
-##### [ladybug.comfort](http://ladybug-tools.github.io/ladybug/doc/comfort.m.html)
+##### [ladybug.comfort](http://ladybug-tools.github.io/ladybug/doc/comfort/index.html)
 ##### [ladybug.datacollection](http://ladybug-tools.github.io/ladybug/doc/datacollection.m.html)
 ##### [ladybug.datatype](http://ladybug-tools.github.io/ladybug/doc/datatype.m.html)
 ##### [ladybug.dt](http://ladybug-tools.github.io/ladybug/doc/dt.m.html)
