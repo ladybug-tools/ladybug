@@ -1,8 +1,6 @@
 """Wea weather file."""
 from .epw import EPW
-from .dt import LBDateTime
-
-import os
+from .dt import DateTime
 
 
 class Wea(object):
@@ -47,7 +45,7 @@ class Wea(object):
         generate the sky.
         """
         hoys = hoys or xrange(8760)
-        dts = (LBDateTime.fromHOY(h) for h in hoys)
+        dts = (DateTime.fromHoy(h) for h in hoys)
 
         with open(filePath, "wb") as weaFile:
             # write header

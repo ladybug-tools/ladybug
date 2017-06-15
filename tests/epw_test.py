@@ -33,7 +33,7 @@ from ladybug.epw import EPW
 # data = epwData.dryBulbTemperature.filterByAnalysisPeriod(analysisPeriod).values()
 # print len(data) == 8760
 
-# print LBDateTime.fromMOY(1395 + 47).MOY
+# print DateTime.fromMoy(1395 + 47).moy
 # ap = AnalysisPeriod(stMonth=1, stDay=31, stHour=21, \
 #                     endMonth=2, endDay=1, endHour=10, timestep=4)
 #

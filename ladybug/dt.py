@@ -2,14 +2,14 @@
 from datetime import datetime
 
 
-class LBDateTime(datetime):
+class DateTime(datetime):
     """Create Ladybug Date time.
 
     Args:
         month: A value for month between 1-12. (Defualt: 1)
         day: A value for day between 1-31. (Defualt: 1)
         hour: A value for hour between 0-23. (Defualt: 0)
-        minute: A value for month between 1-59. (Defualt: 0)
+        minute: A value for month between 0-59. (Defualt: 0)
     """
 
     __slots__ = ()
@@ -19,25 +19,25 @@ class LBDateTime(datetime):
         try:
             return datetime.__new__(cls, 2015, month, day, hour, minute)
         except ValueError as e:
-            raise ValueError("{} > ({}/{}@{}:{})(m/d@h:m)".format(
+            raise ValueError("{}:\n\t({}/{}@{}:{})(m/d@h:m)".format(
                 e, month, day, hour, minute
             ))
 
     @classmethod
-    def fromHOY(cls, HOY):
+    def fromHoy(cls, hoy):
         """Create Ladybug Datetime from an hour of the year.
 
         Args:
-            HOY: A float value 0 <= and < 8760
+            hoy: A float value 0 <= and < 8760
         """
-        return cls.fromMOY(round(HOY * 60))
+        return cls.fromMoy(round(hoy * 60))
 
     @classmethod
-    def fromMOY(cls, MOY):
+    def fromMoy(cls, moy):
         """Create Ladybug Datetime from a minute of the year.
 
         Args:
-            MOY: An integer value 0 <= and < 525600
+            moy: An integer value 0 <= and < 525600
         """
         numOfMinutesUntilMonth = (0, 44640, 84960, 129600, 172800, 217440,
                                   260640, 305280, 349920, 393120, 437760,
@@ -45,49 +45,49 @@ class LBDateTime(datetime):
 
         # find month
         for monthCount in range(12):
-            if int(MOY) < numOfMinutesUntilMonth[monthCount + 1]:
+            if int(moy) < numOfMinutesUntilMonth[monthCount + 1]:
                 month = monthCount + 1
                 break
         try:
-            day = int((MOY - numOfMinutesUntilMonth[month - 1]) / (60 * 24)) + 1
+            day = int((moy - numOfMinutesUntilMonth[month - 1]) / (60 * 24)) + 1
         except UnboundLocalError:
             raise ValueError(
-                "MOY must be positive and smaller than 525600. Invalid input %d" % (MOY)
+                "moy must be positive and smaller than 525600. Invalid input %d" % (moy)
             )
         else:
-            hour = int((MOY / 60) % 24)
-            minute = int(MOY % 60)
+            hour = int((moy / 60) % 24)
+            minute = int(moy % 60)
 
             return cls(month, day, hour, minute)
 
     @classmethod
     def fromDateTimeString(cls, datetimeString):
-        """Create Ladybug DateTime from a LBDateTime string.
+        """Create Ladybug DateTime from a DateTime string.
 
         Usage:
 
-            dt = LBDateTime.fromDateTimeString("31 Dec 12:00")
+            dt = DateTime.fromDateTimeString("31 Dec 12:00")
         """
         dt = datetime.strptime(datetimeString, '%d %b %H:%M')
         return cls(dt.month, dt.day, dt.hour, dt.minute)
 
     @property
-    def isLBDateTime(self):
+    def isDateTime(self):
         """Check if data is ladybug data."""
         return True
 
     @property
-    def DOY(self):
+    def doy(self):
         """Calculate day of the year for this date time."""
         return self.timetuple().tm_yday
 
     @property
-    def HOY(self):
+    def hoy(self):
         """Calculate hour of the year for this date time."""
-        return (self.DOY - 1) * 24 + self.floatHour
+        return (self.doy - 1) * 24 + self.floatHour
 
     @property
-    def MOY(self):
+    def moy(self):
         """Calculate minute of the year for this date time."""
         return self.intHOY * 60 + self.minute  # minute of the year
 
@@ -102,32 +102,32 @@ class LBDateTime(datetime):
 
         This output assumes the minute is 0.
         """
-        return (self.DOY - 1) * 24 + self.hour
+        return (self.doy - 1) * 24 + self.hour
 
     def addminutes(self, minutes):
-        """Create a new LBDateTime after the minutes are added.
+        """Create a new DateTime after the minutes are added.
 
-        minutes: An integer value for the number of minutes.
+        minutes: An integer value for minutes.
         """
-        _moy = self.MOY + int(minutes)
-        return self.__class__.fromMOY(_moy)
+        _moy = self.moy + int(minutes)
+        return self.__class__.fromMoy(_moy)
 
     def subminutes(self, minutes):
-        """Create a new LBDateTime after the minutes are subtracted.
+        """Create a new DateTime after the minutes are subtracted.
 
         minutes: An integer value for the number of minutes.
         """
         return self.addminutes(-minutes)
 
     def addhour(self, hour):
-        """Create a new LBDateTime from this time + timedelta.
+        """Create a new DateTime from this time + timedelta.
 
         hours: A float value in hours (e.g. .5 = half an hour)
         """
-        return self.addminutes((self.HOY + hour) * 60)
+        return self.addminutes((self.hoy + hour) * 60)
 
     def subhour(self, hour):
-        """Create a new LBDateTime from this time - timedelta.
+        """Create a new DateTime from this time - timedelta.
 
         hour: A float value in hours (e.g. .5 is half an hour and 2 is two hours).
         """
