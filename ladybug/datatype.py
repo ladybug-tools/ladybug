@@ -242,9 +242,9 @@ class DataPoint(DataTypeBase):
         DataTypeBase.__init__(self, value, datetime, standard, nickname)
 
     @classmethod
-    def fromLBData(cls, value):
+    def fromData(cls, value):
         """Try to create a DataPoint from input data."""
-        if hasattr(value, 'isLBData'):
+        if hasattr(value, 'isData'):
             return value
 
         try:

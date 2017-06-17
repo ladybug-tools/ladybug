@@ -174,7 +174,7 @@ class Sunpath(object):
                      ) % (2 * math.pi))
 
         # create the sun for this hour
-        return LBSun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving,
+        return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving,
                      self.northAngle)
 
     def calculateSunriseSunset(self, month, day, depression=0.833,
@@ -351,7 +351,7 @@ class Sunpath(object):
             return hour, minute
 
 
-class LBSun(object):
+class Sun(object):
     """Sun.
 
     Attributes:

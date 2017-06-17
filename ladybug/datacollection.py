@@ -21,7 +21,7 @@ class DataCollection(object):
         elif not hasattr(data, '__iter__'):
             data = (data,)
         for d in data:
-            assert self._checkLBData(d), \
+            assert self._checkData(d), \
                 'Expected DataPoint got {}'.format(type(d))
             self._values.append(d)
 
@@ -44,7 +44,7 @@ class DataCollection(object):
         if analysisPeriod:
             return cls.fromDataAndDatetimes(lst, analysisPeriod.datetimes, header)
         else:
-            data = (DataPoint.fromLBData(d) for d in lst)
+            data = (DataPoint.fromData(d) for d in lst)
             return cls(data, header)
 
     @classmethod
@@ -69,14 +69,14 @@ class DataCollection(object):
 
     def append(self, d):
         """Append a single item to the list."""
-        assert self._checkLBData(d), \
+        assert self._checkData(d), \
             'Expected DataPoint got {}'.format(type(d))
         self._values.append(d)
 
     def extend(self, newData):
         """Extend a number of items to the end of items."""
         for d in newData:
-            assert self._checkLBData(d), \
+            assert self._checkData(d), \
                 'Expected DataPoint got {}'.format(type(d))
         self._values.extend(newData)
 
@@ -97,7 +97,7 @@ class DataCollection(object):
         """
         return self._values
 
-    def _checkLBData(self, d):
+    def _checkData(self, d):
         return True if hasattr(d, 'isDataPoint') else False
 
     def duplicate(self):
@@ -111,7 +111,7 @@ class DataCollection(object):
         return sum(values) / len(data)
 
     @staticmethod
-    def groupLBDataByMonth(data, monthRange=xrange(1, 13)):
+    def groupDataByMonth(data, monthRange=xrange(1, 13)):
         """Return a dictionary of values where values are grouped for each month.
 
         Key values are between 1-12
@@ -148,10 +148,10 @@ class DataCollection(object):
            monthlyValues = epwfile.dryBulbTemperature.groupByMonth()
            print monthlyValues[2] # returns values for the month of March
         """
-        return self.groupLBDataByMonth(self.values, monthRange)
+        return self.groupDataByMonth(self.values, monthRange)
 
     @staticmethod
-    def groupLBDataByDay(data, dayRange=xrange(1, 366)):
+    def groupDataByDay(data, dayRange=xrange(1, 366)):
         """
         Return a dictionary of values where values are grouped by each day of year.
 
@@ -190,10 +190,10 @@ class DataCollection(object):
             dailyValues = epwfile.dryBulbTemperature.groupByDay(range(1, 30))
             print dailyValues[2] # returns values for the second day of year
         """
-        return self.groupLBDataByDay(self.values, dayRange)
+        return self.groupDataByDay(self.values, dayRange)
 
     @staticmethod
-    def groupLBDataByHour(data, hourRange=xrange(0, 24)):
+    def groupDataByHour(data, hourRange=xrange(0, 24)):
         """Return a dictionary of values where values are grouped by each hour of day.
 
         Key values are between 0-23
@@ -228,13 +228,13 @@ class DataCollection(object):
 
             epwfile = EPW("epw file address")
             monthlyValues = epwfile.dryBulbTemperature.groupByMonth([1])
-            groupedHourlyData = epwfile.dryBulbTemperature.groupLBDataDataByHour(
+            groupedHourlyData = epwfile.dryBulbTemperature.groupDataDataByHour(
                 monthlyValues[1])
             for hour, data in groupedHourlyData.items():
                 print("average temperature values for hour {} during JAN is {} {}"
                       .format(hour, core.DataList.average(data), DBT.header.unit))
         """
-        return self.groupLBDataByHour(self.values, hourRange)
+        return self.groupDataByHour(self.values, hourRange)
 
     def updateDataForHoursOfYear(self, values, hoursOfYear):
         """Update values new set of values for a list of hours of the year.
@@ -479,10 +479,10 @@ class DataCollection(object):
             return self.__class__(_filteredData)
 
     @staticmethod
-    def averageLBDataMonthly(self, data):
+    def averageDataMonthly(self, data):
         """Return a dictionary of values for average values for available months."""
         # group data for each month
-        monthlyValues = self.groupLBDataByMonth(data)
+        monthlyValues = self.groupDataByMonth(data)
 
         averageValues = OrderedDict()
 
@@ -494,16 +494,16 @@ class DataCollection(object):
 
     def averageMonthly(self):
         """Return a dictionary of values for average values for available months."""
-        return self.averageLBDataMonthly(self.values)
+        return self.averageDataMonthly(self.values)
 
     @staticmethod
-    def averageLBDataMonthlyForEachHour(self, data):
+    def averageDataMonthlyForEachHour(self, data):
         """Calculate average value for each hour during each month.
 
         This method returns a dictionary with nested dictionaries for each hour
         """
         # get monthy values
-        monthlyHourlyValues = self.groupLBDataByMonth(data)
+        monthlyHourlyValues = self.groupDataByMonth(data)
 
         # group data for each hour in each month and collect them in a dictionary
         averagedMonthlyValuesPerHour = OrderedDict()
@@ -512,7 +512,7 @@ class DataCollection(object):
                 averagedMonthlyValuesPerHour[month] = OrderedDict()
 
             # group data for each hour
-            groupedHourlyData = self.groupLBDataByHour(monthlyValues)
+            groupedHourlyData = self.groupDataByHour(monthlyValues)
             for hour, data in groupedHourlyData.items():
                 averagedMonthlyValuesPerHour[month][hour] = self.average(data)
 
@@ -523,7 +523,7 @@ class DataCollection(object):
 
         This method returns a dictionary with nested dictionaries for each hour
         """
-        return self.averageLBDataMonthlyForEachHour(self.values)
+        return self.averageDataMonthlyForEachHour(self.values)
 
     def __len__(self):
         return len(self._values)
