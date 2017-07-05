@@ -13,13 +13,14 @@ class Location(object):
         timezone: Time zone between -12 hours (west) and 12 hours (east) (Default: 0).
         elevation: A number for elevation of the location.
         stationId: Id of the location if the location is represnting a weather station.
+        source: Source of data (e.g. TMY, TMY3).
     """
 
     __slots__ = ("city", "country", "__lat", "__lon", "__tz", "__elev",
-                 "stationId")
+                 "stationId", "source")
 
     def __init__(self, city=None, country=None, latitude=0, longitude=0,
-                 timezone=0, elevation=0, stationId=None):
+                 timezone=0, elevation=0, stationId=None, source=None):
         """Create a Ladybug location."""
         self.city = "unknown" if not city else str(city)
         self.country = "unknown" if not country else str(country)
@@ -27,7 +28,8 @@ class Location(object):
         self.longitude = longitude
         self.timezone = timezone
         self.elevation = float(elevation)
-        self.stationId = "unknown" if not stationId else str(stationId)
+        self.stationId = None if not stationId else str(stationId)
+        self.source = source
 
     @classmethod
     def fromLocation(cls, location):
@@ -119,13 +121,13 @@ class Location(object):
     def elevation(self, elev):
         try:
             self.__elev = float(elev)
-        except:
+        except TypeError:
             raise ValueError("Failed to convert {} to an elevation".format(elev))
 
     def duplicate(self):
         """Duplicate location."""
         return self(self.city, self.country, self.latitude, self.longitude,
-                    self.timezone, self.elevation, self.stationId)
+                    self.timezone, self.elevation, self.stationId, self.source)
 
     @property
     def EPStyleLocationString(self):

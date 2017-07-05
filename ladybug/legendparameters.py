@@ -1,8 +1,8 @@
-from color import LBColorRange
+from color import ColorRange
 from listoperations import flatten, unflatten
 
 
-class LBLegendParameters(object):
+class LegendParameters(object):
     """Ladybug lagend parameters.
 
     Attributes:
@@ -34,7 +34,7 @@ class LBLegendParameters(object):
 
     Usage:
 
-        lp = LBLegendParameters(legendRange = [2, 28])
+        lp = LegendParameters(legendRange = [2, 28])
         print lp.color(10)
 
     """
@@ -42,11 +42,13 @@ class LBLegendParameters(object):
     _cType = {0: 'continuous', 1: 'segmented', 2: 'ordinal'}
 
     # TODO: Add textual and geometry parts
-    def __init__(self, legendRange=['min', 'max'], numberOfSegments=11,
+    def __init__(self, legendRange=None, numberOfSegments=11,
                  colors=None, chartType=0):
         """Init the class."""
-        self.colorRange = LBColorRange(colors=colors, domain=legendRange,
-                                       chartType=chartType)
+        legendRange = legendRange or ['min', 'max']
+        self.numberOfSegments = numberOfSegments or 11
+        self.colorRange = ColorRange(colors=colors, domain=legendRange,
+                                     chartType=chartType)
 
     @property
     def colors(self):

@@ -1,5 +1,5 @@
 """Ladybug analysis period class."""
-from .dt import LBDateTime
+from .dt import DateTime
 from datetime import datetime, timedelta
 
 
@@ -20,39 +20,49 @@ class AnalysisPeriod(object):
         timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
     """
 
-    __validTimesteps = {1: 60, 2: 30, 3: 20, 4: 15, 5: 12,
-                        6: 10, 10: 6, 12: 5, 15: 4, 20: 3, 30: 2, 60: 1}
-    __numOfDaysEachMonth = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    _validTimesteps = {1: 60, 2: 30, 3: 20, 4: 15, 5: 12,
+                       6: 10, 10: 6, 12: 5, 15: 4, 20: 3, 30: 2, 60: 1}
+    _numOfDaysEachMonth = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
     # TODO: handle timestep between 1-60
     def __init__(self, stMonth=1, stDay=1, stHour=0, endMonth=12,
                  endDay=31, endHour=23, timestep=1):
         """Init an analysis period."""
-        # calculate start time and end time
-        self.stTime = LBDateTime(int(stMonth), int(stDay), int(stHour))
 
-        if int(endDay) > self.__numOfDaysEachMonth[int(endMonth) - 1]:
-            end = self.__numOfDaysEachMonth[endMonth - 1]
+        stMonth = stMonth or 1
+        stDay = stDay or 1
+        stHour = stHour or 0
+        endMonth = endMonth or 12
+        endDay = endDay or 31
+        endHour = endHour or 23
+        timestep = timestep or 1
+
+        # calculate start time and end time
+        self.stTime = DateTime(int(stMonth), int(stDay), int(stHour))
+
+        if int(endDay) > self._numOfDaysEachMonth[int(endMonth) - 1]:
+            end = self._numOfDaysEachMonth[endMonth - 1]
             print "Updated endDay from {} to {}".format(endDay, end)
             endDay = end
 
-        self.endTime = LBDateTime(int(endMonth), int(endDay), int(endHour))
+        self.endTime = DateTime(int(endMonth), int(endDay), int(endHour))
 
         if self.stTime.hour <= self.endTime.hour:
             self.overnight = False  # each segments of hours will be in a single day
         else:
             self.overnight = True
 
-        # A reversed analysis period defines a period that starting month is after ending month
-        # (e.g DEC to JUN)
-        if self.stTime.HOY > self.endTime.HOY:
+        # A reversed analysis period defines a period that starting month is after
+        # ending month (e.g DEC to JUN)
+        if self.stTime.hoy > self.endTime.hoy:
             self.reversed = True
         else:
             self.reversed = False
 
         # check time step
-        if timestep not in self.__validTimesteps:
-            raise ValueError("Invalid timestep. Valid values are %s" % str(self.__validTimesteps))
+        if timestep not in self._validTimesteps:
+            raise ValueError("Invalid timestep."
+                             "Valid values are %s" % str(self._validTimesteps))
 
         # calculate time stamp
         self.timestep = timestep
@@ -60,8 +70,8 @@ class AnalysisPeriod(object):
 
         # calculate timestamps and hoursOfYear
         # A dictionary for datetimes. Key values will be minute of year
-        self.__timestampsData = list()
-        self.__calculateTimestamps()
+        self._timestampsData = []
+        self._calculateTimestamps()
 
     @classmethod
     def fromAnalysisPeriod(cls, analysisPeriod=None):
@@ -75,7 +85,7 @@ class AnalysisPeriod(object):
             return analysisPeriod
         elif isinstance(analysisPeriod, str):
             try:
-                return cls.__fromAnalysisPeriodString(analysisPeriod)
+                return cls.fromAnalysisPeriodString(analysisPeriod)
             except Exception as e:
                 raise ValueError(
                     "{} is not convertable to an AnalysisPeriod: {}".format(
@@ -83,7 +93,7 @@ class AnalysisPeriod(object):
                 )
 
     @classmethod
-    def __fromAnalysisPeriodString(cls, analysisPeriodString):
+    def fromAnalysisPeriodString(cls, analysisPeriodString):
         """Create an Analysis Period object from an analysis period string."""
         # %s/%s to %s/%s between %s to %s @%s
         ap = analysisPeriodString.lower().replace(' ', '') \
@@ -102,9 +112,9 @@ class AnalysisPeriod(object):
         """Return True."""
         return True
 
-    def __isPossibleHour(self, hour):
+    def isPossibleHour(self, hour):
         """Check if a float hour is a possible hour for this analysis period."""
-        if hour > 23 and self.__isPossibleHour(0):
+        if hour > 23 and self.isPossibleHour(0):
             hour = int(hour)
         if not self.overnight:
             return self.stTime.hour <= hour <= self.endTime.hour
@@ -112,13 +122,13 @@ class AnalysisPeriod(object):
             return self.stTime.hour <= hour <= 23 or \
                 0 <= hour <= self.endTime.hour
 
-    def __calcTimestamps(self, stTime, endTime):
+    def _calcTimestamps(self, stTime, endTime):
         """Calculate timesteps between start time and end time.
 
         Use this method only when start time month is before end time month.
         """
         # calculate based on minutes
-        # I have to convert the object to LBDateTime because of how Dynamo
+        # I have to convert the object to DateTime because of how Dynamo
         # works: https://github.com/DynamoDS/Dynamo/issues/6683
         # Do not modify this line to datetime
         curr = datetime(stTime.year, stTime.month, stTime.day, stTime.hour,
@@ -127,48 +137,48 @@ class AnalysisPeriod(object):
                            endTime.hour, endTime.minute)
 
         while curr <= endTime:
-            if self.__isPossibleHour(curr.hour + (curr.minute / 60.0)):
-                time = LBDateTime(curr.month, curr.day, curr.hour, curr.minute)
-                self.__timestampsData.append(time.MOY)
+            if self.isPossibleHour(curr.hour + (curr.minute / 60.0)):
+                time = DateTime(curr.month, curr.day, curr.hour, curr.minute)
+                self._timestampsData.append(time.moy)
             curr += self.minuteIntervals
 
-        if self.timestep != 1 and curr.hour == 23 and self.__isPossibleHour(0):
+        if self.timestep != 1 and curr.hour == 23 and self.isPossibleHour(0):
             # This is for cases that timestep is more than one
             # and last hour of the day is part of the calculation
             curr = endTime
             for i in range(self.timestep)[1:]:
                 curr += self.minuteIntervals
-                time = LBDateTime(curr.month, curr.day, curr.hour, curr.minute)
-                self.__timestampsData.append(time.MOY)
+                time = DateTime(curr.month, curr.day, curr.hour, curr.minute)
+                self._timestampsData.append(time.moy)
 
-    def __calculateTimestamps(self):
+    def _calculateTimestamps(self):
         """Return a list of Ladybug DateTime in this analysis period."""
         if not self.reversed:
-            self.__calcTimestamps(self.stTime, self.endTime)
+            self._calcTimestamps(self.stTime, self.endTime)
         else:
-            self.__calcTimestamps(self.stTime, LBDateTime.fromHOY(8759))
-            self.__calcTimestamps(LBDateTime.fromHOY(0), self.endTime)
+            self._calcTimestamps(self.stTime, DateTime.fromHoy(8759))
+            self._calcTimestamps(DateTime.fromHoy(0), self.endTime)
 
     @property
     def datetimes(self):
         """A sorted list of datetimes in this analysis period."""
         # sort dictionary based on key values (minute of the year)
-        return tuple(LBDateTime.fromMOY(MOY) for MOY in self.__timestampsData)
+        return tuple(DateTime.fromMoy(moy) for moy in self._timestampsData)
 
     @property
-    def HOYs(self):
+    def hoys(self):
         """A sorted list of hours of year in this analysis period."""
-        return tuple(MOY / 60.0 for MOY in self.__timestampsData)
+        return tuple(moy / 60.0 for moy in self._timestampsData)
 
     @property
-    def intHOYs(self):
+    def intHoys(self):
         """A sorted list of hours of year as float values in this analysis period."""
-        return tuple(int(MOY / 60) for MOY in self.__timestampsData)
+        return tuple(int(moy / 60) for moy in self._timestampsData)
 
     @property
     def isAnnual(self):
         """Check if an analysis period is annual."""
-        return True if len(self.__timestampsData) / self.timestep == 8760 \
+        return True if len(self._timestampsData) / self.timestep == 8760 \
             else False
 
     def isTimeIncluded(self, time):
@@ -178,7 +188,7 @@ class AnalysisPeriod(object):
         otherwise return False
 
         Args:
-            time: A LBDateTime to be tested
+            time: A DateTime to be tested
 
         Returns:
             A boolean. True if time is included in analysis period
@@ -187,7 +197,7 @@ class AnalysisPeriod(object):
         # start hour and end hour will be applied for every day.
         # For instance 2/20 9am to 2/22 5pm means hour between 9-17
         # during 20, 21 and 22 of Feb.
-        return time.MOY in self.__timestampsData
+        return time.moy in self._timestampsData
 
     def ToString(self):
         """Overwrite .NET representation."""

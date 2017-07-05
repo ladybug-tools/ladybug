@@ -28,7 +28,7 @@ from ladybug.analysisperiod import AnalysisPeriod
 # ap = AnalysisPeriod()
 # dates = ap.datetimes
 # print len(dates) == 8760
-# hoys = ap.HOYs
+# hoys = ap.hoys
 # print len(hoys) == 8760
 #
 # app = AnalysisPeriod.fromAnalysisPeriod(ap)

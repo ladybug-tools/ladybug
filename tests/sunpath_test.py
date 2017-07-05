@@ -2,7 +2,7 @@
 
 import unittest
 from ladybug.location import Location
-from ladybug.sunpath import LBSunpath
+from ladybug.sunpath import Sunpath
 
 # class AnalysisPeriodTestCase(unittest.TestCase):
 #     """Test for (honeybee/radiance/command/epw2wea.py)"""
@@ -26,7 +26,7 @@ from ladybug.sunpath import LBSunpath
 
 # test sunpath
 # test defualt inputs
-sunpath = LBSunpath()
+sunpath = Sunpath()
 sun = sunpath.calculateSun(month=12, day=21, hour=23)
 
 print round(sun.sunVector.x, 2) == 0.23
@@ -35,7 +35,7 @@ print round(sun.sunVector.z, 2) == 0.89
 
 # test sunpath from location
 l = Location()
-sunpath = LBSunpath.fromLocation(l)
+sunpath = Sunpath.fromLocation(l)
 sun = sunpath.calculateSun(month=12, day=21, hour=23)
 print round(sun.sunVector.x, 2) == 0.23
 print round(sun.sunVector.y, 2) == 0.40

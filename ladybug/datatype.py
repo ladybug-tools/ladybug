@@ -48,9 +48,9 @@ class DataTypeBase(object):
                     _v = str(v)
                 else:
                     _v = map(self.valueType, (v,))[0]
-            except:
-                raise ValueError("Failed to convert {} to {}".format(v,
-                                                                     self.valueType))
+            except Exception:
+                raise ValueError(
+                    "Failed to convert {} to {}".format(v, self.valueType))
             else:
                 self.isInRange(_v, True)
                 self.__value = _v
@@ -136,8 +136,7 @@ class DataTypeBase(object):
     def __str__(self):
         """Return full information."""
         # Temperature: 21C
-        return "{0}: {1}{2}{3}".format(
-            self.__class__.__name__,
+        return "{}{}{}".format(
             self.__repr__(),
             self.unit if self.unit else "",
             " at %s" % self.datetime if self.datetime else "")
@@ -196,7 +195,7 @@ class DataTypeBase(object):
         return self.value % other
 
     def __pow__(self, other):
-        return self.value**other
+        return self.value ** other
 
     def __radd__(self, other):
         return self.__add__(other)
@@ -217,10 +216,10 @@ class DataTypeBase(object):
         return other % self.value
 
     def __rpow__(self, other):
-        return other**self.value
+        return other ** self.value
 
 
-class LBData(DataTypeBase):
+class DataPoint(DataTypeBase):
     """A single Ladybug data point.
 
     Attributes:
@@ -243,20 +242,20 @@ class LBData(DataTypeBase):
         DataTypeBase.__init__(self, value, datetime, standard, nickname)
 
     @classmethod
-    def fromLBData(cls, value):
-        """Try to create a LBData from input data."""
-        if hasattr(value, 'isLBData'):
+    def fromData(cls, value):
+        """Try to create a DataPoint from input data."""
+        if hasattr(value, 'isData'):
             return value
 
         try:
             return cls(value)
         except Exception, e:
             raise ValueError(
-                "Failed to create a LBData from %s!\n%s" % (value, e))
+                "Failed to create a DataPoint from %s!\n%s" % (value, e))
 
     @property
-    def isLBData(self):
-        """Return True if Ladybug data."""
+    def isDataPoint(self):
+        """Return True if Ladybug data point."""
         return True
 
     @staticmethod
@@ -271,7 +270,7 @@ class LBData(DataTypeBase):
 
 
 # TODO: Add methods for toKelvin
-class Temperature(LBData):
+class Temperature(DataPoint):
     """Base type for temperature.
 
     Attributes:
@@ -291,7 +290,7 @@ class Temperature(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
     @staticmethod
     def toIP(value):
@@ -342,7 +341,7 @@ class DewPointTemperature(Temperature):
         Temperature.__init__(self, value, datetime, standard, nickname)
 
 
-class RelativeHumidity(LBData):
+class RelativeHumidity(DataPoint):
     """Relative humidity.
 
     Attributes:
@@ -361,10 +360,10 @@ class RelativeHumidity(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
 
-class Pressure(LBData):
+class Pressure(DataPoint):
     """Atmospheric Pressure.
 
     Attributes:
@@ -383,10 +382,10 @@ class Pressure(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
 
-class Radiation(LBData):
+class Radiation(DataPoint):
     """Radiation.
 
     Attributes:
@@ -405,7 +404,7 @@ class Radiation(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
     @staticmethod
     def toIP(value):
@@ -418,7 +417,7 @@ class Radiation(LBData):
         return value / 0.316998331
 
 
-class Illuminance(LBData):
+class Illuminance(DataPoint):
     """Illuminance.
 
     Attributes:
@@ -437,7 +436,7 @@ class Illuminance(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
     @staticmethod
     def toIP(value):
@@ -472,7 +471,7 @@ class Luminance(Illuminance):
         Illuminance.__init__(self, value, datetime, standard, nickname)
 
 
-class Angle(LBData):
+class Angle(DataPoint):
     """Angle.
 
     Attributes:
@@ -492,7 +491,7 @@ class Angle(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
     @staticmethod
     def toIP(value):
@@ -505,7 +504,7 @@ class Angle(LBData):
         return (value / PI) * 360
 
 
-class Speed(LBData):
+class Speed(DataPoint):
     """Speed.
 
     Attributes:
@@ -524,7 +523,7 @@ class Speed(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
     @staticmethod
     def toIP(value):
@@ -551,7 +550,7 @@ class WindSpeed(Speed):
     maximum = 40
 
 
-class Time(LBData):
+class Time(DataPoint):
     """Time.
 
     Attributes:
@@ -570,10 +569,10 @@ class Time(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
 
-class Tenth(LBData):
+class Tenth(DataPoint):
     """Tenth.
 
     Attributes:
@@ -593,10 +592,10 @@ class Tenth(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
 
-class Thousandths(LBData):
+class Thousandths(DataPoint):
     """Thousandths.
 
     Attributes:
@@ -615,10 +614,10 @@ class Thousandths(LBData):
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
-        LBData.__init__(self, value, datetime, standard, nickname)
+        DataPoint.__init__(self, value, datetime, standard, nickname)
 
 
-class Distance(LBData):
+class Distance(DataPoint):
     """Distance.
 
     Attributes:
@@ -639,7 +638,7 @@ class Distance(LBData):
     def __init__(self, value, datetime=None, standard='SI', nickname=None,
                  conversion=1):
         """Init class."""
-        LBData.__init__(self, value * conversion, datetime, standard, nickname)
+        DataPoint.__init__(self, value * conversion, datetime, standard, nickname)
 
     @staticmethod
     def toIP(value):
@@ -652,7 +651,7 @@ class Distance(LBData):
         return value / 3.28084
 
 
-class SkyPatch(LBData):
+class SkyPatch(DataPoint):
     """SkyPatch.
 
     Attributes:
@@ -669,7 +668,7 @@ class SkyPatch(LBData):
 
     def __init__(self, value, vector, id=None):
         """Init class."""
-        LBData.__init__(self, value, datetime=None, standard=None, nickname=id)
+        DataPoint.__init__(self, value, datetime=None, standard=None, nickname=id)
         self.vector = Vector3(*vector)
 
     @property

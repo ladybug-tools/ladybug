@@ -1,10 +1,10 @@
 import math
 from .location import Location
-from .dt import LBDateTime
+from .dt import DateTime
 from .euclid import Vector3
 
 
-class LBSunpath(object):
+class Sunpath(object):
     """
     Calculates sun path.
 
@@ -26,12 +26,12 @@ class LBSunpath(object):
 
         import ladybug.sunpath as sunpath
         # initiate sunpath
-        sp = sunpath.LBSunpath(50)
+        sp = sunpath.Sunpath(50)
         sun = sp.calculateSun(1, 1, 12) # calculate sun data for Jan 1 at noon
         print sun.azimuth, sun.altitude
     """
 
-    __slots__ = ('__longitude', '__latitude', 'northAngle', 'timezone',
+    __slots__ = ('_longitude', '_latitude', 'northAngle', 'timezone',
                  'daylightSavingPeriod')
     PI = math.pi
 
@@ -54,24 +54,24 @@ class LBSunpath(object):
     @property
     def latitude(self):
         """Get/set latitude in degrees."""
-        return math.degrees(self.__latitude)
+        return math.degrees(self._latitude)
 
     @latitude.setter
     def latitude(self, value):
         """Set latitude value."""
-        self.__latitude = math.radians(float(value))
-        assert -self.PI / 2 <= self.__latitude <= self.PI / 2, \
+        self._latitude = math.radians(float(value))
+        assert -self.PI / 2 <= self._latitude <= self.PI / 2, \
             "latitude value should be between -90..90."
 
     @property
     def longitude(self):
         """Get longitude in degrees."""
-        return math.degrees(self.__longitude)
+        return math.degrees(self._longitude)
 
     @longitude.setter
     def longitude(self, value):
         """Set longitude value in degrees."""
-        self.__longitude = math.radians(float(value))
+        self._longitude = math.radians(float(value))
 
         # update timezone
         if abs((value / 15.0) - self.timezone) > 1:
@@ -82,7 +82,7 @@ class LBSunpath(object):
         """Check if a datetime is a daylight saving time."""
         if not self.daylightSavingPeriod:
             return False
-        return self.daylightSavingPeriod.isTimeIncluded(datetime.HOY)
+        return self.daylightSavingPeriod.isTimeIncluded(datetime.hoy)
 
     def calculateSun(self, month, day, hour, isSolarTime=False):
         """Get Sun data for an hour of the year.
@@ -97,20 +97,21 @@ class LBSunpath(object):
         Returns:
             A sun object for this particular time
         """
-        datetime = LBDateTime(month, day, *self.__calculateHourAndMinute(hour))
+        datetime = DateTime(month, day, *self._calculateHourAndMinute(hour))
         return self.calculateSunFromDataTime(datetime, isSolarTime)
 
-    def calculateSunFromHOY(self, HOY, isSolarTime=False):
+    def calculateSunFromHOY(self, hoy, isSolarTime=False):
         """Get Sun data for an hour of the year.
 
         Args:
             datetime: Ladybug datetime
-            isSolarTime: A boolean to indicate if the input hour is solar time. (Default: False)
+            isSolarTime: A boolean to indicate if the input hour is solar time
+                (Default: False).
 
         Returns:
             A sun object for this particular time
         """
-        datetime = LBDateTime.fromHOY(HOY)
+        datetime = DateTime.fromHoy(hoy)
         return self.calculateSunFromDataTime(datetime, isSolarTime)
 
     def calculateSunFromDataTime(self, datetime, isSolarTime=False):
@@ -127,53 +128,53 @@ class LBSunpath(object):
         Returns:
             A sun object for this particular time
         """
-        solDec, eqOfTime = self.__calculateSolarGeometry(datetime)
+        solDec, eqOfTime = self._calculateSolarGeometry(datetime)
 
         hour = datetime.floatHour
 
-        isDaylightSaving = self.isDaylightSavingHour(datetime.HOY)
+        isDaylightSaving = self.isDaylightSavingHour(datetime.hoy)
 
-        hour = hour + 1 if self.isDaylightSavingHour(datetime.HOY) else hour
+        hour = hour + 1 if self.isDaylightSavingHour(datetime.hoy) else hour
 
         # hours
-        solTime = self.__calculateSolarTime(hour, eqOfTime, isSolarTime)
+        solTime = self._calculateSolarTime(hour, eqOfTime, isSolarTime)
 
         # degrees
         hourAngle = (solTime * 15 + 180) if (solTime * 15 < 0) \
             else (solTime * 15 - 180)
 
         # RADIANS
-        zenith = math.acos(math.sin(self.__latitude) * math.sin(solDec) +
-                           math.cos(self.__latitude) * math.cos(solDec) *
+        zenith = math.acos(math.sin(self._latitude) * math.sin(solDec) +
+                           math.cos(self._latitude) * math.cos(solDec) *
                            math.cos(math.radians(hourAngle)))
 
         altitude = (math.pi / 2) - zenith
 
         if hourAngle == 0.0 or hourAngle == -180.0 or hourAngle == 180.0:
 
-            azimuth = math.pi if solDec < self.__latitude else 0.0
+            azimuth = math.pi if solDec < self._latitude else 0.0
 
         else:
             azimuth = (
                 (math.acos(
                     (
-                        (math.sin(self.__latitude) *
+                        (math.sin(self._latitude) *
                          math.cos(zenith)) - math.sin(solDec)
                     ) /
                     (
-                        math.cos(self.__latitude) * math.sin(zenith)
+                        math.cos(self._latitude) * math.sin(zenith)
                     )
                 ) + math.pi) % (2 * math.pi)) if (hourAngle > 0) \
                 else \
                 (
                     (3 * math.pi -
-                     math.acos(((math.sin(self.__latitude) * math.cos(zenith)) -
+                     math.acos(((math.sin(self._latitude) * math.cos(zenith)) -
                                 math.sin(solDec)) /
-                               (math.cos(self.__latitude) * math.sin(zenith)))
+                               (math.cos(self._latitude) * math.sin(zenith)))
                      ) % (2 * math.pi))
 
         # create the sun for this hour
-        return LBSun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving,
+        return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving,
                      self.northAngle)
 
     def calculateSunriseSunset(self, month, day, depression=0.833,
@@ -183,7 +184,7 @@ class LBSunpath(object):
         Return:
             A dictionary. Keys are ("sunrise", "noon", "sunset")
         """
-        datetime = LBDateTime(month, day, hour=12)
+        datetime = DateTime(month, day, hour=12)
 
         return self.calculateSunriseSunsetFromDateTime(datetime,
                                                        depression,
@@ -193,14 +194,14 @@ class LBSunpath(object):
     def calculateSunriseSunsetFromDateTime(self, datetime, depression=0.833,
                                            isSolarTime=False):
         """Calculate sunrise, sunset and noon for a day of year."""
-        solDec, eqOfTime = self.__calculateSolarGeometry(datetime)
+        solDec, eqOfTime = self._calculateSolarGeometry(datetime)
 
         # calculate sunrise and sunset hour
         # if isSolarTime:
         #     noon = .5
         # else:
         noon = (720 -
-                4 * math.degrees(self.__longitude) -
+                4 * math.degrees(self._longitude) -
                 eqOfTime +
                 self.timezone * 60
                 ) / 1440.0
@@ -210,9 +211,9 @@ class LBSunpath(object):
         sunset = noon + sunRiseHourAngle * 4 / 1440.0
 
         # convert demical hour to solar hour
-        # noon    = self.__calculateSolarTime(24*noon, eqOfTime, isSolarTime)
-        # sunrise = self.__calculateSolarTime(24*sunrise, eqOfTime, isSolarTime)
-        # sunset  = self.__calculateSolarTime(24*sunset, eqOfTime, isSolarTime)
+        # noon    = self._calculateSolarTime(24*noon, eqOfTime, isSolarTime)
+        # sunrise = self._calculateSolarTime(24*sunrise, eqOfTime, isSolarTime)
+        # sunset  = self._calculateSolarTime(24*sunset, eqOfTime, isSolarTime)
 
         # convert to hours
         sunrise *= 24
@@ -220,15 +221,15 @@ class LBSunpath(object):
         noon *= 24
 
         return {
-            "sunrise": LBDateTime(datetime.month, datetime.day,
-                                  *self.__calculateHourAndMinute(sunrise)),
-            "noon": LBDateTime(datetime.month, datetime.day,
-                               *self.__calculateHourAndMinute(noon)),
-            "sunset": LBDateTime(datetime.month, datetime.day,
-                                 *self.__calculateHourAndMinute(sunset))
+            "sunrise": DateTime(datetime.month, datetime.day,
+                                *self._calculateHourAndMinute(sunrise)),
+            "noon": DateTime(datetime.month, datetime.day,
+                             *self._calculateHourAndMinute(noon)),
+            "sunset": DateTime(datetime.month, datetime.day,
+                               *self._calculateHourAndMinute(sunset))
         }
 
-    def __calculateSolarGeometry(self, datetime, year=2015):
+    def _calculateSolarGeometry(self, datetime, year=2015):
         """Calculate Solar geometry for an hour of the year.
 
         Attributes:
@@ -274,11 +275,11 @@ class LBSunpath(object):
         sunTrueLong = geomMeanLongSun + sunEqOfCtr
 
         # AUs
-        sunTrueAnom = geomMeanAnomSun + sunEqOfCtr
+        # sunTrueAnom = geomMeanAnomSun + sunEqOfCtr
 
         # AUs
-        sunRadVector = (1.000001018 * (1 - eccentOrbit**2)) / \
-            (1 + eccentOrbit * math.cos(math.radians(sunTrueLong)))
+        # sunRadVector = (1.000001018 * (1 - eccentOrbit ** 2)) / \
+        #     (1 + eccentOrbit * math.cos(math.radians(sunTrueLong)))
 
         # degrees
         sunAppLong = sunTrueLong - 0.00569 - 0.00478 * \
@@ -295,10 +296,10 @@ class LBSunpath(object):
             math.cos(math.radians(125.04 - 1934.136 * julianCentury))
 
         # degrees
-        sunRightAscen = math.degrees(
-            math.atan2(math.cos(math.radians(obliqueCorr)) *
-                       math.sin(math.radians(sunAppLong)),
-                       math.cos(math.radians(sunAppLong))))
+        # sunRightAscen = math.degrees(
+        #     math.atan2(math.cos(math.radians(obliqueCorr)) *
+        #                math.sin(math.radians(sunAppLong)),
+        #                math.cos(math.radians(sunAppLong))))
 
         # RADIANS
         solDec = math.asin(math.sin(math.radians(obliqueCorr)) *
@@ -326,31 +327,35 @@ class LBSunpath(object):
     def __calculateSunriseHourAngle(self, solarDec, depression=0.833):
         """Calculate hour angle for sunrise time in degrees."""
         hourAngleArg = math.cos(math.radians(90 + depression)) \
-            / (math.cos(self.__latitude) * math.cos(solarDec)) \
-            - math.tan(self.__latitude) * math.tan(solarDec)
+            / (math.cos(self._latitude) * math.cos(solarDec)) \
+            - math.tan(self._latitude) * math.tan(solarDec)
 
         return math.degrees(math.acos(hourAngleArg))
 
-    def __calculateSolarTime(self, hour, eqOfTime, isSolarTime):
+    def _calculateSolarTime(self, hour, eqOfTime, isSolarTime):
         """Calculate Solar time for an hour."""
         if isSolarTime:
             return hour
 
         return (
-            (hour * 60 + eqOfTime + 4 * math.degrees(self.__longitude) -
+            (hour * 60 + eqOfTime + 4 * math.degrees(self._longitude) -
              60 * self.timezone) % 1440) / 60
 
     @staticmethod
-    def __calculateHourAndMinute(floatHour):
+    def _calculateHourAndMinute(floatHour):
         """Calculate hour and minutes as integers from a float hour."""
-        return int(floatHour), int(round((floatHour - int(floatHour)) * 60))
+        hour, minute = int(floatHour), int(round((floatHour - int(floatHour)) * 60))
+        if minute == 60:
+            return hour + 1, 0
+        else:
+            return hour, minute
 
 
-class LBSun(object):
+class Sun(object):
     """Sun.
 
     Attributes:
-        datetime: A LBDateTime that represents the datetime for this sunVector
+        datetime: A DateTime that represents the datetime for this sunVector
         altitude: Solar Altitude in **radians**
         azimuth: Solar Azimuth in **radians**
         isSolarTime: A Boolean that indicates if datetime represents the solar
@@ -361,33 +366,33 @@ class LBSun(object):
             used to calculate the solar vector.
     """
 
-    __slots__ = ('__datetime', '__altitude', '__azimuth', '__isSolarTime',
-                 '__isDaylightSaving', '__northAngle', '__hourlyData', '__data',
-                 '__sunVector')
+    __slots__ = ('_datetime', '_altitude', '_azimuth', '_isSolarTime',
+                 '_isDaylightSaving', '_northAngle', '_hourlyData', '_data',
+                 '_sunVector')
     PI = math.pi
 
     def __init__(self, datetime, altitude, azimuth, isSolarTime,
                  isDaylightSaving, northAngle, data=None):
         """Init sun."""
-        assert hasattr(datetime, 'isLBDateTime'), \
-            "datetime must be a LBDateTime (not {})".format(type(datetime))
-        self.__datetime = datetime  # read-only
+        assert hasattr(datetime, 'isDateTime'), \
+            "datetime must be a DateTime (not {})".format(type(datetime))
+        self._datetime = datetime  # read-only
 
         assert -self.PI <= altitude <= self.PI, \
             "altitude({}) must be between {} and {}." \
             .format(altitude, -self.PI, self.PI)
 
-        self.__altitude = altitude  # read-only
+        self._altitude = altitude  # read-only
 
         assert -2 * self.PI <= azimuth <= 2 * self.PI, \
             "azimuth({}) should be between {} and {}." \
             .format(azimuth, -self.PI, self.PI)
 
-        self.__azimuth = azimuth  # read-only
-        self.__isSolarTime = isSolarTime
-        self.__isDaylightSaving = isDaylightSaving
+        self._azimuth = azimuth  # read-only
+        self._isSolarTime = isSolarTime
+        self._isDaylightSaving = isDaylightSaving
         # useful to calculate sun vector - sun angle is in degrees
-        self.__northAngle = northAngle
+        self._northAngle = northAngle
         self.data = data  # Place holder for hourly data
 
         self._calculateSunVector()
@@ -395,56 +400,56 @@ class LBSun(object):
     @property
     def datetime(self):
         """Return datetime."""
-        return self.__datetime
+        return self._datetime
 
     @property
     def northAngle(self):
         """Return north angle for +YAxis."""
-        return self.__northAngle
+        return self._northAngle
 
     @property
-    def HOY(self):
+    def hoy(self):
         """Return Hour of the year."""
-        return self.__datetime.HOY
+        return self._datetime.hoy
 
     @property
     def altitude(self):
         """Return solar altitude in degrees."""
-        return math.degrees(self.__altitude)
+        return math.degrees(self._altitude)
 
     @property
     def azimuth(self):
         """Return solar azimuth in degrees."""
-        return math.degrees(self.__azimuth)
+        return math.degrees(self._azimuth)
 
     @property
     def altitudeInRadians(self):
         """Return solar altitude in radians."""
-        return self.__altitude
+        return self._altitude
 
     @property
     def azimuthInRadians(self):
         """Return solar azimuth in radians."""
-        return self.__azimuth
+        return self._azimuth
 
     @property
     def isSolarTime(self):
         """Return a Boolean that indicates is datetime is solar time."""
-        return self.__isSolarTime
+        return self._isSolarTime
 
     @property
     def isDaylightSaving(self):
         """Return a Boolean that indicates is datetime is solar time."""
-        return self.__isDaylightSaving
+        return self._isDaylightSaving
 
     @property
     def data(self):
         """Get or set data to this sun position."""
-        return self.__data
+        return self._data
 
     @data.setter
     def data(self, d):
-        self.__data = d
+        self._data = d
 
     @property
     def isDuringDay(self):
@@ -458,7 +463,7 @@ class LBSun(object):
 
         Sun vector faces downward (e.g. z will be negative.)
         """
-        return self.__sunVector
+        return self._sunVector
 
     def _calculateSunVector(self):
         """Calculate sun vector for this sun."""
@@ -474,7 +479,7 @@ class LBSun(object):
 
         _sunvector.normalize().flip()
 
-        self.__sunVector = _sunvector
+        self._sunVector = _sunvector
 
     def ToString(self):
         """Overwrite .NET ToString method."""
