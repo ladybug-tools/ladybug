@@ -151,116 +151,117 @@ class Colorset(object):
 
     def __init__(self):
         """Initialize Color-sets."""
+        pass
 
     @classmethod
     def Original(cls):
         """Original Ladybug colors."""
-        return cls[0]
+        return tuple(Color(*color) for color in cls._colors[0])
 
     @classmethod
     def Nuanced(cls):
         """Nuanced Ladybug colors."""
-        return cls[1]
+        return tuple(Color(*color) for color in cls._colors[1])
 
     @classmethod
     def MultiColored(cls):
         """Multi-colored legend."""
-        return cls[2]
+        return tuple(Color(*color) for color in cls._colors[2])
 
     @classmethod
     def ViewAnalysis1(cls):
         """View analysis colors."""
-        return cls[3]
+        return tuple(Color(*color) for color in cls._colors[3])
 
     @classmethod
     def ViewAnalysis2(cls):
         """View Analysis 2 colors."""
-        return cls[4]
+        return tuple(Color(*color) for color in cls._colors[4])
 
     @classmethod
     def SunlightHours(cls):
         """SunlightHours colors."""
-        return cls[5]
+        return tuple(Color(*color) for color in cls._colors[5])
 
     @classmethod
     def Ecotect(cls):
         """Ecotect colors."""
-        return cls[6]
+        return tuple(Color(*color) for color in cls._colors[6])
 
     @classmethod
     def ThermalComfortPercentage(cls):
         """Thermal Comfort percentage."""
-        return cls[7]
+        return tuple(Color(*color) for color in cls._colors[7])
 
     @classmethod
     def ThermalComfort(cls):
         """Thermal Comfort colors."""
-        return cls[8]
+        return tuple(Color(*color) for color in cls._colors[8])
 
     @classmethod
     def ThermalComfortUTCI1(cls):
         """Thermal Comfort UTCI 1."""
-        return cls[9]
+        return tuple(Color(*color) for color in cls._colors[9])
 
     @classmethod
     def HotHours(cls):
         """Hot Hours."""
-        return cls[10]
+        return tuple(Color(*color) for color in cls._colors[10])
 
     @classmethod
     def ColdHours(cls):
         """Cold Hours."""
-        return cls[11]
+        return tuple(Color(*color) for color in cls._colors[11])
 
     @classmethod
     def ShadeBenefitHarm(cls):
         """Shade Benefit Harm colors."""
-        return cls[12]
+        return tuple(Color(*color) for color in cls._colors[12])
 
     @classmethod
     def ThermalComfortUTCI2(cls):
         """Thermal Comfort UTCI 2."""
-        return cls[13]
+        return tuple(Color(*color) for color in cls._colors[13])
 
     @classmethod
     def ShadeHarm(cls):
         """Shade Harm colors."""
-        return cls[14]
+        return tuple(Color(*color) for color in cls._colors[14])
 
     @classmethod
     def ShadeBenefit(cls):
         """Shade Benefit colors."""
-        return cls[15]
+        return tuple(Color(*color) for color in cls._colors[15])
 
     @classmethod
     def BlackToWhite(cls):
         """Black to white colors."""
-        return cls[16]
+        return tuple(Color(*color) for color in cls._colors[16])
 
     @classmethod
     def CFDColors1(cls):
         """CFD colors 1."""
-        return cls[17]
+        return tuple(Color(*color) for color in cls._colors[17])
 
     @classmethod
     def CFDColors2(cls):
         """CFD colors 2."""
-        return cls[18]
+        return tuple(Color(*color) for color in cls._colors[18])
 
     @classmethod
     def EnergyBalance(cls):
         """Energy Balance colors."""
-        return cls[19]
+        return tuple(Color(*color) for color in cls._colors[19])
 
     @classmethod
     def Therm(cls):
         """THERM colors."""
-        return cls[20]
+        return tuple(Color(*color) for color in cls._colors[20])
 
     @classmethod
     def CloudCover(cls):
         """Cloud Cover colors."""
-        return cls[21]
+        return tuple(Color(*color) for color in cls._colors[21])
 
     def __len__(self):
         """Return length of colors."""
