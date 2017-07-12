@@ -175,7 +175,7 @@ class Sunpath(object):
 
         # create the sun for this hour
         return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving,
-                     self.northAngle)
+                   self.northAngle)
 
     def calculateSunriseSunset(self, month, day, depression=0.833,
                                isSolarTime=False):
@@ -341,6 +341,16 @@ class Sunpath(object):
             (hour * 60 + eqOfTime + 4 * math.degrees(self._longitude) -
              60 * self.timezone) % 1440) / 60
 
+    def _calculateSolarTimeByDoy(self, hour, doy):
+        """This is how radiance calculates solar time.
+
+        This is a place holder and need to be validated against calculateSolarTime.
+        """
+        raise NotImplementedError()
+        return (0.170 * math.sin((4 * math.pi / 373) * (doy - 80)) -
+                0.129 * math.sin((2 * math.pi / 355) * (doy - 8)) +
+                12 * (-(15 * self.timezone) - self.longitude) / math.pi)
+
     @staticmethod
     def _calculateHourAndMinute(floatHour):
         """Calculate hour and minutes as integers from a float hour."""
@@ -475,7 +485,7 @@ class Sun(object):
         _sunvector = northVector \
             .rotate_around(xAxis, self.altitudeInRadians) \
             .rotate_around(zAxis, self.azimuthInRadians) \
-            .rotate_around(zAxis, math.radians(-self.northAngle))
+            .rotate_around(zAxis, math.radians(-1 * self.northAngle))
 
         _sunvector.normalize().flip()
 
