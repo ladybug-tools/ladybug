@@ -2,6 +2,8 @@
 from .epw import EPW
 from .dt import DateTime
 
+import itertools
+
 
 class Wea(object):
     """An annual WEA data for a location."""
@@ -9,8 +11,9 @@ class Wea(object):
     def __init__(self, location, directNormalRadiation, diffuseHorizontalRadiation,
                  timestep=1):
         """Create a wea object."""
-        assert len(directNormalRadiation) == len(diffuseHorizontalRadiation) == 8760, \
-            'directNormalRadiation and diffuseHorizontalRadiation data should be annual.'
+        assert len(directNormalRadiation) / timestep == \
+            len(diffuseHorizontalRadiation) / timestep == 8760, \
+            'directNormalRadiation and diffuseHorizontalRadiation data must be annual.'
         self.location = location
         self.directNormalRadiation = directNormalRadiation
         self.diffuseHorizontalRadiation = diffuseHorizontalRadiation
@@ -27,6 +30,17 @@ class Wea(object):
     def isWea(self):
         """Return True."""
         return True
+
+    def getRadiationValues(self, month, day, hour):
+        """Get direct and diffuse radiation values for a point in time."""
+        dt = DateTime(month, day, hour)
+        hoy = int(dt.hoy * self.timestep)
+        return self.directNormalRadiation[hoy], self.diffuseHorizontalRadiation[hoy]
+
+    def getRadiationValuesForHoy(self, hoy):
+        """Get direct and diffuse radiation values for an hoy."""
+        hoy = int(hoy * self.timestep)
+        return self.directNormalRadiation[hoy], self.diffuseHorizontalRadiation[hoy]
 
     @property
     def header(self):
@@ -51,7 +65,7 @@ class Wea(object):
             # write header
             weaFile.write(self.header)
             # write values
-            for dt, hoy in zip(dts, hoys):
+            for dt, hoy in itertools.izip(dts, hoys):
                 dirRad = self.directNormalRadiation[hoy]
                 difRad = self.diffuseHorizontalRadiation[hoy]
                 line = "%d %d %.3f %d %d\n" \

@@ -124,6 +124,11 @@ class Location(object):
         except TypeError:
             raise ValueError("Failed to convert {} to an elevation".format(elev))
 
+    @property
+    def meridian(self):
+        """Location meridian west of Greenwich."""
+        return -15 * self.timezone
+
     def duplicate(self):
         """Duplicate location."""
         return self(self.city, self.country, self.latitude, self.longitude,
