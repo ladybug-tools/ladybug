@@ -1,44 +1,56 @@
 """Ladybug data collection."""
 from .header import Header
-from .datatype import LBData
+from .datatype import DataPoint
 
 from collections import OrderedDict
+from itertools import izip
 
 
-class LBDataCollection(list):
-    """A list of LadybugData with a header.
+class DataCollection(object):
+    """A list of data with a header."""
 
-    Header is item 0 of the list
-    """
-
-    __slots__ = ('__header')
+    __slots__ = ('_header', '_values')
 
     def __init__(self, data=None, header=None):
         """Init class."""
-        list.__init__(self)
-        self._setInitialData(data)
         self.header = header
+        self._values = []
+
+        if not data:
+            data = ()
+        elif not hasattr(data, '__iter__'):
+            data = (data,)
+        for d in data:
+            assert self._checkData(d), \
+                'Expected DataPoint got {}'.format(type(d))
+            self._values.append(d)
 
     @classmethod
-    def fromList(cls, lst, header=None):
-        """Create a ladybug data collection from a list.
+    def fromList(cls, lst, location=None, dataType=None, unit=None,
+                 analysisPeriod=None):
+        """Create a data collection from a list.
 
-        lst items can be LBData or non-LBData. This method will try to convert
-        the first item to header if header is not provided.
+        lst items can be DataPoint or other values.
+
+        Args:
+            lst: A list of data.
+            location: location data as a ladybug Location or location string
+                (Default: unknown).
+            dataType: Type of data (e.g. Temperature) (Default: unknown).
+            unit: dataType unit (Default: unknown).
+            analysisPeriod: A Ladybug analysis period (Defualt: None)
         """
-        if not header:
-            try:
-                header = Header.fromHeader(lst[0])
-                lst = lst[1:]
-            except ValueError:
-                pass
-        _d = (LBData.fromLBData(d) for d in lst)
-        return cls(_d, header)
+        header = Header(location, dataType, unit, analysisPeriod)
+        if analysisPeriod:
+            return cls.fromDataAndDatetimes(lst, analysisPeriod.datetimes, header)
+        else:
+            data = (DataPoint.fromData(d) for d in lst)
+            return cls(data, header)
 
     @classmethod
     def fromDataAndDatetimes(cls, data, datetimes, header=None):
         """Create a list from data and dateteimes."""
-        _d = (LBData(v, d) for v, d in zip(data, datetimes))
+        _d = (DataPoint(v, d) for v, d in izip(data, datetimes))
         return cls(_d, header)
 
     @classmethod
@@ -49,42 +61,32 @@ class LBDataCollection(list):
     @property
     def header(self):
         """Get or set header."""
-        return self.__header
+        return self._header
 
     @header.setter
     def header(self, h):
-        self.__header = None if not h else Header.fromHeader(h)
-
-    def _setInitialData(self, newData):
-        if not newData:
-            newData = ()
-        elif not hasattr(newData, '__iter__'):
-            newData = (newData,)
-
-        for d in newData:
-            assert self._checkLBData(d), \
-                'Expected LadybugData got {}'.format(type(d))
-            self.append(d)
+        self._header = None if not h else Header.fromHeader(h)
 
     def append(self, d):
         """Append a single item to the list."""
-        assert self._checkLBData(d), \
-            'Expected LadybugData got {}'.format(type(d))
-        list.append(self, d)
+        assert self._checkData(d), \
+            'Expected DataPoint got {}'.format(type(d))
+        self._values.append(d)
 
     def extend(self, newData):
         """Extend a number of items to the end of items."""
         for d in newData:
-            assert self._checkLBData(d), \
-                'Expected LadybugData got {}'.format(type(d))
-        list.extend(self, newData)
+            assert self._checkData(d), \
+                'Expected DataPoint got {}'.format(type(d))
+        self._values.extend(newData)
 
     @property
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
         return tuple(value.datetime for value in self)
 
-    def values(self, header=False):
+    @property
+    def values(self):
         """Return the list of values.
 
         Args:
@@ -93,17 +95,14 @@ class LBDataCollection(list):
         Return:
             A list of values
         """
-        if not header:
-            return self
-        else:
-            return [self.header] + self
+        return self._values
 
-    def _checkLBData(self, d):
-        return True if hasattr(d, 'isLBData') else False
+    def _checkData(self, d):
+        return True if hasattr(d, 'isDataPoint') else False
 
     def duplicate(self):
         """Duplicate current data list."""
-        return self.__class__(self.values(), self.header)
+        return self.__class__(self.values, self.header)
 
     @staticmethod
     def average(data):
@@ -112,13 +111,13 @@ class LBDataCollection(list):
         return sum(values) / len(data)
 
     @staticmethod
-    def groupLBDataByMonth(data, monthRange=xrange(1, 13)):
+    def groupDataByMonth(data, monthRange=xrange(1, 13)):
         """Return a dictionary of values where values are grouped for each month.
 
         Key values are between 1-12
 
         Args:
-            data: A list of LBData to be processed
+            data: A list of DataPoint to be processed
             monthRange: A list of numbers for months. Default is 1-12
         """
         hourlyDataByMonth = OrderedDict()
@@ -149,17 +148,17 @@ class LBDataCollection(list):
            monthlyValues = epwfile.dryBulbTemperature.groupByMonth()
            print monthlyValues[2] # returns values for the month of March
         """
-        return self.groupLBDataByMonth(self.values(header=False), monthRange)
+        return self.groupDataByMonth(self.values, monthRange)
 
     @staticmethod
-    def groupLBDataByDay(data, dayRange=xrange(1, 366)):
+    def groupDataByDay(data, dayRange=xrange(1, 366)):
         """
         Return a dictionary of values where values are grouped by each day of year.
 
         Key values are between 1-365
 
         Args:
-            data: A list of LBData to be processed
+            data: A list of DataPoint to be processed
             dayRange: A list of numbers for days. Default is 1-365
         """
         hourlyDataByDay = OrderedDict()
@@ -168,7 +167,7 @@ class LBDataCollection(list):
 
         for d in data:
             try:
-                hourlyDataByDay[d.datetime.DOY].append(d)
+                hourlyDataByDay[d.datetime.doy].append(d)
             except KeyError:
                 # day is not there
                 pass
@@ -183,7 +182,7 @@ class LBDataCollection(list):
 
         Args:
             dayRange: A list of numbers for days. Default is 1-365
-            userDataList: An optional data list of LBData to be processed
+            userDataList: An optional data list of DataPoint to be processed
 
         Usage:
 
@@ -191,16 +190,16 @@ class LBDataCollection(list):
             dailyValues = epwfile.dryBulbTemperature.groupByDay(range(1, 30))
             print dailyValues[2] # returns values for the second day of year
         """
-        return self.groupLBDataByDay(self.values(header=False), dayRange)
+        return self.groupDataByDay(self.values, dayRange)
 
     @staticmethod
-    def groupLBDataByHour(data, hourRange=xrange(0, 24)):
+    def groupDataByHour(data, hourRange=xrange(0, 24)):
         """Return a dictionary of values where values are grouped by each hour of day.
 
         Key values are between 0-23
 
         Args:
-            data: A list of LBData to be processed
+            data: A list of DataPoint to be processed
             hourRange: A list of numbers for hours. Default is 1-24
         """
         hourlyDataByHour = OrderedDict()
@@ -223,18 +222,19 @@ class LBDataCollection(list):
 
         Args:
             hourRange: A list of numbers for hours. Default is 1-24
-            userDataList: An optional data list of LBData to be processed
+            userDataList: An optional data list of DataPoint to be processed
 
         Usage:
 
             epwfile = EPW("epw file address")
             monthlyValues = epwfile.dryBulbTemperature.groupByMonth([1])
-            groupedHourlyData = epwfile.dryBulbTemperature.groupLBDataDataByHour(monthlyValues[1])
+            groupedHourlyData = epwfile.dryBulbTemperature.groupDataDataByHour(
+                monthlyValues[1])
             for hour, data in groupedHourlyData.items():
-                print "average temperature values for hour {} during JAN is {} {}".format(
-                hour, core.DataList.average(data), DBT.header.unit)
+                print("average temperature values for hour {} during JAN is {} {}"
+                      .format(hour, core.DataList.average(data), DBT.header.unit))
         """
-        return self.groupLBDataByHour(self.values(header=False), hourRange)
+        return self.groupDataByHour(self.values, hourRange)
 
     def updateDataForHoursOfYear(self, values, hoursOfYear):
         """Update values new set of values for a list of hours of the year.
@@ -243,7 +243,7 @@ class LBDataCollection(list):
 
         Args:
             values: A list of values to be replaced in the file
-            hoursOfYear: A list of HOY between 1 and 8760
+            hoursOfYear: A list of hoy between 1 and 8760
         """
         # check length of data vs length of analysis hoursOfYear
         if len(values) != len(hoursOfYear):
@@ -253,9 +253,9 @@ class LBDataCollection(list):
 
         # update values
         updatedCount = 0
-        for data in self.values(header=False):
+        for data in self.values:
             try:
-                data.value = values[hoursOfYear.index(data.datetime.HOY)]
+                data.value = values[hoursOfYear.index(data.datetime.hoy)]
                 updatedCount += 1
             except IndexError:
                 pass
@@ -270,7 +270,7 @@ class LBDataCollection(list):
 
     def updateDataForAnHour(self, value, hourOfYear):
         """
-        Replace current value in data list with a new value for a specific HOY.
+        Replace current value in data list with a new value for a specific hoy.
 
         Args:
             value: A single value
@@ -288,7 +288,7 @@ class LBDataCollection(list):
             analysisPeriod: An analysis period for input the input values.
                 Default is set to the whole year.
         """
-        return self.updateDataForHoursOfYear(values, analysisPeriod.HOYs)
+        return self.updateDataForHoursOfYear(values, analysisPeriod.hoys)
 
     def interpolateData(self, timestep):
         """Interpolate data for a finer timestep.
@@ -302,7 +302,7 @@ class LBDataCollection(list):
             .format(timestep, self.header.analysisPeriod.timestep)
 
         _minutesStep = int(60 / int(timestep / self.header.analysisPeriod.timestep))
-        _dataLength = len(self.values(header=False))
+        _dataLength = len(self.values)
         # generate new data
         _data = tuple(
             self[d].__class__(_v, self[d].datetime.addminutes(step * _minutesStep))
@@ -353,7 +353,7 @@ class LBDataCollection(list):
             return _data.duplicate()
 
         # create a new filteredData
-        _filteredData = _data.filterByHOYs(analysisPeriod.HOYs)
+        _filteredData = _data.filterByHOYs(analysisPeriod.hoys)
         if self.header:
             _filteredData.header.analysisPeriod = analysisPeriod
 
@@ -377,8 +377,7 @@ class LBDataCollection(list):
         """
         # There is no guarantee that data is continuous so I iterate through the
         # each data point one by one
-        _filteredData = [d for d in self.values(header=False)
-                         if d.datetime.MOY in MOYs]
+        _filteredData = [d for d in self.values if d.datetime.moy in MOYs]
 
         # create a new filteredData
         if self.header:
@@ -388,23 +387,23 @@ class LBDataCollection(list):
         else:
             return self.__class__(_filteredData)
 
-    def filterByHOYs(self, HOYs):
+    def filterByHOYs(self, hoys):
         """Filter the list based on an analysis period.
 
         Args:
-           HOYs: A List of hours of the year 0..8759
+           hoys: A List of hours of the year 0..8759
 
         Return:
             A new DataList with filtered data
 
         Usage:
 
-           HOYs = range(1,48)  # The first two days of the year
+           hoys = range(1,48)  # The first two days of the year
            epw = EPW("c:/ladybug/weatherdata.epw")
            DBT = epw.dryBulbTemperature
-           filteredDBT = DBT.filterByHOYs(HOYs)
+           filteredDBT = DBT.filterByHOYs(hoys)
         """
-        _moys = tuple(int(hour * 60) for hour in HOYs)
+        _moys = tuple(int(hour * 60) for hour in hoys)
 
         return self.filterByMOYs(_moys)
 
@@ -432,8 +431,8 @@ class LBDataCollection(list):
                 .replace("and", "").replace("or", "") \
                 .replace("not", "").replace("in", "").replace("is", "")
 
-            l = [s for s in stStatement if s.isalpha()]
-            if list(set(l)) != ['x']:
+            parsedSt = [s for s in stStatement if s.isalpha()]
+            if list(set(parsedSt)) != ['x']:
                 statementErrorMsg = 'Invalid input statement. ' + \
                     'Statement should be a valid Python statement' + \
                     ' and the variable should be named as x'
@@ -442,15 +441,15 @@ class LBDataCollection(list):
         checkInputStatement(statement)
 
         statement = statement.replace('x', 'd.value')
-        _filteredData = [d for d in self.values(header=False) if eval(statement)]
+        _filteredData = [d for d in self.values if eval(statement)]
 
         # create a new filteredData
         if self.header:
             _filteredHeader = self.header.duplicate()
             _filteredHeader.analysisPeriod = None
-            return self.__class__(_filteredData, _filteredHeader)
+            return self(_filteredData, _filteredHeader)
         else:
-            return self.__class__(_filteredData)
+            return self(_filteredData)
 
     def filterByPattern(self, pattern):
         """Filter the list based on a list of Boolean.
@@ -468,7 +467,7 @@ class LBDataCollection(list):
         except TypeError:
             raise ValueError("pattern should be a list of values.")
 
-        _filteredData = [d for count, d in enumerate(self.values(False))
+        _filteredData = [d for count, d in enumerate(self.values)
                          if pattern[count % _len]]
 
         # create a new filteredData
@@ -480,10 +479,10 @@ class LBDataCollection(list):
             return self.__class__(_filteredData)
 
     @staticmethod
-    def averageLBDataMonthly(self, data):
+    def averageDataMonthly(self, data):
         """Return a dictionary of values for average values for available months."""
         # group data for each month
-        monthlyValues = self.groupLBDataByMonth(data)
+        monthlyValues = self.groupDataByMonth(data)
 
         averageValues = OrderedDict()
 
@@ -495,16 +494,16 @@ class LBDataCollection(list):
 
     def averageMonthly(self):
         """Return a dictionary of values for average values for available months."""
-        return self.averageLBDataMonthly(self.values(header=False))
+        return self.averageDataMonthly(self.values)
 
     @staticmethod
-    def averageLBDataMonthlyForEachHour(self, data):
+    def averageDataMonthlyForEachHour(self, data):
         """Calculate average value for each hour during each month.
 
         This method returns a dictionary with nested dictionaries for each hour
         """
         # get monthy values
-        monthlyHourlyValues = self.groupLBDataByMonth(data)
+        monthlyHourlyValues = self.groupDataByMonth(data)
 
         # group data for each hour in each month and collect them in a dictionary
         averagedMonthlyValuesPerHour = OrderedDict()
@@ -513,7 +512,7 @@ class LBDataCollection(list):
                 averagedMonthlyValuesPerHour[month] = OrderedDict()
 
             # group data for each hour
-            groupedHourlyData = self.groupLBDataByHour(monthlyValues)
+            groupedHourlyData = self.groupDataByHour(monthlyValues)
             for hour, data in groupedHourlyData.items():
                 averagedMonthlyValuesPerHour[month][hour] = self.average(data)
 
@@ -524,4 +523,36 @@ class LBDataCollection(list):
 
         This method returns a dictionary with nested dictionaries for each hour
         """
-        return self.averageLBDataMonthlyForEachHour(self.values(header=False))
+        return self.averageDataMonthlyForEachHour(self.values)
+
+    def __len__(self):
+        return len(self._values)
+
+    def __getitem__(self, key):
+        return self._values[key]
+
+    def __setitem__(self, key, value):
+        self._values[key] = value
+
+    def __delitem__(self, key):
+        del self._values[key]
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __reversed__(self):
+        return reversed(self._values)
+
+    def __contains__(self, item):
+        return item in self._values
+
+    def ToString(self):
+        """Overwrite .NET ToString method."""
+        return self.__repr__()
+
+    def __repr__(self):
+        """Data collection representation."""
+        if self.header and self.header.dataType:
+            return "{}: #{}".format(self.header.dataType, len(self._values))
+        else:
+            return "DataCollection: #{}".format(len(self._values))

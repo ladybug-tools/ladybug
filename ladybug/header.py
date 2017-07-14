@@ -13,17 +13,17 @@ class Header(object):
 
     Attributes:
         location: location data as a ladybug Location or location string
-            (Default: unknown).
-        dataType: Type of data (e.g. Temperature) (Default: unknown).
-        unit: dataType unit (Default: unknown).
+            (Default: None).
+        dataType: Type of data (e.g. Temperature) (Default: None).
+        unit: dataType unit (Default: None).
         analysisPeriod: A Ladybug analysis period (Defualt: None)
     """
 
     def __init__(self, location=None, dataType=None, unit=None, analysisPeriod=None):
         """Initiate Ladybug header for lists."""
         self.location = Location.fromLocation(location)
-        self.dataType = dataType if dataType else "unknown"
-        self.unit = unit if unit else "unknown"
+        self.dataType = dataType if dataType else None
+        self.unit = unit if unit else None
         self.analysisPeriod = AnalysisPeriod.fromAnalysisPeriod(analysisPeriod)
 
     @classmethod
