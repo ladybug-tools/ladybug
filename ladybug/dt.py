@@ -16,6 +16,7 @@ class DateTime(datetime):
 
     def __new__(cls, month=1, day=1, hour=0, minute=0):
         """Create Ladybug datetime."""
+        hour, minute = cls._calculateHourAndMinute(hour + minute / 60.0)
         try:
             return datetime.__new__(cls, 2015, month, day, hour, minute)
         except ValueError as e:
@@ -103,6 +104,15 @@ class DateTime(datetime):
         This output assumes the minute is 0.
         """
         return (self.doy - 1) * 24 + self.hour
+
+    @staticmethod
+    def _calculateHourAndMinute(floatHour):
+        """Calculate hour and minutes as integers from a float hour."""
+        hour, minute = int(floatHour), int(round((floatHour - int(floatHour)) * 60))
+        if minute == 60:
+            return hour + 1, 0
+        else:
+            return hour, minute
 
     def addminutes(self, minutes):
         """Create a new DateTime after the minutes are added.
