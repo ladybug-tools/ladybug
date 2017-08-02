@@ -1,2 +1,4 @@
 *.pyc
 test.py
+ladybug/geometry.py
+ladybug/output.py
