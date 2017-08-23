@@ -409,7 +409,10 @@ class ColorRange(object):
                 cols = [col if isinstance(col, Color) else Color(
                     col.R, col.G, col.B) for col in cols]
             except Exception:
-                raise ValueError("%s is not a vlid color" % str(cols))
+                try:
+                    cols = [Color(col.Red, col.Green, col.Blue) for col in cols]
+                except Exception:
+                    raise ValueError("%s is not a vlid color" % str(cols))
             self._colors = cols
 
     @property
