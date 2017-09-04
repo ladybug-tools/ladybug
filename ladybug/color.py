@@ -63,20 +63,20 @@ class Colorset(object):
     """Ladybug Color-range repository.
 
     A list of default Ladybug colorsets for color range:
-        0 - Original Ladybug
-        1 - Nuanced Ladybug
+        0 - original Ladybug
+        1 - nuanced Ladybug
         2 - Multi-colored Ladybug
         3 - View Analysis 1
         4 - View Analysis 2 (Red,Green,Blue)
         5 - Sunlight Hours
-        6 - Ecotect
-        7 - Thermal Comfort Percentage
-        8 - Thermal Comfort Colors
-        9 - Thermal Comfort Colors (UTCI)
+        6 - ecotect
+        7 - thermal Comfort Percentage
+        8 - thermal Comfort Colors
+        9 - thermal Comfort Colors (UTCI)
         10 - Hot Hours
         11 - Cold Hours
         12 - Shade Benefit/Harm
-        13 - Thermal Comfort Colors v2 (UTCI)
+        13 - thermal Comfort Colors v2 (UTCI)
         14 - Shade Harm
         15 - Shade Benefit
         16 - Black to White
@@ -154,112 +154,112 @@ class Colorset(object):
         pass
 
     @classmethod
-    def Original(cls):
-        """Original Ladybug colors."""
+    def original(cls):
+        """original Ladybug colors."""
         return tuple(Color(*color) for color in cls._colors[0])
 
     @classmethod
-    def Nuanced(cls):
-        """Nuanced Ladybug colors."""
+    def nuanced(cls):
+        """nuanced Ladybug colors."""
         return tuple(Color(*color) for color in cls._colors[1])
 
     @classmethod
-    def MultiColored(cls):
+    def multi_colored(cls):
         """Multi-colored legend."""
         return tuple(Color(*color) for color in cls._colors[2])
 
     @classmethod
-    def ViewAnalysis1(cls):
+    def view_analysis1(cls):
         """View analysis colors."""
         return tuple(Color(*color) for color in cls._colors[3])
 
     @classmethod
-    def ViewAnalysis2(cls):
+    def view_analysis2(cls):
         """View Analysis 2 colors."""
         return tuple(Color(*color) for color in cls._colors[4])
 
     @classmethod
-    def SunlightHours(cls):
-        """SunlightHours colors."""
+    def sunlight_hours(cls):
+        """sunlight_hours colors."""
         return tuple(Color(*color) for color in cls._colors[5])
 
     @classmethod
-    def Ecotect(cls):
-        """Ecotect colors."""
+    def ecotect(cls):
+        """ecotect colors."""
         return tuple(Color(*color) for color in cls._colors[6])
 
     @classmethod
-    def ThermalComfortPercentage(cls):
-        """Thermal Comfort percentage."""
+    def thermal_comfort_percentage(cls):
+        """thermal Comfort percentage."""
         return tuple(Color(*color) for color in cls._colors[7])
 
     @classmethod
-    def ThermalComfort(cls):
-        """Thermal Comfort colors."""
+    def thermal_comfort(cls):
+        """thermal Comfort colors."""
         return tuple(Color(*color) for color in cls._colors[8])
 
     @classmethod
-    def ThermalComfortUTCI1(cls):
-        """Thermal Comfort UTCI 1."""
+    def thermal_comfort_UTCI1(cls):
+        """thermal Comfort UTCI 1."""
         return tuple(Color(*color) for color in cls._colors[9])
 
     @classmethod
-    def HotHours(cls):
+    def hot_hours(cls):
         """Hot Hours."""
         return tuple(Color(*color) for color in cls._colors[10])
 
     @classmethod
-    def ColdHours(cls):
+    def cold_hours(cls):
         """Cold Hours."""
         return tuple(Color(*color) for color in cls._colors[11])
 
     @classmethod
-    def ShadeBenefitHarm(cls):
+    def shade_benefit_harm(cls):
         """Shade Benefit Harm colors."""
         return tuple(Color(*color) for color in cls._colors[12])
 
     @classmethod
-    def ThermalComfortUTCI2(cls):
-        """Thermal Comfort UTCI 2."""
+    def thermal_comfort_UTCI2(cls):
+        """thermal Comfort UTCI 2."""
         return tuple(Color(*color) for color in cls._colors[13])
 
     @classmethod
-    def ShadeHarm(cls):
+    def shade_harm(cls):
         """Shade Harm colors."""
         return tuple(Color(*color) for color in cls._colors[14])
 
     @classmethod
-    def ShadeBenefit(cls):
+    def shade_benefit(cls):
         """Shade Benefit colors."""
         return tuple(Color(*color) for color in cls._colors[15])
 
     @classmethod
-    def BlackToWhite(cls):
+    def black_to_white(cls):
         """Black to white colors."""
         return tuple(Color(*color) for color in cls._colors[16])
 
     @classmethod
-    def CFDColors1(cls):
+    def cfd_colors1(cls):
         """CFD colors 1."""
         return tuple(Color(*color) for color in cls._colors[17])
 
     @classmethod
-    def CFDColors2(cls):
+    def cfd_colors2(cls):
         """CFD colors 2."""
         return tuple(Color(*color) for color in cls._colors[18])
 
     @classmethod
-    def EnergyBalance(cls):
+    def energy_balance(cls):
         """Energy Balance colors."""
         return tuple(Color(*color) for color in cls._colors[19])
 
     @classmethod
-    def Therm(cls):
+    def therm(cls):
         """THERM colors."""
         return tuple(Color(*color) for color in cls._colors[20])
 
     @classmethod
-    def CloudCover(cls):
+    def cloud_cover(cls):
         """Cloud Cover colors."""
         return tuple(Color(*color) for color in cls._colors[21])
 
@@ -295,12 +295,12 @@ class ColorRange(object):
             Default: Colorset[1]
         domain: A list of numbers or strings. For numerical values it should be
             sorted from min to max. Default: ['min', 'max']
-        chartType: 0: continuous, 1: segmented, 2: ordinal. Default: 0
+        chart_type: 0: continuous, 1: segmented, 2: ordinal. Default: 0
             In segmented and ordinal mode number of values should match number of colors
             Ordinal values can be strings and well as numericals
     Usage:
         ##
-        colorRange = ColorRange(chartType = 1)
+        colorRange = ColorRange(chart_type = 1)
         colorRange.domain = [100, 2000]
         colorRange.colors = [Color(75, 107, 169), Color(245, 239, 103),
             Color(234, 38, 0)]
@@ -314,7 +314,7 @@ class ColorRange(object):
         >> <R:234, G:38, B:0>
 
         ##
-        colorRange = ColorRange(chartType = 1)
+        colorRange = ColorRange(chart_type = 1)
         colorRange.domain = [100, 2000]
         colorRange.colors = [Color(75, 107, 169), Color(245, 239, 103),
             Color(234, 38, 0)]
@@ -322,7 +322,7 @@ class ColorRange(object):
         >> <R:245, G:239, B:103>
 
         ##
-        colorRange = ColorRange(chartType = 2)
+        colorRange = ColorRange(chart_type = 2)
         colorRange.domain = ["cold", "comfortable", "hot"]
         colorRange.colors = [Color(75, 107, 169), Color(245, 239, 103),
             Color(234, 38, 0)]
@@ -332,15 +332,15 @@ class ColorRange(object):
     """
 
     # TODO: write a Color object
-    def __init__(self, colors=None, domain=None, chartType=0):
+    def __init__(self, colors=None, domain=None, chart_type=0):
         """Initiate Ladybug color range."""
-        self.ctype = chartType
+        self.ctype = chart_type
         self._isDomainSet = False
         self.colors = colors
         self.domain = domain
 
     @property
-    def isDomainSet(self):
+    def is_domain_set(self):
         """Return if Domain is set for this color-range."""
         return self._isDomainSet
 
@@ -449,24 +449,24 @@ class ColorRange(object):
         for count, d in enumerate(self._domain):
             if d <= value <= self._domain[count + 1]:
                 if self._ctype == 0:
-                    return self._calColor(value, count)
+                    return self._cal_color(value, count)
                 if self._ctype == 1:
                     return self._colors[count + 1]
 
-    def _calColor(self, value, colorIndex):
+    def _cal_color(self, value, color_index):
         """Blend between two colors based on input value."""
-        rangeMinP = self._domain[colorIndex]
-        rangeP = self._domain[colorIndex + 1] - rangeMinP
+        range_min_p = self._domain[color_index]
+        range_p = self._domain[color_index + 1] - range_min_p
         try:
-            factor = (value - rangeMinP) / rangeP
+            factor = (value - range_min_p) / range_p
         except ZeroDivisionError:
             factor = 0
 
-        minColor = self.colors[colorIndex]
-        maxColor = self.colors[colorIndex + 1]
-        red = round(factor * (maxColor.r - minColor.r) + minColor.r)
-        green = round(factor * (maxColor.g - minColor.g) + minColor.g)
-        blue = round(factor * (maxColor.b - minColor.b) + minColor.b)
+        min_color = self.colors[color_index]
+        max_color = self.colors[color_index + 1]
+        red = round(factor * (max_color.r - min_color.r) + min_color.r)
+        green = round(factor * (max_color.g - min_color.g) + min_color.g)
+        blue = round(factor * (max_color.b - min_color.b) + min_color.b)
 
         return Color(red, green, blue)
 

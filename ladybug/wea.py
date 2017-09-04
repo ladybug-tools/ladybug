@@ -8,39 +8,40 @@ import itertools
 class Wea(object):
     """An annual WEA data for a location."""
 
-    def __init__(self, location, directNormalRadiation, diffuseHorizontalRadiation,
+    def __init__(self, location, direct_normal_radiation, diffuse_horizontal_radiation,
                  timestep=1):
         """Create a wea object."""
-        assert len(directNormalRadiation) / timestep == \
-            len(diffuseHorizontalRadiation) / timestep == 8760, \
-            'directNormalRadiation and diffuseHorizontalRadiation data must be annual.'
+        assert len(direct_normal_radiation) / timestep == \
+            len(diffuse_horizontal_radiation) / timestep == 8760, \
+            'direct_normal_radiation and diffuse_horizontal_radiation data must be ' \
+            'annual.'
         self.location = location
-        self.directNormalRadiation = directNormalRadiation
-        self.diffuseHorizontalRadiation = diffuseHorizontalRadiation
+        self.direct_normal_radiation = direct_normal_radiation
+        self.diffuse_horizontal_radiation = diffuse_horizontal_radiation
         self.timestep = timestep
 
     @classmethod
-    def fromEpwFile(cls, epwfile):
+    def from_epw_file(cls, epwfile):
         """Create a wea object from an epw file."""
         epw = EPW(epwfile)
-        return cls(epw.location, tuple(epw.directNormalRadiation),
-                   tuple(epw.diffuseHorizontalRadiation))
+        return cls(epw.location, tuple(epw.direct_normal_radiation),
+                   tuple(epw.diffuse_horizontal_radiation))
 
     @property
-    def isWea(self):
+    def is_wea(self):
         """Return True."""
         return True
 
-    def getRadiationValues(self, month, day, hour):
+    def get_radiation_values(self, month, day, hour):
         """Get direct and diffuse radiation values for a point in time."""
         dt = DateTime(month, day, hour)
         hoy = int(dt.hoy * self.timestep)
-        return self.directNormalRadiation[hoy], self.diffuseHorizontalRadiation[hoy]
+        return self.direct_normal_radiation[hoy], self.diffuse_horizontal_radiation[hoy]
 
-    def getRadiationValuesForHoy(self, hoy):
+    def get_radiation_values_for_hoy(self, hoy):
         """Get direct and diffuse radiation values for an hoy."""
         hoy = int(hoy * self.timestep)
-        return self.directNormalRadiation[hoy], self.diffuseHorizontalRadiation[hoy]
+        return self.direct_normal_radiation[hoy], self.diffuse_horizontal_radiation[hoy]
 
     @property
     def header(self):
@@ -52,32 +53,32 @@ class Wea(object):
             "site_elevation %.1f\n" % self.location.elevation + \
             "weather_data_file_units %d\n" % self.timestep
 
-    def write(self, filePath, hoys=None, writeHours=False):
+    def write(self, file_path, hoys=None, write_hours=False):
         """Write the wea file.
 
         WEA carries radiation values from epw and is what gendaymtx uses to
         generate the sky.
         """
         hoys = hoys or xrange(8760)
-        dts = (DateTime.fromHoy(h) for h in hoys)
+        dts = (DateTime.from_hoy(h) for h in hoys)
 
-        with open(filePath, "wb") as weaFile:
+        with open(file_path, "wb") as weaFile:
             # write header
             weaFile.write(self.header)
             # write values
             for dt, hoy in itertools.izip(dts, hoys):
-                dirRad = self.directNormalRadiation[hoy]
-                difRad = self.diffuseHorizontalRadiation[hoy]
+                dir_rad = self.direct_normal_radiation[hoy]
+                dif_rad = self.diffuse_horizontal_radiation[hoy]
                 line = "%d %d %.3f %d %d\n" \
-                    % (dt.month, dt.day, dt.hour + 0.5, dirRad, difRad)
+                    % (dt.month, dt.day, dt.hour + 0.5, dir_rad, dif_rad)
 
                 weaFile.write(line)
 
-        if writeHours:
-            with open(filePath[:-4] + '.hrs', 'wb') as outf:
+        if write_hours:
+            with open(file_path[:-4] + '.hrs', 'wb') as outf:
                 outf.write(','.join(str(h) for h in hoys) + '\n')
 
-        return filePath
+        return file_path
 
     def ToString(self):
         """Overwrite .NET ToString."""

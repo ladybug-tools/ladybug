@@ -19,7 +19,7 @@ class Sunpath(object):
     Attributes:
         latitude: The latitude of the location in degrees. Values must be
             between -90 and 90. Default is set to the equator.
-        northAngle: Angle to north (0-360). 90 is west and 270 is east
+        north_angle: Angle to north (0-360). 90 is west and 270 is east
             (Default: 0)
         longitude: The longitude of the location in degrees (Default: 0)
         timezone: A number representing the time zone of the location you are
@@ -27,7 +27,7 @@ class Sunpath(object):
             plot.  The time zone should follow the epw convention and should be
             between -12 and +12, where 0 is at Greenwich, UK, positive values
             are to the East of Greenwich and negative values are to the West.
-        daylightSavingPeriod: An analysis period for daylight saving.
+        daylight_saving_period: An analysis period for daylight saving.
             (Default: None)
 
     Usage:
@@ -35,29 +35,29 @@ class Sunpath(object):
         import ladybug.sunpath as sunpath
         # initiate sunpath
         sp = sunpath.Sunpath(50)
-        sun = sp.calculateSun(1, 1, 12) # calculate sun data for Jan 1 at noon
+        sun = sp.calculate_sun(1, 1, 12) # calculate sun data for Jan 1 at noon
         print sun.azimuth, sun.altitude
     """
 
-    __slots__ = ('_longitude', '_latitude', 'northAngle', 'timezone',
-                 'daylightSavingPeriod')
+    __slots__ = ('_longitude', '_latitude', 'north_angle', 'timezone',
+                 'daylight_saving_period')
     PI = math.pi
 
-    def __init__(self, latitude=0, northAngle=0, longitude=0, timezone=0,
-                 daylightSavingPeriod=None):
+    def __init__(self, latitude=0, north_angle=0, longitude=0, timezone=0,
+                 daylight_saving_period=None):
         """Init sunpath."""
         self.timezone = timezone
         self.latitude = latitude
         self.longitude = longitude
-        self.northAngle = northAngle
-        self.daylightSavingPeriod = daylightSavingPeriod
+        self.north_angle = north_angle
+        self.daylight_saving_period = daylight_saving_period
 
     @classmethod
-    def fromLocation(cls, location, northAngle=0, daylightSavingPeriod=None):
+    def from_location(cls, location, north_angle=0, daylight_saving_period=None):
         """Create a sun path from a LBlocation."""
-        location = Location.fromLocation(location)
-        return cls(location.latitude, northAngle, location.longitude,
-                   location.timezone, daylightSavingPeriod)
+        location = Location.from_location(location)
+        return cls(location.latitude, north_angle, location.longitude,
+                   location.timezone, daylight_saving_period)
 
     @property
     def latitude(self):
@@ -86,43 +86,43 @@ class Sunpath(object):
             # if timezone doesn't match the longitude update the timezone
             self.timezone = value / 15.0
 
-    def isDaylightSavingHour(self, datetime):
+    def is_daylight_saving_hour(self, datetime):
         """Check if a datetime is a daylight saving time."""
-        if not self.daylightSavingPeriod:
+        if not self.daylight_saving_period:
             return False
-        return self.daylightSavingPeriod.isTimeIncluded(datetime.hoy)
+        return self.daylight_saving_period.is_time_included(datetime.hoy)
 
-    def calculateSun(self, month, day, hour, isSolarTime=False):
+    def calculate_sun(self, month, day, hour, is_solar_time=False):
         """Get Sun data for an hour of the year.
 
         Args:
             month: An integer between 1-12
             day: An integer between 1-31
             hour: A positive number between 0..23
-            isSolarTime: A boolean to indicate if the input hour is solar time.
+            is_solar_time: A boolean to indicate if the input hour is solar time.
                 (Default: False)
 
         Returns:
             A sun object for this particular time
         """
-        datetime = DateTime(month, day, *self._calculateHourAndMinute(hour))
-        return self.calculateSunFromDataTime(datetime, isSolarTime)
+        datetime = DateTime(month, day, *self._calculate_hour_and_minute(hour))
+        return self.calculate_sun_from_data_time(datetime, is_solar_time)
 
-    def calculateSunFromHOY(self, hoy, isSolarTime=False):
+    def calculate_sun_from_hoy(self, hoy, is_solar_time=False):
         """Get Sun data for an hour of the year.
 
         Args:
             datetime: Ladybug datetime
-            isSolarTime: A boolean to indicate if the input hour is solar time
+            is_solar_time: A boolean to indicate if the input hour is solar time
                 (Default: False).
 
         Returns:
             A sun object for this particular time
         """
-        datetime = DateTime.fromHoy(hoy)
-        return self.calculateSunFromDataTime(datetime, isSolarTime)
+        datetime = DateTime.from_hoy(hoy)
+        return self.calculate_sun_from_data_time(datetime, is_solar_time)
 
-    def calculateSunFromDataTime(self, datetime, isSolarTime=False):
+    def calculate_sun_from_data_time(self, datetime, is_solar_time=False):
         """Get Sun for an hour of the year.
 
         This code is originally written by Trygve Wastvedt (Trygve.Wastvedt@gmail.com)
@@ -130,63 +130,63 @@ class Sunpath(object):
 
         Args:
             datetime: Ladybug datetime
-            isSolarTime: A boolean to indicate if the input hour is solar time.
+            is_solar_time: A boolean to indicate if the input hour is solar time.
                 (Default: False)
 
         Returns:
             A sun object for this particular time
         """
-        solDec, eqOfTime = self._calculateSolarGeometry(datetime)
+        sol_dec, eq_of_time = self._calculate_solar_geometry(datetime)
 
-        hour = datetime.floatHour
+        hour = datetime.float_hour
 
-        isDaylightSaving = self.isDaylightSavingHour(datetime.hoy)
+        is_daylight_saving = self.is_daylight_saving_hour(datetime.hoy)
 
-        hour = hour + 1 if self.isDaylightSavingHour(datetime.hoy) else hour
+        hour = hour + 1 if self.is_daylight_saving_hour(datetime.hoy) else hour
 
         # hours
-        solTime = self._calculateSolarTime(hour, eqOfTime, isSolarTime)
+        sol_time = self._calculate_solar_time(hour, eq_of_time, is_solar_time)
 
         # degrees
-        hourAngle = (solTime * 15 + 180) if (solTime * 15 < 0) \
-            else (solTime * 15 - 180)
+        hour_angle = (sol_time * 15 + 180) if (sol_time * 15 < 0) \
+            else (sol_time * 15 - 180)
 
         # RADIANS
-        zenith = math.acos(math.sin(self._latitude) * math.sin(solDec) +
-                           math.cos(self._latitude) * math.cos(solDec) *
-                           math.cos(math.radians(hourAngle)))
+        zenith = math.acos(math.sin(self._latitude) * math.sin(sol_dec) +
+                           math.cos(self._latitude) * math.cos(sol_dec) *
+                           math.cos(math.radians(hour_angle)))
 
         altitude = (math.pi / 2) - zenith
 
-        if hourAngle == 0.0 or hourAngle == -180.0 or hourAngle == 180.0:
+        if hour_angle == 0.0 or hour_angle == -180.0 or hour_angle == 180.0:
 
-            azimuth = math.pi if solDec < self._latitude else 0.0
+            azimuth = math.pi if sol_dec < self._latitude else 0.0
 
         else:
             azimuth = (
                 (math.acos(
                     (
                         (math.sin(self._latitude) *
-                         math.cos(zenith)) - math.sin(solDec)
+                         math.cos(zenith)) - math.sin(sol_dec)
                     ) /
                     (
                         math.cos(self._latitude) * math.sin(zenith)
                     )
-                ) + math.pi) % (2 * math.pi)) if (hourAngle > 0) \
+                ) + math.pi) % (2 * math.pi)) if (hour_angle > 0) \
                 else \
                 (
                     (3 * math.pi -
                      math.acos(((math.sin(self._latitude) * math.cos(zenith)) -
-                                math.sin(solDec)) /
+                                math.sin(sol_dec)) /
                                (math.cos(self._latitude) * math.sin(zenith)))
                      ) % (2 * math.pi))
 
         # create the sun for this hour
-        return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving,
-                   self.northAngle)
+        return Sun(datetime, altitude, azimuth, is_solar_time, is_daylight_saving,
+                   self.north_angle)
 
-    def calculateSunriseSunset(self, month, day, depression=0.833,
-                               isSolarTime=False):
+    def calculate_sunrise_sunset(self, month, day, depression=0.833,
+                                 is_solar_time=False):
         """Calculate sunrise, noon and sunset.
 
         Return:
@@ -194,45 +194,46 @@ class Sunpath(object):
         """
         datetime = DateTime(month, day, hour=12)
 
-        return self.calculateSunriseSunsetFromDateTime(datetime,
-                                                       depression,
-                                                       isSolarTime)
+        return self.calculate_sunrise_sunset_from_date_time(datetime,
+                                                            depression,
+                                                            is_solar_time)
 
     # TODO: implement solar time
-    def calculateSunriseSunsetFromDateTime(self, datetime, depression=0.833,
-                                           isSolarTime=False):
+    def calculate_sunrise_sunset_from_date_time(self, datetime, depression=0.833,
+                                                is_solar_time=False):
         """Calculate sunrise, sunset and noon for a day of year."""
-        solDec, eqOfTime = self._calculateSolarGeometry(datetime)
+        sol_dec, eq_of_time = self._calculate_solar_geometry(datetime)
 
         # calculate sunrise and sunset hour
-        if isSolarTime:
+        if is_solar_time:
             noon = .5
         else:
             noon = (720 -
                     4 * math.degrees(self._longitude) -
-                    eqOfTime +
+                    eq_of_time +
                     self.timezone * 60
                     ) / 1440.0
 
         try:
-            sunRiseHourAngle = self._calculateSunriseHourAngle(solDec, depression)
+            sun_rise_hour_angle = self._calculate_sunrise_hour_angle(sol_dec, depression)
         except ValueError:
             # no sun rise and sunset at this hour
             noon = 24 * noon
             return {
                 "sunrise": None,
                 "noon": DateTime(datetime.month, datetime.day,
-                                 *self._calculateHourAndMinute(noon)),
+                                 *self._calculate_hour_and_minute(noon)),
                 "sunset": None
             }
         else:
-            sunrise = noon - sunRiseHourAngle * 4 / 1440.0
-            sunset = noon + sunRiseHourAngle * 4 / 1440.0
+            sunrise = noon - sun_rise_hour_angle * 4 / 1440.0
+            sunset = noon + sun_rise_hour_angle * 4 / 1440.0
 
             # convert demical hour to solar hour
-            # noon = self._calculateSolarTime(24 * noon, eqOfTime, isSolarTime)
-            # sunrise = self._calculateSolarTime(24 * sunrise, eqOfTime, isSolarTime)
-            # sunset = self._calculateSolarTime(24 * sunset, eqOfTime, isSolarTime)
+            # noon = self._calculate_solar_time(24 * noon, eq_of_time, is_solar_time)
+            # sunrise = self._calculate_solar_time(24 *
+            #                                      sunrise, eq_of_time, is_solar_time)
+            # sunset = self._calculate_solar_time(24 * sunset, eq_of_time, is_solar_time)
 
             noon = 24 * noon
             sunrise = 24 * sunrise
@@ -240,14 +241,14 @@ class Sunpath(object):
 
             return {
                 "sunrise": DateTime(datetime.month, datetime.day,
-                                    *self._calculateHourAndMinute(sunrise)),
+                                    *self._calculate_hour_and_minute(sunrise)),
                 "noon": DateTime(datetime.month, datetime.day,
-                                 *self._calculateHourAndMinute(noon)),
+                                 *self._calculate_hour_and_minute(noon)),
                 "sunset": DateTime(datetime.month, datetime.day,
-                                   *self._calculateHourAndMinute(sunset))
+                                   *self._calculate_hour_and_minute(sunset))
             }
 
-    def _calculateSolarGeometry(self, datetime, year=2015):
+    def _calculate_solar_geometry(self, datetime, year=2015):
         """Calculate Solar geometry for an hour of the year.
 
         Attributes:
@@ -255,111 +256,111 @@ class Sunpath(object):
 
         Returns:
             Solar declination: Solar declination in radians
-            eqOfTime: Equation of time as minutes
+            eq_of_time: Equation of time as minutes
         """
-        month, day, hour = datetime.month, datetime.day, datetime.floatHour
+        month, day, hour = datetime.month, datetime.day, datetime.float_hour
 
         a = 1 if (month < 3) else 0
         y = year + 4800 - a
         m = month + 12 * a - 3
 
-        julianDay = day + math.floor((153 * m + 2) / 5) + 59
+        julian_day = day + math.floor((153 * m + 2) / 5) + 59
 
-        julianDay += (hour - self.timezone) / 24.0 + 365 * y + \
+        julian_day += (hour - self.timezone) / 24.0 + 365 * y + \
             math.floor(y / 4) - math.floor(y / 100) + \
             math.floor(y / 400) - 32045.5 - 59
 
-        julianCentury = (julianDay - 2451545) / 36525
+        julian_century = (julian_day - 2451545) / 36525
 
         # degrees
-        geomMeanLongSun = (280.46646 + julianCentury *
-                           (36000.76983 + julianCentury * 0.0003032)
-                           ) % 360
+        geom_mean_long_sun = (280.46646 + julian_century *
+                              (36000.76983 + julian_century * 0.0003032)
+                              ) % 360
 
         # degrees
-        geomMeanAnomSun = 357.52911 + julianCentury * \
-            (35999.05029 - 0.0001537 * julianCentury)
+        geom_mean_anom_sun = 357.52911 + julian_century * \
+            (35999.05029 - 0.0001537 * julian_century)
 
-        eccentOrbit = 0.016708634 - julianCentury * \
-            (0.000042037 + 0.0000001267 * julianCentury)
+        eccent_orbit = 0.016708634 - julian_century * \
+            (0.000042037 + 0.0000001267 * julian_century)
 
-        sunEqOfCtr = math.sin(math.radians(geomMeanAnomSun)) * \
-            (1.914602 - julianCentury * (0.004817 + 0.000014 * julianCentury)) + \
-            math.sin(math.radians(2 * geomMeanAnomSun)) * \
-            (0.019993 - 0.000101 * julianCentury) + \
-            math.sin(math.radians(3 * geomMeanAnomSun)) * 0.000289
+        sun_eq_of_ctr = math.sin(math.radians(geom_mean_anom_sun)) * \
+            (1.914602 - julian_century * (0.004817 + 0.000014 * julian_century)) + \
+            math.sin(math.radians(2 * geom_mean_anom_sun)) * \
+            (0.019993 - 0.000101 * julian_century) + \
+            math.sin(math.radians(3 * geom_mean_anom_sun)) * 0.000289
 
         # degrees
-        sunTrueLong = geomMeanLongSun + sunEqOfCtr
+        sun_true_long = geom_mean_long_sun + sun_eq_of_ctr
 
         # AUs
-        # sunTrueAnom = geomMeanAnomSun + sunEqOfCtr
+        # sunTrueAnom = geom_mean_anom_sun + sun_eq_of_ctr
 
         # AUs
-        # sunRadVector = (1.000001018 * (1 - eccentOrbit ** 2)) / \
-        #     (1 + eccentOrbit * math.cos(math.radians(sunTrueLong)))
+        # sunRadVector = (1.000001018 * (1 - eccent_orbit ** 2)) / \
+        #     (1 + eccent_orbit * math.cos(math.radians(sunTrueLong)))
 
         # degrees
-        sunAppLong = sunTrueLong - 0.00569 - 0.00478 * \
-            math.sin(math.radians(125.04 - 1934.136 * julianCentury))
+        sun_app_long = sun_true_long - 0.00569 - 0.00478 * \
+            math.sin(math.radians(125.04 - 1934.136 * julian_century))
 
         # degrees
-        meanObliqEcliptic = 23 + \
-            (26 + ((21.448 - julianCentury * (46.815 + julianCentury *
-                                              (0.00059 - julianCentury *
-                                               0.001813)))) / 60) / 60
+        mean_obliq_ecliptic = 23 + \
+            (26 + ((21.448 - julian_century * (46.815 + julian_century *
+                                               (0.00059 - julian_century *
+                                                0.001813)))) / 60) / 60
 
         # degrees
-        obliqueCorr = meanObliqEcliptic + 0.00256 * \
-            math.cos(math.radians(125.04 - 1934.136 * julianCentury))
+        oblique_corr = mean_obliq_ecliptic + 0.00256 * \
+            math.cos(math.radians(125.04 - 1934.136 * julian_century))
 
         # degrees
         # sunRightAscen = math.degrees(
-        #     math.atan2(math.cos(math.radians(obliqueCorr)) *
-        #                math.sin(math.radians(sunAppLong)),
-        #                math.cos(math.radians(sunAppLong))))
+        #     math.atan2(math.cos(math.radians(oblique_corr)) *
+        #                math.sin(math.radians(sun_app_long)),
+        #                math.cos(math.radians(sun_app_long))))
 
         # RADIANS
-        solDec = math.asin(math.sin(math.radians(obliqueCorr)) *
-                           math.sin(math.radians(sunAppLong)))
+        sol_dec = math.asin(math.sin(math.radians(oblique_corr)) *
+                            math.sin(math.radians(sun_app_long)))
 
-        varY = math.tan(math.radians(obliqueCorr / 2)) * \
-            math.tan(math.radians(obliqueCorr / 2))
+        var_y = math.tan(math.radians(oblique_corr / 2)) * \
+            math.tan(math.radians(oblique_corr / 2))
 
         # minutes
-        eqOfTime = 4 \
+        eq_of_time = 4 \
             * math.degrees(
-                varY * math.sin(2 * math.radians(geomMeanLongSun)) -
-                2 * eccentOrbit * math.sin(math.radians(geomMeanAnomSun)) +
-                4 * eccentOrbit * varY *
-                math.sin(math.radians(geomMeanAnomSun)) *
-                math.cos(2 * math.radians(geomMeanLongSun)) -
-                0.5 * (varY ** 2) *
-                math.sin(4 * math.radians(geomMeanLongSun)) -
-                1.25 * (eccentOrbit ** 2) *
-                math.sin(2 * math.radians(geomMeanAnomSun))
+                var_y * math.sin(2 * math.radians(geom_mean_long_sun)) -
+                2 * eccent_orbit * math.sin(math.radians(geom_mean_anom_sun)) +
+                4 * eccent_orbit * var_y *
+                math.sin(math.radians(geom_mean_anom_sun)) *
+                math.cos(2 * math.radians(geom_mean_long_sun)) -
+                0.5 * (var_y ** 2) *
+                math.sin(4 * math.radians(geom_mean_long_sun)) -
+                1.25 * (eccent_orbit ** 2) *
+                math.sin(2 * math.radians(geom_mean_anom_sun))
             )
 
-        return solDec, eqOfTime
+        return sol_dec, eq_of_time
 
-    def _calculateSunriseHourAngle(self, solarDec, depression=0.833):
+    def _calculate_sunrise_hour_angle(self, solar_dec, depression=0.833):
         """Calculate hour angle for sunrise time in degrees."""
-        hourAngleArg = math.cos(math.radians(90 + depression)) \
-            / (math.cos(self._latitude) * math.cos(solarDec)) \
-            - math.tan(self._latitude) * math.tan(solarDec)
+        hour_angle_arg = math.cos(math.radians(90 + depression)) \
+            / (math.cos(self._latitude) * math.cos(solar_dec)) \
+            - math.tan(self._latitude) * math.tan(solar_dec)
 
-        return math.degrees(math.acos(hourAngleArg))
+        return math.degrees(math.acos(hour_angle_arg))
 
-    def _calculateSolarTime(self, hour, eqOfTime, isSolarTime):
+    def _calculate_solar_time(self, hour, eq_of_time, is_solar_time):
         """Calculate Solar time for an hour."""
-        if isSolarTime:
+        if is_solar_time:
             return hour
 
         return (
-            (hour * 60 + eqOfTime + 4 * math.degrees(self._longitude) -
+            (hour * 60 + eq_of_time + 4 * math.degrees(self._longitude) -
              60 * self.timezone) % 1440) / 60
 
-    def _calculateSolarTimeByDoy(self, hour, doy):
+    def _calculate_solar_time_by_doy(self, hour, doy):
         """This is how radiance calculates solar time.
 
         This is a place holder and need to be validated against calculateSolarTime.
@@ -370,30 +371,30 @@ class Sunpath(object):
                 12 * (-(15 * self.timezone) - self.longitude) / math.pi)
 
     @staticmethod
-    def _calculateHourAndMinute(floatHour):
+    def _calculate_hour_and_minute(float_hour):
         """Calculate hour and minutes as integers from a float hour."""
-        hour, minute = int(floatHour), int(round((floatHour - int(floatHour)) * 60))
+        hour, minute = int(float_hour), int(round((float_hour - int(float_hour)) * 60))
         if minute == 60:
             return hour + 1, 0
         else:
             return hour, minute
 
-    def drawSunpath(self, hoys=None, origin=None, scale=1, sunScale=1, annual=True,
-                    remNight=True):
+    def draw_sunpath(self, hoys=None, origin=None, scale=1, sun_scale=1, annual=True,
+                     rem_night=True):
         """Create sunpath geometry. This method should only be used from the + libraries.
 
         Args:
             hoys: An optional list of hours of the year (default: None).
             origin: Sunpath origin (default: (0, 0, 0)).
             scale: Sunpath scale (default: 1).
-            sunScale: Scale for the sun spheres (default: 1).
+            sun_scale: Scale for the sun spheres (default: 1).
             annual: Set to True to draw an annual sunpath. Otherwise a daily sunpath is
                 drawn.
-            remNight: Remove suns which are under the horizon (night!).
+            rem_night: Remove suns which are under the horizon (night!).
         Returns:
-            baseCurves: A collection of curves for base plot.
-            analemmaCurves: A collection of analemmaCurves.
-            dailyCurves: A collection of dailyCurves.
+            base_curves: A collection of curves for base plot.
+            analemma_curves: A collection of analemma_curves.
+            daily_curves: A collection of daily_curves.
             suns: A list of suns.
         """
         # check and make sure the call is coming from inside a plus library
@@ -411,31 +412,31 @@ class Sunpath(object):
                 raise TypeError(str(e))
 
         scale = scale or 1
-        sunScale = sunScale or 1
+        sun_scale = sun_scale or 1
         assert annual or hoys, 'For daily sunpath you need to provide at least one hour.'
 
         radius = 200 * scale
 
         # draw base circles and lines
-        baseCurves = plus.baseCurves(origin, radius, self.northAngle)
+        base_curves = plus.base_curves(origin, radius, self.north_angle)
         # draw analemma
         # calculate date times for analemma curves
         if annual:
-            asuns = self._analemmaSuns()
-            analemmaCurves = plus.analemmaCurves(asuns, origin, radius)
+            asuns = self._analemma_suns()
+            analemma_curves = plus.analemma_curves(asuns, origin, radius)
         else:
-            analemmaCurves = ()
+            analemma_curves = ()
 
         # add sun spheres
         if hoys:
-            suns = tuple(self.calculateSunFromHOY(hour) for hour in hoys)
+            suns = tuple(self.calculate_sun_from_hoy(hour) for hour in hoys)
         else:
             suns = ()
 
-        if remNight:
-            suns = tuple(sun for sun in suns if sun.isDuringDay)
+        if rem_night:
+            suns = tuple(sun for sun in suns if sun.is_during_day)
 
-        sunGeos = plus.sunGeometry(suns, origin, radius)
+        sun_geos = plus.sun_geometry(suns, origin, radius)
 
         # draw daily sunpath
         if annual:
@@ -443,17 +444,17 @@ class Sunpath(object):
         else:
             dts = (sun.datetime for sun in suns)
 
-        dsuns = self._dailySuns(dts)
-        dailyCurves = plus.dailyCurves(dsuns, origin, radius)
+        dsuns = self._daily_suns(dts)
+        daily_curves = plus.daily_curves(dsuns, origin, radius)
 
         SPGeo = namedtuple(
             'SunpathGeo',
-            ('compassCurves', 'analemmaCurves', 'dailyCurves', 'suns', 'sunGeos'))
+            ('compassCurves', 'analemma_curves', 'daily_curves', 'suns', 'sunGeos'))
 
         # return outputs
-        return SPGeo(baseCurves, analemmaCurves, dailyCurves, suns, sunGeos)
+        return SPGeo(base_curves, analemma_curves, daily_curves, suns, sun_geos)
 
-    def _analemmaPosition(self, hour):
+    def _analemma_position(self, hour):
         """Check what the analemma position is for an hour.
 
         This is useful for calculating hours of analemma curves.
@@ -464,8 +465,8 @@ class Sunpath(object):
             1 if always day.
         """
         # check for 21 dec and 21 jun
-        low = self.calculateSun(12, 21, hour).isDuringDay
-        high = self.calculateSun(6, 21, hour).isDuringDay
+        low = self.calculate_sun(12, 21, hour).is_during_day
+        high = self.calculate_sun(6, 21, hour).is_during_day
 
         if low and high:
             return 1
@@ -474,25 +475,25 @@ class Sunpath(object):
         else:
             return -1
 
-    def _analemmaSuns(self):
-        """Calculate times that should be used for drawing analemmaCurves.
+    def _analemma_suns(self):
+        """Calculate times that should be used for drawing analemma_curves.
 
         Returns:
             A list of list of analemma suns.
         """
         for h in xrange(0, 24):
-            if self._analemmaPosition(h) < 0:
+            if self._analemma_position(h) < 0:
                 continue
-            elif self._analemmaPosition(h) == 0:
+            elif self._analemma_position(h) == 0:
                 chours = []
                 # this is an hour that not all the hours are day or night
                 prevhour = self.latitude <= 0
                 for hoy in xrange(h, 8760, 24):
-                    thishour = self.calculateSunFromHOY(hoy).isDuringDay
+                    thishour = self.calculate_sun_from_hoy(hoy).is_during_day
                     if thishour != prevhour:
                         if not thishour:
                             hoy -= 24
-                        dt = DateTime.fromHoy(hoy)
+                        dt = DateTime.from_hoy(hoy)
                         chours.append((dt.month, dt.day, dt.hour))
                     prevhour = thishour
                 tt = []
@@ -500,44 +501,44 @@ class Sunpath(object):
                     st = chours[2 * hcount]
                     en = chours[2 * hcount + 1]
                     if self.latitude >= 0:
-                        tt = [self.calculateSun(*st)] + \
-                            [self.calculateSun(st[0], d, h)
+                        tt = [self.calculate_sun(*st)] + \
+                            [self.calculate_sun(st[0], d, h)
                              for d in xrange(st[1] + 1, 29, 7)] + \
-                            [self.calculateSun(m, d, h)
+                            [self.calculate_sun(m, d, h)
                              for m in xrange(st[0] + 1, en[0])
                              for d in xrange(3, 29, 7)] + \
-                            [self.calculateSun(en[0], d, h)
+                            [self.calculate_sun(en[0], d, h)
                              for d in xrange(3, en[1], 7)] + \
-                            [self.calculateSun(*en)]
+                            [self.calculate_sun(*en)]
                     else:
-                        tt = [self.calculateSun(*en)] + \
-                            [self.calculateSun(en[0], d, h)
+                        tt = [self.calculate_sun(*en)] + \
+                            [self.calculate_sun(en[0], d, h)
                              for d in xrange(en[1] + 1, 29, 7)] + \
-                            [self.calculateSun(m, d, h) for m in xrange(en[0] + 1, 13)
+                            [self.calculate_sun(m, d, h) for m in xrange(en[0] + 1, 13)
                              for d in xrange(3, 29, 7)] + \
-                            [self.calculateSun(m, d, h) for m in xrange(1, st[0])
+                            [self.calculate_sun(m, d, h) for m in xrange(1, st[0])
                              for d in xrange(3, 29, 7)] + \
-                            [self.calculateSun(st[0], d, h)
+                            [self.calculate_sun(st[0], d, h)
                              for d in xrange(3, st[1], 7)] + \
-                            [self.calculateSun(*st)]
+                            [self.calculate_sun(*st)]
                     yield tt
             else:
-                yield tuple(self.calculateSun((m % 12) + 1, d, h)
+                yield tuple(self.calculate_sun((m % 12) + 1, d, h)
                             for m in xrange(0, 13) for d in (7, 14, 21))[:-2]
 
-    def _dailySuns(self, datetimes):
+    def _daily_suns(self, datetimes):
         """Get sun curve for multiple days of the year."""
         for dt in datetimes:
             # calculate sunrise sunset and noon
-            nss = self.calculateSunriseSunset(dt.month, dt.day)
+            nss = self.calculate_sunriseSunset(dt.month, dt.day)
             dts = tuple(nss[k] for k in ('sunrise', 'noon', 'sunset'))
             if dts[0] is None:
                 # circle
-                yield (self.calculateSun(dt.month, dt.day, h) for h in (0, 12, 15)), \
+                yield (self.calculate_sun(dt.month, dt.day, h) for h in (0, 12, 15)), \
                     False
             else:
                 # Arc
-                yield (self.calculateSunFromDataTime(dt) for dt in dts), True
+                yield (self.calculate_sun_from_data_time(dt) for dt in dts), True
 
 
 class Sun(object):
@@ -547,21 +548,21 @@ class Sun(object):
         datetime: A DateTime that represents the datetime for this sunVector
         altitude: Solar Altitude in **radians**
         azimuth: Solar Azimuth in **radians**
-        isSolarTime: A Boolean that indicates if datetime represents the solar
+        is_solar_time: A Boolean that indicates if datetime represents the solar
             time.
-        isDaylightSaving: A Boolean that indicates if datetime is calculated
+        is_daylight_saving: A Boolean that indicates if datetime is calculated
             for Daylight saving period
-        northAngle: North angle of the sunpath in Degrees. This will be only
+        north_angle: North angle of the sunpath in Degrees. This will be only
             used to calculate the solar vector.
     """
 
-    __slots__ = ('_datetime', '_altitude', '_azimuth', '_isSolarTime',
-                 '_isDaylightSaving', '_northAngle', '_hourlyData', '_data',
+    __slots__ = ('_datetime', '_altitude', '_azimuth', '_is_solar_time',
+                 '_is_daylight_saving', '_north_angle', '_hourlyData', '_data',
                  '_sunVector')
     PI = math.pi
 
-    def __init__(self, datetime, altitude, azimuth, isSolarTime,
-                 isDaylightSaving, northAngle, data=None):
+    def __init__(self, datetime, altitude, azimuth, is_solar_time,
+                 is_daylight_saving, north_angle, data=None):
         """Init sun."""
         assert hasattr(datetime, 'isDateTime'), \
             "datetime must be a DateTime (not {})".format(type(datetime))
@@ -578,13 +579,13 @@ class Sun(object):
             .format(azimuth, -self.PI, self.PI)
 
         self._azimuth = azimuth  # read-only
-        self._isSolarTime = isSolarTime
-        self._isDaylightSaving = isDaylightSaving
+        self._is_solar_time = is_solar_time
+        self._is_daylight_saving = is_daylight_saving
         # useful to calculate sun vector - sun angle is in degrees
-        self._northAngle = northAngle
+        self._north_angle = north_angle
         self.data = data  # Place holder for hourly data
 
-        self._calculateSunVector()
+        self._calculate_sun_vector()
 
     @property
     def datetime(self):
@@ -592,9 +593,9 @@ class Sun(object):
         return self._datetime
 
     @property
-    def northAngle(self):
+    def north_angle(self):
         """Return north angle for +YAxis."""
-        return self._northAngle
+        return self._north_angle
 
     @property
     def hoy(self):
@@ -612,24 +613,24 @@ class Sun(object):
         return math.degrees(self._azimuth)
 
     @property
-    def altitudeInRadians(self):
+    def altitude_in_radians(self):
         """Return solar altitude in radians."""
         return self._altitude
 
     @property
-    def azimuthInRadians(self):
+    def azimuth_in_radians(self):
         """Return solar azimuth in radians."""
         return self._azimuth
 
     @property
-    def isSolarTime(self):
+    def is_solar_time(self):
         """Return a Boolean that indicates is datetime is solar time."""
-        return self._isSolarTime
+        return self._is_solar_time
 
     @property
-    def isDaylightSaving(self):
+    def is_daylight_saving(self):
         """Return a Boolean that indicates is datetime is solar time."""
-        return self._isDaylightSaving
+        return self._is_daylight_saving
 
     @property
     def data(self):
@@ -641,30 +642,30 @@ class Sun(object):
         self._data = d
 
     @property
-    def isDuringDay(self):
+    def is_during_day(self):
         """Check if this sun position is during day."""
         # sun vector is flipped to look to the center
-        return self.sunVector.z <= 0
+        return self.sun_vector.z <= 0
 
     @property
-    def sunVector(self):
+    def sun_vector(self):
         """Sun vector for this sun.
 
         Sun vector faces downward (e.g. z will be negative.)
         """
         return self._sunVector
 
-    def _calculateSunVector(self):
+    def _calculate_sun_vector(self):
         """Calculate sun vector for this sun."""
-        zAxis = Vector3(0., 0., -1.)
-        xAxis = Vector3(1., 0., 0.)
-        northVector = Vector3(0., 1., 0.)
+        z_axis = Vector3(0., 0., -1.)
+        x_axis = Vector3(1., 0., 0.)
+        north_vector = Vector3(0., 1., 0.)
 
         # rotate north vector based on azimuth, altitude, and north
-        _sunvector = northVector \
-            .rotate_around(xAxis, self.altitudeInRadians) \
-            .rotate_around(zAxis, self.azimuthInRadians) \
-            .rotate_around(zAxis, math.radians(-1 * self.northAngle))
+        _sunvector = north_vector \
+            .rotate_around(x_axis, self.altitude_in_radians) \
+            .rotate_around(z_axis, self.azimuth_in_radians) \
+            .rotate_around(z_axis, math.radians(-1 * self.north_angle))
 
         _sunvector.normalize().flip()
 
@@ -679,7 +680,7 @@ class Sun(object):
         # sun at datetime (X, Y, Z)
         return "Sun at {} (x:{}, y:{}, z:{})".format(
             self.datetime,
-            self.sunVector.x,
-            self.sunVector.y,
-            self.sunVector.z
+            self.sun_vector.x,
+            self.sun_vector.y,
+            self.sun_vector.z
         )

@@ -14,20 +14,20 @@ class Header(object):
     Attributes:
         location: location data as a ladybug Location or location string
             (Default: None).
-        dataType: Type of data (e.g. Temperature) (Default: None).
-        unit: dataType unit (Default: None).
-        analysisPeriod: A Ladybug analysis period (Defualt: None)
+        data_type: Type of data (e.g. Temperature) (Default: None).
+        unit: data_type unit (Default: None).
+        analysis_period: A Ladybug analysis period (Defualt: None)
     """
 
-    def __init__(self, location=None, dataType=None, unit=None, analysisPeriod=None):
+    def __init__(self, location=None, data_type=None, unit=None, analysis_period=None):
         """Initiate Ladybug header for lists."""
-        self.location = Location.fromLocation(location)
-        self.dataType = dataType if dataType else None
+        self.location = Location.from_location(location)
+        self.data_type = data_type if data_type else None
         self.unit = unit if unit else None
-        self.analysisPeriod = AnalysisPeriod.fromAnalysisPeriod(analysisPeriod)
+        self.analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
 
     @classmethod
-    def fromHeader(cls, header):
+    def from_header(cls, header):
         """Try to generate a header from a header or a header string."""
         if hasattr(header, 'isHeader'):
             return header
@@ -41,27 +41,27 @@ class Header(object):
                 "Failed to create a Header from %s!\n%s" % (header, e))
 
     @property
-    def isHeader(self):
+    def is_header(self):
         """Return True."""
         return True
 
     def duplicate(self):
         """Duplicate header."""
-        return self.__class__(self.location, self.dataType, self.unit,
-                              self.analysisPeriod)
+        return self.__class__(self.location, self.data_type, self.unit,
+                              self.analysis_period)
 
-    def toTuple(self):
+    def to_tuple(self):
         """Return Ladybug header as a list."""
         return (
             self.location,
-            self.dataType,
+            self.data_type,
             self.unit,
-            self.analysisPeriod
+            self.analysis_period
         )
 
     def __iter__(self):
         """Return data as tuple."""
-        return self.toTuple()
+        return self.to_tuple()
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -70,4 +70,4 @@ class Header(object):
     def __repr__(self):
         """Return Ladybug header as a string."""
         return "%s|%s(%s)|%s" % (
-            repr(self.location), self.dataType, self.unit, self.analysisPeriod)
+            repr(self.location), self.data_type, self.unit, self.analysis_period)

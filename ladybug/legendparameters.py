@@ -6,14 +6,14 @@ class LegendParameters(object):
     """Ladybug lagend parameters.
 
     Attributes:
-        legendRange: Input a list of numbers or strings to set the boundary of
+        legend_range: Input a list of numbers or strings to set the boundary of
             legend. The default is ['min', 'max']
-        numberOfSegments: An interger representing the number of steps between
+        number_of_segments: An interger representing the number of steps between
             the high and low boundary of the legend. The default is set to 11
             and any custom values put in here should always be greater than or
             equal to 2.
         colors: An optional list of colors. Default is Ladybug's default colorset
-        chartType: 0: continuous, 1: segmented, 2: ordinal. Default: 0.
+        chart_type: 0: continuous, 1: segmented, 2: ordinal. Default: 0.
             Ordinal values can be strings and well as numericals
         title:  Legend title. It's usually analysis unit
         font: An optional text string that sets the font of the text. Examples
@@ -34,7 +34,7 @@ class LegendParameters(object):
 
     Usage:
 
-        lp = LegendParameters(legendRange = [2, 28])
+        lp = LegendParameters(legend_range = [2, 28])
         print lp.color(10)
 
     """
@@ -42,13 +42,13 @@ class LegendParameters(object):
     _cType = {0: 'continuous', 1: 'segmented', 2: 'ordinal'}
 
     # TODO: Add textual and geometry parts
-    def __init__(self, legendRange=None, numberOfSegments=11,
-                 colors=None, chartType=0):
+    def __init__(self, legend_range=None, number_of_segments=11,
+                 colors=None, chart_type=0):
         """Init the class."""
-        legendRange = legendRange or ['min', 'max']
-        self.numberOfSegments = numberOfSegments or 11
-        self.colorRange = ColorRange(colors=colors, domain=legendRange,
-                                     chartType=chartType)
+        legend_range = legend_range or ['min', 'max']
+        self.number_of_segments = number_of_segments or 11
+        self.colorRange = ColorRange(colors=colors, domain=legend_range,
+                                     chart_type=chart_type)
 
     @property
     def colors(self):
@@ -70,30 +70,30 @@ class LegendParameters(object):
         self.colorRange.domain = dom
 
     @property
-    def isDomainSet(self):
+    def is_domain_set(self):
         """Check if the domain is set."""
-        return self.colorRange.isDomainSet
+        return self.colorRange.is_domain_set
 
-    def setDomain(self, values):
+    def set_domain(self, values):
         """Set domain of the colors based on min and max of a list of values."""
         _flattenedList = sorted(flatten(values))
         self.domain = tuple(_flattenedList[0] if d == 'min' else d for d in self.domain)
         self.domain = tuple(_flattenedList[-1] if d == 'max' else d for d in self.domain)
 
-    def calculateColors(self, values):
+    def calculate_colors(self, values):
         """Return a list (or list of lists) of colors based on input values."""
         # set domain if it is not set
         _flattenedList = list(flatten(values))
-        if not self.isDomainSet:
-            self.setDomain(_flattenedList)
+        if not self.is_domain_set:
+            self.set_domain(_flattenedList)
 
         _flattenedColors = range(len(_flattenedList))
         for count, value in enumerate(_flattenedList):
-            _flattenedColors[count] = self.calculateColor(value)
+            _flattenedColors[count] = self.calculate_color(value)
 
         return unflatten(values, iter(_flattenedColors))
 
-    def calculateColor(self, value):
+    def calculate_color(self, value):
         """Calculate color for a specific value."""
         return self.colorRange.color(value)
 

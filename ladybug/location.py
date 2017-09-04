@@ -12,15 +12,15 @@ class Location(object):
         longitude: Location longitude between -180 (west) and 180 (east) (Default: 0).
         timezone: Time zone between -12 hours (west) and 12 hours (east) (Default: 0).
         elevation: A number for elevation of the location.
-        stationId: Id of the location if the location is represnting a weather station.
+        station_id: Id of the location if the location is represnting a weather station.
         source: Source of data (e.g. TMY, TMY3).
     """
 
     __slots__ = ("city", "country", "__lat", "__lon", "__tz", "__elev",
-                 "stationId", "source")
+                 "station_id", "source")
 
     def __init__(self, city=None, country=None, latitude=0, longitude=0,
-                 timezone=0, elevation=0, stationId=None, source=None):
+                 timezone=0, elevation=0, station_id=None, source=None):
         """Create a Ladybug location."""
         self.city = "unknown" if not city else str(city)
         self.country = "unknown" if not country else str(country)
@@ -28,11 +28,11 @@ class Location(object):
         self.longitude = longitude
         self.timezone = timezone
         self.elevation = float(elevation)
-        self.stationId = None if not stationId else str(stationId)
+        self.station_id = None if not station_id else str(station_id)
         self.source = source
 
     @classmethod
-    def fromLocation(cls, location):
+    def from_location(cls, location):
         """Try to create a Ladybug location from a location string.
 
         Args:
@@ -78,7 +78,7 @@ class Location(object):
                 "Failed to create a Location from %s!\n%s" % (location, e))
 
     @property
-    def isLocation(self):
+    def is_location(self):
         """Return Ture."""
         return True
 
@@ -132,10 +132,10 @@ class Location(object):
     def duplicate(self):
         """Duplicate location."""
         return self(self.city, self.country, self.latitude, self.longitude,
-                    self.timezone, self.elevation, self.stationId, self.source)
+                    self.timezone, self.elevation, self.station_id, self.source)
 
     @property
-    def EPStyleLocationString(self):
+    def ep_style_location_string(self):
         """Return EnergyPlus's location string."""
         return "Site:Location,\n" + \
             self.city + ',\n' + \
@@ -146,7 +146,7 @@ class Location(object):
 
     def __str__(self):
         """Return location as a string."""
-        return "%s" % (self.EPStyleLocationString)
+        return "%s" % (self.ep_style_location_string)
 
     def ToString(self):
         """Overwrite .NET ToString."""

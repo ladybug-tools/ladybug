@@ -314,6 +314,21 @@ class Vector3:
         self.y = y
         self.z = z
 
+    @property
+    def X(self):
+        """Return x value."""
+        return self.x
+
+    @property
+    def Y(self):
+        """Return y value."""
+        return self.y
+
+    @property
+    def Z(self):
+        """Return z value."""
+        return self.z
+
     def __copy__(self):
         return self.__class__(self.x, self.y, self.z)
 
@@ -323,6 +338,9 @@ class Vector3:
         return 'Vector3(%.2f, %.2f, %.2f)' % (self.x,
                                               self.y,
                                               self.z)
+
+    def __str__(self):
+        return '%.3f %.3f %.3f' % (self.x, self.y, self.z)
 
     def __eq__(self, other):
         if isinstance(other, Vector3):
@@ -541,7 +559,7 @@ class Vector3:
         return self
 
     def flipped(self):
-        """Calculate a flipped vector"""
+        """Return flipped vector"""
         # added by Mostapha Sadeghipour
         return Vector3(-self.x,
                        -self.y,
@@ -568,7 +586,10 @@ class Vector3:
                        self.z - d * normal.z)
 
     def rotate_around(self, axis, theta):
-        """Return the vector rotated around axis through angle theta. Right hand rule applies"""
+        """Return the vector rotated around axis through angle theta.
+
+        Right hand rule applies.
+        """
 
         # Adapted from equations published by Glenn Murray.
         # http://inside.mines.edu/~gmurray/ArbitraryAxisRotation/ArbitraryAxisRotation.html
