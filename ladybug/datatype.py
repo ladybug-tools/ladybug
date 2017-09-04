@@ -249,7 +249,7 @@ class DataPoint(DataTypeBase):
 
         try:
             return cls(value)
-        except Exception, e:
+        except Exception as e:
             raise ValueError(
                 "Failed to create a DataPoint from %s!\n%s" % (value, e))
 

@@ -17,7 +17,7 @@ def flatten(inputList):
             for sub in flatten(el):
                 yield sub
         else:
-                yield el
+            yield el
 
 
 def unflatten(guide, falttenedInput):

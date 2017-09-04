@@ -36,7 +36,7 @@ class Header(object):
         try:
             _h = header.replace("|", "**").replace("(", "**").replace(")", "")
             return cls(*_h.split("**"))
-        except Exception, e:
+        except Exception as e:
             raise ValueError(
                 "Failed to create a Header from %s!\n%s" % (header, e))
 

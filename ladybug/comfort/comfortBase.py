@@ -30,14 +30,14 @@ class ComfortModel(object):
                     checkData = True
                     self.__headerIncl = True
                     self.__headerStr = inputValue[0:7]
-            except:
+            except BaseException:
                 pass
             if checkData is False:
                 for item in inputValue:
                     try:
                         finalVals.append(float(item))
                         checkData = True
-                    except:
+                    except BaseException:
                         checkData = False
             if len(finalVals) > 1:
                 multVal = True

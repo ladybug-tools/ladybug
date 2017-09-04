@@ -362,8 +362,7 @@ class ColorRange(object):
             assert hasattr(dom, "__iter__"), "Domain should be an iterable type"
             # if domain is numerical it should be sorted
             try:
-                dom = map(float, dom)
-                dom.sort()
+                dom = sorted(map(float, dom))
             except ValueError:
                 if self._ctype != 2:
                     print "Text domains can only be used in ordinal mode.\n" + \

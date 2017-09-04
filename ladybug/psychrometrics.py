@@ -21,7 +21,9 @@ def findSaturatedVaporPressureHighAccuracy(tKelvin):
     if tKelvin >= 273:
         # Calculate saturation vapor pressure above freezing
         sigma = 1 - (tKelvin / 647.096)
-        expressResult = (sigma * (-7.85951783)) + ((sigma**1.5) * 1.84408259) + ((sigma**3) * (-11.7866487)) + ((sigma**3.5) * 22.6807411) + ((sigma**4) * (-15.9618719)) + ((sigma**7.5) * 1.80122502)
+        expressResult = (sigma * (-7.85951783)) + ((sigma**1.5) * 1.84408259) + ((sigma**3) * (-11.7866487)) + \
+            ((sigma**3.5) * 22.6807411) + ((sigma**4) *
+                                           (-15.9618719)) + ((sigma**7.5) * 1.80122502)
         critTemp = 647.096 / tKelvin
         exponent = critTemp * expressResult
         power = math.exp(exponent)
@@ -29,7 +31,8 @@ def findSaturatedVaporPressureHighAccuracy(tKelvin):
     else:
         # Calculate saturation vapor pressure below freezing
         theta = tKelvin / 273.16
-        exponent2 = ((1 - (theta**(-1.5))) * (-13.928169)) + ((1 - (theta**(-1.25))) * 34.707823)
+        exponent2 = ((1 - (theta**(-1.5))) * (-13.928169)) + \
+            ((1 - (theta**(-1.25))) * 34.707823)
         power = math.exp(exponent2)
         saturationPressure = power * 611.657
 
@@ -66,8 +69,10 @@ def findEnthalpy(airTemp, humidRatio):
     enVariable2 = enVariable1 * airTemp
     enVariable3 = 2500 * humidRatio
     enVariable4 = enVariable2 + enVariable3
-    if enVariable4 >= 0: enthalpy = enVariable4
-    else: enthalpy = 0
+    if enVariable4 >= 0:
+        enthalpy = enVariable4
+    else:
+        enthalpy = 0
 
     return enthalpy
 
@@ -173,8 +178,10 @@ def findAirTempFromWetBulb(wetBulb, relHumid, avgBarPress=101325):
     Calculates Air Temperature (C) at Wet Bulb Temperature wetBulb (C), Relative Humidity relHumid (%)
     and Barometric Pressure avgBarPress (Pa).
     """
-    humidityRatio, partialPressure, saturationPressure = findHumidRatio(wetBulb, relHumid, avgBarPress)
-    absHumid, partialPressure, saturationPressure = findHumidRatio(wetBulb, 100, avgBarPress)
+    humidityRatio, partialPressure, saturationPressure = findHumidRatio(
+        wetBulb, relHumid, avgBarPress)
+    absHumid, partialPressure, saturationPressure = findHumidRatio(
+        wetBulb, 100, avgBarPress)
     airTemp = wetBulb + (((absHumid - humidityRatio) * 2260000) / (1005))
 
     return airTemp, humidityRatio

@@ -73,7 +73,7 @@ class Location(object):
                        longitude=longitude, timezone=timezone,
                        elevation=elevation)
 
-        except Exception, e:
+        except Exception as e:
             raise ValueError(
                 "Failed to create a Location from %s!\n%s" % (location, e))
 
