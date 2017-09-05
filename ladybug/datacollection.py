@@ -1,6 +1,6 @@
 """Ladybug data collection."""
 from .header import Header
-from .datatype import _dataPoint
+from .datatype import DataPoint
 
 from collections import OrderedDict
 from itertools import izip
@@ -22,7 +22,7 @@ class DataCollection(object):
             data = (data,)
         for d in data:
             assert self._check_data(d), \
-                'Expected _dataPoint got {}'.format(type(d))
+                'Expected DataPoint got {}'.format(type(d))
             self._values.append(d)
 
     @classmethod
@@ -30,7 +30,7 @@ class DataCollection(object):
                   analysis_period=None):
         """Create a data collection from a list.
 
-        lst items can be _dataPoint or other values.
+        lst items can be DataPoint or other values.
 
         Args:
             lst: A list of data.
@@ -44,13 +44,13 @@ class DataCollection(object):
         if analysis_period:
             return cls.from_data_and_datetimes(lst, analysis_period.datetimes, header)
         else:
-            data = (_dataPoint.from_data(d) for d in lst)
+            data = (DataPoint.from_data(d) for d in lst)
             return cls(data, header)
 
     @classmethod
     def from_data_and_datetimes(cls, data, datetimes, header=None):
         """Create a list from data and dateteimes."""
-        _d = (_dataPoint(v, d) for v, d in izip(data, datetimes))
+        _d = (DataPoint(v, d) for v, d in izip(data, datetimes))
         return cls(_d, header)
 
     @classmethod
@@ -70,14 +70,14 @@ class DataCollection(object):
     def append(self, d):
         """Append a single item to the list."""
         assert self._check_data(d), \
-            'Expected _dataPoint got {}'.format(type(d))
+            'Expected DataPoint got {}'.format(type(d))
         self._values.append(d)
 
     def extend(self, new_data):
         """Extend a number of items to the end of items."""
         for d in new_data:
             assert self._check_data(d), \
-                'Expected _dataPoint got {}'.format(type(d))
+                'Expected DataPoint got {}'.format(type(d))
         self._values.extend(new_data)
 
     @property
@@ -98,7 +98,7 @@ class DataCollection(object):
         return self._values
 
     def _check_data(self, d):
-        return True if hasattr(d, 'is_dataPoint') else False
+        return True if hasattr(d, 'is_data_point') else False
 
     def duplicate(self):
         """Duplicate current data list."""
@@ -117,7 +117,7 @@ class DataCollection(object):
         Key values are between 1-12
 
         Args:
-            data: A list of _dataPoint to be processed
+            data: A list of DataPoint to be processed
             month_range: A list of numbers for months. Default is 1-12
         """
         hourly_data_by_month = OrderedDict()
@@ -158,7 +158,7 @@ class DataCollection(object):
         Key values are between 1-365
 
         Args:
-            data: A list of _dataPoint to be processed
+            data: A list of DataPoint to be processed
             day_range: A list of numbers for days. Default is 1-365
         """
         hourly_data_by_day = OrderedDict()
@@ -182,7 +182,7 @@ class DataCollection(object):
 
         Args:
             day_range: A list of numbers for days. Default is 1-365
-            user_dataList: An optional data list of _dataPoint to be processed
+            user_dataList: An optional data list of DataPoint to be processed
 
         Usage:
 
@@ -199,7 +199,7 @@ class DataCollection(object):
         Key values are between 0-23
 
         Args:
-            data: A list of _dataPoint to be processed
+            data: A list of DataPoint to be processed
             hour_range: A list of numbers for hours. Default is 1-24
         """
         hourly_data_by_hour = OrderedDict()
@@ -222,7 +222,7 @@ class DataCollection(object):
 
         Args:
             hour_range: A list of numbers for hours. Default is 1-24
-            user_dataList: An optional data list of _dataPoint to be processed
+            user_dataList: An optional data list of DataPoint to be processed
 
         Usage:
 
