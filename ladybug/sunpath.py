@@ -564,7 +564,7 @@ class Sun(object):
     def __init__(self, datetime, altitude, azimuth, is_solar_time,
                  is_daylight_saving, north_angle, data=None):
         """Init sun."""
-        assert hasattr(datetime, 'isDateTime'), \
+        assert hasattr(datetime, 'is_date_time'), \
             "datetime must be a DateTime (not {})".format(type(datetime))
         self._datetime = datetime  # read-only
 
