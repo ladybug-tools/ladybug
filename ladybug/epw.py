@@ -91,7 +91,9 @@ class EPW(object):
                 return
 
             # TODO: add parsing for header
-            self.epwHeader = [epwin.readline() for i in xrange(7)]
+            #Bug fix: Added the missing location data to header that was being lost due
+            # to implementation of generator pattern.
+            self.epwHeader = [line]+[epwin.readline() for i in xrange(7)]
 
             line = epwin.readline()
             self._numOfFields = len(line.strip().split(','))
