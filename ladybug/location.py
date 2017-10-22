@@ -32,6 +32,21 @@ class Location(object):
         self.source = source
 
     @classmethod
+    def fromJson(cls, locJson):
+        """Create a location from json.
+        {
+          "city": "",
+          "latitude": 0,
+          "longitude": 0,
+          "time_zone": 0,
+          "elevation": 0
+        }
+        """
+        d = locJson
+        return cls(d['city'], None, d['latitude'], d['longitude'],
+                   d['time_zone'], d['elevation'])
+
+    @classmethod
     def fromLocation(cls, location):
         """Try to create a Ladybug location from a location string.
 
@@ -151,6 +166,24 @@ class Location(object):
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
+
+    def toJson(self):
+        """Create a location from json.
+        {
+          "city": "",
+          "latitude": 0,
+          "longitude": 0,
+          "time_zone": 0,
+          "elevation": 0
+        }
+        """
+        return {
+            "city": self.city,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "time_zone": self.timezone,
+            "elevation": self.elevation
+        }
 
     def __repr__(self):
         """Return location as a string."""
