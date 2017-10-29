@@ -91,7 +91,7 @@ class EPW(object):
                 return
 
             # TODO: add parsing for header
-            self.epwHeader = [epwin.readline() for i in xrange(7)]
+            self.epwHeader = [line] + [epwin.readline() for i in xrange(7)]
 
             line = epwin.readline()
             self._numOfFields = len(line.strip().split(','))
