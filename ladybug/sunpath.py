@@ -151,36 +151,19 @@ class Sunpath(object):
         hourAngle = (solTime * 15 + 180) if (solTime * 15 < 0) \
             else (solTime * 15 - 180)
 
-        # RADIANS
-        zenith = math.acos(math.sin(self._latitude) * math.sin(solDec) +
-                           math.cos(self._latitude) * math.cos(solDec) *
-                           math.cos(math.radians(hourAngle)))
+        # Degrees
+        zenith = math.degrees(math.acos(math.sin(self._latitude)*math.sin(math.radians(solDec))+math.cos(self._latitude)*math.cos(math.radians(solDec))*math.cos(math.radians(hourAngle))))
 
-        altitude = (math.pi / 2) - zenith
+        altitude = 90 - zenith
 
-        if hourAngle == 0.0 or hourAngle == -180.0 or hourAngle == 180.0:
-
-            azimuth = math.pi if solDec < self._latitude else 0.0
-
+        # Degrees
+        if hourAngle>0:
+            azimuth = math.degrees(math.acos(((math.sin(self._latitude)*math.cos(math.raradians(zenith)))-math.sin(math.radians(solDec)))/(math.cos(self._l_latitude)*math.sin(math.radians(zenith)))))+180 % 360
         else:
-            azimuth = (
-                (math.acos(
-                    (
-                        (math.sin(self._latitude) *
-                         math.cos(zenith)) - math.sin(solDec)
-                    ) /
-                    (
-                        math.cos(self._latitude) * math.sin(zenith)
-                    )
-                ) + math.pi) % (2 * math.pi)) if (hourAngle > 0) \
-                else \
-                (
-                    (3 * math.pi -
-                     math.acos(((math.sin(self._latitude) * math.cos(zenith)) -
-                                math.sin(solDec)) /
-                               (math.cos(self._latitude) * math.sin(zenith)))
-                     ) % (2 * math.pi))
+            azimuth = (540-math.degrees(math.acos(((math.sin(self._latitude)*math.cos(math.radians(zenith)))-math.sin(math.radians(solDec)))/(math.cos(self._latitude)*math.sin(math.radians(zenith)))))) % 360
 
+        altitude = math.radians(altitude)
+        azimuth = math.radians(azimuth)
         # create the sun for this hour
         return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving,
                    self.northAngle)
@@ -257,17 +240,75 @@ class Sunpath(object):
             Solar declination: Solar declination in radians
             eqOfTime: Equation of time as minutes
         """
-        month, day, hour = datetime.month, datetime.day, datetime.floatHour
+        month, day, hour, minute = datetime.month, datetime.day, datetime.floatHour, datetime.minute
 
         a = 1 if (month < 3) else 0
         y = year + 4800 - a
         m = month + 12 * a - 3
 
-        julianDay = day + math.floor((153 * m + 2) / 5) + 59
+        def findFractionOf24(hour,minute):
+            """
+            This function calculates the fraction of the 24 hour the provided time represents
+            1440 is total the number of minutes in a 24 hour cycle.
+            args
+                hour: Integer. Hour between 0 - 23
+                minute: INteger. Minute between 0 - 59
+            return: Float. The fraction of the 24 hours the provided time represents
+            """
+            return round((minute + hour*60)/1440.0,2)
 
-        julianDay += (hour - self.timezone) / 24.0 + 365 * y + \
-            math.floor(y / 4) - math.floor(y / 100) + \
-            math.floor(y / 400) - 32045.5 - 59
+
+        def dayfrom010119(year, month, day):
+            """
+            This function calculates the number of days from 01-01-1900 to the provided date
+            args
+                year: Integer. The year in the date
+                month: Integer. The month in the date
+                day: Integer. The date
+            return: The number of days from 01-01-1900 to the date provided
+            """
+
+            # Making a list of years from the year 1900
+            years = [item for item in range(1900, year)]
+
+            def is_leap_year(year):
+                """Determine whether a year is a leap year."""
+                return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+            # Number of days in a year are 366 if it is a leap year
+            daysInYear = []
+            for item in years:
+                if is_leap_year(item):
+                    daysInYear.append(366)
+                else:
+                    daysInYear.append(365)
+
+            # Making the total of all the days in preceding years
+            daysInPrecendingYears = 0
+            for days in daysInYear:
+                daysInPrecendingYears += days
+
+            if is_leap_year(year):
+                monthDict = {1:31, 2:29, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31}
+            else:
+                monthDict = {1:31, 2:28, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31}
+
+            # Making the total of all the days in preceding months in the same year
+            keys = monthDict.keys()
+            daysInPrecendingMonths = 0
+            for i in range(month-1):
+                daysInPrecendingMonths += monthDict[keys[i]]
+
+            return daysInPrecendingYears + daysInPrecendingMonths + day + 1
+
+
+        # julianDay = day + math.floor((153 * m + 2) / 5) + 59
+        #
+        # julianDay += (hour - self.timezone) / 24.0 + 365 * y + \
+        #     math.floor(y / 4) - math.floor(y / 100) + \
+        #     math.floor(y / 400) - 32045.5 - 59
+
+        julianDay = dayfrom010119(year, month, day) + 2415018.5 + findFractionOf24(hour, minute)-(5.30 / 24)
 
         julianCentury = (julianDay - 2451545) / 36525
 
@@ -296,7 +337,7 @@ class Sunpath(object):
         # sunTrueAnom = geomMeanAnomSun + sunEqOfCtr
 
         # AUs
-        # sunRadVector = (1.000001018 * (1 - eccentOrbit ** 2)) / \
+        # sunRadVector = (1.000001018 * (1 - eccentOrbit * eccentOrbit)) / \
         #     (1 + eccentOrbit * math.cos(math.radians(sunTrueLong)))
 
         # degrees
@@ -320,8 +361,9 @@ class Sunpath(object):
         #                math.cos(math.radians(sunAppLong))))
 
         # RADIANS
-        solDec = math.asin(math.sin(math.radians(obliqueCorr)) *
-                           math.sin(math.radians(sunAppLong)))
+        solDec = math.degrees(math.asin(math.sin(math.radians(obliqueCorr)) *
+                           math.sin(math.radians(sunAppLong))))
+
 
         varY = math.tan(math.radians(obliqueCorr / 2)) * \
             math.tan(math.radians(obliqueCorr / 2))
