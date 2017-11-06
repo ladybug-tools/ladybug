@@ -772,5 +772,5 @@ print "For second location and time, \nazimuth and altitude on NOAA webcalculato
 
 # Check 03
 sp3 = Sunpath(-33.85731, 0, 151.215161, 10, None)
-sun3 = sp3.calculateSun(2, 28, 16) # calculate sun data for June 21st at 11:00
+sun3 = sp3.calculateSun(2, 28, 16) # calculate sun data for February 28th at 16:00
 print "For third location and time, \nazimuth and altitude on NOAA webcalculator are {} and {}. \nAnd azimuth and altitude produced from this script are {} and {} \n" . format(281.78, 30.91 , round(sun3.azimuth,2) , round(sun3.altitude,2))
