@@ -144,23 +144,54 @@ class Sunpath(object):
 
         hour = hour + 1 if self.isDaylightSavingHour(datetime.hoy) else hour
 
-        # hours
-        solTime = self._calculateSolarTime(hour, eqOfTime, isSolarTime)
+        # minutes
+        solTime = self._calculateSolarTime(hour, eqOfTime, isSolarTime) * 60
 
         # degrees
-        hourAngle = (solTime * 15 + 180) if (solTime * 15 < 0) \
-            else (solTime * 15 - 180)
+        if solTime / 4 < 0:
+            hourAngle = solTime / 4 + 180
+        else:
+            hourAngle = solTime / 4 - 180
 
         # Degrees
-        zenith = math.degrees(math.acos(math.sin(self._latitude)*math.sin(math.radians(solDec))+math.cos(self._latitude)*math.cos(math.radians(solDec))*math.cos(math.radians(hourAngle))))
+        zenith = math.degrees(math.acos \
+                              (math.sin(self._latitude) * \
+                                        math.sin(math.radians(solDec)) + \
+                                        math.cos(self._latitude) * \
+                                        math.cos(math.radians(solDec)) * \
+                                        math.cos(math.radians(hourAngle))))
 
         altitude = 90 - zenith
 
-        # Degrees
-        if hourAngle>0:
-            azimuth = math.degrees(math.acos(((math.sin(self._latitude)*math.cos(math.raradians(zenith)))-math.sin(math.radians(solDec)))/(math.cos(self._l_latitude)*math.sin(math.radians(zenith)))))+180 % 360
+        # Approx Atmospheric Refraction
+        if altitude > 85:
+            atmosRefraction = 0
         else:
-            azimuth = (540-math.degrees(math.acos(((math.sin(self._latitude)*math.cos(math.radians(zenith)))-math.sin(math.radians(solDec)))/(math.cos(self._latitude)*math.sin(math.radians(zenith)))))) % 360
+            if altitude > 5:
+                atmosRefraction = 58.1 / math.tan(math.radians(altitude)) - \
+                0.07 / (math.tan(math.radians(altitude)))**3 + \
+                0.000086 / (math.tan(math.radians(altitude)))**5
+            else:
+                if altitude > -0.575:
+                    atmosRefraction = 1735 + altitude * (-518.2 + altitude * \
+                    (103.4 + altitude * (-12.79 + altitude * 0.711)))
+                else:
+                    atmosRefraction = -20.772 / math.tan(math.radians(altitude))
+
+        atmosRefraction /= 3600
+
+        altitude += atmosRefraction
+
+        # Degrees
+        if hourAngle > 0:
+            azimuth = math.degrees(math.acos \
+            (((math.sin(self._latitude) * \
+            math.cos(math.radians(zenith))) - math.sin(math.radians(solDec)))/(math.cos(self._latitude) * \
+            math.sin(math.radians(zenith))))) + 180 % 360
+        else:
+            azimuth = (540 - math.degrees(math.acos \
+            (((math.sin(self._latitude) * math.cos(math.radians(zenith))) - \
+            math.sin(math.radians(solDec))) / (math.cos(self._latitude) * math.sin(math.radians(zenith)))))) % 360
 
         altitude = math.radians(altitude)
         azimuth = math.radians(azimuth)
@@ -246,7 +277,7 @@ class Sunpath(object):
         y = year + 4800 - a
         m = month + 12 * a - 3
 
-        def findFractionOf24(hour,minute):
+        def findFractionOf24(hour, minute):
             """
             This function calculates the fraction of the 24 hour the provided time represents
             1440 is total the number of minutes in a 24 hour cycle.
@@ -258,10 +289,10 @@ class Sunpath(object):
             return round((minute + hour*60)/1440.0,2)
 
 
-        def dayfrom010119(year, month, day):
+        def daysfrom010119(year, month, day):
             """
             This function calculates the number of days from 01-01-1900 to the provided date
-            args
+            args :
                 year: Integer. The year in the date
                 month: Integer. The month in the date
                 day: Integer. The date
@@ -269,16 +300,16 @@ class Sunpath(object):
             """
 
             # Making a list of years from the year 1900
-            years = [item for item in range(1900, year)]
+            years = range(1900, year)
 
-            def is_leap_year(year):
+            def isLeapYear(year):
                 """Determine whether a year is a leap year."""
                 return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
 
             # Number of days in a year are 366 if it is a leap year
             daysInYear = []
             for item in years:
-                if is_leap_year(item):
+                if isLeapYear(item):
                     daysInYear.append(366)
                 else:
                     daysInYear.append(365)
@@ -288,7 +319,7 @@ class Sunpath(object):
             for days in daysInYear:
                 daysInPrecendingYears += days
 
-            if is_leap_year(year):
+            if isLeapYear(year):
                 monthDict = {1:31, 2:29, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31}
             else:
                 monthDict = {1:31, 2:28, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31}
@@ -308,7 +339,7 @@ class Sunpath(object):
         #     math.floor(y / 4) - math.floor(y / 100) + \
         #     math.floor(y / 400) - 32045.5 - 59
 
-        julianDay = dayfrom010119(year, month, day) + 2415018.5 + findFractionOf24(hour, minute)-(5.30 / 24)
+        julianDay = daysfrom010119(year, month, day) + 2415018.5 + findFractionOf24(hour, minute)-(float(self.timezone) / 24)
 
         julianCentury = (julianDay - 2451545) / 36525
 
@@ -725,3 +756,21 @@ class Sun(object):
             self.sunVector.y,
             self.sunVector.z
         )
+
+
+# Following are test cases to compare altitude and azimuth values with NOAA calculator
+
+# Check 01
+sp1 = Sunpath(22.341809, 0, 73.1925514,5.30, None)
+sun1 = sp1.calculateSun(6, 21, 11) # calculate sun data for June 21st at 11:00
+print "For first location and time, \nazimuth and altitude on NOAA webcalculator are {} and {}. \nAnd azimuth and altitude produced from this script are {} and {} \n" . format(82.65, 69.98, round(sun1.azimuth,2) , round(sun1.altitude,2))
+
+# Check 02
+sp2 = Sunpath(39.952689, 0, -75.19226, -5, None)
+sun2 = sp2.calculateSun(12, 21, 17) # calculate sun data for June 21st at 11:00
+print "For second location and time, \nazimuth and altitude on NOAA webcalculator are {} and {}. \nAnd azimuth and altitude produced from this script are {} and {} \n" . format(242.87, -4.32 , round(sun2.azimuth,2) , round(sun2.altitude,2))
+
+# Check 03
+sp3 = Sunpath(-33.85731, 0, 151.215161, 10, None)
+sun3 = sp3.calculateSun(2, 28, 16) # calculate sun data for June 21st at 11:00
+print "For third location and time, \nazimuth and altitude on NOAA webcalculator are {} and {}. \nAnd azimuth and altitude produced from this script are {} and {} \n" . format(281.78, 30.91 , round(sun3.azimuth,2) , round(sun3.altitude,2))
