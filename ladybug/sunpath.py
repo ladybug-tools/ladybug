@@ -125,7 +125,8 @@ class Sunpath(object):
     def calculateSunFromDataTime(self, datetime, isSolarTime=False):
         """Get Sun for an hour of the year.
 
-        This code is originally written by Trygve Wastvedt (Trygve.Wastvedt@gmail.com)
+        This code is originally written by Trygve Wastvedt \
+         (Trygve.Wastvedt@gmail.com)
         based on (NOAA) and modified by Chris Mackey and Mostapha Roudsari
 
         Args:
@@ -144,43 +145,70 @@ class Sunpath(object):
 
         hour = hour + 1 if self.isDaylightSavingHour(datetime.hoy) else hour
 
-        # hours
-        solTime = self._calculateSolarTime(hour, eqOfTime, isSolarTime)
+        # minutes
+        solTime = self._calculateSolarTime(hour, eqOfTime, isSolarTime) * 60
 
         # degrees
-        hourAngle = (solTime * 15 + 180) if (solTime * 15 < 0) \
-            else (solTime * 15 - 180)
-
-        # RADIANS
-        zenith = math.acos(math.sin(self._latitude) * math.sin(solDec) +
-                           math.cos(self._latitude) * math.cos(solDec) *
-                           math.cos(math.radians(hourAngle)))
-
-        altitude = (math.pi / 2) - zenith
-
-        if hourAngle == 0.0 or hourAngle == -180.0 or hourAngle == 180.0:
-
-            azimuth = math.pi if solDec < self._latitude else 0.0
-
+        if solTime / 4 < 0:
+            hourAngle = solTime / 4 + 180
         else:
-            azimuth = (
-                (math.acos(
+            hourAngle = solTime / 4 - 180
+
+        # Degrees
+        zenith = math.degrees(math.acos
+                              (math.sin(self._latitude) *
+                               math.sin(math.radians(solDec)) +
+                               math.cos(self._latitude) *
+                               math.cos(math.radians(solDec)) *
+                               math.cos(math.radians(hourAngle))))
+
+        altitude = 90 - zenith
+
+        # Approx Atmospheric Refraction
+        if altitude > 85:
+            atmosRefraction = 0
+        else:
+            if altitude > 5:
+                atmosRefraction = 58.1 / math.tan(math.radians(altitude))
+                - 0.07 / (math.tan(math.radians(altitude)))**3
+                + 0.000086 / (math.tan(math.radians(altitude)))**5
+            else:
+                if altitude > -0.575:
+                    atmosRefraction = 1735
+                    + altitude * (-518.2 + altitude *
+                                  (103.4 + altitude *
+                                   (-12.79 + altitude * 0.711)))
+                else:
+                    atmosRefraction = -20.772 / math.tan(
+                        math.radians(altitude))
+
+        atmosRefraction /= 3600
+
+        altitude += atmosRefraction
+
+        # Degrees
+        if hourAngle > 0:
+            azimuth = (math.degrees(
+                math.acos(
                     (
                         (math.sin(self._latitude) *
-                         math.cos(zenith)) - math.sin(solDec)
-                    ) /
-                    (
-                        math.cos(self._latitude) * math.sin(zenith)
-                    )
-                ) + math.pi) % (2 * math.pi)) if (hourAngle > 0) \
-                else \
-                (
-                    (3 * math.pi -
-                     math.acos(((math.sin(self._latitude) * math.cos(zenith)) -
-                                math.sin(solDec)) /
-                               (math.cos(self._latitude) * math.sin(zenith)))
-                     ) % (2 * math.pi))
+                         math.cos(math.radians(zenith))) -
+                        math.sin(math.radians(solDec))) /
+                    (math.cos(self._latitude) *
+                     math.sin(math.radians(zenith)))
+                )
+            ) + 180) % 360
+        else:
+            azimuth = (540 - math.degrees(math.acos((
+                (math.sin(self._latitude) *
+                 math.cos(math.radians(zenith))) -
+                math.sin(math.radians(solDec))) /
+                (math.cos(self._latitude) *
+                 math.sin(math.radians(zenith))))
+            )) % 360
 
+        altitude = math.radians(altitude)
+        azimuth = math.radians(azimuth)
         # create the sun for this hour
         return Sun(datetime, altitude, azimuth, isSolarTime, isDaylightSaving,
                    self.northAngle)
@@ -215,7 +243,8 @@ class Sunpath(object):
                     ) / 1440.0
 
         try:
-            sunRiseHourAngle = self._calculateSunriseHourAngle(solDec, depression)
+            sunRiseHourAngle = self._calculateSunriseHourAngle(
+                solDec, depression)
         except ValueError:
             # no sun rise and sunset at this hour
             noon = 24 * noon
@@ -231,8 +260,10 @@ class Sunpath(object):
 
             # convert demical hour to solar hour
             # noon = self._calculateSolarTime(24 * noon, eqOfTime, isSolarTime)
-            # sunrise = self._calculateSolarTime(24 * sunrise, eqOfTime, isSolarTime)
-            # sunset = self._calculateSolarTime(24 * sunset, eqOfTime, isSolarTime)
+            # sunrise = self._calculateSolarTime(24 * sunrise,
+            #                                    eqOfTime, isSolarTime)
+            # sunset = self._calculateSolarTime(24 * sunset,
+            #                                   eqOfTime, isSolarTime)
 
             noon = 24 * noon
             sunrise = 24 * sunrise
@@ -257,17 +288,83 @@ class Sunpath(object):
             Solar declination: Solar declination in radians
             eqOfTime: Equation of time as minutes
         """
-        month, day, hour = datetime.month, datetime.day, datetime.floatHour
+        month = datetime.month
+        day = datetime.day
+        hour = datetime.hour
+        minute = datetime.minute
 
-        a = 1 if (month < 3) else 0
-        y = year + 4800 - a
-        m = month + 12 * a - 3
+        # a = 1 if (month < 3) else 0
+        # y = year + 4800 - a
+        # m = month + 12 * a - 3
 
-        julianDay = day + math.floor((153 * m + 2) / 5) + 59
+        def findFractionOf24(hour, minute):
+            """
+            This function calculates the fraction of the 24 hour \
+            the provided time represents
+            1440 is total the number of minutes in a 24 hour cycle.
+            args
+                hour: Integer. Hour between 0 - 23
+                minute: INteger. Minute between 0 - 59
+            return: Float. The fraction of the 24 hours \
+        the provided time represents
+            """
+            return round((minute + hour * 60) / 1440.0, 2)
 
-        julianDay += (hour - self.timezone) / 24.0 + 365 * y + \
-            math.floor(y / 4) - math.floor(y / 100) + \
-            math.floor(y / 400) - 32045.5 - 59
+        def daysfrom010119(year, month, day):
+            """
+            This function calculates the number of days from 01-01-1900 \
+            to the provided date
+            args :
+                year: Integer. The year in the date
+                month: Integer. The month in the date
+                day: Integer. The date
+            return: The number of days from 01-01-1900 to the date provided
+            """
+
+            # Making a list of years from the year 1900
+            years = range(1900, year)
+
+            def isLeapYear(year):
+                """Determine whether a year is a leap year."""
+                return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+            # Number of days in a year are 366 if it is a leap year
+            daysInYear = []
+            for item in years:
+                if isLeapYear(item):
+                    daysInYear.append(366)
+                else:
+                    daysInYear.append(365)
+
+            # Making the total of all the days in preceding years
+            daysInPrecendingYears = 0
+            for days in daysInYear:
+                daysInPrecendingYears += days
+
+            if isLeapYear(year):
+                monthDict = {1: 31, 2: 29, 3: 31, 4: 30, 5: 31, 6: 30,
+                             7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
+            else:
+                monthDict = {1: 31, 2: 28, 3: 31, 4: 30, 5: 31, 6: 30,
+                             7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
+
+            """Making the total of all the days in preceding months\
+            in the same year"""
+            keys = monthDict.keys()
+            daysInPrecendingMonths = 0
+            for i in range(month - 1):
+                daysInPrecendingMonths += monthDict[keys[i]]
+
+            return daysInPrecendingYears + daysInPrecendingMonths + day + 1
+
+        # julianDay = day + math.floor((153 * m + 2) / 5) + 59
+        #
+        # julianDay += (hour - self.timezone) / 24.0 + 365 * y + \
+        #     math.floor(y / 4) - math.floor(y / 100) + \
+        #     math.floor(y / 400) - 32045.5 - 59
+
+        julianDay = daysfrom010119(year, month, day) + 2415018.5 + \
+            findFractionOf24(hour, minute) - (float(self.timezone) / 24)
 
         julianCentury = (julianDay - 2451545) / 36525
 
@@ -283,11 +380,14 @@ class Sunpath(object):
         eccentOrbit = 0.016708634 - julianCentury * \
             (0.000042037 + 0.0000001267 * julianCentury)
 
-        sunEqOfCtr = math.sin(math.radians(geomMeanAnomSun)) * \
-            (1.914602 - julianCentury * (0.004817 + 0.000014 * julianCentury)) + \
+        sunEqOfCtr = math.sin(
+            math.radians(geomMeanAnomSun)) * \
+            (1.914602 - julianCentury * (0.004817 + 0.000014 * julianCentury)
+             ) +\
             math.sin(math.radians(2 * geomMeanAnomSun)) * \
             (0.019993 - 0.000101 * julianCentury) + \
-            math.sin(math.radians(3 * geomMeanAnomSun)) * 0.000289
+            math.sin(math.radians(3 * geomMeanAnomSun)) * \
+            0.000289
 
         # degrees
         sunTrueLong = geomMeanLongSun + sunEqOfCtr
@@ -296,7 +396,7 @@ class Sunpath(object):
         # sunTrueAnom = geomMeanAnomSun + sunEqOfCtr
 
         # AUs
-        # sunRadVector = (1.000001018 * (1 - eccentOrbit ** 2)) / \
+        # sunRadVector = (1.000001018 * (1 - eccentOrbit * eccentOrbit)) / \
         #     (1 + eccentOrbit * math.cos(math.radians(sunTrueLong)))
 
         # degrees
@@ -320,8 +420,8 @@ class Sunpath(object):
         #                math.cos(math.radians(sunAppLong))))
 
         # RADIANS
-        solDec = math.asin(math.sin(math.radians(obliqueCorr)) *
-                           math.sin(math.radians(sunAppLong)))
+        solDec = math.degrees(math.asin(math.sin(math.radians(obliqueCorr)) *
+                                        math.sin(math.radians(sunAppLong))))
 
         varY = math.tan(math.radians(obliqueCorr / 2)) * \
             math.tan(math.radians(obliqueCorr / 2))
@@ -362,7 +462,8 @@ class Sunpath(object):
     def _calculateSolarTimeByDoy(self, hour, doy):
         """This is how radiance calculates solar time.
 
-        This is a place holder and need to be validated against calculateSolarTime.
+        This is a place holder and \
+        need to be validated against calculateSolarTime.
         """
         raise NotImplementedError()
         return (0.170 * math.sin((4 * math.pi / 373) * (doy - 80)) -
@@ -372,24 +473,30 @@ class Sunpath(object):
     @staticmethod
     def _calculateHourAndMinute(floatHour):
         """Calculate hour and minutes as integers from a float hour."""
-        hour, minute = int(floatHour), int(round((floatHour - int(floatHour)) * 60))
+        hour = int(floatHour)
+        minute = int(round((floatHour - int(floatHour)) * 60))
+
         if minute == 60:
             return hour + 1, 0
         else:
             return hour, minute
 
-    def drawSunpath(self, hoys=None, origin=None, scale=1, sunScale=1, annual=True,
-                    remNight=True):
-        """Create sunpath geometry. This method should only be used from the + libraries.
+    def drawSunpath(self,
+                    hoys=None,
+                    origin=None,
+                    scale=1, sunScale=1, annual=True, remNight=True):
+        """Create sunpath geometry. \
+        This method should only be used from the + libraries.
 
         Args:
-            hoys: An optional list of hours of the year (default: None).
-            origin: Sunpath origin (default: (0, 0, 0)).
-            scale: Sunpath scale (default: 1).
-            sunScale: Scale for the sun spheres (default: 1).
-            annual: Set to True to draw an annual sunpath. Otherwise a daily sunpath is
+            hoys: An optional list of hours of the year(default: None).
+            origin: Sunpath origin(default: (0, 0, 0)).
+            scale: Sunpath scale(default: 1).
+            sunScale: Scale for the sun spheres(default: 1).
+            annual: Set to True to draw an annual sunpath. \
+            Otherwise a daily sunpath is
                 drawn.
-            remNight: Remove suns which are under the horizon (night!).
+            remNight: Remove suns which are under the horizon(night!).
         Returns:
             baseCurves: A collection of curves for base plot.
             analemmaCurves: A collection of analemmaCurves.
@@ -412,7 +519,8 @@ class Sunpath(object):
 
         scale = scale or 1
         sunScale = sunScale or 1
-        assert annual or hoys, 'For daily sunpath you need to provide at least one hour.'
+        assert annual or hoys, 'For daily sunpath \
+        you need to provide at least one hour.'
 
         radius = 200 * scale
 
@@ -448,7 +556,11 @@ class Sunpath(object):
 
         SPGeo = namedtuple(
             'SunpathGeo',
-            ('compassCurves', 'analemmaCurves', 'dailyCurves', 'suns', 'sunGeos'))
+            ('compassCurves',
+             'analemmaCurves',
+             'dailyCurves',
+             'suns',
+             'sunGeos'))
 
         # return outputs
         return SPGeo(baseCurves, analemmaCurves, dailyCurves, suns, sunGeos)
@@ -513,9 +625,11 @@ class Sunpath(object):
                         tt = [self.calculateSun(*en)] + \
                             [self.calculateSun(en[0], d, h)
                              for d in xrange(en[1] + 1, 29, 7)] + \
-                            [self.calculateSun(m, d, h) for m in xrange(en[0] + 1, 13)
+                            [self.calculateSun(m, d, h) for m in xrange(en[0] +
+                                                                        1, 13)
                              for d in xrange(3, 29, 7)] + \
-                            [self.calculateSun(m, d, h) for m in xrange(1, st[0])
+                            [self.calculateSun(m, d, h) for m in xrange(1,
+                                                                        st[0])
                              for d in xrange(3, 29, 7)] + \
                             [self.calculateSun(st[0], d, h)
                              for d in xrange(3, st[1], 7)] + \
@@ -533,7 +647,8 @@ class Sunpath(object):
             dts = tuple(nss[k] for k in ('sunrise', 'noon', 'sunset'))
             if dts[0] is None:
                 # circle
-                yield (self.calculateSun(dt.month, dt.day, h) for h in (0, 12, 15)), \
+                yield (self.calculateSun(dt.month, dt.day, h) for h in (0, 12,
+                                                                        15)), \
                     False
             else:
                 # Arc
@@ -650,7 +765,7 @@ class Sun(object):
     def sunVector(self):
         """Sun vector for this sun.
 
-        Sun vector faces downward (e.g. z will be negative.)
+        Sun vector faces downward(e.g. z will be negative.)
         """
         return self._sunVector
 
@@ -683,3 +798,54 @@ class Sun(object):
             self.sunVector.y,
             self.sunVector.z
         )
+
+
+# """Following are test cases to compare altitude and azimuth values with \
+# NOAA calculator. \
+# Please set the year to 2015 in NOAA calculator \
+# when comparing the values"""
+#
+# # Check 01
+# sp1 = Sunpath(22.341809, 0, 73.1925514, 5.30, None)
+# # calculate sun data for June 21st at 11:00
+# sun1 = sp1.calculateSun(6, 21, 11)
+# print "For first location and time, \
+# \nazimuth and altitude on NOAA webcalculator are {} and {}. \
+# \nAnd azimuth and altitude produced from this script are {} and {} \
+# \n" . format(82.65, 69.98, round(sun1.azimuth, 2), round(sun1.altitude, 2))
+#
+# # Check 02
+# sp2 = Sunpath(39.952689, 0, -75.19226, -5, None)
+# # calculate sun data for June 21st at 11:00
+# sun2 = sp2.calculateSun(12, 21, 17)
+# print "For second location and time, \
+# \nazimuth and altitude on NOAA webcalculator are {} and {}. \
+# \nAnd azimuth and altitude produced from this script are {} and {} \
+# \n" . format(242.87, -4.32, round(sun2.azimuth, 2), round(sun2.altitude, 2))
+#
+# # Check 03
+# sp3 = Sunpath(-33.85731, 0, 151.215161, 10, None)
+# # calculate sun data for February 28th at 16:00
+# sun3 = sp3.calculateSun(2, 28, 16)
+# print "For third location and time, \
+# \nazimuth and altitude on NOAA webcalculator are {} and {}. \
+# \nAnd azimuth and altitude produced from this script are {} and {} \
+# \n" . format(281.78, 30.91, round(sun3.azimuth, 2), round(sun3.altitude, 2))
+#
+# # Check 04
+# sp4 = Sunpath(-22.95189, 0, -43.210386, -2, None)
+# # calculate sun data for March 21st at 13:00
+# sun4 = sp4.calculateSun(3, 21, 13)
+# print "For fourth location and time, \
+# \nazimuth and altitude on NOAA webcalculator are {} and {}. \
+# \nAnd azimuth and altitude produced from this script are {} and {} \
+# \n" . format(0.03, 66.79, round(sun4.azimuth, 2), round(sun4.altitude, 2))
+#
+# # Check 05
+# sp5 = Sunpath(35.70366, 0, 51.395125, 3.30, None)
+# # calculate sun data for September 21st at 17:00
+# sun5 = sp5.calculateSun(9, 21, 17)
+# print "For fifth location and time, \
+# \nazimuth and altitude on NOAA webcalculator are {} and {}. \
+# \nAnd azimuth and altitude produced from this script are {} and {} \
+# \n" . format(263.85, 9.74, round(sun5.azimuth, 2), round(sun5.altitude, 2))
