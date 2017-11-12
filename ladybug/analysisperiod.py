@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 class AnalysisPeriod(object):
     """Ladybug Analysis Period.
 
-    A continuous analysis period between two days of the year between certain hours
+    A continuous analysis period between two days of the year between certain hours.
 
     Attributes:
         st_month: An integer between 1-12 for starting month (default = 1)
@@ -18,16 +18,46 @@ class AnalysisPeriod(object):
                 Note that some months are shorter than 31 days.
         end_hour: An integer between 0-23 for ending hour (default = 23)
         timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+
+    Class methods:
+        from_string: Create an Analysis Period object from an analysis period string.
+            %s/%s to %s/%s between %s to %s @%s
+
+    Properties:
+        isAnalysisPeriod: Always return True. Useful for type checking.
+        datetimes: Sorted list of datetimes in this analysis period.
+        hoys: A sorted list of hours of year in this analysis period.
+        int_hoys: A sorted list of hours of year values in this analysis period as
+            integers.
+        is_annual: Check if an analysis period is annual.
+        is_overnight: If an analysis perido is not overnight each segments of hours
+            will be in the same day (self.st_time.hoy < self.end_time.hoy)
+        is_reversed: A reversed analysis period defines a period that starting month
+            is after ending month (e.g DEC to JUN)
     """
 
-    _validTimesteps = {1: 60, 2: 30, 3: 20, 4: 15, 5: 12,
-                       6: 10, 10: 6, 12: 5, 15: 4, 20: 3, 30: 2, 60: 1}
-    _numOfDaysEachMonth = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    VALIDTIMESTEPS = {1: 60, 2: 30, 3: 20, 4: 15, 5: 12,
+                      6: 10, 10: 6, 12: 5, 15: 4, 20: 3, 30: 2, 60: 1}
+    NUMOFDAYSEACHMONTH = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
     # TODO: handle timestep between 1-60
     def __init__(self, st_month=1, st_day=1, st_hour=0, end_month=12,
                  end_day=31, end_hour=23, timestep=1):
-        """Init an analysis period."""
+        """Init an analysis period.
+
+        A continuous analysis period between two days of the year between certain hours
+
+        Args:
+            st_month: An integer between 1-12 for starting month (default = 1)
+            st_day: An integer between 1-31 for starting day (default = 1).
+                    Note that some months are shorter than 31 days.
+            st_hour: An integer between 0-23 for starting hour (default = 0)
+            end_month: An integer between 1-12 for ending month (default = 12)
+            end_day: An integer between 1-31 for ending day (default = 31)
+                    Note that some months are shorter than 31 days.
+            end_hour: An integer between 0-23 for ending hour (default = 23)
+            timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+        """
 
         st_month = st_month or 1
         st_day = st_day or 1
@@ -40,29 +70,29 @@ class AnalysisPeriod(object):
         # calculate start time and end time
         self.st_time = DateTime(int(st_month), int(st_day), int(st_hour))
 
-        if int(end_day) > self._numOfDaysEachMonth[int(end_month) - 1]:
-            end = self._numOfDaysEachMonth[end_month - 1]
+        if int(end_day) > self.NUMOFDAYSEACHMONTH[int(end_month) - 1]:
+            end = self.NUMOFDAYSEACHMONTH[end_month - 1]
             print "Updated end_day from {} to {}".format(end_day, end)
             end_day = end
 
         self.end_time = DateTime(int(end_month), int(end_day), int(end_hour))
 
         if self.st_time.hour <= self.end_time.hour:
-            self.overnight = False  # each segments of hours will be in a single day
+            self._is_overnight = False  # each segments of hours will be in a single day
         else:
-            self.overnight = True
+            self._is_overnight = True
 
         # A reversed analysis period defines a period that starting month is after
         # ending month (e.g DEC to JUN)
         if self.st_time.hoy > self.end_time.hoy:
-            self.reversed = True
+            self._is_reversed = True
         else:
-            self.reversed = False
+            self._is_reversed = False
 
         # check time step
-        if timestep not in self._validTimesteps:
+        if timestep not in self.VALIDTIMESTEPS:
             raise ValueError("Invalid timestep."
-                             "Valid values are %s" % str(self._validTimesteps))
+                             "Valid values are %s" % str(self.VALIDTIMESTEPS.keys()))
 
         # calculate time stamp
         self.timestep = timestep
@@ -85,7 +115,7 @@ class AnalysisPeriod(object):
             return analysis_period
         elif isinstance(analysis_period, str):
             try:
-                return cls.from_analysis_period_string(analysis_period)
+                return cls.from_string(analysis_period)
             except Exception as e:
                 raise ValueError(
                     "{} is not convertable to an AnalysisPeriod: {}".format(
@@ -93,8 +123,11 @@ class AnalysisPeriod(object):
                 )
 
     @classmethod
-    def from_analysis_period_string(cls, analysis_period_string):
-        """Create an Analysis Period object from an analysis period string."""
+    def from_string(cls, analysis_period_string):
+        """Create an Analysis Period object from an analysis period string.
+
+            %s/%s to %s/%s between %s to %s @%s
+        """
         # %s/%s to %s/%s between %s to %s @%s
         ap = analysis_period_string.lower().replace(' ', '') \
             .replace('to', ' ') \
@@ -110,15 +143,55 @@ class AnalysisPeriod(object):
             raise ValueError(str(e))
 
     @property
-    def is_analysis_period(self):
+    def isAnalysisPeriod(self):
         """Return True."""
         return True
+
+    @property
+    def datetimes(self):
+        """A sorted list of datetimes in this analysis period."""
+        # sort dictionary based on key values (minute of the year)
+        return tuple(DateTime.from_moy(moy) for moy in self._timestampsData)
+
+    @property
+    def hoys(self):
+        """A sorted list of hours of year in this analysis period."""
+        return tuple(moy / 60.0 for moy in self._timestampsData)
+
+    @property
+    def hoys_int(self):
+        """A sorted list of hours of year values in this analysis period as integers."""
+        return tuple(int(moy / 60.0) for moy in self._timestampsData)
+
+    @property
+    def is_annual(self):
+        """Check if an analysis period is annual."""
+        return True if len(self._timestampsData) / self.timestep == 8760 \
+            else False
+
+    @property
+    def is_reversed(self):
+        """Return True if the analysis period is reversed.
+
+        A reversed analysis period defines a period that starting month is after
+        ending month (e.g DEC to JUN).
+        """
+        return self._is_reversed
+
+    @property
+    def is_overnight(self):
+        """Return True if the analysis period is overnight.
+
+        If an analysis perido is overnight each segments of hours
+        will be in two different days (e.g. from 9pm to 2am).
+        """
+        return self._is_overnight
 
     def is_possible_hour(self, hour):
         """Check if a float hour is a possible hour for this analysis period."""
         if hour > 23 and self.is_possible_hour(0):
             hour = int(hour)
-        if not self.overnight:
+        if not self._is_overnight:
             return self.st_time.hour <= hour <= self.end_time.hour
         else:
             return self.st_time.hour <= hour <= 23 or \
@@ -155,33 +228,11 @@ class AnalysisPeriod(object):
 
     def _calculate_timestamps(self):
         """Return a list of Ladybug DateTime in this analysis period."""
-        if not self.reversed:
+        if not self._is_reversed:
             self._calc_timestamps(self.st_time, self.end_time)
         else:
             self._calc_timestamps(self.st_time, DateTime.from_hoy(8759))
             self._calc_timestamps(DateTime.from_hoy(0), self.end_time)
-
-    @property
-    def datetimes(self):
-        """A sorted list of datetimes in this analysis period."""
-        # sort dictionary based on key values (minute of the year)
-        return tuple(DateTime.from_moy(moy) for moy in self._timestampsData)
-
-    @property
-    def hoys(self):
-        """A sorted list of hours of year in this analysis period."""
-        return tuple(moy / 60.0 for moy in self._timestampsData)
-
-    @property
-    def int_hoys(self):
-        """A sorted list of hours of year as float values in this analysis period."""
-        return tuple(int(moy / 60) for moy in self._timestampsData)
-
-    @property
-    def is_annual(self):
-        """Check if an analysis period is annual."""
-        return True if len(self._timestampsData) / self.timestep == 8760 \
-            else False
 
     def is_time_included(self, time):
         """Check if time is included in analysis period.
@@ -204,6 +255,13 @@ class AnalysisPeriod(object):
     def ToString(self):
         """Overwrite .NET representation."""
         return self.__repr__()
+
+    def __len__(self):
+        """Number of hours of the year.
+
+        The length will be number of hours * timestep.
+        """
+        return len(self.hoys)
 
     def __str__(self):
         """Return analysis period as a string."""

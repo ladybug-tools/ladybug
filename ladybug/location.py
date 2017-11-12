@@ -10,23 +10,23 @@ class Location(object):
         country: Name of the country as a string.
         latitude: Location latitude between -90 and 90 (Default: 0).
         longitude: Location longitude between -180 (west) and 180 (east) (Default: 0).
-        timezone: Time zone between -12 hours (west) and 12 hours (east) (Default: 0).
+        time_zone: Time zone between -12 hours (west) and 12 hours (east) (Default: 0).
         elevation: A number for elevation of the location.
         station_id: Id of the location if the location is represnting a weather station.
         source: Source of data (e.g. TMY, TMY3).
     """
 
-    __slots__ = ("city", "country", "__lat", "__lon", "__tz", "__elev",
+    __slots__ = ("city", "country", "_lat", "_lon", "_tz", "_elev",
                  "station_id", "source")
 
     def __init__(self, city=None, country=None, latitude=0, longitude=0,
-                 timezone=0, elevation=0, station_id=None, source=None):
+                 time_zone=0, elevation=0, station_id=None, source=None):
         """Create a Ladybug location."""
-        self.city = "unknown" if not city else str(city)
-        self.country = "unknown" if not country else str(country)
+        self.city = '-' if not city else str(city)
+        self.country = '-' if not country else str(country)
         self.latitude = latitude
         self.longitude = longitude
-        self.timezone = timezone
+        self.time_zone = time_zone
         self.elevation = float(elevation)
         self.station_id = None if not station_id else str(station_id)
         self.source = source
@@ -35,7 +35,7 @@ class Location(object):
     def from_json(cls, loc_json):
         """Create a location from json.
         {
-          "city": "",
+          "city": "-",
           "latitude": 0,
           "longitude": 0,
           "time_zone": 0,
@@ -93,49 +93,49 @@ class Location(object):
                 "Failed to create a Location from %s!\n%s" % (location, e))
 
     @property
-    def is_location(self):
+    def isLocation(self):
         """Return Ture."""
         return True
 
     @property
     def latitude(self):
         """Location latitude."""
-        return self.__lat
+        return self._lat
 
     @latitude.setter
     def latitude(self, lat):
-        self.__lat = 0 if not lat else float(lat)
-        assert -90 <= self.__lat <= 90, "latitude should be between -90..90."
+        self._lat = 0 if not lat else float(lat)
+        assert -90 <= self._lat <= 90, "latitude should be between -90..90."
 
     @property
     def longitude(self):
         """Location latitude."""
-        return self.__lon
+        return self._lon
 
     @longitude.setter
     def longitude(self, lon):
-        self.__lon = 0 if not lon else float(lon)
-        assert -180 <= self.__lon <= 180, "longitude should be between -180..180."
+        self._lon = 0 if not lon else float(lon)
+        assert -180 <= self._lon <= 180, "longitude should be between -180..180."
 
     @property
-    def timezone(self):
+    def time_zone(self):
         """Location latitude."""
-        return self.__tz
+        return self._tz
 
-    @timezone.setter
-    def timezone(self, tz):
-        self.__tz = 0 if not tz else float(tz)
-        assert -12 <= self.__tz <= 12, "Time zone should be between -12.0..12.0"
+    @time_zone.setter
+    def time_zone(self, tz):
+        self._tz = 0 if not tz else float(tz)
+        assert -12 <= self._tz <= 12, "Time zone should be between -12.0..12.0"
 
     @property
     def elevation(self):
         """Location latitude."""
-        return self.__elev
+        return self._elev
 
     @elevation.setter
     def elevation(self, elev):
         try:
-            self.__elev = float(elev)
+            self._elev = float(elev)
         except TypeError:
             raise ValueError("Failed to convert {} to an elevation".format(elev))
 
@@ -170,7 +170,7 @@ class Location(object):
     def to_json(self):
         """Create a location from json.
             {
-              "city": "",
+              "city": "-",
               "latitude": 0,
               "longitude": 0,
               "time_zone": 0,

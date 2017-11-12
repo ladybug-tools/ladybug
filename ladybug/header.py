@@ -7,7 +7,7 @@ from .analysisperiod import AnalysisPeriod
 
 
 class Header(object):
-    """Ladybug header.
+    """data collection header.
 
     Header carries data for location, data type, unit and analysis period
 
@@ -20,7 +20,15 @@ class Header(object):
     """
 
     def __init__(self, location=None, data_type=None, unit=None, analysis_period=None):
-        """Initiate Ladybug header for lists."""
+        """Initiate Ladybug header for lists.
+
+        Args:
+            location: location data as a ladybug Location or location string
+                (Default: None).
+            data_type: Type of data (e.g. Temperature) (Default: None).
+            unit: data_type unit (Default: None).
+            analysis_period: A Ladybug analysis period (Defualt: None)
+        """
         self.location = Location.from_location(location)
         self.data_type = data_type if data_type else None
         self.unit = unit if unit else None
@@ -41,7 +49,7 @@ class Header(object):
                 "Failed to create a Header from %s!\n%s" % (header, e))
 
     @property
-    def is_header(self):
+    def isHeader(self):
         """Return True."""
         return True
 

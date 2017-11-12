@@ -1,6 +1,7 @@
 """Ladybug data collection."""
 from .header import Header
 from .datatype import DataPoint
+from .dt import DateTime
 
 from collections import OrderedDict
 from itertools import izip
@@ -21,7 +22,7 @@ class DataCollection(object):
         elif not hasattr(data, '__iter__'):
             data = (data,)
         for d in data:
-            assert self._check_data(d), \
+            assert hasattr(d, 'isDataPoint'), \
                 'Expected DataPoint got {}'.format(type(d))
             self._values.append(d)
 
@@ -69,14 +70,14 @@ class DataCollection(object):
 
     def append(self, d):
         """Append a single item to the list."""
-        assert self._check_data(d), \
+        assert hasattr(d, 'isDataPoint'), \
             'Expected DataPoint got {}'.format(type(d))
         self._values.append(d)
 
     def extend(self, new_data):
         """Extend a number of items to the end of items."""
         for d in new_data:
-            assert self._check_data(d), \
+            assert hasattr(d, 'isDataPoint'), \
                 'Expected DataPoint got {}'.format(type(d))
         self._values.extend(new_data)
 
@@ -97,16 +98,13 @@ class DataCollection(object):
         """
         return self._values
 
-    def _check_data(self, d):
-        return True if hasattr(d, 'is_data_point') else False
-
     def duplicate(self):
         """Duplicate current data list."""
-        return self.__class__(self.values, self.header)
+        return DataCollection(self.values, self.header)
 
     @staticmethod
     def average(data):
-        """Return average value for a list of values."""
+        """Return average value for a list of ladybug data."""
         values = (value.value for value in data)
         return sum(values) / len(data)
 
@@ -239,7 +237,7 @@ class DataCollection(object):
     def update_data_for_hours_of_year(self, values, hours_of_year):
         """Update values new set of values for a list of hours of the year.
 
-        Length of values should be equal to number of hours in hours of year
+        Length of values should be equal to number of hours in hours of year.
 
         Args:
             values: A list of values to be replaced in the file
@@ -255,13 +253,17 @@ class DataCollection(object):
         updated_count = 0
         for data in self.values:
             try:
-                data.value = values[hours_of_year.index(data.datetime.hoy)]
+                # find matching index for input data
+                index = hours_of_year.index(data.datetime.hoy)
+            except ValueError:
+                continue
+            else:
+                # update the value
+                data.value = values[index]
                 updated_count += 1
-            except IndexError:
-                pass
 
-        print "_data %s updated for %d hour%s." % \
-            ('are' if len(values) > 1 else 'is',
+        print "%s updated for %d hour%s." % \
+            ('Values are' if len(values) > 1 else 'Value is',
              updated_count,
              's' if len(values) > 1 else '')
 
@@ -276,7 +278,7 @@ class DataCollection(object):
             value: A single value
             hours_of_year: The hour of the year
         """
-        return self.update_data_for_hours_of_year([value], [hour_of_year])
+        return self.update_data_for_hours_of_year((value,), (hour_of_year,))
 
     def update_data_for_analysis_period(self, values, analysis_period):
         """Update values with new set of values for an analysis period.
@@ -345,7 +347,7 @@ class DataCollection(object):
             # create a new header
             _hea = self.header.duplicate()
             _hea.analysis_period = analysis_period
-            _data = self.__class__(_int_data, _hea)
+            _data = DataCollection(_int_data, _hea)
         else:
             _data = self
 
@@ -353,41 +355,41 @@ class DataCollection(object):
             return _data.duplicate()
 
         # create a new filtered_data
-        _filtered_data = _data.filter_by_ho_ys(analysis_period.hoys)
+        _filtered_data = _data.filter_by_hoys(analysis_period.hoys)
         if self.header:
             _filtered_data.header.analysis_period = analysis_period
 
         return _filtered_data
 
-    def filter_bymo_ys(self, mo_ys):
+    def filter_by_moys(self, moys):
         """Filter the list based on a list of minutes of the year.
 
         Args:
-           mo_ys: A List of minutes of the year [0..8759 * 60]
+           moys: A List of minutes of the year [0..8759 * 60]
 
         Return:
             A new _dataList with filtered data
 
         Usage:
 
-           mo_ys = range(0, 48 * 60)  # The first two days of the year
+           moys = range(0, 48 * 60)  # The first two days of the year
            epw = EPW("c:/ladybug/weatherdata.epw")
            DBT = epw.dry_bulb_temperature
-           filteredDBT = DBT.filter_bymo_ys(mo_ys)
+           filteredDBT = DBT.filter_bymoys(moys)
         """
         # There is no guarantee that data is continuous so I iterate through the
         # each data point one by one
-        _filtered_data = [d for d in self.values if d.datetime.moy in mo_ys]
+        _filtered_data = [d for d in self.values if d.datetime.moy in moys]
 
         # create a new filtered_data
         if self.header:
             _filteredHeader = self.header.duplicate()
             _filteredHeader.analysis_period = None
-            return self.__class__(_filtered_data, _filteredHeader)
+            return DataCollection(_filtered_data, _filteredHeader)
         else:
-            return self.__class__(_filtered_data)
+            return DataCollection(_filtered_data)
 
-    def filter_by_ho_ys(self, hoys):
+    def filter_by_hoys(self, hoys):
         """Filter the list based on an analysis period.
 
         Args:
@@ -401,11 +403,11 @@ class DataCollection(object):
            hoys = range(1,48)  # The first two days of the year
            epw = EPW("c:/ladybug/weatherdata.epw")
            DBT = epw.dry_bulb_temperature
-           filteredDBT = DBT.filter_by_ho_ys(hoys)
+           filteredDBT = DBT.filter_by_hoys(hoys)
         """
         _moys = tuple(int(hour * 60) for hour in hoys)
 
-        return self.filter_bymo_ys(_moys)
+        return self.filter_bymoys(_moys)
 
     def filter_by_conditional_statement(self, statement):
         """Filter the list based on an analysis period.
@@ -447,9 +449,9 @@ class DataCollection(object):
         if self.header:
             _filteredHeader = self.header.duplicate()
             _filteredHeader.analysis_period = None
-            return self(_filtered_data, _filteredHeader)
+            return DataCollection(_filtered_data, _filteredHeader)
         else:
-            return self(_filtered_data)
+            return DataCollection(_filtered_data)
 
     def filter_by_pattern(self, pattern):
         """Filter the list based on a list of Boolean.
@@ -474,11 +476,10 @@ class DataCollection(object):
         if self.header:
             _filteredHeader = self.header.duplicate()
             _filteredHeader.analysis_period = None
-            return self.__class__(_filtered_data, _filteredHeader)
+            return DataCollection(_filtered_data, _filteredHeader)
         else:
-            return self.__class__(_filtered_data)
+            return DataCollection(_filtered_data)
 
-    @staticmethod
     def average_data_monthly(self, data):
         """Return a dictionary of values for average values for available months."""
         # group data for each month
@@ -496,7 +497,6 @@ class DataCollection(object):
         """Return a dictionary of values for average values for available months."""
         return self.average_data_monthly(self.values)
 
-    @staticmethod
     def average_data_monthly_for_each_hour(self, data):
         """Calculate average value for each hour during each month.
 
@@ -532,7 +532,7 @@ class DataCollection(object):
         return self._values[key]
 
     def __setitem__(self, key, value):
-        self._values[key] = value
+        raise TypeError('Use update_data_for_an_hour to set the values.')
 
     def __delitem__(self, key):
         del self._values[key]

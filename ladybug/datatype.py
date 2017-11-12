@@ -1,7 +1,9 @@
 """Ladybug data types."""
 # from abc import ABCMeta, abstractmethod
-from math import pi as PI
+import math
 from euclid import Vector3
+
+PI = math.pi
 
 
 class DataTypeBase(object):
@@ -14,8 +16,7 @@ class DataTypeBase(object):
         nickname: Optional nickname for data (e.g. Dew Point Temperature)
     """
 
-    # __metaclass__ = ABCMeta
-    __slots__ = ('standard', '__value', 'datetime', 'nickname')
+    __slots__ = ('standard', '_value', 'datetime', 'nickname')
 
     minimum = float('-inf')
     maximum = float('+inf')
@@ -35,13 +36,13 @@ class DataTypeBase(object):
     @property
     def value(self):
         """Get/set value."""
-        return self.__value
+        return self._value
 
     @value.setter
     def value(self, v):
         """Set value."""
         if not self.value_type:
-            self.__value = v
+            self._value = v
         else:
             try:
                 if self.value_type is str:
@@ -53,7 +54,7 @@ class DataTypeBase(object):
                     "Failed to convert {} to {}".format(v, self.value_type))
             else:
                 self.is_in_range(_v, True)
-                self.__value = _v
+                self._value = _v
 
     @property
     def unit(self):
@@ -63,18 +64,25 @@ class DataTypeBase(object):
         return self.unitSI if self.standard == 'SI' else \
             self.unitIP
 
-    # @abstractmethod
+    @property
     def to_ip(self):
         """Write a static method that converts a value from SI to IP."""
-        pass
+        raise NotImplementedError(
+            'to_ip is not implemented to %s' % self.__class__.__name__
+        )
 
-    # @abstractmethod
+    @property
     def to_si(self):
         """Write a static method that converts a value from IP to SI."""
-        pass
+        raise NotImplementedError(
+            'to_si is not implemented to %s' % self.__class__.__name__
+        )
 
     def convert_to_si(self):
-        """Change value to SI."""
+        """Change value to SI.
+
+        To only get the value in SI use to_si property.
+        """
         if not self.standard:
             raise Exception("Failed to convert to SI. "
                             "Current system is unknown.")
@@ -83,10 +91,13 @@ class DataTypeBase(object):
             return
         else:
             self.standard = 'SI'
-            self.value = self.to_si(self.value)
+            self.value = self.to_si
 
     def convert_to_ip(self):
-        """change value to IP."""
+        """change value to IP.
+
+        To only get the value in IP use to_ip property.
+        """
         if not self.standard:
             raise Exception("Failed to convert to IP. "
                             "Current system is unknown.")
@@ -95,7 +106,7 @@ class DataTypeBase(object):
             return
         else:
             self.standard = 'IP'
-            self.value = self.to_ip(self.value)
+            self.value = self.to_ip
 
     def _is_missed_data(self, v):
         """Check if the value is missed data."""
@@ -113,7 +124,7 @@ class DataTypeBase(object):
         if not self.standard:
             return True
 
-        if self._is_missed_data(value):
+        if self._is_missed_data(self):
             return True
 
         _isInRange = self.minimum <= value <= self.maximum \
@@ -254,19 +265,9 @@ class DataPoint(DataTypeBase):
                 "Failed to create a DataPoint from %s!\n%s" % (value, e))
 
     @property
-    def is_data_point(self):
+    def isDataPoint(self):
         """Return True if Ladybug data point."""
         return True
-
-    @staticmethod
-    def to_ip(value):
-        """Return the value in IP assuming input value is in SI."""
-        return value
-
-    @staticmethod
-    def to_si(value):
-        """Return the value in SI assuming input value is in IP."""
-        return value
 
 
 # TODO: Add methods for toKelvin
@@ -292,15 +293,15 @@ class Temperature(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def to_ip(value):
+    @property
+    def to_ip(self):
         """Return the value in F assuming input value is in C."""
-        return value * 9 / 5 + 32
+        return self.value * 9 / 5 + 32
 
-    @staticmethod
-    def to_si(value):
+    @property
+    def to_si(self):
         """Return the value in C assuming input value is in F."""
-        return (value - 32) * 5 / 9
+        return (self.value - 32) * 5 / 9
 
 
 class DryBulbTemperature(Temperature):
@@ -317,10 +318,6 @@ class DryBulbTemperature(Temperature):
     minimum = -70
     maximum = 70
 
-    def __init__(self, value, datetime=None, standard='SI', nickname=None):
-        """Init class."""
-        Temperature.__init__(self, value, datetime, standard, nickname)
-
 
 class DewPointTemperature(Temperature):
     """Dew point temperature.
@@ -335,10 +332,6 @@ class DewPointTemperature(Temperature):
     __slots__ = ()
     minimum = -70
     maximum = 70
-
-    def __init__(self, value, datetime=None, standard='SI', nickname=None):
-        """Init class."""
-        Temperature.__init__(self, value, datetime, standard, nickname)
 
 
 class RelativeHumidity(DataPoint):
@@ -362,6 +355,16 @@ class RelativeHumidity(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
+    @property
+    def to_ip(self):
+        """Return the value in IP."""
+        return self.value
+
+    @property
+    def to_si(self):
+        """Return the value in SI."""
+        return self.value
+
 
 class Pressure(DataPoint):
     """Atmospheric Pressure.
@@ -383,6 +386,16 @@ class Pressure(DataPoint):
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
+
+    @property
+    def to_ip(self):
+        """Return the value in IP."""
+        return self.value
+
+    @property
+    def to_si(self):
+        """Return the value in SI."""
+        return self.value
 
 
 class Radiation(DataPoint):
@@ -406,15 +419,15 @@ class Radiation(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def to_ip(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return value * 0.316998331
+        return self.value * 0.316998331
 
-    @staticmethod
-    def to_si(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return value / 0.316998331
+        return self.value / 0.316998331
 
 
 class Illuminance(DataPoint):
@@ -438,15 +451,15 @@ class Illuminance(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def to_ip(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return value * 0.09290304
+        return self.value * 0.09290304
 
-    @staticmethod
-    def to_si(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return value / 0.09290304
+        return self.value / 0.09290304
 
 
 class Luminance(Illuminance):
@@ -493,15 +506,15 @@ class Angle(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def to_ip(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return (value * PI) / 360
+        return (self.value * PI) / 360
 
-    @staticmethod
-    def to_si(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return (value / PI) * 360
+        return (self.value / PI) * 360
 
 
 class Speed(DataPoint):
@@ -525,15 +538,15 @@ class Speed(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def to_ip(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return value * 2.23694  # m/s to mph
+        return self.value * 2.23694  # m/s to mph
 
-    @staticmethod
-    def to_si(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return value / 2.23694  # mph to m/s
+        return self.value / 2.23694  # mph to m/s
 
 
 class WindSpeed(Speed):
@@ -640,15 +653,15 @@ class Distance(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value * conversion, datetime, standard, nickname)
 
-    @staticmethod
-    def to_ip(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return value * 3.28084
+        return self.value * 3.28084
 
-    @staticmethod
-    def to_si(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return value / 3.28084
+        return self.value / 3.28084
 
 
 class SkyPatch(DataPoint):
