@@ -55,7 +55,7 @@ class Location(object):
 
         Usage:
 
-            l = Location.fromString(locationString)
+            l = Location.from_location(locationString)
         """
         if not location:
             return cls()

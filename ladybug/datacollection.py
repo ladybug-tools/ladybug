@@ -307,7 +307,7 @@ class DataCollection(object):
         _dataLength = len(self.values)
         # generate new data
         _data = tuple(
-            self[d].__class__(_v, self[d].datetime.addminutes(step * _minutesStep))
+            self[d].__class__(_v, self[d].datetime.add_minute(step * _minutesStep))
             for d in xrange(_dataLength)
             for _v, step in zip(self.xxrange(self[d],
                                              self[(d + 1) % _dataLength],

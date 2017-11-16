@@ -11,7 +11,13 @@ class Color(object):
     """
 
     def __init__(self, r, g, b):
-        """Generate RGB Color."""
+        """Generate RGB Color.
+
+        Args:
+            r: red value 0-255, default: 0
+            g: green value 0-255, default: 0
+            b: blue red value 0-255, default: 0
+        """
         self.r = r
         self.g = g
         self.b = b
@@ -199,7 +205,7 @@ class Colorset(object):
         return tuple(Color(*color) for color in cls._colors[8])
 
     @classmethod
-    def thermal_comfort_UTCI1(cls):
+    def thermal_comfort_utci_1(cls):
         """thermal Comfort UTCI 1."""
         return tuple(Color(*color) for color in cls._colors[9])
 
@@ -219,7 +225,7 @@ class Colorset(object):
         return tuple(Color(*color) for color in cls._colors[12])
 
     @classmethod
-    def thermal_comfort_UTCI2(cls):
+    def thermal_comfort_utci_2(cls):
         """thermal Comfort UTCI 2."""
         return tuple(Color(*color) for color in cls._colors[13])
 
@@ -239,12 +245,12 @@ class Colorset(object):
         return tuple(Color(*color) for color in cls._colors[16])
 
     @classmethod
-    def cfd_colors1(cls):
+    def cfd_colors_1(cls):
         """CFD colors 1."""
         return tuple(Color(*color) for color in cls._colors[17])
 
     @classmethod
-    def cfd_colors2(cls):
+    def cfd_colors_2(cls):
         """CFD colors 2."""
         return tuple(Color(*color) for color in cls._colors[18])
 
@@ -335,14 +341,14 @@ class ColorRange(object):
     def __init__(self, colors=None, domain=None, chart_type=0):
         """Initiate Ladybug color range."""
         self.ctype = chart_type
-        self._isDomainSet = False
+        self._is_domain_set = False
         self.colors = colors
         self.domain = domain
 
     @property
     def is_domain_set(self):
         """Return if Domain is set for this color-range."""
-        return self._isDomainSet
+        return self._is_domain_set
 
     @property
     def domain(self):
@@ -357,9 +363,9 @@ class ColorRange(object):
 
         if 'min' in dom or 'max' in dom:
             self._domain = dom
-            self._isDomainSet = False
+            self._is_domain_set = False
         else:
-            assert hasattr(dom, "__iter__"), "Domain should be an iterable type"
+            assert hasattr(dom, "__iter__"), "Domain should be an iterable type."
             # if domain is numerical it should be sorted
             try:
                 dom = sorted(map(float, dom))
@@ -391,7 +397,7 @@ class ColorRange(object):
                     "should be more than domain values for segmented colors"
 
             self._domain = dom
-            self._isDomainSet = True
+            self._is_domain_set = True
 
     @property
     def colors(self):
@@ -427,7 +433,7 @@ class ColorRange(object):
 
     def color(self, value):
         """Return color for an input value."""
-        assert self._isDomainSet, \
+        assert self._is_domain_set, \
             "Domain is not set. Use self.domain to set the domain."
 
         if self._ctype == 2:

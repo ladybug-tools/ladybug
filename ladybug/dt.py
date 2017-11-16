@@ -15,10 +15,17 @@ class DateTime(datetime):
     __slots__ = ()
 
     def __new__(cls, month=1, day=1, hour=0, minute=0):
-        """Create Ladybug datetime."""
+        """Create Ladybug datetime.
+
+        Args:
+            month: A value for month between 1-12. (Defualt: 1)
+            day: A value for day between 1-31. (Defualt: 1)
+            hour: A value for hour between 0-23. (Defualt: 0)
+            minute: A value for month between 0-59. (Defualt: 0)
+        """
         hour, minute = cls._calculate_hour_and_minute(hour + minute / 60.0)
         try:
-            return datetime.__new__(cls, 2015, month, day, hour, minute)
+            return datetime.__new__(cls, 2017, month, day, hour, minute)
         except ValueError as e:
             raise ValueError("{}:\n\t({}/{}@{}:{})(m/d@h:m)".format(
                 e, month, day, hour, minute
@@ -73,7 +80,7 @@ class DateTime(datetime):
         return cls(dt.month, dt.day, dt.hour, dt.minute)
 
     @property
-    def is_date_time(self):
+    def isDateTime(self):
         """Check if data is ladybug data."""
         return True
 
@@ -114,34 +121,38 @@ class DateTime(datetime):
         else:
             return hour, minute
 
-    def addminutes(self, minutes):
+    def add_minute(self, minute):
         """Create a new DateTime after the minutes are added.
 
-        minutes: An integer value for minutes.
+        Args:
+            minute: An integer value for minutes.
         """
-        _moy = self.moy + int(minutes)
+        _moy = self.moy + int(minute)
         return self.__class__.from_moy(_moy)
 
-    def subminutes(self, minutes):
+    def sub_minute(self, minute):
         """Create a new DateTime after the minutes are subtracted.
 
-        minutes: An integer value for the number of minutes.
+        Args:
+            minute: An integer value for the number of minutes.
         """
-        return self.addminutes(-minutes)
+        return self.add_minute(-minute)
 
-    def addhour(self, hour):
+    def add_hour(self, hour):
         """Create a new DateTime from this time + timedelta.
 
-        hours: A float value in hours (e.g. .5 = half an hour)
+        Args:
+            hours: A float value in hours (e.g. .5 = half an hour)
         """
-        return self.addminutes((self.hoy + hour) * 60)
+        return self.add_minute((self.hoy + hour) * 60)
 
-    def subhour(self, hour):
+    def sub_hour(self, hour):
         """Create a new DateTime from this time - timedelta.
 
-        hour: A float value in hours (e.g. .5 is half an hour and 2 is two hours).
+        Args:
+            hour: A float value in hours (e.g. .5 is half an hour and 2 is two hours).
         """
-        return self.addhour(-hour)
+        return self.add_hour(-hour)
 
     def to_simple_string(self, separator="_"):
         """Return a simplified string."""
