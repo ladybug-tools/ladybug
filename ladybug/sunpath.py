@@ -135,7 +135,7 @@ class Sunpath(object):
         Returns:
             A sun object for this particular time
         """
-        datetime = DateTime.fromHoy(hoy)
+        datetime = DateTime.from_hoy(hoy)
         return self.calculate_sun_from_data_time(datetime, is_solar_time)
 
     def calculate_sun_from_data_time(self, datetime, is_solar_time=False):
@@ -526,7 +526,7 @@ class Sunpath(object):
         if rem_night:
             suns = tuple(sun for sun in suns if sun.is_during_day)
 
-        sun_geos = plus.sunGeometry(suns, origin, radius)
+        sun_geos = plus.sun_geometry(suns, origin, radius)
 
         # draw daily sunpath
         if annual:
@@ -587,7 +587,7 @@ class Sunpath(object):
                     if thishour != prevhour:
                         if not thishour:
                             hoy -= 24
-                        dt = DateTime.fromHoy(hoy)
+                        dt = DateTime.from_hoy(hoy)
                         chours.append((dt.month, dt.day, dt.hour))
                     prevhour = thishour
                 tt = []
