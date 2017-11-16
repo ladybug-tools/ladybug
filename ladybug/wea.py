@@ -49,7 +49,7 @@ class Wea(object):
         return "place %s\n" % self.location.city + \
             "latitude %.2f\n" % self.location.latitude + \
             "longitude %.2f\n" % -self.location.longitude + \
-            "time_zone %d\n" % (-self.location.timezone * 15) + \
+            "time_zone %d\n" % (-self.location.time_zone * 15) + \
             "site_elevation %.1f\n" % self.location.elevation + \
             "weather_data_file_units %d\n" % self.timestep
 

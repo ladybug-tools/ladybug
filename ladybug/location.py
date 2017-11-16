@@ -71,13 +71,13 @@ class Location(object):
                            longitude=location.Longitude)
 
             elif location.startswith('Site:'):
-                loc, city, latitude, longitude, timezone, elevation = \
+                loc, city, latitude, longitude, time_zone, elevation = \
                     re.findall(r'\r*\n*([a-zA-Z0-9.:_-]*)[,|;]',
                                location,
                                re.DOTALL)
             else:
                 try:
-                    city, latitude, longitude, timezone, elevation = \
+                    city, latitude, longitude, time_zone, elevation = \
                         [key.split(":")[-1].strip()
                          for key in location.split(",")]
                 except ValueError:
@@ -85,7 +85,7 @@ class Location(object):
                     return cls(city=location)
 
             return cls(city=city, country=None, latitude=latitude,
-                       longitude=longitude, timezone=timezone,
+                       longitude=longitude, time_zone=time_zone,
                        elevation=elevation)
 
         except Exception as e:
@@ -142,12 +142,12 @@ class Location(object):
     @property
     def meridian(self):
         """Location meridian west of Greenwich."""
-        return -15 * self.timezone
+        return -15 * self.time_zone
 
     def duplicate(self):
         """Duplicate location."""
         return self(self.city, self.country, self.latitude, self.longitude,
-                    self.timezone, self.elevation, self.station_id, self.source)
+                    self.time_zone, self.elevation, self.station_id, self.source)
 
     @property
     def ep_style_location_string(self):
@@ -156,7 +156,7 @@ class Location(object):
             self.city + ',\n' + \
             str(self.latitude) + ',      !Latitude\n' + \
             str(self.longitude) + ',     !Longitude\n' + \
-            str(self.timezone) + ',     !Time Zone\n' + \
+            str(self.time_zone) + ',     !Time Zone\n' + \
             str(self.elevation) + ';       !Elevation'
 
     def __str__(self):
@@ -181,7 +181,7 @@ class Location(object):
             "city": self.city,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "time_zone": self.timezone,
+            "time_zone": self.time_zone,
             "elevation": self.elevation
         }
 
@@ -190,4 +190,4 @@ class Location(object):
         # Tehran, lat:36, lon:34, tz:3.5, elev:54
         return "%s, lat:%.2f, lon:%.2f, tz:%.1f, elev:%.2f" % (
             self.city, self.latitude, self.longitude,
-            self.timezone, self.elevation)
+            self.time_zone, self.elevation)
