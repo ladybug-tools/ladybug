@@ -28,7 +28,7 @@ class Wea(object):
                    tuple(epw.diffuse_horizontal_radiation))
 
     @property
-    def is_wea(self):
+    def isWea(self):
         """Return True."""
         return True
 
