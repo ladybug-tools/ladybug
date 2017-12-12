@@ -11,107 +11,158 @@ import os
 class EPW(object):
     """Import epw data from a local epw file.
 
-    epwPath: Local file address to an epw file
+    args:
+        file_path: Local file address to an epw file.
+
+    properties:
+        years
+        dry_bulb_temperature
+        dew_point_temperature
+        relative_humidity
+        atmospheric_station_pressure
+        extraterrestrial_horizontal_radiation
+        extraterrestrial_direct_normal_radiation
+        horizontal_infrared_radiation_intensity
+        global_horizontal_radiation
+        direct_normal_radiation
+        diffuse_horizontal_radiation
+        global_horizontal_illuminance
+        direct_normal_illuminance
+        diffuse_horizontal_illuminance
+        zenith_luminance
+        wind_direction
+        wind_speed
+        total_sky_cover
+        opaque_sky_cover
+        visibility
+        ceiling_height
+        present_weather_observation
+        present_weather_codes
+        precipitable_water
+        aerosol_optical_depth
+        snow_depth
+        days_since_last_snowfall
+        albedo
+        liquid_precipitation_depth
+        liquid_precipitation_quantity
     """
 
-    def __init__(self, epwPath=None):
+    def __init__(self, file_path=None):
         """Init class."""
-        self.epwPath = epwPath
-        self.__isDataLoaded = False
-        self.__isLocationLoaded = False
-        self.__data = []
-        self.epwHeader = None
-        self._numOfFields = 35  # it is 35 for TMY3 files
+        self.file_path = file_path
+        self._is_data_loaded = False
+        self._is_location_loaded = False
+        self._data = []  # place holder for data as ladybug data collection
+        self._header = None  # epw header
+        self._num_of_fields = 35  # it is 35 for TMY3 files
 
     @property
-    def epwPath(self):
+    def file_path(self):
         """Get or set path to epw file."""
-        return self._epwPath
+        return self._file_path
 
-    @epwPath.setter
-    def epwPath(self, epwFilepath):
-        self._epwPath = os.path.normpath(epwFilepath)
+    @property
+    def folder(self):
+        """Get epw file folder."""
+        return self._folder
 
-        if not os.path.isfile(self._epwPath):
+    @property
+    def file_name(self):
+        """Get epw file name."""
+        return self._file_name
+
+    @file_path.setter
+    def file_path(self, epw_file_path):
+        self._file_path = os.path.normpath(epw_file_path)
+
+        if not os.path.isfile(self._file_path):
             raise ValueError(
-                'Cannot find an epw file at {}'.format(self._epwPath))
+                'Cannot find an epw file at {}'.format(self._file_path))
 
-        if not epwFilepath.lower().endswith('epw'):
-            raise TypeError(epwFilepath + ' is not an .epw file.')
+        if not epw_file_path.lower().endswith('epw'):
+            raise TypeError(epw_file_path + ' is not an .epw file.')
 
-        self.filePath, self.fileName = os.path.split(self.epwPath)
+        self._folder, self._file_name = os.path.split(self.file_path)
 
     @property
-    def isDataLoaded(self):
+    def is_data_loaded(self):
         """Return True if weather data is loaded."""
-        return self.__isDataLoaded
+        return self._is_data_loaded
 
     @property
-    def isLocationLoaded(self):
+    def is_location_loaded(self):
         """Return True if location data is loaded."""
-        return self.__isLocationLoaded
+        return self._is_location_loaded
+
+    @property
+    def header(self):
+        """Return epw file header."""
+        if not self.is_location_loaded:
+            self.import_data(import_location_only=True)
+        return self._header
 
     @property
     def location(self):
         """Return location data."""
-        if not self.isLocationLoaded:
-            self.importData(importLocationOnly=True)
+        if not self.is_location_loaded:
+            self.import_data(import_location_only=True)
         return self._location
 
     # TODO: import EPW header. Currently I just ignore header data
-    def importData(self, importLocationOnly=False):
+    def import_data(self, import_location_only=False):
         """Import data from an epw file.
 
         Hourly data will be saved in self.data and location data
         will be saved in self.location
         """
-        with open(self.epwPath, 'rb') as epwin:
+        with open(self.file_path, 'rb') as epwin:
             line = epwin.readline()
 
             # import location data
             # first line has location data - Here is an example
             # LOCATION,Denver Centennial  Golden   Nr,CO,USA,TMY3,724666,39.74,
             # -105.18,-7.0,1829.0
-            if not self.__isLocationLoaded:
-                locationData = line.strip().split(',')
+            if not self._is_location_loaded:
+                location_data = line.strip().split(',')
                 self._location = Location()
-                self._location.city = locationData[1].replace('\\', ' ') \
+                self._location.city = location_data[1].replace('\\', ' ') \
                     .replace('/', ' ')
-                self._location.country = locationData[3]
-                self._location.source = locationData[4]
-                self._location.stationId = locationData[5]
-                self._location.latitude = locationData[6]
-                self._location.longitude = locationData[7]
-                self._location.timezone = locationData[8]
-                self._location.elevation = locationData[9]
+                self._location.country = location_data[3]
+                self._location.source = location_data[4]
+                self._location.station_id = location_data[5]
+                self._location.latitude = location_data[6]
+                self._location.longitude = location_data[7]
+                self._location.time_zone = location_data[8]
+                self._location.elevation = location_data[9]
 
-                self.__isLocationLoaded = True
-
-            if importLocationOnly:
-                return
+                self._is_location_loaded = True
 
             # TODO: add parsing for header
-            #Bug fix: Added the missing location data to header that was being lost due
-            # to implementation of generator pattern.
-            self.epwHeader = [line]+[epwin.readline() for i in xrange(7)]
+            self._header = [line] + [epwin.readline() for i in xrange(7)]
 
+            if import_location_only:
+                return
+
+            # read first line of data to overwrite the number of fields
             line = epwin.readline()
-            self._numOfFields = len(line.strip().split(','))
+            self._num_of_fields = len(line.strip().split(','))
 
             # create an annual analysis period
-            analysisPeriod = AnalysisPeriod()
+            analysis_period = AnalysisPeriod()
 
             # create an empty collection for each field in epw file
-            for fieldNumber in range(self._numOfFields):
+            for field_number in range(self._num_of_fields):
                 # create header
-                field = EPWDataTypes.fieldByNumber(fieldNumber)
+                field = EPWFields.field_by_number(field_number)
+                # the header of data collection
                 header = Header(location=self.location,
-                                analysisPeriod=analysisPeriod,
-                                dataType=field.name, unit=field.units)
+                                analysis_period=analysis_period,
+                                data_type=field.name, unit=field.unit)
 
                 # create an empty data list with the header
-                self.__data.append(DataCollection(header=header))
+                self._data.append(DataCollection(header=header))
 
+            # collect hourly data
             while line:
                 data = line.strip().split(',')
                 year, month, day, hour = map(int, data[:4])
@@ -122,85 +173,92 @@ class EPW(object):
                 # under modelYear
                 timestamp = DateTime(month, day, hour - 1)
 
-                for fieldNumber in xrange(self._numOfFields):
-                    valueType = EPWDataTypes.fieldByNumber(fieldNumber).valueType
-                    value = valueType(data[fieldNumber])
-                    self.__data[fieldNumber].append(DataPoint(value, timestamp))
+                for field_number in xrange(self._num_of_fields):
+                    value_type = EPWFields.field_by_number(field_number).value_type
+                    try:
+                        value = value_type(data[field_number])
+                    except ValueError as e:
+                        # failed to convert the value for the specific TypeError
+                        if value_type != int:
+                            raise ValueError(e)
+                        value = int(round(float(data[field_number])))
+
+                    self._data[field_number].append(DataPoint(value, timestamp))
 
                 line = epwin.readline()
 
-            self.__isDataLoaded = True
+            self._is_data_loaded = True
 
-    def _getDataByField(self, fieldNumber):
+    def _get_data_by_field(self, field_number):
         """Return a data field by field number.
 
         This is a useful method to get the values for fields that Ladybug
         currently doesn't import by default. You can find list of fields by typing
-        EPWDataTypes.fields
+        EPWFields.fields
 
         Args:
-            fieldNumber: a value between 0 to 34 for different available epw fields.
+            field_number: a value between 0 to 34 for different available epw fields.
 
         Returns:
             An annual Ladybug list
         """
-        if not self.isDataLoaded:
-            self.importData()
+        if not self.is_data_loaded:
+            self.import_data()
 
         # check input data
-        if not 0 <= fieldNumber < self._numOfFields:
-            raise ValueError("Field number should be between 0-%d" % self._numOfFields)
+        if not 0 <= field_number < self._num_of_fields:
+            raise ValueError("Field number should be between 0-%d" % self._num_of_fields)
 
-        return self.__data[fieldNumber]
+        return self._data[field_number]
 
     # TODO: Add utility library to check file path, filename, etc
-    def save(self, filePath=None, fileName=None):
+    def save(self, folder=None, file_name=None):
         """Save epw object as an epw file."""
-        # check filePath
-        if not filePath:
-            filePath = self.filePath
+        # check file_path
+        if not folder:
+            folder = self.folder
 
-        if not fileName:
-            fileName = ".".join((self.fileName).split(".")[:-1]) + "_modified.epw"
+        if not file_name:
+            file_name = os.path.splitext(self.file_name)[0] + '_modified.epw'
 
-        fullPath = os.path.join(filePath, fileName)
+        full_path = os.path.join(folder, file_name)
 
         # load data if it's  not loaded
-        if not self.isDataLoaded:
-            self.importData()
+        if not self.is_data_loaded:
+            self.import_data()
 
         # write the file
-        with open(fullPath, 'wb') as modEpwFile:
-            modEpwFile.writelines(self.epwHeader)
+        with open(full_path, 'wb') as modEpwFile:
+            modEpwFile.writelines(self._header)
             lines = []
             try:
                 for hour in xrange(0, 8760):
                     line = []
-                    for field in range(0, self._numOfFields):
-                        line.append(str(self.__data[field].values[hour].value))
+                    for field in range(0, self._num_of_fields):
+                        line.append(str(self._data[field].values[hour].value))
                     lines.append(",".join(line) + "\n")
             except IndexError:
                 # cleaning up
                 modEpwFile.close()
-                lengthErrorMsg = "Data length is not 8760 hours! " + \
-                    "Data can't be saved to epw file."
-                raise ValueError(lengthErrorMsg)
+                length_error_msg = 'Data length is not 8760 hours and cannot be ' + \
+                    'saved as an EPW file.'
+                raise ValueError(length_error_msg)
             else:
                 modEpwFile.writelines(lines)
             finally:
                 del(lines)
 
-        print "New epw file is written to [%s]" % fullPath
+        return full_path
 
-    def import_dataByField(self, fieldNumber):
-        """Return annual values for any fieldNumber in epw file.
+    def import_data_by_field(self, field_number):
+        """Return annual values for any field_number in epw file.
 
         This is a useful method to get the values for fields that Ladybug currently
         doesn't import by default. You can find list of fields by typing
-        EPWDataTypes.fields
+        EPWFields.fields
 
         Args:
-            fieldNumber: a value between 0 to 34 for different available epw fields.
+            field_number: a value between 0 to 34 for different available epw fields.
             0 Year
             1 Month
             2 Day
@@ -239,15 +297,15 @@ class EPW(object):
         Returns:
             An annual Ladybug list
         """
-        return self._getDataByField(fieldNumber)
+        return self._get_data_by_field(field_number)
 
     @property
     def years(self):
         """Return years as a Ladybug Data List."""
-        return self._getDataByField(0)
+        return self._get_data_by_field(0)
 
     @property
-    def dryBulbTemperature(self):
+    def dry_bulb_temperature(self):
         """Return annual Dry Bulb Temperature as a Ladybug Data List.
 
         This is the dry bulb temperature in C at the time indicated. Note that
@@ -258,10 +316,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(6)
+        return self._get_data_by_field(6)
 
     @property
-    def dewPointTemperature(self):
+    def dew_point_temperature(self):
         u"""Return annual Dew Point Temperature as a Ladybug Data List.
 
         This is the dew point temperature in C at the time indicated. Note that this is
@@ -270,10 +328,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(7)
+        return self._get_data_by_field(7)
 
     @property
-    def relativeHumidity(self):
+    def relative_humidity(self):
         u"""Return annual Relative Humidity as a Ladybug Data List.
 
         This is the Relative Humidity in percent at the time indicated. Valid values
@@ -281,10 +339,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(8)
+        return self._get_data_by_field(8)
 
     @property
-    def atmosphericStationPressure(self):
+    def atmospheric_station_pressure(self):
         """Return annual Atmospheric Station Pressure as a Ladybug Data List.
 
         This is the station pressure in Pa at the time indicated. Valid values range
@@ -293,10 +351,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(9)
+        return self._get_data_by_field(9)
 
     @property
-    def extraterrestrialHorizontalRadiation(self):
+    def extraterrestrial_horizontal_radiation(self):
         """Return annual Extraterrestrial Horizontal Radiation as a Ladybug Data List.
 
         This is the Extraterrestrial Horizontal Radiation in Wh/m2. It is not currently
@@ -305,10 +363,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(10)
+        return self._get_data_by_field(10)
 
     @property
-    def extraterrestrialDirectNormalRadiation(self):
+    def extraterrestrial_direct_normal_radiation(self):
         """Return annual Extraterrestrial Direct Normal Radiation as a Ladybug Data List.
 
         This is the Extraterrestrial Direct Normal Radiation in Wh/m2. (Amount of solar
@@ -319,10 +377,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(11)
+        return self._get_data_by_field(11)
 
     @property
-    def horizontalInfraredRadiationIntensity(self):
+    def horizontal_infrared_radiation_intensity(self):
         """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data List.
 
         This is the Horizontal Infrared Radiation Intensity in Wh/m2. If it is missing,
@@ -332,10 +390,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(12)
+        return self._get_data_by_field(12)
 
     @property
-    def globalHorizontalRadiation(self):
+    def global_horizontal_radiation(self):
         """Return annual Global Horizontal Radiation as a Ladybug Data List.
 
         This is the Global Horizontal Radiation in Wh/m2. (Total amount of direct and
@@ -346,10 +404,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(13)
+        return self._get_data_by_field(13)
 
     @property
-    def directNormalRadiation(self):
+    def direct_normal_radiation(self):
         """Return annual Direct Normal Radiation as a Ladybug Data List.
 
         This is the Direct Normal Radiation in Wh/m2. (Amount of solar radiation in
@@ -360,10 +418,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(14)
+        return self._get_data_by_field(14)
 
     @property
-    def diffuseHorizontalRadiation(self):
+    def diffuse_horizontal_radiation(self):
         """Return annual Diffuse Horizontal Radiation as a Ladybug Data List.
 
         This is the Diffuse Horizontal Radiation in Wh/m2. (Amount of solar radiation in
@@ -374,10 +432,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
         /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(15)
+        return self._get_data_by_field(15)
 
     @property
-    def globalHorizontalIlluminance(self):
+    def global_horizontal_illuminance(self):
         """Return annual Global Horizontal Illuminance as a Ladybug Data List.
 
         This is the Global Horizontal Illuminance in lux. (Average total amount of
@@ -389,10 +447,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(16)
+        return self._get_data_by_field(16)
 
     @property
-    def directNormalIlluminance(self):
+    def direct_normal_illuminance(self):
         """Return annual Direct Normal Illuminance as a Ladybug Data List.
 
         This is the Direct Normal Illuminance in lux. (Average amount of illuminance in
@@ -405,10 +463,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(17)
+        return self._get_data_by_field(17)
 
     @property
-    def diffuseHorizontalIlluminance(self):
+    def diffuse_horizontal_illuminance(self):
         """Return annual Diffuse Horizontal Illuminance as a Ladybug Data List.
 
         This is the Diffuse Horizontal Illuminance in lux. (Average amount of illuminance
@@ -421,10 +479,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(18)
+        return self._get_data_by_field(18)
 
     @property
-    def zenithLuminance(self):
+    def zenith_luminance(self):
         """Return annual Zenith Luminance as a Ladybug Data List.
 
         This is the Zenith Illuminance in Cd/m2. (Average amount of luminance at
@@ -435,10 +493,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(19)
+        return self._get_data_by_field(19)
 
     @property
-    def windDirection(self):
+    def wind_direction(self):
         """Return annual Wind Direction as a Ladybug Data List.
 
         This is the Wind Direction in degrees where the convention is that North=0.0,
@@ -449,10 +507,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(20)
+        return self._get_data_by_field(20)
 
     @property
-    def windSpeed(self):
+    def wind_speed(self):
         """Return annual Wind Speed as a Ladybug Data List.
 
         This is the wind speed in m/sec. (Wind speed at time indicated.) Values can
@@ -461,10 +519,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(21)
+        return self._get_data_by_field(21)
 
     @property
-    def totalSkyCover(self):
+    def total_sky_cover(self):
         """Return annual Total Sky Cover as a Ladybug Data List.
 
         This is the value for total sky cover (tenths of coverage). (i.e. 1 is 1/10
@@ -475,10 +533,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(22)
+        return self._get_data_by_field(22)
 
     @property
-    def opaqueSkyCover(self):
+    def opaque_sky_cover(self):
         """Return annual Opaque Sky Cover as a Ladybug Data List.
 
         This is the value for opaque sky cover (tenths of coverage). (i.e. 1 is 1/10
@@ -492,7 +550,7 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(23)
+        return self._get_data_by_field(23)
 
     @property
     def visibility(self):
@@ -505,10 +563,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(24)
+        return self._get_data_by_field(24)
 
     @property
-    def ceilingHeight(self):
+    def ceiling_height(self):
         """Return annual Ceiling Height as a Ladybug Data List.
 
         This is the value for ceiling height in m. (77777 is unlimited ceiling height.
@@ -518,10 +576,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(25)
+        return self._get_data_by_field(25)
 
     @property
-    def presentWeatherObservation(self):
+    def present_weather_observation(self):
         """Return annual Present Weather Observation as a Ladybug Data List.
 
         If the value of the field is 0, then the observed weather codes are taken from
@@ -533,10 +591,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(26)
+        return self._get_data_by_field(26)
 
     @property
-    def presentWeatherCodes(self):
+    def present_weather_codes(self):
         """Return annual Present Weather Codes as a Ladybug Data List.
 
         The present weather codes field is assumed to follow the TMY2 conventions for
@@ -552,10 +610,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(27)
+        return self._get_data_by_field(27)
 
     @property
-    def precipitableWater(self):
+    def precipitable_water(self):
         """Return annual Precipitable Water as a Ladybug Data List.
 
         This is the value for Precipitable Water in mm. (This is not rain - rain is
@@ -567,10 +625,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(28)
+        return self._get_data_by_field(28)
 
     @property
-    def aerosolOpticalDepth(self):
+    def aerosol_optical_depth(self):
         """Return annual Aerosol Optical Depth as a Ladybug Data List.
 
         This is the value for Aerosol Optical Depth in thousandths. It is not currently
@@ -579,10 +637,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(29)
+        return self._get_data_by_field(29)
 
     @property
-    def snowDepth(self):
+    def snow_depth(self):
         """Return annual Snow Depth as a Ladybug Data List.
 
         This is the value for Snow Depth in cm. This field is used to tell when snow
@@ -592,10 +650,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(30)
+        return self._get_data_by_field(30)
 
     @property
-    def daysSinceLastSnowfall(self):
+    def days_since_last_snowfall(self):
         """Return annual Days Since Last Snow Fall as a Ladybug Data List.
 
         This is the value for Days Since Last Snowfall. It is not currently used in
@@ -604,7 +662,7 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(31)
+        return self._get_data_by_field(31)
 
     @property
     def albedo(self):
@@ -616,10 +674,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(32)
+        return self._get_data_by_field(32)
 
     @property
-    def liquidPrecipitationDepth(self):
+    def liquid_precipitation_depth(self):
         """Return annual liquid precipitation depth as a Ladybug Data List.
 
         The amount of liquid precipitation (mm) observed at the indicated time for the
@@ -631,10 +689,10 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(33)
+        return self._get_data_by_field(33)
 
     @property
-    def liquidPrecipitationQuantity(self):
+    def liquid_precipitation_quantity(self):
         """Return annual Liquid Precipitation Quantity as a Ladybug Data List.
 
         The period of accumulation (hr) for the liquid precipitation depth field.
@@ -643,43 +701,49 @@ class EPW(object):
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/
             pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
-        return self._getDataByField(34)
+        return self._get_data_by_field(34)
 
-    def __getWEAHeader(self):
+    def _get_wea_header(self):
         return "place %s\n" % self.location.city + \
             "latitude %.2f\n" % self.location.latitude + \
             "longitude %.2f\n" % -self.location.longitude + \
-            "time_zone %d\n" % (-self.location.timezone * 15) + \
+            "time_zone %d\n" % (-self.location.time_zone * 15) + \
             "site_elevation %.1f\n" % self.location.elevation + \
-            "weather_data_file_units 1\n"
+            "weather_data_file_unit 1\n"
 
-    def toWea(self, filePath=None, hoys=None):
+    def to_wea(self, file_path=None, hoys=None):
         """Write an wea file from the epw file.
 
-        WEA carries radiation values from epw ans is what gendaymtx uses to
-        generate the sky. I wrote my own implementation to avoid shipping
-        epw2wea.exe file. Now epw2wea is part of the Radiance distribution
+        WEA carries radiation values from epw. Gendaymtx uses these values to
+        generate the sky. For an annual analysis it is identical to using epw2wea.
+
+        args:
+            file_path: Full file path for output file.
+            hoys: List of hours of the year. Default is 0-8759.
         """
         hoys = hoys or xrange(8760)
-        if not filePath:
-            filePath = self.epwPath[:-3] + "wea"
+        if not file_path:
+            file_path = self.file_path[:-4] + '.wea'
 
-        with open(filePath, "wb") as weaFile:
+        if not file_path.lower().endswith('.wea'):
+            file_path += '.wea'
+
+        with open(file_path, "wb") as weaFile:
             # write header
-            weaFile.write(self.__getWEAHeader())
+            weaFile.write(self._get_wea_header())
             # write values
             for hoy in hoys:
-                dirRad = self.directNormalRadiation[hoy]
-                difRad = self.diffuseHorizontalRadiation[hoy]
+                dir_rad = self.direct_normal_radiation[hoy]
+                dif_rad = self.diffuse_horizontal_radiation[hoy]
                 line = "%d %d %.3f %d %d\n" \
-                    % (dirRad.datetime.month,
-                       dirRad.datetime.day,
-                       dirRad.datetime.hour + 0.5,
-                       dirRad, difRad)
+                    % (dir_rad.datetime.month,
+                       dir_rad.datetime.day,
+                       dir_rad.datetime.hour + 0.5,
+                       dir_rad, dif_rad)
 
                 weaFile.write(line)
 
-        return filePath
+        return file_path
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -690,7 +754,7 @@ class EPW(object):
         return "EPW file Data for [%s]" % self.location.city
 
 
-class EPWDataTypes:
+class EPWFields(object):
     """EPW weather file fields.
 
     Read more at:
@@ -699,7 +763,7 @@ class EPWDataTypes:
     (Chapter 2.9.1)
     """
 
-    __fields = {
+    FIELDS = {
         0: {'name': 'Year',
             'type': int
             },
@@ -726,7 +790,7 @@ class EPWDataTypes:
 
         6: {'name': 'Dry Bulb Temperature',
             'type': float,
-            'units': 'C',
+            'unit': 'C',
             'min': -70,
             'max': 70,
             'missing': 99.9
@@ -734,7 +798,7 @@ class EPWDataTypes:
 
         7: {'name': 'Dew Point Temperature',
             'type': float,
-            'units': 'C',
+            'unit': 'C',
             'min': -70,
             'max': 70,
             'missing': 99.9
@@ -742,6 +806,7 @@ class EPWDataTypes:
 
         8: {'name': 'Relative Humidity',
             'type': int,
+            'unit': '%',
             'missing': 999,
             'min': 0,
             'max': 110
@@ -749,7 +814,7 @@ class EPWDataTypes:
 
         9: {'name': 'Atmospheric Station Pressure',
             'type': int,
-            'units': 'Pa',
+            'unit': 'Pa',
             'missing': 999999,
             'min': 31000,
             'max': 120000
@@ -757,77 +822,77 @@ class EPWDataTypes:
 
         10: {'name': 'Extraterrestrial Horizontal Radiation',
              'type': int,
-             'units': 'Wh/m2',
+             'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0
              },
 
         11: {'name': 'Extraterrestrial Direct Normal Radiation',
              'type': int,
-             'units': 'Wh/m2',
+             'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0
              },
 
         12: {'name': 'Horizontal Infrared Radiation Intensity',
              'type': int,
-             'units': 'Wh/m2',
+             'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0
              },
 
         13: {'name': 'Global Horizontal Radiation',
              'type': int,
-             'units': 'Wh/m2',
+             'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0
              },
 
         14: {'name': 'Direct Normal Radiation',
              'type': int,
-             'units': 'Wh/m2',
+             'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0
              },
 
         15: {'name': 'Diffuse Horizontal Radiation',
              'type': int,
-             'units': 'Wh/m2',
+             'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0
              },
 
         16: {'name': 'Global Horizontal Illuminance',
              'type': int,
-             'units': 'lux',
+             'unit': 'lux',
              'missing': 999999,  # note will be missing if >= 999900
              'min': 0
              },
 
         17: {'name': 'Direct Normal Illuminance',
              'type': int,
-             'units': 'lux',
+             'unit': 'lux',
              'missing': 999999,  # note will be missing if >= 999900
              'min': 0
              },
 
         18: {'name': 'Diffuse Horizontal Illuminance',
              'type': int,
-             'units': 'lux',
+             'unit': 'lux',
              'missing': 999999,  # note will be missing if >= 999900
              'min': 0
              },
 
         19: {'name': 'Zenith Luminance',
              'type': int,
-             'units': 'Cd/m2',
+             'unit': 'Cd/m2',
              'missing': 9999,  # note will be missing if >= 9999
              'min': 0
              },
 
         20: {'name': 'Wind Direction',
              'type': int,
-             'units': 'degrees',
+             'unit': 'degrees',
              'missing': 999,
              'min': 0,
              'max': 360
@@ -835,7 +900,7 @@ class EPWDataTypes:
 
         21: {'name': 'Wind Speed',
              'type': float,
-             'units': 'm/s',
+             'unit': 'm/s',
              'missing': 999,
              'min': 0,
              'max': 40
@@ -855,13 +920,13 @@ class EPWDataTypes:
 
         24: {'name': 'Visibility',
              'type': float,
-             'units': 'km',
+             'unit': 'km',
              'missing': 9999
              },
 
         25: {'name': 'Ceiling Height',
              'type': int,
-             'units': 'm',
+             'unit': 'm',
              'missing': 99999
              },
 
@@ -875,19 +940,19 @@ class EPWDataTypes:
 
         28: {'name': 'Precipitable Water',
              'type': int,
-             'units': 'mm',
+             'unit': 'mm',
              'missing': 999
              },
 
         29: {'name': 'Aerosol Optical Depth',
              'type': float,
-             'units': 'thousandths',
+             'unit': 'thousandths',
              'missing': 999
              },
 
         30: {'name': 'Snow Depth',
              'type': int,
-             'units': 'cm',
+             'unit': 'cm',
              'missing': 999
              },
 
@@ -903,43 +968,19 @@ class EPWDataTypes:
 
         33: {'name': 'Liquid Precipitation Depth',
              'type': float,
-             'units': 'mm',
+             'unit': 'mm',
              'missing': 999
              },
 
         34: {'name': 'Liquid Precipitation Quantity',
              'type': float,
-             'units': 'hr',
+             'unit': 'hr',
              'missing': 99
              }
     }
 
-    class EPWField:
-
-        def __init__(self, dataDict):
-            self.name = dataDict['name']
-            self.valueType = dataDict['type']
-            if 'units' in dataDict:
-                self.units = dataDict['units']
-            else:
-                self.units = 'N/A'
-
     @classmethod
-    def fields(cls):
-        """Print fields."""
-        for key, value in cls.__fields.items():
-            print key, value['name']
-
-    @classmethod
-    def fieldsDictionary(cls):
-        """Return fields as a dictionary.
-
-        If you are looking for field numbers try fieldNumbers method instead
-        """
-        return cls.__fields
-
-    @classmethod
-    def fieldByNumber(cls, fieldNumber):
+    def field_by_number(cls, field_number):
         """Return an EPWField based on field number.
 
         0 Year
@@ -978,4 +1019,31 @@ class EPWDataTypes:
         33 Liquid Precipitation Depth
         34 Liquid Precipitation Quantity
         """
-        return cls.EPWField(cls.__fields[fieldNumber])
+        return EPWField(cls.FIELDS[field_number])
+
+    def __repr__(self):
+        """EPW fields representation."""
+        fields = (
+            '{}: {}'.format(key, value['name'])
+            for key, value in self.FIELDS.iteritems()
+        )
+
+        return '\n'.join(fields)
+
+
+class EPWField(object):
+    """An EPW field.
+
+    Attributes:
+        name: Name of the field.
+        type: field value type (e.g. int, float, str)
+        unit: Field unit.
+    """
+
+    def __init__(self, field_dict):
+        self.name = field_dict['name']
+        self.value_type = field_dict['type']
+        if 'unit' in field_dict:
+            self.unit = field_dict['unit']
+        else:
+            self.unit = None

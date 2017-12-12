@@ -10,44 +10,44 @@ class Location(object):
         country: Name of the country as a string.
         latitude: Location latitude between -90 and 90 (Default: 0).
         longitude: Location longitude between -180 (west) and 180 (east) (Default: 0).
-        timezone: Time zone between -12 hours (west) and 12 hours (east) (Default: 0).
+        time_zone: Time zone between -12 hours (west) and 12 hours (east) (Default: 0).
         elevation: A number for elevation of the location.
-        stationId: Id of the location if the location is represnting a weather station.
+        station_id: Id of the location if the location is represnting a weather station.
         source: Source of data (e.g. TMY, TMY3).
     """
 
-    __slots__ = ("city", "country", "__lat", "__lon", "__tz", "__elev",
-                 "stationId", "source")
+    __slots__ = ("city", "country", "_lat", "_lon", "_tz", "_elev",
+                 "station_id", "source")
 
     def __init__(self, city=None, country=None, latitude=0, longitude=0,
-                 timezone=0, elevation=0, stationId=None, source=None):
+                 time_zone=0, elevation=0, station_id=None, source=None):
         """Create a Ladybug location."""
-        self.city = "unknown" if not city else str(city)
-        self.country = "unknown" if not country else str(country)
+        self.city = '-' if not city else str(city)
+        self.country = '-' if not country else str(country)
         self.latitude = latitude
         self.longitude = longitude
-        self.timezone = timezone
+        self.time_zone = time_zone
         self.elevation = float(elevation)
-        self.stationId = None if not stationId else str(stationId)
+        self.station_id = None if not station_id else str(station_id)
         self.source = source
 
     @classmethod
-    def fromJson(cls, locJson):
+    def from_json(cls, loc_json):
         """Create a location from json.
         {
-          "city": "",
+          "city": "-",
           "latitude": 0,
           "longitude": 0,
           "time_zone": 0,
           "elevation": 0
         }
         """
-        d = locJson
+        d = loc_json
         return cls(d['city'], None, d['latitude'], d['longitude'],
                    d['time_zone'], d['elevation'])
 
     @classmethod
-    def fromLocation(cls, location):
+    def from_location(cls, location):
         """Try to create a Ladybug location from a location string.
 
         Args:
@@ -55,7 +55,7 @@ class Location(object):
 
         Usage:
 
-            l = Location.fromString(locationString)
+            l = Location.from_location(locationString)
         """
         if not location:
             return cls()
@@ -71,13 +71,13 @@ class Location(object):
                            longitude=location.Longitude)
 
             elif location.startswith('Site:'):
-                loc, city, latitude, longitude, timezone, elevation = \
+                loc, city, latitude, longitude, time_zone, elevation = \
                     re.findall(r'\r*\n*([a-zA-Z0-9.:_-]*)[,|;]',
                                location,
                                re.DOTALL)
             else:
                 try:
-                    city, latitude, longitude, timezone, elevation = \
+                    city, latitude, longitude, time_zone, elevation = \
                         [key.split(":")[-1].strip()
                          for key in location.split(",")]
                 except ValueError:
@@ -85,10 +85,10 @@ class Location(object):
                     return cls(city=location)
 
             return cls(city=city, country=None, latitude=latitude,
-                       longitude=longitude, timezone=timezone,
+                       longitude=longitude, time_zone=time_zone,
                        elevation=elevation)
 
-        except Exception, e:
+        except Exception as e:
             raise ValueError(
                 "Failed to create a Location from %s!\n%s" % (location, e))
 
@@ -100,88 +100,88 @@ class Location(object):
     @property
     def latitude(self):
         """Location latitude."""
-        return self.__lat
+        return self._lat
 
     @latitude.setter
     def latitude(self, lat):
-        self.__lat = 0 if not lat else float(lat)
-        assert -90 <= self.__lat <= 90, "latitude should be between -90..90."
+        self._lat = 0 if not lat else float(lat)
+        assert -90 <= self._lat <= 90, "latitude should be between -90..90."
 
     @property
     def longitude(self):
         """Location latitude."""
-        return self.__lon
+        return self._lon
 
     @longitude.setter
     def longitude(self, lon):
-        self.__lon = 0 if not lon else float(lon)
-        assert -180 <= self.__lon <= 180, "longitude should be between -180..180."
+        self._lon = 0 if not lon else float(lon)
+        assert -180 <= self._lon <= 180, "longitude should be between -180..180."
 
     @property
-    def timezone(self):
+    def time_zone(self):
         """Location latitude."""
-        return self.__tz
+        return self._tz
 
-    @timezone.setter
-    def timezone(self, tz):
-        self.__tz = 0 if not tz else float(tz)
-        assert -12 <= self.__tz <= 12, "Time zone should be between -12.0..12.0"
+    @time_zone.setter
+    def time_zone(self, tz):
+        self._tz = 0 if not tz else float(tz)
+        assert -12 <= self._tz <= 12, "Time zone should be between -12.0..12.0"
 
     @property
     def elevation(self):
         """Location latitude."""
-        return self.__elev
+        return self._elev
 
     @elevation.setter
     def elevation(self, elev):
         try:
-            self.__elev = float(elev)
+            self._elev = float(elev)
         except TypeError:
             raise ValueError("Failed to convert {} to an elevation".format(elev))
 
     @property
     def meridian(self):
         """Location meridian west of Greenwich."""
-        return -15 * self.timezone
+        return -15 * self.time_zone
 
     def duplicate(self):
         """Duplicate location."""
         return self(self.city, self.country, self.latitude, self.longitude,
-                    self.timezone, self.elevation, self.stationId, self.source)
+                    self.time_zone, self.elevation, self.station_id, self.source)
 
     @property
-    def EPStyleLocationString(self):
+    def ep_style_location_string(self):
         """Return EnergyPlus's location string."""
         return "Site:Location,\n" + \
             self.city + ',\n' + \
             str(self.latitude) + ',      !Latitude\n' + \
             str(self.longitude) + ',     !Longitude\n' + \
-            str(self.timezone) + ',     !Time Zone\n' + \
+            str(self.time_zone) + ',     !Time Zone\n' + \
             str(self.elevation) + ';       !Elevation'
 
     def __str__(self):
         """Return location as a string."""
-        return "%s" % (self.EPStyleLocationString)
+        return "%s" % (self.ep_style_location_string)
 
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
 
-    def toJson(self):
+    def to_json(self):
         """Create a location from json.
-        {
-          "city": "",
-          "latitude": 0,
-          "longitude": 0,
-          "time_zone": 0,
-          "elevation": 0
-        }
+            {
+              "city": "-",
+              "latitude": 0,
+              "longitude": 0,
+              "time_zone": 0,
+              "elevation": 0
+            }
         """
         return {
             "city": self.city,
             "latitude": self.latitude,
             "longitude": self.longitude,
-            "time_zone": self.timezone,
+            "time_zone": self.time_zone,
             "elevation": self.elevation
         }
 
@@ -190,4 +190,4 @@ class Location(object):
         # Tehran, lat:36, lon:34, tz:3.5, elev:54
         return "%s, lat:%.2f, lon:%.2f, tz:%.1f, elev:%.2f" % (
             self.city, self.latitude, self.longitude,
-            self.timezone, self.elevation)
+            self.time_zone, self.elevation)

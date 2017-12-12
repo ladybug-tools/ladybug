@@ -3,7 +3,7 @@ import math
 from collections import Iterable
 from .comfortBase import ComfortModel
 from ..psychrometrics import findHumidRatio
-from ..psychrometrics import findSaturatedVaporPressureTorr
+from ..psychrometrics import findSaturatedvapor_pressureTorr
 from ..rootFinding import secant
 from ..rootFinding import bisect
 from ..listoperations import duplicate
@@ -11,61 +11,62 @@ from ..epw import EPW
 
 
 class PMV(ComfortModel):
-    """
+    u"""
     PMV Comfort Object.
 
     Usage:
         from ladybug.comfort.pmv import PMV
 
         # Compute PMV for a single set of values.
-        myPmvComf = PMV.fromIndividualValues(26, 26, 0.75, 80, 1.1, 0.5)
+        myPmvComf = PMV.from_individual_values(26, 26, 0.75, 80, 1.1, 0.5)
         pmv = myPmvComf.pmv
 
         # Compute PMV for a list of data.
-        airTemp = [10, 12, 15, 18, 19]
-        relHumid = [75, 70, 60, 50, 45]
-        myPmvComf = PMV(airTemp, [], [], relHumid)
+        air_temp = [10, 12, 15, 18, 19]
+        rel_humid = [75, 70, 60, 50, 45]
+        myPmvComf = PMV(air_temp, [], [], rel_humid)
         pmv = myPmvComf.pmv
 
         # Compute PMV for all hours of an EPW file.
-        epwFileAddress = "C:/ladybug/New_York_J_F_Kennedy_IntL_Ar_NY_USA/New_York_J_F_Kennedy_IntL_Ar_NY_USA.epw"
-        myPmvComf = PMV.fromEPWFile(epwFileAddress, 1.4, 1.0)
+        epw_file_address = "C:/ladybug/New_York_J_F_Kennedy_IntL_Ar_NY_USA/New_York_JF" \
+            "Kennedy_IntL_Ar_NY_USA.epw"
+        myPmvComf = PMV.from_epw_file(epw_file_address, 1.4, 1.0)
         pmv = myPmvComf.pmv
 
     """
 
-    def __init__(self, airTemperature=None, radTemperature=[], windSpeed=[],
-                 relHumidity=[], metRate=[], cloValue=[], externalWork=[]):
+    def __init__(self, air_temperature=None, rad_temperature=[], wind_speed=[],
+                 rel_humidity=[], met_rate=[], clo_value=[], external_work=[]):
         """Initialize a PMV comfort object from lists of PMV inputs."""
         # Assign all of the input values to the PMV comfort model object.
         # And assign defaults if nothing has been connected.
-        self.airTemperature = airTemperature
+        self.air_temperature = air_temperature
 
-        if radTemperature != []:
-            self.__radTemperature = radTemperature
+        if rad_temperature != []:
+            self.__rad_temperature = rad_temperature
         else:
-            self.__radTemperature = self.__airTemperature
+            self.__rad_temperature = self.__air_temperature
 
-        if windSpeed != []:
-            self.__windSpeed = windSpeed
+        if wind_speed != []:
+            self.__wind_speed = wind_speed
         else:
-            self.__windSpeed = [0]
-        if relHumidity != []:
-            self.__relHumidity = relHumidity
+            self.__wind_speed = [0]
+        if rel_humidity != []:
+            self.__rel_humidity = rel_humidity
         else:
-            self.__relHumidity = [50]
-        if metRate != []:
-            self.__metRate = metRate
+            self.__rel_humidity = [50]
+        if met_rate != []:
+            self.__met_rate = met_rate
         else:
-            self.__metRate = [1.1]
-        if cloValue != []:
-            self.__cloValue = cloValue
+            self.__met_rate = [1.1]
+        if clo_value != []:
+            self.__clo_value = clo_value
         else:
-            self.__cloValue = [0.85]
-        if externalWork != []:
-            self.__externalWork = externalWork
+            self.__clo_value = [0.85]
+        if external_work != []:
+            self.__external_work = external_work
         else:
-            self.__externalWork = [0]
+            self.__external_work = [0]
 
         # Default variables that all comfort models have.
         self.__calcLength = None
@@ -77,10 +78,10 @@ class PMV(ComfortModel):
         self.__singleVals = False
 
         # Set default comfort parameters for the PMV model.
-        self.__PPDComfortThresh = 10.0
-        self.__humidRatioUp = 0.03
-        self.__humidRatioLow = 0
-        self.__stillAirThreshold = 0.1
+        self.__ppd_comfort_thresh = 10.0
+        self.__humid_ratio_up = 0.03
+        self.__humid_ratio_low = 0
+        self.__still_air_threshold = 0.1
 
         # Set blank values for the key returns of the class.
         self.__pmv = []
@@ -88,51 +89,65 @@ class PMV(ComfortModel):
         self.__set = []
         self.__isComfortable = []
         self.__discomfReason = []
-        self.__taAdj = []
+        self.__ta_adj = []
         self.__coolingEffect = []
 
     @classmethod
-    def fromIndividualValues(cls, airTemperature=20.0, radTemperature=None,
-                             windSpeed=0.0, relHumidity=50.0, metRate=1.1,
-                             cloValue=0.85, externalWork=0.0):
+    def from_individual_values(cls, air_temperature=20.0, rad_temperature=None,
+                               wind_speed=0.0, rel_humidity=50.0, met_rate=1.1,
+                               clo_value=0.85, external_work=0.0):
         """Create a PMV comfort object from individual values."""
-        if airTemperature is None:
-            airTemperature = 20.0
-        if radTemperature is None:
-            radTemperature = airTemperature
-        if windSpeed is None:
-            windSpeed = 0.0
-        if relHumidity is None:
-            relHumidity = 0.0
+        if air_temperature is None:
+            air_temperature = 20.0
+        if rad_temperature is None:
+            rad_temperature = air_temperature
+        if wind_speed is None:
+            wind_speed = 0.0
+        if rel_humidity is None:
+            rel_humidity = 0.0
 
-        pmvModel = cls([float(airTemperature)], [float(radTemperature)], [float(windSpeed)], [float(relHumidity)], [float(metRate)], [float(cloValue)], [float(externalWork)])
-        pmvModel.__singleVals = True
-        pmvModel.__isDataAligned = True
-        pmvModel.__calcLength = 1
+        pmv_model = cls(
+            [
+                float(air_temperature)], [
+                float(rad_temperature)], [
+                float(wind_speed)], [
+                    float(rel_humidity)], [
+                        float(met_rate)], [
+                            float(clo_value)], [
+                                float(external_work)])
+        pmv_model.__singleVals = True
+        pmv_model.__isDataAligned = True
+        pmv_model.__calcLength = 1
 
-        return pmvModel
+        return pmv_model
 
     @classmethod
-    def fromEPWFile(cls, epwFileAddress, metRate=1.1, cloValue=0.85,
-                    externalWork=0.0, inclHeader=True):
+    def from_epw_file(cls, epw_file_address, met_rate=1.1, clo_value=0.85,
+                      external_work=0.0, incl_header=True):
         """Create a PMV comfort object from the conditions within an EPW file.
 
         Args:
-            metRate: A value representing the metabolic rate of the human subject in met.
-                1 met = resting seated. If list is empty, default is set to 1 met.
-            cloValue: A lvalue representing the clothing level of the human subject in clo.
-                1 clo = three-piece suit. If list is empty, default is set to 1 clo.
-            externalWork: A value representing the work done by the human subject in met.
-                1 met = resting seated. If list is empty, default is set to 0 met.
-            header: set to "True" to have a ladybug header included in the output and set to
-                "False" to remove the header.  The default is set to "True."
+            met_rate: A value representing the metabolic rate of the human subject in
+                met. 1 met = resting seated. If list is empty, default is set to 1 met.
+            clo_value: A lvalue representing the clothing level of the human subject in
+                clo. 1 clo = three-piece suit. If list is empty, default is set to 1 clo.
+            external_work: A value representing the work done by the human subject in
+                met. 1 met = resting seated. If list is empty, default is set to 0 met.
+            header: set to "True" to have a ladybug header included in the output and
+                set to "False" to remove the header.  The default is set to "True."
         """
-        epwData = EPW(epwFileAddress)
-        return cls(epwData.dryBulbTemperature.values(header=inclHeader), epwData.dryBulbTemperature.values(header=inclHeader), epwData.windSpeed.values(header=inclHeader), epwData.relativeHumidity.values(header=inclHeader), [metRate], [cloValue], [externalWork])
+        epw_data = EPW(epw_file_address)
+        return cls(
+            epw_data.dryBulbTemperature.values(header=incl_header),
+            epw_data.dryBulbTemperature.values(header=incl_header),
+            epw_data.wind_speed.values(header=incl_header),
+            epw_data.relativeHumidity.values(header=incl_header),
+            [met_rate], [clo_value], [external_work])
 
     @property
-    def isReCalculationNeeded(self):
-        """Boolean value that indicates whether the comfort values need to be re-computed.
+    def is_re_calculation_needed(self):
+        """Boolean value that indicates whether the comfort values need to be
+        re-computed.
 
         Returns:
             True = re-calculation is needed before comfort values can be output.
@@ -141,7 +156,7 @@ class PMV(ComfortModel):
         return self.__isRecalcNeeded
 
     @property
-    def isDataAligned(self):
+    def is_data_aligned(self):
         """
         Boolean value that indicates whether the input data is aligned.
             True = aligned
@@ -150,7 +165,7 @@ class PMV(ComfortModel):
         return self.__isDataAligned
 
     @property
-    def isHeaderIncluded(self):
+    def is_header_included(self):
         """
         Boolean value that indicates whether a header will be output on the results.
             True = header included.
@@ -159,281 +174,310 @@ class PMV(ComfortModel):
         return self.__headerIncl
 
     @property
-    def singleValues(self):
+    def single_values(self):
         """
-        Boolean value that indicates whether single values or a list of values will be output.
+        Boolean value that indicates whether single values or a list of values will be
+        output.
             True = single values output.
             False = lists of values output.
         """
         return self.__singleVals
 
     @property
-    def airTemperature(self):
+    def air_temperature(self):
         """
-        A number or list of numbers representing dry bulb temperatures in degrees Celcius.
-        This can be a list with a LB header on it.  If list is empty, default is set to 20 C.
+        A number or list of numbers representing dry bulb temperatures in degrees
+        Celcius. This can be a list with a LB header on it.  If list is empty, default
+        is set to 20 C.
         """
-        return self.__airTemperature
+        return self.__air_temperature
 
-    @airTemperature.setter
-    def airTemperature(self, value):
+    @air_temperature.setter
+    def air_temperature(self, value):
 
-        self.__airTemperature = [20] if not value else value
+        self.__air_temperature = [20] if not value else value
 
-        if not isinstance(self.__airTemperature, Iterable):
-            self.__airTemperature = [self.__airTemperature]
+        if not isinstance(self.__air_temperature, Iterable):
+            self.__air_temperature = [self.__air_temperature]
 
         self.__isDataAligned = False
         self.__isRecalcNeeded = True
 
     @property
-    def radTemperature(self):
+    def rad_temperature(self):
         """
-        A number or list of numbers representing mean radiant temperatures in degrees Celcius.
-        This list can have a LB header on it.  If list is empty, default is set be the same as __airTemperature.
-        """
-        return self.__radTemperature
+        A number or list of numbers representing mean radiant temperatures in degrees
+        Celcius.
 
-    @radTemperature.setter
-    def radTemperature(self, value):
+        This list can have a LB header on it.  If list is empty, default is set be the
+        same as __air_temperature.
+        """
+        return self.__rad_temperature
+
+    @rad_temperature.setter
+    def rad_temperature(self, value):
         try:
-            self.__radTemperature = [float(value)]
-        except:
-            self.__radTemperature = value
+            self.__rad_temperature = [float(value)]
+        except BaseException:
+            self.__rad_temperature = value
         self.__isDataAligned = False
         self.__isRecalcNeeded = True
 
     @property
-    def windSpeed(self):
+    def wind_speed(self):
         """
-        A number or list of numbers representing wind speeds in m/s. This list can have a LB header on it.
-        If list is empty, default is set to 0 m/s.
+        A number or list of numbers representing wind speeds in m/s. This list can have
+        a LB header on it. If list is empty, default is set to 0 m/s.
         """
-        return self.__windSpeed
+        return self.__wind_speed
 
-    @windSpeed.setter
-    def windSpeed(self, value):
+    @wind_speed.setter
+    def wind_speed(self, value):
         try:
-            self.__windSpeed = [float(value)]
-        except:
-            self.__windSpeed = value
+            self.__wind_speed = [float(value)]
+        except BaseException:
+            self.__wind_speed = value
         self.__isDataAligned = False
         self.__isRecalcNeeded = True
 
     @property
-    def relHumidity(self):
+    def rel_humidity(self):
         """
-        A number or list of numbers representing relative humidities in %. This list can have a LB header on it.
-        If list is empty, default is set to 50%.
+        A number or list of numbers representing relative humidities in %. This list can
+        have a LB header on it. If list is empty, default is set to 50%.
         """
-        return self.__relHumidity
+        return self.__rel_humidity
 
-    @relHumidity.setter
-    def relHumidity(self, value):
+    @rel_humidity.setter
+    def rel_humidity(self, value):
         try:
-            self.__relHumidity = [float(value)]
-        except:
-            self.__relHumidity = value
+            self.__rel_humidity = [float(value)]
+        except BaseException:
+            self.__rel_humidity = value
         self.__isDataAligned = False
         self.__isRecalcNeeded = True
 
     @property
-    def metRate(self):
+    def met_rate(self):
         """
-        A number or list of numbers representing the metabolic rate of the human subject in met.
+        A number or list of numbers representing the metabolic rate of the human subject
+        in met.
         1 met = resting seated. This list can have a LB header on it.
         If list is empty, default is set to 1.1 met.
         """
-        return self.__metRate
+        return self.__met_rate
 
-    @metRate.setter
-    def metRate(self, value):
+    @met_rate.setter
+    def met_rate(self, value):
         try:
-            self.__metRate = [float(value)]
-        except:
-            self.__metRate = value
+            self.__met_rate = [float(value)]
+        except BaseException:
+            self.__met_rate = value
         self.__isDataAligned = False
         self.__isRecalcNeeded = True
 
     @property
-    def cloValue(self):
+    def clo_value(self):
         """
-        A number or list of numbers representing the clothing level of the human subject in clo.
+        A number or list of numbers representing the clothing level of the human subject
+        in clo.
         1 clo = three-piece suit. This list can have a LB header on it.
         If list is empty, default is set to 0.85 clo.
         """
-        return self.__cloValue
+        return self.__clo_value
 
-    @cloValue.setter
-    def cloValue(self, value):
+    @clo_value.setter
+    def clo_value(self, value):
         try:
-            self.__cloValue = [float(value)]
-        except:
-            self.__cloValue = value
+            self.__clo_value = [float(value)]
+        except BaseException:
+            self.__clo_value = value
         self.__isDataAligned = False
         self.__isRecalcNeeded = True
 
     @property
-    def externalWork(self):
+    def external_work(self):
         """
-        A number or list of numbers representing the work done by the human subject in met.
+        A number or list of numbers representing the work done by the human subject in
+        met.
         This list can have a LB header on it.
         If list is empty, default is set to 0 met.
         """
-        return self.__externalWork
+        return self.__external_work
 
-    @externalWork.setter
-    def externalWork(self, value):
+    @external_work.setter
+    def external_work(self, value):
         try:
-            self.__externalWork = [float(value)]
-        except:
-            self.__externalWork = value
+            self.__external_work = [float(value)]
+        except BaseException:
+            self.__external_work = value
         self.__isDataAligned = False
         self.__isRecalcNeeded = True
 
     @property
-    def PPDComfortThresh(self):
+    def ppd_comfort_thresh(self):
         """
-        A number representing the threshold of the percentage of people dissatisfied (PPD)
-        beyond which the conditions are not comfortable.  The default is 10%.
+        A number representing the threshold of the percentage of people dissatisfied
+        (PPD) beyond which the conditions are not comfortable.  The default is 10%.
         """
-        return self.__PPDComfortThresh
+        return self.__ppd_comfort_thresh
 
-    @PPDComfortThresh.setter
-    def PPDComfortThresh(self, value):
-        self.__PPDComfortThresh = value
+    @ppd_comfort_thresh.setter
+    def ppd_comfort_thresh(self, value):
+        self.__ppd_comfort_thresh = value
         self.__isRecalcNeeded = True
 
     @property
-    def humidRatioUp(self):
+    def humid_ratio_up(self):
         """
-        A number representing the upper boundary of humidity ratio above which conditions are considered too
-        humid to be comfortable.  The default is set to 0.03 kg wather/kg air.
+        A number representing the upper boundary of humidity ratio above which conditions
+        are considered too humid to be comfortable.  The default is set to 0.03 kg
+        wather/kg air.
         """
-        return self.__humidRatioUp
+        return self.__humid_ratio_up
 
-    @humidRatioUp.setter
-    def humidRatioUp(self, value):
-        self.__humidRatioUp = value
+    @humid_ratio_up.setter
+    def humid_ratio_up(self, value):
+        self.__humid_ratio_up = value
         self.__isRecalcNeeded = True
 
     @property
-    def humidRatioLow(self):
+    def humid_ratio_low(self):
         """
-        A number representing the lower boundary of humidity ratio below which conditions are considered too
-        dry to be comfortable.  The default is set to 0 kg wather/kg air.
+        A number representing the lower boundary of humidity ratio below which conditions
+        are considered too dry to be comfortable.  The default is set to 0 kg wather/kg
+        air.
         """
-        return self.__humidRatioUp
+        return self.__humid_ratio_up
 
-    @humidRatioLow.setter
-    def humidRatioLow(self, value):
-        self.__humidRatioLow = value
+    @humid_ratio_low.setter
+    def humid_ratio_low(self, value):
+        self.__humid_ratio_low = value
         self.__isRecalcNeeded = True
 
     @property
-    def stillAirThreshold(self):
+    def still_air_threshold(self):
         """
-        A number representing the wind speed beyond which the formula for Standard Effective Temperature (SET)
-        is used to dtermine PMV/PPD (as opposed to Fanger's original equation).
-        The default is set to 0.1 m/s.
+        A number representing the wind speed beyond which the formula for Standard
+        Effective Temperature (SET) is used to dtermine PMV/PPD (as opposed to Fanger's
+        original equation). The default is set to 0.1 m/s.
         """
-        return self.__humidRatioUp
+        return self.__humid_ratio_up
 
-    @stillAirThreshold.setter
-    def stillAirThreshold(self, value):
-        self.__stillAirThreshold = value
+    @still_air_threshold.setter
+    def still_air_threshold(self, value):
+        self.__still_air_threshold = value
         self.__isRecalcNeeded = True
 
-    def setComfortPar(self, PPDComfortThresh=10, humidRatioUp=0.03, humidRatioLow=0, stillAirThreshold=0.1):
+    def set_comfort_par(self, ppd_comfort_thresh=10, humid_ratio_up=0.03,
+                        humid_ratio_low=0, still_air_threshold=0.1):
         """
         Set all of the comfort parameters of the comfort model at once.  These are:
-            PPDComfortThresh
-            humidRatioUp
-            humidRatioLow
-            stillAirThreshold
+            ppd_comfort_thresh
+            humid_ratio_up
+            humid_ratio_low
+            still_air_threshold
         """
-        self.__PPDComfortThresh = PPDComfortThresh
-        self.__humidRatioUp = humidRatioUp
-        self.__humidRatioLow = humidRatioLow
-        self.__stillAirThreshold = stillAirThreshold
+        self.__ppd_comfort_thresh = ppd_comfort_thresh
+        self.__humid_ratio_up = humid_ratio_up
+        self.__humid_ratio_low = humid_ratio_low
+        self.__still_air_threshold = still_air_threshold
 
         self.__isRecalcNeeded = True
 
-    def _checkAndAlignLists(self):
+    def _check_and_align_lists(self):
         """
-        Checks to be sure that the lists of PMV input variables are aligned and fills in defaults where possible.
+        Checks to be sure that the lists of PMV input variables are aligned and fills in
+        defaults where possible.
         """
         # Check each list to be sure that the contents are what we want.
-        checkData1, airTemp, airMultVal = self._checkInputList(self.__airTemperature, [20], "airTemperature", "Temperature")
-        checkData2, radTemp, radMultVal = self._checkInputList(self.__radTemperature, airTemp, "radTemperature", "Temperature")
-        checkData3, windSpeed, windMultVal = self._checkInputList(self.__windSpeed, [0.0], "windSpeed", "Wind Speed")
-        checkData4, relHumid, humidMultVal = self._checkInputList(self.__relHumidity, [50.0], "relHumidity", "Humidity")
-        checkData5, metRate, metMultVal = self._checkInputList(self.__metRate, [1.1], "metabolicRate", "Metabolic")
-        checkData6, cloLevel, cloMultVal = self._checkInputList(self.__cloValue, [0.85], "clothingValue", "Clothing")
-        checkData7, exWork, exMultVal = self._checkInputList(self.__externalWork, [0.0], "externalWork", "Work")
+        check_data1, air_temp, airMultVal = self._checkInputList(
+            self.__air_temperature, [20], "air_temperature", "Temperature")
+        check_data2, rad_temp, radMultVal = self._checkInputList(
+            self.__rad_temperature, air_temp, "rad_temperature", "Temperature")
+        check_data3, wind_speed, windMultVal = self._checkInputList(
+            self.__wind_speed, [0.0], "wind_speed", "Wind Speed")
+        check_data4, rel_humid, humidMultVal = self._checkInputList(
+            self.__rel_humidity, [50.0], "rel_humidity", "Humidity")
+        check_data5, met_rate, metMultVal = self._checkInputList(
+            self.__met_rate, [1.1], "metabolicRate", "Metabolic")
+        check_data6, clo_level, cloMultVal = self._checkInputList(
+            self.__clo_value, [0.85], "clothingValue", "Clothing")
+        check_data7, ex_work, exMultVal = self._checkInputList(
+            self.__external_work, [0.0], "external_work", "Work")
 
-        # Finally, for those lists of length greater than 1, check to make sure that they are all the same length.
-        checkData = False
-        if checkData1 is True and checkData2 is True and checkData3 is True and checkData4 is True and checkData5 is True and checkData6 is True and checkData7 is True:
-            if airMultVal is True or radMultVal is True or windMultVal is True or humidMultVal is True or metMultVal is True or cloMultVal is True or exMultVal is True:
-                listLenCheck = []
+        # Finally, for those lists of length greater than 1, check to make sure
+        # that they are all the same length.
+        check_data = False
+        if check_data1 is True and check_data2 is True and check_data3 is True and \
+            check_data4 is True and check_data5 is True and check_data6 is True and \
+                check_data7 is True:
+            if airMultVal is True or radMultVal is True or windMultVal is True or \
+                    humidMultVal is True or metMultVal is True or cloMultVal is True or \
+                    exMultVal is True:
+                list_len_check = []
                 if airMultVal is True:
-                    listLenCheck.append(len(airTemp))
+                    list_len_check.append(len(air_temp))
                 if radMultVal is True:
-                    listLenCheck.append(len(radTemp))
+                    list_len_check.append(len(rad_temp))
                 if windMultVal is True:
-                    listLenCheck.append(len(windSpeed))
+                    list_len_check.append(len(wind_speed))
                 if humidMultVal is True:
-                    listLenCheck.append(len(relHumid))
+                    list_len_check.append(len(rel_humid))
                 if metMultVal is True:
-                    listLenCheck.append(len(metRate))
+                    list_len_check.append(len(met_rate))
                 if cloMultVal is True:
-                    listLenCheck.append(len(cloLevel))
+                    list_len_check.append(len(clo_level))
                 if exMultVal is True:
-                    listLenCheck.append(len(exWork))
+                    list_len_check.append(len(ex_work))
 
-                if all(x == listLenCheck[0] for x in listLenCheck) is True:
-                    checkData = True
-                    self.__calcLength = listLenCheck[0]
+                if all(x == list_len_check[0] for x in list_len_check) is True:
+                    check_data = True
+                    self.__calcLength = list_len_check[0]
 
                     if airMultVal is False:
-                        airTemp = duplicate(airTemp[0], self.__calcLength)
+                        air_temp = duplicate(air_temp[0], self.__calcLength)
                     if radMultVal is False:
-                        radTemp = duplicate(radTemp[0], self.__calcLength)
+                        rad_temp = duplicate(rad_temp[0], self.__calcLength)
                     if windMultVal is False:
-                        windSpeed = duplicate(windSpeed[0], self.__calcLength)
+                        wind_speed = duplicate(wind_speed[0], self.__calcLength)
                     if humidMultVal is False:
-                        relHumid = duplicate(relHumid[0], self.__calcLength)
+                        rel_humid = duplicate(rel_humid[0], self.__calcLength)
                     if metMultVal is False:
-                        metRate = duplicate(metRate[0], self.__calcLength)
+                        met_rate = duplicate(met_rate[0], self.__calcLength)
                     if cloMultVal is False:
-                        cloLevel = duplicate(cloLevel[0], self.__calcLength)
+                        clo_level = duplicate(clo_level[0], self.__calcLength)
                     if exMultVal is False:
-                        exWork = duplicate(exWork[0], self.__calcLength)
+                        ex_work = duplicate(ex_work[0], self.__calcLength)
 
                 else:
                     self.__calcLength = None
-                    raise Exception('If you have put in lists with multiple values, the lengths of these lists must match \n across the parameters or you have a single value for a given parameter to be applied to all values in the list.')
+                    raise Exception(
+                        'If you have put in lists with multiple values, the lengths of'
+                        'these lists must match \n across the parameters or you have a'
+                        ' single value for a given parameter to be applied to all values'
+                        ' in the list.')
             else:
-                checkData = True
+                check_data = True
                 self.__calcLength = 1
 
-        # If everything is good, re-assign the lists of input variables and set the list alignment to true.
-        if checkData is True:
+        # If everything is good, re-assign the lists of input variables and set
+        # the list alignment to true.
+        if check_data is True:
             # Assign all of the input values to the PMV comfort model object.
-            self.__airTemperature = airTemp
-            self.__radTemperature = radTemp
-            self.__windSpeed = windSpeed
-            self.__relHumidity = relHumid
-            self.__metRate = metRate
-            self.__cloValue = cloLevel
-            self.__externalWork = exWork
+            self.__air_temperature = air_temp
+            self.__rad_temperature = rad_temp
+            self.__wind_speed = wind_speed
+            self.__rel_humidity = rel_humid
+            self.__met_rate = met_rate
+            self.__clo_value = clo_level
+            self.__external_work = ex_work
             # Set the alighed data value to true.
             self.__isDataAligned = True
             self.__isRecalcNeeded = True
 
     @staticmethod
-    def findPPD(pmv):
+    def find_ppd(pmv):
         """
         Args:
             pmv: The predicted mean vote (PMV) for which you want to know the PPD.
@@ -444,40 +488,46 @@ class PMV(ComfortModel):
         return 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
 
     @staticmethod
-    def findPMV(ppd, ppdError=0.001):
+    def find_pmv(ppd, ppd_error=0.001):
         """
         Args:
-            ppd: The percentage of people dissatisfied (PPD) for which you want to know the possible PMV.
-            ppdError: The acceptable error in meeting the target PPD.  The default is set to 0.001.
+            ppd: The percentage of people dissatisfied (PPD) for which you want to know
+                the possible PMV.
+            ppd_error: The acceptable error in meeting the target PPD.  The default is
+                set to 0.001.
 
         Returns:
-            pmv: A list with the two predicted mean vote (PMV) values that produces the input PPD.
+            pmv: A list with the two predicted mean vote (PMV) values that produces the
+                input PPD.
         """
         if not ppd < 5:
-            pmvLow = -3
-            pmvMid = 0
-            pmvHi = 3
+            pmv_low = -3
+            pmv_mid = 0
+            pmv_hi = 3
 
             def fn(pmv):
-                return ((100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))) - ppd)
+                return (
+                    (100.0 - 95.0 *
+                     math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))) - ppd)
 
             # Solve for the missing lower PMV value.
-            pmvLowSolution = secant(pmvLow, pmvMid, fn, ppdError)
-            if pmvLowSolution == 'NaN':
-                pmvLowSolution = bisect(pmvLow, pmvMid, fn, ppdError)
+            pmv_low_solution = secant(pmv_low, pmv_mid, fn, ppd_error)
+            if pmv_low_solution == 'NaN':
+                pmv_low_solution = bisect(pmv_low, pmv_mid, fn, ppd_error)
             # Solve for the missing higher PMV value.
-            pmvHiSolution = secant(pmvMid, pmvHi, fn, ppdError)
-            if pmvHiSolution == 'NaN':
-                pmvHiSolution = bisect(pmvMid, pmvHi, fn, ppdError)
+            pmv_hi_solution = secant(pmv_mid, pmv_hi, fn, ppd_error)
+            if pmv_hi_solution == 'NaN':
+                pmv_hi_solution = bisect(pmv_mid, pmv_hi, fn, ppd_error)
 
-            return [pmvLowSolution, pmvHiSolution]
+            return [pmv_low_solution, pmv_hi_solution]
         else:
             raise Exception('A ppd lower than 5% is not achievable with the PMV model.')
 
     @staticmethod
-    def comfPMV(ta, tr, vel, rh, met, clo, wme):
+    def comf_pmv(ta, tr, vel, rh, met, clo, wme):
         """
-        Original Fanger function to compute PMV.  Only intended for use with low air speeds (<0.1 m/s).
+        Original Fanger function to compute PMV.  Only intended for use with low air
+        speeds (<0.1 m/s).
 
         Args:
             ta: air temperature (C)
@@ -562,7 +612,7 @@ class PMV(ComfortModel):
         return r
 
     @staticmethod
-    def comfPierceSET(ta, tr, vel, rh, met, clo, wme):
+    def comf_pierce_set(ta, tr, vel, rh, met, clo, wme):
         """
         Args:
             ta, air temperature (C)
@@ -578,185 +628,194 @@ class PMV(ComfortModel):
         """
 
         # Key initial variables.
-        VaporPressure = (rh * findSaturatedVaporPressureTorr(ta)) / 100
-        AirVelocity = max(vel, 0.1)
-        KCLO = 0.25
-        BODYWEIGHT = 69.9
-        BODYSURFACEAREA = 1.8258
-        METFACTOR = 58.2
-        SBC = 0.000000056697  # Stefan-Boltzmann constant (W/m2K4)
-        CSW = 170
-        CDIL = 120
-        CSTR = 0.5
+        vapor_pressure = (rh * findSaturatedvapor_pressureTorr(ta)) / 100
+        air_velocity = max(vel, 0.1)
+        kclo = 0.25
+        bodyweight = 69.9
+        bodysurfacearea = 1.8258
+        metfactor = 58.2
+        sbc = 0.000000056697  # Stefan-Boltzmann constant (W/m2K4)
+        csw = 170
+        cdil = 120
+        cstr = 0.5
 
-        TempSkinNeutral = 33.7  # setpoint (neutral) value for Tsk
-        TempCoreNeutral = 36.49  # setpoint value for Tcr
-        TempBodyNeutral = 36.49  # setpoint for Tb (.1*TempSkinNeutral + .9*TempCoreNeutral)
-        SkinBloodFlowNeutral = 6.3  # neutral value for SkinBloodFlow
+        temp_skin_neutral = 33.7  # setpoint (neutral) value for Tsk
+        temp_core_neutral = 36.49  # setpoint value for Tcr
+        # setpoint for Tb (.1*temp_skin_neutral + .9*temp_core_neutral)
+        temp_body_neutral = 36.49
+        skin_blood_flow_neutral = 6.3  # neutral value for skin_blood_flow
 
         # INITIAL VALUES - start of 1st experiment
-        TempSkin = TempSkinNeutral
-        TempCore = TempCoreNeutral
-        SkinBloodFlow = SkinBloodFlowNeutral
-        MSHIV = 0.0
-        ALFA = 0.1
-        ESK = 0.1 * met
+        temp_skin = temp_skin_neutral
+        temp_core = temp_core_neutral
+        skin_blood_flow = skin_blood_flow_neutral
+        mshiv = 0.0
+        alfa = 0.1
+        esk = 0.1 * met
 
         # Start new experiment here (for graded experiments)
         # UNIT CONVERSIONS (from input variables)
 
-        p = 101325.0 / 1000  # This variable is the pressure of the atmosphere in kPa and was taken from the psychrometrics.js file of the CBE comfort tool.
+        # This variable is the pressure of the atmosphere in kPa and was taken
+        # from the psychrometrics.js file of the CBE comfort tool.
+        p = 101325.0 / 1000
 
-        PressureInAtmospheres = p * 0.009869
-        LTIME = 60
-        RCL = 0.155 * clo
-        # AdjustICL(RCL, Conditions);  TH: I don't think this is used in the software
+        pressure_in_atmospheres = p * 0.009869
+        ltime = 60
+        rcl = 0.155 * clo
+        # Adjusticl(rcl, Conditions);  TH: I don't think this is used in the software
 
-        FACL = 1.0 + 0.15 * clo  # % INCREASE IN BODY SURFACE AREA DUE TO CLOTHING
-        LR = 2.2 / PressureInAtmospheres  # Lewis Relation is 2.2 at sea level
-        RM = met * METFACTOR
-        M = met * METFACTOR
+        facl = 1.0 + 0.15 * clo  # % INCreaSE IN BODY SURFACE Area DUE TO CLOTHING
+        LR = 2.2 / pressure_in_atmospheres  # Lewis Relation is 2.2 at sea level
+        RM = met * metfactor
+        M = met * metfactor
 
         if clo <= 0:
-            WCRIT = 0.38 * pow(AirVelocity, -0.29)
-            ICL = 1.0
+            wcrit = 0.38 * pow(air_velocity, -0.29)
+            icl = 1.0
         else:
-            WCRIT = 0.59 * pow(AirVelocity, -0.08)
-            ICL = 0.45
+            wcrit = 0.59 * pow(air_velocity, -0.08)
+            icl = 0.45
 
-        CHC = 3.0 * pow(PressureInAtmospheres, 0.53)
-        CHCV = 8.600001 * pow((AirVelocity * PressureInAtmospheres), 0.53)
-        CHC = max(CHC, CHCV)
+        chc = 3.0 * pow(pressure_in_atmospheres, 0.53)
+        chcV = 8.600001 * pow((air_velocity * pressure_in_atmospheres), 0.53)
+        chc = max(chc, chcV)
 
         # initial estimate of Tcl
-        CHR = 4.7
-        CTC = CHR + CHC
-        RA = 1.0 / (FACL * CTC)  # resistance of air layer to dry heat transfer
-        TOP = (CHR * tr + CHC * ta) / CTC
-        TCL = TOP + (TempSkin - TOP) / (CTC * (RA + RCL))
+        chr = 4.7
+        ctc = chr + chc
+        RA = 1.0 / (facl * ctc)  # resistance of air layer to dry heat transfer
+        top = (chr * tr + chc * ta) / ctc
+        tcl = top + (temp_skin - top) / (ctc * (RA + rcl))
 
         # ========================  BEGIN ITERATION
         #
-        # Tcl and CHR are solved iteratively using: H(Tsk - To) = CTC(Tcl - To),
-        # where H = 1/(Ra + Rcl) and Ra = 1/Facl*CTC
+        # Tcl and chr are solved iteratively using: H(Tsk - To) = ctc(Tcl - To),
+        # where H = 1/(Ra + Rcl) and Ra = 1/Facl*ctc
 
-        TCL_OLD = TCL
-        TIME = range(LTIME)
+        tcl_old = tcl
+        time = range(ltime)
         flag = True
-        for TIM in TIME:
+        for TIM in time:
             if flag is True:
-                while abs(TCL - TCL_OLD) > 0.01:
-                    TCL_OLD = TCL
-                    CHR = 4.0 * SBC * pow(((TCL + tr) / 2.0 + 273.15), 3.0) * 0.72
-                    CTC = CHR + CHC
-                    RA = 1.0 / (FACL * CTC)  # resistance of air layer to dry heat transfer
-                    TOP = (CHR * tr + CHC * ta) / CTC
-                    TCL = (RA * TempSkin + RCL * TOP) / (RA + RCL)
+                while abs(tcl - tcl_old) > 0.01:
+                    tcl_old = tcl
+                    chr = 4.0 * sbc * pow(((tcl + tr) / 2.0 + 273.15), 3.0) * 0.72
+                    ctc = chr + chc
+                    # resistance of air layer to dry heat transfer
+                    RA = 1.0 / (facl * ctc)
+                    top = (chr * tr + chc * ta) / ctc
+                    tcl = (RA * temp_skin + rcl * top) / (RA + rcl)
             flag = False
-            DRY = (TempSkin - TOP) / (RA + RCL)
-            HFCS = (TempCore - TempSkin) * (5.28 + 1.163 * SkinBloodFlow)
-            ERES = 0.0023 * M * (44.0 - VaporPressure)
-            CRES = 0.0014 * M * (34.0 - ta)
-            SCR = M - HFCS - ERES - CRES - wme
-            SSK = HFCS - DRY - ESK
-            TCSK = 0.97 * ALFA * BODYWEIGHT
-            TCCR = 0.97 * (1 - ALFA) * BODYWEIGHT
-            DTSK = (SSK * BODYSURFACEAREA) / (TCSK * 60.0)  # deg C per minute
-            DTCR = SCR * BODYSURFACEAREA / (TCCR * 60.0)  # deg C per minute
-            TempSkin = TempSkin + DTSK
-            TempCore = TempCore + DTCR
-            TB = ALFA * TempSkin + (1 - ALFA) * TempCore
-            SKSIG = TempSkin - TempSkinNeutral
-            WARMS = (SKSIG > 0) * SKSIG
-            COLDS = ((-1.0 * SKSIG) > 0) * (-1.0 * SKSIG)
-            CRSIG = (TempCore - TempCoreNeutral)
-            WARMC = (CRSIG > 0) * CRSIG
-            COLDC = ((-1.0 * CRSIG) > 0) * (-1.0 * CRSIG)
-            BDSIG = TB - TempBodyNeutral
-            WARMB = (BDSIG > 0) * BDSIG
-            SkinBloodFlow = (SkinBloodFlowNeutral + CDIL * WARMC) / (1 + CSTR * COLDS)
-            if SkinBloodFlow > 90.0:
-                SkinBloodFlow = 90.0
-            if SkinBloodFlow < 0.5:
-                SkinBloodFlow = 0.5
-            REGSW = CSW * WARMB * math.exp(WARMS / 10.7)
-            if REGSW > 500.0:
-                REGSW = 500.0
-            ERSW = 0.68 * REGSW
-            REA = 1.0 / (LR * FACL * CHC)  # evaporative resistance of air layer
-            RECL = RCL / (LR * ICL)  # evaporative resistance of clothing (icl=.45)
-            EMAX = (findSaturatedVaporPressureTorr(TempSkin) - VaporPressure) / (REA + RECL)
-            PRSW = ERSW / EMAX
-            PWET = 0.06 + 0.94 * PRSW
-            EDIF = PWET * EMAX - ERSW
-            ESK = ERSW + EDIF
-            if PWET > WCRIT:
-                PWET = WCRIT
-                PRSW = WCRIT / 0.94
-                ERSW = PRSW * EMAX
-                EDIF = 0.06 * (1.0 - PRSW) * EMAX
-                ESK = ERSW + EDIF
-            if EMAX < 0:
-                EDIF = 0
-                ERSW = 0
-                PWET = WCRIT
-                PRSW = WCRIT
-                ESK = EMAX
-            ESK = ERSW + EDIF
-            MSHIV = 19.4 * COLDS * COLDC
-            M = RM + MSHIV
-            ALFA = 0.0417737 + 0.7451833 / (SkinBloodFlow + .585417)
+            dry = (temp_skin - top) / (RA + rcl)
+            hfcs = (temp_core - temp_skin) * (5.28 + 1.163 * skin_blood_flow)
+            eres = 0.0023 * M * (44.0 - vapor_pressure)
+            cres = 0.0014 * M * (34.0 - ta)
+            scr = M - hfcs - eres - cres - wme
+            ssk = hfcs - dry - esk
+            tcsk = 0.97 * alfa * bodyweight
+            tccr = 0.97 * (1 - alfa) * bodyweight
+            dtsk = (ssk * bodysurfacearea) / (tcsk * 60.0)  # deg C per minute
+            dtcr = scr * bodysurfacearea / (tccr * 60.0)  # deg C per minute
+            temp_skin = temp_skin + dtsk
+            temp_core = temp_core + dtcr
+            TB = alfa * temp_skin + (1 - alfa) * temp_core
+            sksig = temp_skin - temp_skin_neutral
+            warms = (sksig > 0) * sksig
+            colds = ((-1.0 * sksig) > 0) * (-1.0 * sksig)
+            crsig = (temp_core - temp_core_neutral)
+            warmc = (crsig > 0) * crsig
+            coldc = ((-1.0 * crsig) > 0) * (-1.0 * crsig)
+            bdsig = TB - temp_body_neutral
+            warmb = (bdsig > 0) * bdsig
+            skin_blood_flow = (skin_blood_flow_neutral + cdil *
+                               warmc) / (1 + cstr * colds)
+            if skin_blood_flow > 90.0:
+                skin_blood_flow = 90.0
+            if skin_blood_flow < 0.5:
+                skin_blood_flow = 0.5
+            regsw = csw * warmb * math.exp(warms / 10.7)
+            if regsw > 500.0:
+                regsw = 500.0
+            ersw = 0.68 * regsw
+            rea = 1.0 / (LR * facl * chc)  # evaporative resistance of air layer
+            recl = rcl / (LR * icl)  # evaporative resistance of clothing (icl=.45)
+            emax = (findSaturatedvapor_pressureTorr(
+                temp_skin) - vapor_pressure) / (rea + recl)
+            prsw = ersw / emax
+            pwet = 0.06 + 0.94 * prsw
+            edif = pwet * emax - ersw
+            esk = ersw + edif
+            if pwet > wcrit:
+                pwet = wcrit
+                prsw = wcrit / 0.94
+                ersw = prsw * emax
+                edif = 0.06 * (1.0 - prsw) * emax
+                esk = ersw + edif
+            if emax < 0:
+                edif = 0
+                ersw = 0
+                pwet = wcrit
+                prsw = wcrit
+                esk = emax
+            esk = ersw + edif
+            mshiv = 19.4 * colds * coldc
+            M = RM + mshiv
+            alfa = 0.0417737 + 0.7451833 / (skin_blood_flow + .585417)
 
         # Define new heat flow terms, coeffs, and abbreviations
-        HSK = DRY + ESK  # total heat loss from skin
+        hsk = dry + esk  # total heat loss from skin
         RN = M - wme  # net metabolic heat production
-        ECOMF = 0.42 * (RN - (1 * METFACTOR))
-        if ECOMF < 0.0:
-            ECOMF = 0.0  # from Fanger
-        EMAX = EMAX * WCRIT
-        W = PWET
-        PSSK = findSaturatedVaporPressureTorr(TempSkin)
+        ecomf = 0.42 * (RN - (1 * metfactor))
+        if ecomf < 0.0:
+            ecomf = 0.0  # from Fanger
+        emax = emax * wcrit
+        W = pwet
+        pssk = findSaturatedvapor_pressureTorr(temp_skin)
         # Definition of ASHRAE standard environment... denoted "S"
-        CHRS = CHR
+        chrS = chr
         if met < 0.85:
-            CHCS = 3.0
+            chcS = 3.0
         else:
-            CHCS = 5.66 * pow((met - 0.85), 0.39)
-            if CHCS < 3.0:
-                CHCS = 3.0
+            chcS = 5.66 * pow((met - 0.85), 0.39)
+            if chcS < 3.0:
+                chcS = 3.0
 
-        CTCS = CHCS + CHRS
-        RCLOS = 1.52 / ((met - wme / METFACTOR) + 0.6944) - 0.1835
-        RCLS = 0.155 * RCLOS
-        FACLS = 1.0 + KCLO * RCLOS
-        FCLS = 1.0 / (1.0 + 0.155 * FACLS * CTCS * RCLOS)
-        IMS = 0.45
-        ICLS = IMS * CHCS / CTCS * (1 - FCLS) / (CHCS / CTCS - FCLS * IMS)
-        RAS = 1.0 / (FACLS * CTCS)
-        REAS = 1.0 / (LR * FACLS * CHCS)
-        RECLS = RCLS / (LR * ICLS)
-        HD_S = 1.0 / (RAS + RCLS)
-        HE_S = 1.0 / (REAS + RECLS)
+        ctcs = chcS + chrS
+        rclos = 1.52 / ((met - wme / metfactor) + 0.6944) - 0.1835
+        rcls = 0.155 * rclos
+        facls = 1.0 + kclo * rclos
+        fcls = 1.0 / (1.0 + 0.155 * facls * ctcs * rclos)
+        ims = 0.45
+        icls = ims * chcS / ctcs * (1 - fcls) / (chcS / ctcs - fcls * ims)
+        ras = 1.0 / (facls * ctcs)
+        reaS = 1.0 / (LR * facls * chcS)
+        reclS = rcls / (LR * icls)
+        hd_s = 1.0 / (ras + rcls)
+        he_s = 1.0 / (reaS + reclS)
 
-        # SET* (standardized humidity, clo, Pb, and CHC)
+        # SET* (standardized humidity, clo, Pb, and chc)
         # determined using Newton's iterative solution
         # FNERRS is defined in the GENERAL SETUP section above
 
-        DELTA = .0001
+        delta = .0001
         dx = 100.0
-        X_OLD = TempSkin - HSK / HD_S  # lower bound for SET
+        x_old = temp_skin - hsk / hd_s  # lower bound for SET
         while abs(dx) > .01:
-            ERR1 = (HSK - HD_S * (TempSkin - X_OLD) - W * HE_S * (PSSK - 0.5 * findSaturatedVaporPressureTorr(X_OLD)))
-            ERR2 = (HSK - HD_S * (TempSkin - (X_OLD + DELTA)) - W * HE_S * (PSSK - 0.5 * findSaturatedVaporPressureTorr((X_OLD + DELTA))))
-            X = X_OLD - DELTA * ERR1 / (ERR2 - ERR1)
-            dx = X - X_OLD
-            X_OLD = X
+            err1 = (hsk - hd_s * (temp_skin - x_old) - W * he_s *
+                    (pssk - 0.5 * findSaturatedvapor_pressureTorr(x_old)))
+            err2 = (hsk - hd_s * (temp_skin - (x_old + delta)) - W * he_s *
+                    (pssk - 0.5 * findSaturatedvapor_pressureTorr((x_old + delta))))
+            x = x_old - delta * err1 / (err2 - err1)
+            dx = x - x_old
+            x_old = x
 
-        return X
+        return x
 
-    def _comfPMVElevatedAirspeed(self, ta, tr, vel, rh, met, clo, wme):
+    def _comf_pmv_elevated_airspeed(self, ta, tr, vel, rh, met, clo, wme):
         """
-        This function will return accurate values if the airspeed is above the sillAirThreshold.
+        This function will return accurate values if the airspeed is above the
+            sillAirThreshold.
 
         Args:
             ta, air temperature (C)
@@ -770,17 +829,18 @@ class PMV(ComfortModel):
         Returns:
             pmv : Predicted mean vote
             ppd : Percent predicted dissatisfied [%]
-            taAdj: Air temperature adjusted for air speed [C]
-            coolingEffect : Difference between the air temperature and adjusted air temperature [C]
+            ta_adj: Air temperature adjusted for air speed [C]
+            coolingEffect : Difference between the air temperature and adjusted air
+                temperature [C]
             set: The Standard Effective Temperature [C] (see below)
         """
 
         r = {}
-        set = self.comfPierceSET(ta, tr, vel, rh, met, clo, wme)
+        set = self.comf_pierce_set(ta, tr, vel, rh, met, clo, wme)
 
-        if vel <= self.__stillAirThreshold:
-            pmv, ppd = self.comfPMV(ta, tr, vel, rh, met, clo, wme)
-            taAdj = ta
+        if vel <= self.__still_air_threshold:
+            pmv, ppd = self.comf_pmv(ta, tr, vel, rh, met, clo, wme)
+            ta_adj = ta
             ce = 0
         else:
             ce_l = 0
@@ -788,24 +848,27 @@ class PMV(ComfortModel):
             eps = 0.001  # precision of ce
 
             def fn(ce):
-                return (set - self.comfPierceSET(ta - ce, tr - ce, self.__stillAirThreshold, rh, met, clo, wme))
+                return (set - self.comf_pierce_set(
+                    ta - ce, tr - ce,
+                    self.__still_air_threshold, rh, met, clo, wme))
 
             ce = secant(ce_l, ce_r, fn, eps)
             if ce == 'NaN':
                 ce = bisect(ce_l, ce_r, fn, eps, 0)
 
-            pmv, ppd = self.comfPMV(ta - ce, tr - ce, self.__stillAirThreshold, rh, met, clo, wme)
-            taAdj = ta - ce
+            pmv, ppd = self.comf_pmv(
+                ta - ce, tr - ce, self.__still_air_threshold, rh, met, clo, wme)
+            ta_adj = ta - ce
 
         r['pmv'] = pmv
         r['ppd'] = ppd
         r['set'] = set
-        r['taAdj'] = taAdj
+        r['ta_adj'] = ta_adj
         r['ce'] = ce
 
         return r
 
-    def _calculatePMVParams(self):
+    def _calculate_pmv_params(self):
         """
         Runs the input conditions through the PMV model to get pmv, ppd, and set.
         """
@@ -815,54 +878,77 @@ class PMV(ComfortModel):
         self.__set = []
         self.__isComfortable = []
         self.__discomfReason = []
-        self.__taAdj = []
+        self.__ta_adj = []
         self.__coolingEffect = []
 
         # If the input data has a header, put a header on the output.
         if self.__headerIncl is True:
             self.__pmv.extend(self.buildCustomHeader("Predicted Mean Vote", "PMV"))
-            self.__ppd.extend(self.buildCustomHeader("Percentage of People Dissatisfied", "%"))
-            self.__set.extend(self.buildCustomHeader("Standard Effective Temperature", "C"))
-            self.__isComfortable.extend(self.buildCustomHeader("Comfortable Or Not", "0/1"))
-            self.__discomfReason.extend(self.buildCustomHeader("Reason For Discomfort", "-2(cold), -1(dry), 0(comf), 1(humid), 2(hot)"))
-            self.__taAdj.extend(self.buildCustomHeader("Perceived Air Temperature With Air Speed", "C"))
-            self.__coolingEffect.extend(self.buildCustomHeader("Cooling Effect of air speed", "C"))
+            self.__ppd.extend(
+                self.buildCustomHeader(
+                    "Percentage of People Dissatisfied", "%"))
+            self.__set.extend(
+                self.buildCustomHeader(
+                    "Standard Effective Temperature", "C"))
+            self.__isComfortable.extend(
+                self.buildCustomHeader(
+                    "Comfortable Or Not", "0/1"))
+            self.__discomfReason.extend(
+                self.buildCustomHeader(
+                    "Reason For Discomfort",
+                    "-2(cold), -1(dry), 0(comf), 1(humid), 2(hot)"))
+            self.__ta_adj.extend(
+                self.buildCustomHeader(
+                    "Perceived Air Temperature With Air Speed", "C"))
+            self.__coolingEffect.extend(
+                self.buildCustomHeader(
+                    "Cooling Effect of air speed", "C"))
 
         # calculate the pmv, ppd, and set values.
         for i in range(self.__calcLength):
-            pmvResult = self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], self.__windSpeed[i], self.__relHumidity[i], self.__metRate[i], self.__cloValue[i], self.__externalWork[i])
-            self.__pmv.append(pmvResult['pmv'])
-            self.__ppd.append(pmvResult['ppd'])
-            self.__set.append(pmvResult['set'])
-            self.__taAdj.append(pmvResult['taAdj'])
-            self.__coolingEffect.append(pmvResult['ce'])
+            pmv_result = self._comf_pmv_elevated_airspeed(
+                self.__air_temperature[i],
+                self.__rad_temperature[i],
+                self.__wind_speed[i],
+                self.__rel_humidity[i],
+                self.__met_rate[i],
+                self.__clo_value[i],
+                self.__external_work[i])
+            self.__pmv.append(pmv_result['pmv'])
+            self.__ppd.append(pmv_result['ppd'])
+            self.__set.append(pmv_result['set'])
+            self.__ta_adj.append(pmv_result['ta_adj'])
+            self.__coolingEffect.append(pmv_result['ce'])
 
             # determine whether conditions meet the comfort criteria.
-            HR, vapPress, satPress = findHumidRatio(self.__airTemperature[i], self.__relHumidity[i])
-            if pmvResult['ppd'] > self.__PPDComfortThresh:
+            HR, vapPress, satPress = findHumidRatio(
+                self.__air_temperature[i], self.__rel_humidity[i])
+            if pmv_result['ppd'] > self.__ppd_comfort_thresh:
                 self.__isComfortable.append(0)
-                if pmvResult['pmv'] > 0:
+                if pmv_result['pmv'] > 0:
                     self.__discomfReason.append(2)
                 else:
                     self.__discomfReason.append(-2)
-            elif HR > self.__humidRatioUp:
+            elif HR > self.__humid_ratio_up:
                 self.__isComfortable.append(0)
                 self.__discomfReason.append(1)
-            elif HR < self.__humidRatioLow:
+            elif HR < self.__humid_ratio_low:
                 self.__isComfortable.append(0)
                 self.__discomfReason.append(-1)
             else:
                 self.__isComfortable.append(1)
                 self.__discomfReason.append(0)
 
-        # Let the class know that we don't need to re-run things unless something changes.
+        # Let the class know that we don't need to re-run things unless something
+        # changes.
         self.__isRecalcNeeded = False
 
     @property
     def pmv(self):
         """
         Predicted mean vote (PMV) values for the input conditions.
-        PMV is a seven-point scale from cold (-3) to hot (+3) that was used in comfort surveys of P.O. Fanger.
+        PMV is a seven-point scale from cold (-3) to hot (+3) that was used in comfort
+        surveys of P.O. Fanger.
         Each interger value of the scale indicates the following:
             -3 = Cold
             -2 = Cool
@@ -871,16 +957,18 @@ class PMV(ComfortModel):
             +1 = Slightly Warm
             +2 = Warm
             +3 = Hot
-        Exceeding +1 will result in an uncomfortably warm occupant while dropping below -1 will result in an uncomfortably cool occupant.
+        Exceeding +1 will result in an uncomfortably warm occupant while dropping below
+        -1 will result in an uncomfortably cool occupant.
         For detailed information on the PMV scale, see P.O. Fanger's original paper:
-        Fanger, P Ole (1970). Thermal Comfort: Analysis and applications in environmental engineering.
+        Fanger, P Ole (1970). Thermal Comfort: Analysis and applications in environmental
+        engineering.
         """
 
         if not self.__isDataAligned:
-            self._checkAndAlignLists()
+            self._check_and_align_lists()
 
         if self.__isRecalcNeeded:
-            self._calculatePMVParams()
+            self._calculate_pmv_params()
 
         if self.__singleVals is True:
             return self.__pmv[0]
@@ -891,15 +979,17 @@ class PMV(ComfortModel):
     def ppd(self):
         """
         Percentage of people dissatisfied (PPD) values for the input conditions.
-        Specifically, this is defined by the percent of people who would have a PMV less than -1 or greater than +1 under the conditions.
-        Note that, with this model, the best possible PPD achievable is 5% and most standards aim to have a PPD below 10%.
+        Specifically, this is defined by the percent of people who would have a PMV less
+        than -1 or greater than +1 under the conditions. Note that, with this model, the
+        best possible PPD achievable is 5% and most standards aim to have a PPD below
+        10%.
         """
 
         if not self.__isDataAligned:
-            self._checkAndAlignLists()
+            self._check_and_align_lists()
 
         if self.__isRecalcNeeded:
-            self._calculatePMVParams()
+            self._calculate_pmv_params()
 
         if self.__singleVals is True:
             return self.__ppd[0]
@@ -910,17 +1000,19 @@ class PMV(ComfortModel):
     def set(self):
         """
         Standard effective temperature (SET) values for the input conditions.
-        These temperatures describe what the given input conditions "feel like" in relation
-        to a standard environment of 50% relative humidity, <0.1 m/s average air speed, and mean radiant temperature
-        equal to average air temperature, in which the total heat loss from the skin of an imaginary occupant with an activity
-        level of 1.0 met and a clothing level of 0.6 clo is the same as that from a person in the actual environment.
+        These temperatures describe what the given input conditions "feel like" in
+        relation to a standard environment of 50% relative humidity, <0.1 m/s average
+        air speed, and mean radiant temperature equal to average air temperature, in
+        which the total heat loss from the skin of an imaginary occupant with an activity
+        level of 1.0 met and a clothing level of 0.6 clo is the same as that from a
+        person in the actual environment.
         """
 
         if not self.__isDataAligned:
-            self._checkAndAlignLists()
+            self._check_and_align_lists()
 
         if self.__isRecalcNeeded:
-            self._calculatePMVParams()
+            self._calculate_pmv_params()
 
         if self.__singleVals is True:
             return self.__set[0]
@@ -928,19 +1020,20 @@ class PMV(ComfortModel):
             return self.__set
 
     @property
-    def isComfortable(self):
+    def is_comfortable(self):
         """
-        Integer values that show whether the input conditions are comfortable according to the assigned compfortPar.
+        Integer values that show whether the input conditions are comfortable according
+        to the assigned compfortPar.
         Values are one of the following:
             0 = uncomfortable
             1 = comfortable
         """
 
         if not self.__isDataAligned:
-            self._checkAndAlignLists()
+            self._check_and_align_lists()
 
         if self.__isRecalcNeeded:
-            self._calculatePMVParams()
+            self._calculate_pmv_params()
 
         if self.__singleVals is True:
             return self.__isComfortable[0]
@@ -948,9 +1041,10 @@ class PMV(ComfortModel):
             return self.__isComfortable
 
     @property
-    def discomfReason(self):
+    def discomf_reason(self):
         """
-        Integer values that show the reason for discomfort according to the assigned compfortPar.
+        Integer values that show the reason for discomfort according to the assigned
+        compfortPar.
         Values are one of the following:
             -2 = too cold
             -1 = too dry
@@ -960,10 +1054,10 @@ class PMV(ComfortModel):
         """
 
         if not self.__isDataAligned:
-            self._checkAndAlignLists()
+            self._check_and_align_lists()
 
         if self.__isRecalcNeeded:
-            self._calculatePMVParams()
+            self._calculate_pmv_params()
 
         if self.__singleVals is True:
             return self.__discomfReason[0]
@@ -971,122 +1065,163 @@ class PMV(ComfortModel):
             return self.__discomfReason
 
     @property
-    def taAdj(self):
+    def ta_adj(self):
         """
-        Air temperatures that have been adjusted to account for the effect of air speed [C].
+        Air temperatures that have been adjusted to account for the effect of air speed
+        [C].
         """
 
         if not self.__isDataAligned:
-            self._checkAndAlignLists()
+            self._check_and_align_lists()
 
         if self.__isRecalcNeeded:
-            self._calculatePMVParams()
+            self._calculate_pmv_params()
 
         if self.__singleVals is True:
-            return self.__taAdj[0]
+            return self.__ta_adj[0]
         else:
-            return self.__taAdj
+            return self.__ta_adj
 
     @property
-    def coolingEffect(self):
+    def cooling_effect(self):
         """
-        The temperature difference in [C] between the air temperature and the air temperature adjusted for air speed.
+        The temperature difference in [C] between the air temperature and the air
+        temperature adjusted for air speed.
         """
 
         if not self.__isDataAligned:
-            self._checkAndAlignLists()
+            self._check_and_align_lists()
 
         if self.__isRecalcNeeded:
-            self._calculatePMVParams()
+            self._calculate_pmv_params()
 
         if self.__singleVals is True:
             return self.__coolingEffect[0]
         else:
             return self.__coolingEffect
 
-    def calcMissingPMVInput(self, targetPMV, missingInput=0, lowBound=0, upBound=100, error=0.001):
+    def calc_missing_pmv_input(self, target_pmv, missing_input=0,
+                               low_bound=0, up_bound=100, error=0.001):
         """
-        Sets the comfort model to return a deisred target PMV given a missingInput (out of the seven total PMV model inputs), which will be adjusted to meet this targetPMV.
-        Returns the value(s) of the missingInput that makes the model obey the targetPMV.
+        Sets the comfort model to return a deisred target PMV given a missing_input
+        (out of the seven total PMV model inputs), which will be adjusted to meet this
+        target_pmv.
+
+        Returns the value(s) of the missing_input that makes the model obey the
+        target_pmv.
 
         Args:
-            targetPMV: The target pmv that you are trying to produce from the inputs to this pmv object.
-            missingInput: An integer that denotes which of the 6 inputs to the PMV model you want to
-            adjust to produce the targetPMV.  Choose from the following options:
-                0 = airTemperature
-                1 = radTemperature
-                2 = windSpeed
-                3 = relHumidity
-                4 = metRate
-                5 = cloValue
-                6 = externalWork
-            lowBound: The lowest possible value of the missingInput you are tying to find.
-                Putting in a good value here will help the model converge to a solution faster.
-            upBound: The highest possible value of the missingInput you are tying to find.
-                Putting in a good value here will help the model converge to a solution faster.
-            error: The acceptable error in the targetPMV. The default is set to 0.001
+            target_pmv: The target pmv that you are trying to produce from the inputs to
+                this pmv object.
+            missing_input: An integer that denotes which of the 6 inputs to the PMV
+                model you want to
+            adjust to produce the target_pmv.  Choose from the following options:
+                0 = air_temperature
+                1 = rad_temperature
+                2 = wind_speed
+                3 = rel_humidity
+                4 = met_rate
+                5 = clo_value
+                6 = external_work
+            low_bound: The lowest possible value of the missing_input you are tying to
+                find. Putting in a good value here will help the model converge to a
+                solution faster.
+            up_bound: The highest possible value of the missing_input you are tying to
+                find. Putting in a good value here will help the model converge to a
+                solution faster.
+            error: The acceptable error in the target_pmv. The default is set to 0.001
 
         Returns:
-            missingVal: The value of the missingInput that will produce the targetPMV.
+            missing_val: The value of the missing_input that will produce the target_pmv.
 
         """
 
         if not self.__isDataAligned:
-            self._checkAndAlignLists()
+            self._check_and_align_lists()
 
-        missingVal = []
+        missing_val = []
         for i in range(self.__calcLength):
 
-            # Determine the function that should be used given the requested missingInput.
-            if missingInput == 0:
+            # Determine the function that should be used given the requested
+            # missing_input.
+            if missing_input == 0:
                 def fn(x):
-                    return (self._comfPMVElevatedAirspeed(x, self.__radTemperature[i], self.__windSpeed[i], self.__relHumidity[i], self.__metRate[i], self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
-            elif missingInput == 1:
+                    return (self._comf_pmv_elevated_airspeed(
+                        x, self.__rad_temperature[i], self.__wind_speed[i],
+                        self.__rel_humidity[i], self.__met_rate[i], self.__clo_value[i],
+                        self.__external_work[i])['pmv'] - target_pmv)
+            elif missing_input == 1:
                 def fn(x):
-                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], x, self.__windSpeed[i], self.__relHumidity[i], self.__metRate[i], self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
-            elif missingInput == 2:
+                    return (self._comf_pmv_elevated_airspeed(
+                        self.__air_temperature[i], x, self.__wind_speed[i],
+                        self.__rel_humidity[i], self.__met_rate[i], self.__clo_value[i],
+                        self.__external_work[i])['pmv'] - target_pmv)
+            elif missing_input == 2:
                 def fn(x):
-                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], x, self.__relHumidity[i], self.__metRate[i], self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
-            elif missingInput == 3:
+                    return (self._comf_pmv_elevated_airspeed(
+                        self.__air_temperature[i], self.__rad_temperature[i], x,
+                        self.__rel_humidity[i], self.__met_rate[i], self.__clo_value[i],
+                        self.__external_work[i])['pmv'] - target_pmv)
+            elif missing_input == 3:
                 def fn(x):
-                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], self.__windSpeed[i], x, self.__metRate[i], self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
-            elif missingInput == 4:
+                    return (self._comf_pmv_elevated_airspeed(
+                        self.__air_temperature[i], self.__rad_temperature[i],
+                        self.__wind_speed[i], x, self.__met_rate[i], self.__clo_value[i],
+                        self.__external_work[i])['pmv'] - target_pmv)
+            elif missing_input == 4:
                 def fn(x):
-                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], self.__windSpeed[i], self.__relHumidity[i], x, self.__cloValue[i], self.__externalWork[i])['pmv'] - targetPMV)
-            elif missingInput == 5:
+                    return (
+                        self._comf_pmv_elevated_airspeed(
+                            self.__air_temperature[i], self.__rad_temperature[i],
+                            self.__wind_speed[i], self.__rel_humidity[i], x,
+                            self.__clo_value[i],
+                            self.__external_work[i])['pmv'] - target_pmv)
+            elif missing_input == 5:
                 def fn(x):
-                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], self.__windSpeed[i], self.__relHumidity[i], self.__metRate[i], x, self.__externalWork[i])['pmv'] - targetPMV)
-            elif missingInput == 6:
+                    return (
+                        self._comf_pmv_elevated_airspeed(
+                            self.__air_temperature[i], self.__rad_temperature[i],
+                            self.__wind_speed[i], self.__rel_humidity[i],
+                            self.__met_rate[i], x,
+                            self.__external_work[i])['pmv'] - target_pmv)
+            elif missing_input == 6:
                 def fn(x):
-                    return (self._comfPMVElevatedAirspeed(self.__airTemperature[i], self.__radTemperature[i], self.__windSpeed[i], self.__relHumidity[i], self.__metRate[i], self.__cloValue[i], x)['pmv'] - targetPMV)
+                    return (
+                        self._comf_pmv_elevated_airspeed(
+                            self.__air_temperature[i],
+                            self.__rad_temperature[i],
+                            self.__wind_speed[i],
+                            self.__rel_humidity[i],
+                            self.__met_rate[i],
+                            self.__clo_value[i], x)['pmv'] - target_pmv)
 
             # Solve for the missing input using the function.
-            xMissing = secant(lowBound, upBound, fn, error)
-            if xMissing == 'NaN':
-                xMissing = bisect(lowBound, upBound, fn, error)
+            x_missing = secant(low_bound, up_bound, fn, error)
+            if x_missing == 'NaN':
+                x_missing = bisect(low_bound, up_bound, fn, error)
 
-            missingVal.append(xMissing)
+            missing_val.append(x_missing)
 
-        # Set the conditions of the comfort model to have the new missingVal.
-        if missingInput == 0:
-            self.__airTemperature = missingVal
-        elif missingInput == 1:
-            self.__radTemperature = missingVal
-        elif missingInput == 2:
-            self.__windSpeed = missingVal
-        elif missingInput == 3:
-            self.__relHumidity = missingVal
-        elif missingInput == 4:
-            self.__metRate = missingVal
-        elif missingInput == 5:
-            self.__cloValue = missingVal
-        elif missingInput == 6:
-            self.__externalWork = missingVal
+        # Set the conditions of the comfort model to have the new missing_val.
+        if missing_input == 0:
+            self.__air_temperature = missing_val
+        elif missing_input == 1:
+            self.__rad_temperature = missing_val
+        elif missing_input == 2:
+            self.__wind_speed = missing_val
+        elif missing_input == 3:
+            self.__rel_humidity = missing_val
+        elif missing_input == 4:
+            self.__met_rate = missing_val
+        elif missing_input == 5:
+            self.__clo_value = missing_val
+        elif missing_input == 6:
+            self.__external_work = missing_val
 
         # Tell the comfort model to recompute now that the new values have been set.
         self.__isRecalcNeeded = True
 
         if self.__singleVals is True:
-            return missingVal[0]
+            return missing_val[0]
         else:
-            return missingVal
+            return missing_val

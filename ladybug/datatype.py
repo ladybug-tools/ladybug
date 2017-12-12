@@ -1,7 +1,9 @@
 """Ladybug data types."""
 # from abc import ABCMeta, abstractmethod
-from math import pi as PI
+import math
 from euclid import Vector3
+
+PI = math.pi
 
 
 class DataTypeBase(object):
@@ -14,12 +16,11 @@ class DataTypeBase(object):
         nickname: Optional nickname for data (e.g. Dew Point Temperature)
     """
 
-    # __metaclass__ = ABCMeta
-    __slots__ = ('standard', '__value', 'datetime', 'nickname')
+    __slots__ = ('standard', '_value', 'datetime', 'nickname')
 
     minimum = float('-inf')
     maximum = float('+inf')
-    valueType = None
+    value_type = None
     unitSI = None
     unitIP = None
     missing = None
@@ -35,25 +36,25 @@ class DataTypeBase(object):
     @property
     def value(self):
         """Get/set value."""
-        return self.__value
+        return self._value
 
     @value.setter
     def value(self, v):
         """Set value."""
-        if not self.valueType:
-            self.__value = v
+        if not self.value_type:
+            self._value = v
         else:
             try:
-                if self.valueType is str:
+                if self.value_type is str:
                     _v = str(v)
                 else:
-                    _v = map(self.valueType, (v,))[0]
+                    _v = map(self.value_type, (v,))[0]
             except Exception:
                 raise ValueError(
-                    "Failed to convert {} to {}".format(v, self.valueType))
+                    "Failed to convert {} to {}".format(v, self.value_type))
             else:
-                self.isInRange(_v, True)
-                self.__value = _v
+                self.is_in_range(_v, True)
+                self._value = _v
 
     @property
     def unit(self):
@@ -63,18 +64,25 @@ class DataTypeBase(object):
         return self.unitSI if self.standard == 'SI' else \
             self.unitIP
 
-    # @abstractmethod
-    def toIP(self):
+    @property
+    def to_ip(self):
         """Write a static method that converts a value from SI to IP."""
-        pass
+        raise NotImplementedError(
+            'to_ip is not implemented to %s' % self.__class__.__name__
+        )
 
-    # @abstractmethod
-    def toSI(self):
+    @property
+    def to_si(self):
         """Write a static method that converts a value from IP to SI."""
-        pass
+        raise NotImplementedError(
+            'to_si is not implemented to %s' % self.__class__.__name__
+        )
 
-    def convertToSI(self):
-        """Change value to SI."""
+    def convert_to_si(self):
+        """Change value to SI.
+
+        To only get the value in SI use to_si property.
+        """
         if not self.standard:
             raise Exception("Failed to convert to SI. "
                             "Current system is unknown.")
@@ -83,10 +91,13 @@ class DataTypeBase(object):
             return
         else:
             self.standard = 'SI'
-            self.value = self.toSI(self.value)
+            self.value = self.to_si
 
-    def convertToIP(self):
-        """change value to IP."""
+    def convert_to_ip(self):
+        """change value to IP.
+
+        To only get the value in IP use to_ip property.
+        """
         if not self.standard:
             raise Exception("Failed to convert to IP. "
                             "Current system is unknown.")
@@ -95,9 +106,9 @@ class DataTypeBase(object):
             return
         else:
             self.standard = 'IP'
-            self.value = self.toIP(self.value)
+            self.value = self.to_ip
 
-    def _isMissedData(self, v):
+    def _is_missed_data(self, v):
         """Check if the value is missed data."""
         _isMissed = v == self.missing
 
@@ -108,19 +119,19 @@ class DataTypeBase(object):
 
         return _isMissed
 
-    def isInRange(self, value, raiseException=False):
+    def is_in_range(self, value, raise_exception=False):
         """check if the value is in range."""
         if not self.standard:
             return True
 
-        if self._isMissedData(value):
+        if self._is_missed_data(self):
             return True
 
         _isInRange = self.minimum <= value <= self.maximum \
             if self.standard == 'SI' \
-            else self.toIP(self.minimum) <= value <= self.toIP(self.maximum)
+            else self.to_ip(self.minimum) <= value <= self.to_ip(self.maximum)
 
-        if _isInRange or not raiseException:
+        if _isInRange or not raise_exception:
             return _isInRange
         else:
             raise ValueError(
@@ -232,7 +243,7 @@ class DataPoint(DataTypeBase):
     __slots__ = ()
     minimum = float('-inf')
     maximum = float('+inf')
-    valueType = None
+    value_type = None
     unitSI = None
     unitIP = None
     missing = None
@@ -242,14 +253,14 @@ class DataPoint(DataTypeBase):
         DataTypeBase.__init__(self, value, datetime, standard, nickname)
 
     @classmethod
-    def fromData(cls, value):
+    def from_data(cls, value):
         """Try to create a DataPoint from input data."""
         if hasattr(value, 'isData'):
             return value
 
         try:
             return cls(value)
-        except Exception, e:
+        except Exception as e:
             raise ValueError(
                 "Failed to create a DataPoint from %s!\n%s" % (value, e))
 
@@ -257,16 +268,6 @@ class DataPoint(DataTypeBase):
     def isDataPoint(self):
         """Return True if Ladybug data point."""
         return True
-
-    @staticmethod
-    def toIP(value):
-        """Return the value in IP assuming input value is in SI."""
-        return value
-
-    @staticmethod
-    def toSI(value):
-        """Return the value in SI assuming input value is in IP."""
-        return value
 
 
 # TODO: Add methods for toKelvin
@@ -284,7 +285,7 @@ class Temperature(DataPoint):
     minimum = float('-inf')
     maximum = float('inf')
     missing = 99.9
-    valueType = float
+    value_type = float
     unitSI = 'C'
     unitIP = 'F'
 
@@ -292,15 +293,15 @@ class Temperature(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def toIP(value):
+    @property
+    def to_ip(self):
         """Return the value in F assuming input value is in C."""
-        return value * 9 / 5 + 32
+        return self.value * 9 / 5 + 32
 
-    @staticmethod
-    def toSI(value):
+    @property
+    def to_si(self):
         """Return the value in C assuming input value is in F."""
-        return (value - 32) * 5 / 9
+        return (self.value - 32) * 5 / 9
 
 
 class DryBulbTemperature(Temperature):
@@ -317,10 +318,6 @@ class DryBulbTemperature(Temperature):
     minimum = -70
     maximum = 70
 
-    def __init__(self, value, datetime=None, standard='SI', nickname=None):
-        """Init class."""
-        Temperature.__init__(self, value, datetime, standard, nickname)
-
 
 class DewPointTemperature(Temperature):
     """Dew point temperature.
@@ -336,10 +333,6 @@ class DewPointTemperature(Temperature):
     minimum = -70
     maximum = 70
 
-    def __init__(self, value, datetime=None, standard='SI', nickname=None):
-        """Init class."""
-        Temperature.__init__(self, value, datetime, standard, nickname)
-
 
 class RelativeHumidity(DataPoint):
     """Relative humidity.
@@ -354,13 +347,23 @@ class RelativeHumidity(DataPoint):
     minimum = 0
     maximum = 100
     missing = 999
-    valueType = int
+    value_type = int
     unitSI = '%'
     unitIP = '%'
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
+
+    @property
+    def to_ip(self):
+        """Return the value in IP."""
+        return self.value
+
+    @property
+    def to_si(self):
+        """Return the value in SI."""
+        return self.value
 
 
 class Pressure(DataPoint):
@@ -376,13 +379,23 @@ class Pressure(DataPoint):
     minimum = 31000
     maximum = 120000
     missing = 999999
-    valueType = int
+    value_type = int
     unitSI = 'Pa'
     unitIP = 'Pa'
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
+
+    @property
+    def to_ip(self):
+        """Return the value in IP."""
+        return self.value
+
+    @property
+    def to_si(self):
+        """Return the value in SI."""
+        return self.value
 
 
 class Radiation(DataPoint):
@@ -398,7 +411,7 @@ class Radiation(DataPoint):
     __slots__ = ()
     minimum = 0
     missing = 9999
-    valueType = int
+    value_type = int
     unitSI = 'Wh/m2'
     unitIP = 'BTU/ft2'
 
@@ -406,15 +419,15 @@ class Radiation(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def toIP(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return value * 0.316998331
+        return self.value * 0.316998331
 
-    @staticmethod
-    def toSI(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return value / 0.316998331
+        return self.value / 0.316998331
 
 
 class Illuminance(DataPoint):
@@ -430,7 +443,7 @@ class Illuminance(DataPoint):
     __slots__ = ()
     minimum = 0
     missing = 999999
-    valueType = int
+    value_type = int
     unitSI = 'lux'
     unitIP = 'fc'
 
@@ -438,15 +451,15 @@ class Illuminance(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def toIP(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return value * 0.09290304
+        return self.value * 0.09290304
 
-    @staticmethod
-    def toSI(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return value / 0.09290304
+        return self.value / 0.09290304
 
 
 class Luminance(Illuminance):
@@ -462,7 +475,7 @@ class Luminance(Illuminance):
     __slots__ = ()
     minimum = 0
     missing = 9999
-    valueType = int
+    value_type = int
     unitSI = 'Cd/m2'
     unitIP = 'Cd/ft2'
 
@@ -485,7 +498,7 @@ class Angle(DataPoint):
     minimum = 0
     maximum = 360
     missing = 999
-    valueType = int
+    value_type = int
     unitSI = 'degrees'
     unitIP = 'radians'
 
@@ -493,15 +506,15 @@ class Angle(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def toIP(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return (value * PI) / 360
+        return (self.value * PI) / 360
 
-    @staticmethod
-    def toSI(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return (value / PI) * 360
+        return (self.value / PI) * 360
 
 
 class Speed(DataPoint):
@@ -517,7 +530,7 @@ class Speed(DataPoint):
     __slots__ = ()
     minimum = 0
     missing = 999
-    valueType = float
+    value_type = float
     unitSI = 'm/s'
     unitIP = 'mph'
 
@@ -525,15 +538,15 @@ class Speed(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value, datetime, standard, nickname)
 
-    @staticmethod
-    def toIP(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return value * 2.23694  # m/s to mph
+        return self.value * 2.23694  # m/s to mph
 
-    @staticmethod
-    def toSI(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return value / 2.23694  # mph to m/s
+        return self.value / 2.23694  # mph to m/s
 
 
 class WindSpeed(Speed):
@@ -563,7 +576,7 @@ class Time(DataPoint):
     __slots__ = ()
     minimum = 0
     missing = 99 * 3600
-    valueType = int
+    value_type = int
     unitSI = 'second'
     unitIP = 'second'
 
@@ -586,7 +599,7 @@ class Tenth(DataPoint):
     minimum = 0
     maximum = 10
     missing = 99
-    valueType = int
+    value_type = int
     unitSI = None
     unitIP = None
 
@@ -608,7 +621,7 @@ class Thousandths(DataPoint):
     __slots__ = ()
     minimum = 0
     missing = 999
-    valueType = float
+    value_type = float
     unitSI = 'thousandths'
     unitIP = 'thousandths'
 
@@ -631,7 +644,7 @@ class Distance(DataPoint):
 
     __slots__ = ()
     minimum = 0
-    valueType = float
+    value_type = float
     unitSI = 'm'
     unitIP = 'foot'
 
@@ -640,15 +653,15 @@ class Distance(DataPoint):
         """Init class."""
         DataPoint.__init__(self, value * conversion, datetime, standard, nickname)
 
-    @staticmethod
-    def toIP(value):
+    @property
+    def to_ip(self):
         """Return the value in IP assuming input value is in SI."""
-        return value * 3.28084
+        return self.value * 3.28084
 
-    @staticmethod
-    def toSI(value):
+    @property
+    def to_si(self):
         """Return the value in SI assuming input value is in IP."""
-        return value / 3.28084
+        return self.value / 3.28084
 
 
 class SkyPatch(DataPoint):
@@ -662,7 +675,7 @@ class SkyPatch(DataPoint):
 
     __slots__ = ('vector',)
     minimum = 0
-    valueType = float
+    value_type = float
     unitSI = 'steradian'
     unitIP = 'steradian'
 
