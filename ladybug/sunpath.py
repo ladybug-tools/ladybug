@@ -171,6 +171,7 @@ class Sunpath(object):
         else:
             hour_angle = sol_time / 4 - 180
 
+
         # Degrees
         zenith = math.degrees(math.acos
                               (math.sin(self._latitude) *
@@ -178,6 +179,7 @@ class Sunpath(object):
                                math.cos(self._latitude) *
                                math.cos(math.radians(sol_dec)) *
                                math.cos(math.radians(hour_angle))))
+
 
         altitude = 90 - zenith
 
@@ -187,15 +189,18 @@ class Sunpath(object):
         else:
             if altitude > 5:
                 atmos_refraction = 58.1 / math.tan(math.radians(altitude))
+
                 - 0.07 / (math.tan(math.radians(altitude)))**3
                 + 0.000086 / (math.tan(math.radians(altitude)))**5
             else:
                 if altitude > -0.575:
                     atmos_refraction = 1735
+
                     + altitude * (-518.2 + altitude *
                                   (103.4 + altitude *
                                    (-12.79 + altitude * 0.711)))
                 else:
+
                     atmos_refraction = -20.772 / math.tan(
                         math.radians(altitude))
 
@@ -273,7 +278,6 @@ class Sunpath(object):
         else:
             sunrise = noon - sunrise_hour_angle * 4 / 1440.0
             sunset = noon + sunrise_hour_angle * 4 / 1440.0
-
             noon = 24 * noon
             sunrise = 24 * sunrise
             sunset = 24 * sunset
@@ -371,7 +375,6 @@ class Sunpath(object):
         geom_mean_long_sun = (280.46646 + julian_century *
                               (36000.76983 + julian_century * 0.0003032)
                               ) % 360
-
         # degrees
         geom_mean_anom_sun = 357.52911 + julian_century * \
             (35999.05029 - 0.0001537 * julian_century)
@@ -466,6 +469,7 @@ class Sunpath(object):
         """Calculate hour and minutes as integers from a float hour."""
         hour = int(float_hour)
         minute = int(round((float_hour - int(float_hour)) * 60))
+
 
         if minute == 60:
             return hour + 1, 0
