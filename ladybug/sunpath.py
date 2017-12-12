@@ -4,6 +4,7 @@ from dt import DateTime
 from euclid import Vector3
 from collections import namedtuple
 
+
 import ladybug
 try:
     import sunpathplus as plus
@@ -429,11 +430,16 @@ class Sunpath(object):
 
     def _calculate_sunrise_hour_angle(self, solar_dec, depression=0.833):
         """Calculate hour angle for sunrise time in degrees."""
-        hour_angle_arg = math.cos(math.radians(90 + depression)) \
-            / (math.cos(self._latitude) * math.cos(solar_dec)) \
-            - math.tan(self._latitude) * math.tan(solar_dec)
 
-        return math.degrees(math.acos(hour_angle_arg))
+        hour_angle_arg = math.degrees(math.acos(
+            math.cos(math.radians(90 + depression))
+            / (math.cos(math.radians(self.latitude)) * math.cos(
+                math.radians(solar_dec))) -
+            math.tan(math.radians(self.latitude)) *
+            math.tan(math.radians(solar_dec))
+        ))
+
+        return hour_angle_arg
 
     def _calculate_solar_time(self, hour, eq_of_time, is_solar_time):
         """Calculate Solar time for an hour."""
