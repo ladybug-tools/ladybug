@@ -113,9 +113,9 @@ class DataTypeBase(object):
         _isMissed = v == self.missing
 
         if not self.mute and _isMissed:
-            print "{} value is missing!".format(
+            print("{} value is missing!".format(
                 self.__class__.__name__ if not self.nickname else self.nickname
-            )
+            ))
 
         return _isMissed
 

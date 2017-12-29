@@ -72,7 +72,7 @@ class AnalysisPeriod(object):
 
         if int(end_day) > self.NUMOFDAYSEACHMONTH[int(end_month) - 1]:
             end = self.NUMOFDAYSEACHMONTH[end_month - 1]
-            print "Updated end_day from {} to {}".format(end_day, end)
+            print("Updated end_day from {} to {}".format(end_day, end))
             end_day = end
 
         self.end_time = DateTime(int(end_month), int(end_day), int(end_hour))
@@ -146,6 +146,36 @@ class AnalysisPeriod(object):
     def isAnalysisPeriod(self):
         """Return True."""
         return True
+
+    @property
+    def st_month(self):
+        """Start month."""
+        return self.st_time.month
+
+    @property
+    def st_day(self):
+        """Start day."""
+        return self.st_time.day
+
+    @property
+    def st_hour(self):
+        """Start hour."""
+        return self.st_time.hour
+
+    @property
+    def end_month(self):
+        """Start month."""
+        return self.end_time.month
+
+    @property
+    def end_day(self):
+        """Start day."""
+        return self.end_time.day
+
+    @property
+    def end_hour(self):
+        """Start hour."""
+        return self.end_time.hour
 
     @property
     def datetimes(self):

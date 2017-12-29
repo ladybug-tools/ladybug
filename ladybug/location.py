@@ -24,10 +24,10 @@ class Location(object):
         """Create a Ladybug location."""
         self.city = '-' if not city else str(city)
         self.country = '-' if not country else str(country)
-        self.latitude = latitude
-        self.longitude = longitude
-        self.time_zone = time_zone
-        self.elevation = float(elevation)
+        self.latitude = latitude or 0
+        self.longitude = longitude or 0
+        self.time_zone = time_zone or 0
+        self.elevation = elevation or 0
         self.station_id = None if not station_id else str(station_id)
         self.source = source
 
@@ -43,6 +43,17 @@ class Location(object):
         }
         """
         d = loc_json
+        if 'city' not in d:
+            d['city'] = None
+        if 'latitude' not in d:
+            d['latitude'] = None
+        if 'longitude' not in d:
+            d['longitude'] = None
+        if 'time_zone' not in d:
+            d['time_zone'] = None
+        if 'elevation' not in d:
+            d['elevation'] = None
+
         return cls(d['city'], None, d['latitude'], d['longitude'],
                    d['time_zone'], d['elevation'])
 

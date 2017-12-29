@@ -144,7 +144,7 @@ class DataCollection(object):
 
            epwfile = EPW("epw file address")
            monthly_values = epwfile.dry_bulb_temperature.group_by_month()
-           print monthly_values[2] # returns values for the month of March
+           print(monthly_values[2]) # returns values for the month of March
         """
         return self.group_data_by_month(self.values, month_range)
 
@@ -186,7 +186,7 @@ class DataCollection(object):
 
             epwfile = EPW("epw file address")
             daily_values = epwfile.dry_bulb_temperature.group_by_day(range(1, 30))
-            print daily_values[2] # returns values for the second day of year
+            print(daily_values[2]) # returns values for the second day of year
         """
         return self.group_data_by_day(self.values, day_range)
 
@@ -262,10 +262,10 @@ class DataCollection(object):
                 data.value = values[index]
                 updated_count += 1
 
-        print "%s updated for %d hour%s." % \
-            ('Values are' if len(values) > 1 else 'Value is',
-             updated_count,
-             's' if len(values) > 1 else '')
+        print("%s updated for %d hour%s." % \
+              ('Values are' if len(values) > 1 else 'Value is',
+               updated_count,
+               's' if len(values) > 1 else ''))
 
         # return self for chaining methods
         return self
@@ -424,9 +424,9 @@ class DataCollection(object):
            epw = EPW("c:/ladybug/weatherdata.epw")
            DBT = epw.dry_bulb_temperature
            # filter data for when dry bulb temperature is more then 25
-           filteredDBT = DBT.filter_by_conditional_statement('x > 25')
+           filtered_DBT = DBT.filter_by_conditional_statement('x > 25')
            # get the list of time stamps that meet the conditional statement
-           print filteredDBT.timeStamps
+           print(filtered_DBT.time_stamps)
         """
         def check_input_statement(statement):
             st_statement = statement.lower() \

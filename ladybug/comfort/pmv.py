@@ -580,7 +580,7 @@ class PMV(ComfortModel):
             xn = (p5 + p4 * hc - p2 * math.pow(xf, 4)) / (100 + p3 * hc)
             n += 1
             if (n > 150):
-                print 'Max iterations exceeded'
+                print('Max iterations exceeded')
                 return 1
 
         tcl = 100 * xn - 273

@@ -96,7 +96,7 @@ class Colorset(object):
 
         # initiare colorsets
         cs = Colorset()
-        print cs[0]
+        print(cs[0])
         >> [<R:75, G:107, B:169>, <R:115, G:147, B:202>, <R:170, G:200, B:247>,
             <R:193, G:213, B:208>, <R:245, G:239, B:103>, <R:252, G:230, B:74>,
             <R:239, G:156, B:21>, <R:234, G:123, B:0>, <R:234, G:74, B:0>,
@@ -310,10 +310,10 @@ class ColorRange(object):
         colorRange.domain = [100, 2000]
         colorRange.colors = [Color(75, 107, 169), Color(245, 239, 103),
             Color(234, 38, 0)]
-        print colorRange.color(99)
-        print colorRange.color(100)
-        print colorRange.color(2000)
-        print colorRange.color(2001)
+        print(colorRange.color(99))
+        print(colorRange.color(100))
+        print(colorRange.color(2000))
+        print(colorRange.color(2001))
         >> <R:75, G:107, B:169>
         >> <R:245, G:239, B:103>
         >> <R:245, G:239, B:103>
@@ -371,8 +371,8 @@ class ColorRange(object):
                 dom = sorted(map(float, dom))
             except ValueError:
                 if self._ctype != 2:
-                    print "Text domains can only be used in ordinal mode.\n" + \
-                        "Type is changed to ordinal."
+                    print("Text domains can only be used in ordinal mode.\n" + \
+                          "Type is changed to ordinal.")
                     self.ctype == 2
 
             if self._ctype == 0:

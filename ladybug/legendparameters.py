@@ -21,7 +21,7 @@ class LegendParameters(object):
             quotations). The text input here can be any font that is on your
             computer but the font must be of an Editable file type (as seen in
             the font folder off of your control panel).  Font files that are
-            Print and Preview will not work.  If you wish to use a Bold version
+            print and Preview will not work.  If you wish to use a Bold version
             of the font, include a ", Bold" at the end of the font name
             (example: "Arial, Bold").
         fontSize: An optional number to set the size of the text in model's units.
@@ -35,7 +35,7 @@ class LegendParameters(object):
     Usage:
 
         lp = LegendParameters(legend_range = [2, 28])
-        print lp.color(10)
+        print(lp.color(10))
 
     """
 

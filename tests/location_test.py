@@ -18,8 +18,8 @@ class LocationTestCase(unittest.TestCase):
 
     def test_default_values(self):
         """Test if the command correctly creates a location."""
-        Location()
-        # self.assertEqual()
+        loc = Location()
+        self.assertEqual(loc.latitude == 0)
 
     def test_from_string(self):
         pass

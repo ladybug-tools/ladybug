@@ -37,7 +37,7 @@ class Sunpath(object):
         # initiate sunpath
         sp = sunpath.Sunpath(50)
         sun = sp.calculate_sun(1, 1, 12) # calculate sun data for Jan 1 at noon
-        print sun.azimuth, sun.altitude
+        print(sun.azimuth, sun.altitude)
     """
 
     __slots__ = ('_longitude', '_latitude', 'north_angle', 'time_zone',
