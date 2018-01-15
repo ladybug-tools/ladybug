@@ -22,7 +22,11 @@ class Wea(object):
 
     @classmethod
     def from_epw_file(cls, epwfile):
-        """Create a wea object from an epw file."""
+        """Create a wea object from an epw file.
+
+        Args:
+            epwfile: Full path to epw weather file.
+        """
         epw = EPW(epwfile)
         return cls(epw.location, tuple(epw.direct_normal_radiation),
                    tuple(epw.diffuse_horizontal_radiation))
