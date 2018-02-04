@@ -145,7 +145,7 @@ class EPW(object):
 
             # read first line of data to overwrite the number of fields
             line = epwin.readline()
-            self._num_of_fields = len(line.strip().split(','))
+            self._num_of_fields = min(len(line.strip().split(',')), 35)
 
             # create an annual analysis period
             analysis_period = AnalysisPeriod()
