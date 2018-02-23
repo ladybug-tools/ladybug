@@ -375,7 +375,7 @@ class DataCollection(object):
            moys = range(0, 48 * 60)  # The first two days of the year
            epw = EPW("c:/ladybug/weatherdata.epw")
            DBT = epw.dry_bulb_temperature
-           filteredDBT = DBT.filter_bymoys(moys)
+           filteredDBT = DBT.filter_by_moys(moys)
         """
         # There is no guarantee that data is continuous so I iterate through the
         # each data point one by one
@@ -406,11 +406,10 @@ class DataCollection(object):
            filteredDBT = DBT.filter_by_hoys(hoys)
         """
         _moys = tuple(int(hour * 60) for hour in hoys)
-
-        return self.filter_bymoys(_moys)
+        return self.filter_by_moys(_moys)
 
     def filter_by_conditional_statement(self, statement):
-        """Filter the list based on an analysis period.
+        """Filter the list based on a conditional statement.
 
         Args:
            statement: A conditional statement as a string (e.g. x>25 and x%5==0).
