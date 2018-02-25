@@ -77,6 +77,16 @@ class WindRose(object):
                 )
                 return (wsOut, wdOut, annualHourlyData)
 
+        elif self.windCondition is None \
+            and self.annualHourlyData is None \
+                and self.dataCondition is not None:
+                print "Conditional statement for wind data is missing"
+                print "Annual hourly data is missing"
+                print ("Please provide annual hourly data in order to use" +
+                       " the conditional statement for annual hourly data" +
+                       " that you provided")
+                return -1
+
         elif self.windCondition is not None \
             and self.annualHourlyData is None \
                 and self.dataCondition is None:
