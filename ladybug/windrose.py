@@ -30,8 +30,23 @@ class WindRose(object):
 
     @staticmethod
     def check_condition(condition):
+        """
+        Checks whether the conditional statement has
+        the variable 'x'
+        Args:
+            condition: A list of conditional statements
+        Returns:
+            None: if condition is None or the variable 'x' is not \
+            in the conditional statement
+            condition: The same list of conditional statements provided
+            as arguments to the function
+
+        """
         if condition is None:
             return None
+        if isinstance(condition, str):
+            if "x" in condition.lower():
+                return condition
         else:
             xcount = 0
             for statement in condition:
@@ -124,11 +139,11 @@ class WindRose(object):
                 print "Annual hourly data is recognized"
                 print "Conditional statement for annual hourly data is missing"
                 HOYs = windSpeed.data_to_HOY(self.windCondition)
-                wsOut, wdOut, annualHourlyData = (
+                wsOut, wdOut = (
                     windSpeed.filter_by_hoys(HOYs),
-                    windDirection.filter_by_hoys(HOYs),
-                    self.annualHourlyData.filter_by_hoys(HOYs)
-                )
+                    windDirection.filter_by_hoys(HOYs))
+                annualHourlyData = [item.filter_by_hoys(HOYs)
+                                    for item in self.annualHourlyData]
                 return (wsOut, wdOut, annualHourlyData)
 
         elif self.windCondition is not None \
@@ -138,30 +153,50 @@ class WindRose(object):
                 print "Annual hourly data is recognized"
                 print ("Conditional statement for annual hourly data" +
                        "is recognized")
-                HOYwindCond = windSpeed.data_to_HOY(self.windCondition)
-                HOYdataCond = self.annualHourlyData.data_to_HOY(
-                    self.dataCondition
-                )
-                HOYs = set(HOYwindCond).intersection(HOYdataCond)
-                wsOut, wdOut, annualHourlyData = (
+                HOYsWind = windSpeed.data_to_HOY(self.windCondition)
+                HOYsData = self.data_to_HOY()
+                HOYs = self.HOYs
+                HOYsList = [HOYs, HOYsWind, HOYsData]
+                HOYsSets = [set(listItem) for listItem in HOYsList]
+                HOYsCommon = set.intersection(*HOYsSets)
+                HOYs = sorted(HOYsCommon)
+                wsOut, wdOut = (
                     windSpeed.filter_by_hoys(HOYs),
-
-
-                    windDirection.filter_by_hoys(HOYs),
-                    self.annualHourlyData.filter_by_hoys(HOYs))
+                    windDirection.filter_by_hoys(HOYs))
+                annualHourlyData = [item.filter_by_hoys(HOYs)
+                                    for item in self.annualHourlyData]
                 return (wsOut, wdOut, annualHourlyData)
-
         else:
             return ("Something went wrong. Ladybug failed to parse the data" +
                     "with the provided inputs")
 
-    def parse_data(self):
+    def data_to_HOY(self):
         """
         This function takes the list of annual hourly data
         and the list of data conditions. By taking them into consideration
         this function creates a list of HOYs that can be used to
         craft the wind data
+        Args:
+            The instance of the WindRose Object
+        Returns:
+            A sorted list of common HOYs as per provided
+            annualHourlyData and the dataCondition. It is
+            the list of HOYs that pass all the dataConditions
+            provided.
         """
-        print type(self.annualHourlyData)
-        print type(self.dataCondition)
-        print len(self.annualHourlyData), len(self.dataCondition)
+        if not len(self.annualHourlyData) == len(self.dataCondition):
+            print ("Then number of condtional statements don't match" +
+                   " the number of annualHourlyData provided")
+            return []
+        else:
+            # The following is a list of lists
+            # It catches HOYs for all the annualHourlyData
+            # dataCondition pairs
+            HOYList = []
+            for i in range(len(self.annualHourlyData)):
+                HOYList.append(
+                    self.annualHourlyData[i].data_to_HOY(
+                        self.dataCondition[i]))
+            HOYSets = [set(listItem) for listItem in HOYList]
+            HOYCommon = set.intersection(*HOYSets)
+            return sorted(HOYCommon)
