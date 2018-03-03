@@ -14,7 +14,7 @@ dryBulbTemp = weatherData.dry_bulb_temperature
 humidity = weatherData.relative_humidity
 wind = WindRose(epw_filePath,
                 HOYs=range(1, 500),
-                annualHourlyData=[dryBulbTemp, humidity],
-                windCondition="x>2",
-                dataCondition=["x>20", "x<40"])
+                annualHourlyData=[dryBulbTemp],
+                windCondition=None,
+                dataCondition=["x<3"])
 print wind.parse_wind_data()
