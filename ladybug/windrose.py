@@ -25,8 +25,24 @@ class WindRose(object):
         self.epw = EPW(epw_filePath)
         self.HOYs = HOYs
         self.annualHourlyData = annualHourlyData
-        self.windCondition = windCondition
-        self.dataCondition = dataCondition
+        self.windCondition = self.check_condition(windCondition)
+        self.dataCondition = self.check_condition(dataCondition)
+
+    @staticmethod
+    def check_condition(condition):
+        if condition is None:
+            return None
+        else:
+            xcount = 0
+            for statement in condition:
+                if "x" in statement.lower():
+                    xcount += 1
+            if len(condition) == xcount:
+                return condition
+            else:
+                print ("All conditions shall be a valid string with" +
+                       "a variable 'x' in it.")
+                return None
 
     def parse_wind_data(self):
         """
@@ -129,6 +145,8 @@ class WindRose(object):
                 HOYs = set(HOYwindCond).intersection(HOYdataCond)
                 wsOut, wdOut, annualHourlyData = (
                     windSpeed.filter_by_hoys(HOYs),
+
+
                     windDirection.filter_by_hoys(HOYs),
                     self.annualHourlyData.filter_by_hoys(HOYs))
                 return (wsOut, wdOut, annualHourlyData)
@@ -136,3 +154,14 @@ class WindRose(object):
         else:
             return ("Something went wrong. Ladybug failed to parse the data" +
                     "with the provided inputs")
+
+    def parse_data(self):
+        """
+        This function takes the list of annual hourly data
+        and the list of data conditions. By taking them into consideration
+        this function creates a list of HOYs that can be used to
+        craft the wind data
+        """
+        print type(self.annualHourlyData)
+        print type(self.dataCondition)
+        print len(self.annualHourlyData), len(self.dataCondition)

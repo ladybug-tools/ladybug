@@ -1,3 +1,5 @@
+"""This is not a unit test for the windrose"""
+
 import os
 from ladybug.windrose import WindRose
 from ladybug.epw import EPW
@@ -9,9 +11,10 @@ os.chdir("D:\Dropbox\Github\ladybug-1")
 epw_filePath = "./tests/epw/chicago.epw"
 weatherData = EPW(epw_filePath)
 dryBulbTemp = weatherData.dry_bulb_temperature
+humidity = weatherData.relative_humidity
 wind = WindRose(epw_filePath,
-                range(1, 500),
-                annualHourlyData=None,
+                HOYs=range(1, 500),
+                annualHourlyData=[dryBulbTemp, humidity],
                 windCondition=None,
-                dataCondition="x>20")
-print wind.parse_wind_data()
+                dataCondition=["x>20"])
+wind.parse_data()
