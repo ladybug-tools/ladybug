@@ -4,7 +4,6 @@ from datetime import datetime
 
 class DateTime(datetime):
     """Create Ladybug Date time.
-
     Args:
         month: A value for month between 1-12. (Defualt: 1)
         day: A value for day between 1-31. (Defualt: 1)
@@ -16,7 +15,6 @@ class DateTime(datetime):
 
     def __new__(cls, month=1, day=1, hour=0, minute=0):
         """Create Ladybug datetime.
-
         Args:
             month: A value for month between 1-12. (Defualt: 1)
             day: A value for day between 1-31. (Defualt: 1)
@@ -32,9 +30,33 @@ class DateTime(datetime):
             ))
 
     @classmethod
+    def from_json(cls, data):
+        """Creat datetime from a dictionary.
+        Args:
+            data: {
+                'month': A value for month between 1-12. (Defualt: 1)
+                'day': A value for day between 1-31. (Defualt: 1)
+                'hour': A value for hour between 0-23. (Defualt: 0)
+                'minute': A value for month between 0-59. (Defualt: 0)
+            }
+        """
+        if 'month' not in data:
+            data['month'] = 1
+
+        if 'day' not in data:
+            data['day'] = 1
+
+        if 'hour' not in data:
+            data['hour'] = 0
+
+        if 'minute' not in data:
+            data['minute'] = 0
+
+        return cls(data['month'], data['day'], data['hour'], data['minute'])
+
+    @classmethod
     def from_hoy(cls, hoy):
         """Create Ladybug Datetime from an hour of the year.
-
         Args:
             hoy: A float value 0 <= and < 8760
         """
@@ -43,7 +65,6 @@ class DateTime(datetime):
     @classmethod
     def from_moy(cls, moy):
         """Create Ladybug Datetime from a minute of the year.
-
         Args:
             moy: An integer value 0 <= and < 525600
         """
@@ -71,9 +92,7 @@ class DateTime(datetime):
     @classmethod
     def from_date_time_string(cls, datetime_string):
         """Create Ladybug DateTime from a DateTime string.
-
         Usage:
-
             dt = DateTime.from_date_time_string("31 Dec 12:00")
         """
         dt = datetime.strptime(datetime_string, '%d %b %H:%M')
@@ -107,7 +126,6 @@ class DateTime(datetime):
     @property
     def int_hoy(self):
         """Calculate hour of the year for this date time as an integer.
-
         This output assumes the minute is 0.
         """
         return (self.doy - 1) * 24 + self.hour
@@ -123,7 +141,6 @@ class DateTime(datetime):
 
     def add_minute(self, minute):
         """Create a new DateTime after the minutes are added.
-
         Args:
             minute: An integer value for minutes.
         """
@@ -132,7 +149,6 @@ class DateTime(datetime):
 
     def sub_minute(self, minute):
         """Create a new DateTime after the minutes are subtracted.
-
         Args:
             minute: An integer value for the number of minutes.
         """
@@ -140,7 +156,6 @@ class DateTime(datetime):
 
     def add_hour(self, hour):
         """Create a new DateTime from this time + timedelta.
-
         Args:
             hours: A float value in hours (e.g. .5 = half an hour)
         """
@@ -148,7 +163,6 @@ class DateTime(datetime):
 
     def sub_hour(self, hour):
         """Create a new DateTime from this time - timedelta.
-
         Args:
             hour: A float value in hours (e.g. .5 is half an hour and 2 is two hours).
         """
@@ -161,6 +175,13 @@ class DateTime(datetime):
     def __str__(self):
         """Return date time as a string."""
         return self.strftime('%d %b %H:%M')
+
+    def to_json(self):
+        """Get date time as a dictionary."""
+        return {'month': self.month,
+                'day': self.day,
+                'hour': self.hour,
+                'minute': self.minute}
 
     def ToString(self):
         """Overwrite .NET ToString."""

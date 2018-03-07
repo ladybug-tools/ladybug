@@ -1,5 +1,4 @@
 """Ladybug Header.
-
 Header is useful for creating list of ladybug data.
 """
 from .location import Location
@@ -8,9 +7,7 @@ from .analysisperiod import AnalysisPeriod
 
 class Header(object):
     """data collection header.
-
     Header carries data for location, data type, unit and analysis period
-
     Attributes:
         location: location data as a ladybug Location or location string
             (Default: None).
@@ -21,7 +18,6 @@ class Header(object):
 
     def __init__(self, location=None, data_type=None, unit=None, analysis_period=None):
         """Initiate Ladybug header for lists.
-
         Args:
             location: location data as a ladybug Location or location string
                 (Default: None).
@@ -33,6 +29,27 @@ class Header(object):
         self.data_type = data_type if data_type else None
         self.unit = unit if unit else None
         self.analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a header from a dictionary.
+        Args:
+            data: {
+                "location": {}, // A Ladybug location
+                "data_type": string, //Type of data (e.g. Temperature) (Default: None).
+                "unit": string,
+                "analysis_period": {}, // A Ladybug AnalysisPeriod
+            }
+        """
+        # assign default values
+        keys = ('location', 'data_type', 'unit', 'analysis_period')
+        for key in keys:
+            if key not in data:
+                data[key] = None
+
+        location = Location.from_json(data['location'])
+        ap = AnalysisPeriod.from_json(data['analysis_period'])
+        return cls(location, data['data_type'], data['unit'], ap)
 
     @classmethod
     def from_header(cls, header):
@@ -70,6 +87,13 @@ class Header(object):
     def __iter__(self):
         """Return data as tuple."""
         return self.to_tuple()
+
+    def to_json(self):
+        """Return a header as a dictionary."""
+        return {'location': self.location.to_json(),
+                'data_type': self.data_type,
+                'unit': self.unit,
+                'analysis_period': self.analysis_period.to_json()}
 
     def ToString(self):
         """Overwrite .NET ToString."""

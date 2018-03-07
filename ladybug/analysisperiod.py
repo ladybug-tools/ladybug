@@ -5,9 +5,7 @@ from datetime import datetime, timedelta
 
 class AnalysisPeriod(object):
     """Ladybug Analysis Period.
-
     A continuous analysis period between two days of the year between certain hours.
-
     Attributes:
         st_month: An integer between 1-12 for starting month (default = 1)
         st_day: An integer between 1-31 for starting day (default = 1).
@@ -18,11 +16,9 @@ class AnalysisPeriod(object):
                 Note that some months are shorter than 31 days.
         end_hour: An integer between 0-23 for ending hour (default = 23)
         timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
-
     Class methods:
         from_string: Create an Analysis Period object from an analysis period string.
             %s/%s to %s/%s between %s to %s @%s
-
     Properties:
         isAnalysisPeriod: Always return True. Useful for type checking.
         datetimes: Sorted list of datetimes in this analysis period.
@@ -44,9 +40,7 @@ class AnalysisPeriod(object):
     def __init__(self, st_month=1, st_day=1, st_hour=0, end_month=12,
                  end_day=31, end_hour=23, timestep=1):
         """Init an analysis period.
-
         A continuous analysis period between two days of the year between certain hours
-
         Args:
             st_month: An integer between 1-12 for starting month (default = 1)
             st_day: An integer between 1-31 for starting day (default = 1).
@@ -104,9 +98,34 @@ class AnalysisPeriod(object):
         self._calculate_timestamps()
 
     @classmethod
+    def from_json(cls, data):
+        """Create an analysis period from a dictionary.
+        Args:
+            data: {
+            st_month: An integer between 1-12 for starting month (default = 1)
+            st_day: An integer between 1-31 for starting day (default = 1).
+                    Note that some months are shorter than 31 days.
+            st_hour: An integer between 0-23 for starting hour (default = 0)
+            end_month: An integer between 1-12 for ending month (default = 12)
+            end_day: An integer between 1-31 for ending day (default = 31)
+                    Note that some months are shorter than 31 days.
+            end_hour: An integer between 0-23 for ending hour (default = 23)
+            timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+            }
+        """
+        keys = ('st_month', 'st_day', 'st_hour', 'end_month',
+                'end_day', 'end_hour', 'timestep')
+        for key in keys:
+            if key not in data:
+                data[key] = None
+
+        return cls(
+            data['st_month'], data['st_day'], data['st_hour'], data['end_month'],
+            data['end_day'], data['end_hour'], data['timestep'])
+
+    @classmethod
     def from_analysis_period(cls, analysis_period=None):
         """Create and AnalysisPeriod from an analysis period.
-
         This method is useful to be called from inside Grasshopper or Dynamo
         """
         if not analysis_period:
@@ -125,7 +144,6 @@ class AnalysisPeriod(object):
     @classmethod
     def from_string(cls, analysis_period_string):
         """Create an Analysis Period object from an analysis period string.
-
             %s/%s to %s/%s between %s to %s @%s
         """
         # %s/%s to %s/%s between %s to %s @%s
@@ -202,7 +220,6 @@ class AnalysisPeriod(object):
     @property
     def is_reversed(self):
         """Return True if the analysis period is reversed.
-
         A reversed analysis period defines a period that starting month is after
         ending month (e.g DEC to JUN).
         """
@@ -211,7 +228,6 @@ class AnalysisPeriod(object):
     @property
     def is_overnight(self):
         """Return True if the analysis period is overnight.
-
         If an analysis perido is overnight each segments of hours
         will be in two different days (e.g. from 9pm to 2am).
         """
@@ -229,7 +245,6 @@ class AnalysisPeriod(object):
 
     def _calc_timestamps(self, st_time, end_time):
         """Calculate timesteps between start time and end time.
-
         Use this method only when start time month is before end time month.
         """
         # calculate based on minutes
@@ -266,13 +281,10 @@ class AnalysisPeriod(object):
 
     def is_time_included(self, time):
         """Check if time is included in analysis period.
-
         Return True if time is inside this analysis period,
         otherwise return False
-
         Args:
             time: A DateTime to be tested
-
         Returns:
             A boolean. True if time is included in analysis period
         """
@@ -282,13 +294,24 @@ class AnalysisPeriod(object):
         # during 20, 21 and 22 of Feb.
         return time.moy in self._timestampsData
 
+    def to_json(self):
+        """Convert the analysis period to a dictionary."""
+        return {
+            'st_month': self.st_month,
+            'st_day': self.st_day,
+            'st_hour': self.st_hour,
+            'end_month': self.end_month,
+            'end_day': self.end_day,
+            'end_hour': self.end_hour,
+            'timestep': self.timestep
+        }
+
     def ToString(self):
         """Overwrite .NET representation."""
         return self.__repr__()
 
     def __len__(self):
         """Number of hours of the year.
-
         The length will be number of hours * timestep.
         """
         return len(self.hoys)
