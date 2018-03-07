@@ -1,6 +1,7 @@
 """Wea weather file."""
 from .epw import EPW
 from .dt import DateTime
+from ladybug.location import Location
 
 import itertools
 
@@ -19,6 +20,25 @@ class Wea(object):
         self.direct_normal_radiation = direct_normal_radiation
         self.diffuse_horizontal_radiation = diffuse_horizontal_radiation
         self.timestep = timestep
+
+    @classmethod
+    def from_json(cls, rec_json):
+        """ Create Wea from json file
+            {
+            "location": {} , // ladybug location schema
+            "direct_normal_radiation": [], // List of hourly direct normal
+                radiation
+            "diffuse_horizontal_radiation": [], // List of hourly diffuse
+                horizontal radiation
+            "timestep": float //timestep between measurements, default is 1
+            }
+        """
+        location = Location.from_json(rec_json["location"])
+        direct_normal_radiation = rec_json["direct_normal_radiation"]
+        diffuse_horizontal_radiation = rec_json["diffuse_horizontal_radiation"]
+        timestep = rec_json["timestep"]
+
+        return cls(location, direct_normal_radiation, diffuse_horizontal_radiation)
 
     @classmethod
     def from_epw_file(cls, epwfile):
@@ -56,6 +76,24 @@ class Wea(object):
             "time_zone %d\n" % (-self.location.time_zone * 15) + \
             "site_elevation %.1f\n" % self.location.elevation + \
             "weather_data_file_units %d\n" % self.timestep
+
+    def to_json(self):
+        """Write Wea to json file
+            {
+            "location": {} , // ladybug location schema
+            "direct_normal_radiation": (), // Tuple of hourly direct normal
+                radiation
+            "diffuse_horizontal_radiation": (), // Tuple of hourly diffuse
+                horizontal radiation
+            "timestep": float //timestep between measurements, default is 1
+            }
+        """
+        return {
+                "location": self.location.to_json(),
+                "direct_normal_radiation": self.direct_normal_radiation,
+                "diffuse_horizontal_radiation": self.diffuse_horizontal_radiation,
+                "timestep": self.timestep
+                }
 
     def write(self, file_path, hoys=None, write_hours=False):
         """Write the wea file.
