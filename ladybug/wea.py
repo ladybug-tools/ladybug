@@ -14,10 +14,10 @@ class Wea(object):
                  timestep=1):
         """Create a wea object."""
         timestep = timestep or 1
-        assert len(direct_normal_radiation) / timestep == \
-            len(diffuse_horizontal_radiation) / timestep == 8760, \
-            'direct_normal_radiation and diffuse_horizontal_radiation data must be ' \
-            'annual.'
+        #assert len(direct_normal_radiation) / timestep == \
+        #    len(diffuse_horizontal_radiation) / timestep == 8760, \
+         #   'direct_normal_radiation and diffuse_horizontal_radiation data must be ' \
+          #  'annual.'
         self.location = location
         self.direct_normal_radiation = direct_normal_radiation
         self.diffuse_horizontal_radiation = diffuse_horizontal_radiation
