@@ -35,6 +35,28 @@ class Header(object):
         self.analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
 
     @classmethod
+    def from_json(cls, data):
+        """Create a header from a dictionary.
+
+        Args:
+            data: {
+                "location": {}, // A Ladybug location
+                "data_type": string, //Type of data (e.g. Temperature) (Default: None).
+                "unit": string,
+                "analysis_period": {}, // A Ladybug AnalysisPeriod
+            }
+        """
+        # assign default values
+        keys = ('location', 'data_type', 'unit', 'analysis_period')
+        for key in keys:
+            if key not in data:
+                data[key] = None
+
+        location = Location.from_json(data['location'])
+        ap = AnalysisPeriod.from_json(data['analysis_period'])
+        return cls(location, data['data_type'], data['unit'], ap)
+
+    @classmethod
     def from_header(cls, header):
         """Try to generate a header from a header or a header string."""
         if hasattr(header, 'isHeader'):
@@ -70,6 +92,13 @@ class Header(object):
     def __iter__(self):
         """Return data as tuple."""
         return self.to_tuple()
+
+    def to_json(self):
+        """Return a header as a dictionary."""
+        return {'location': self.location.to_json(),
+                'data_type': self.data_type,
+                'unit': self.unit,
+                'analysis_period': self.analysis_period.to_json()}
 
     def ToString(self):
         """Overwrite .NET ToString."""

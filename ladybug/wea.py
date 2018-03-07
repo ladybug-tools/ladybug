@@ -1,7 +1,8 @@
 """Wea weather file."""
 from .epw import EPW
 from .dt import DateTime
-from ladybug.location import Location
+from .location import Location
+from .datacollection import DataCollection
 
 import itertools
 
@@ -12,6 +13,7 @@ class Wea(object):
     def __init__(self, location, direct_normal_radiation, diffuse_horizontal_radiation,
                  timestep=1):
         """Create a wea object."""
+        timestep = timestep or 1
         assert len(direct_normal_radiation) / timestep == \
             len(diffuse_horizontal_radiation) / timestep == 8760, \
             'direct_normal_radiation and diffuse_horizontal_radiation data must be ' \
@@ -22,23 +24,37 @@ class Wea(object):
         self.timestep = timestep
 
     @classmethod
-    def from_json(cls, rec_json):
+    def from_json(cls, data):
         """ Create Wea from json file
             {
             "location": {} , // ladybug location schema
             "direct_normal_radiation": [], // List of hourly direct normal
-                radiation
+                radiation data points
             "diffuse_horizontal_radiation": [], // List of hourly diffuse
-                horizontal radiation
+                horizontal radiation data points
             "timestep": float //timestep between measurements, default is 1
             }
         """
-        location = Location.from_json(rec_json["location"])
-        direct_normal_radiation = rec_json["direct_normal_radiation"]
-        diffuse_horizontal_radiation = rec_json["diffuse_horizontal_radiation"]
-        timestep = rec_json["timestep"]
+        required_keys = ('location', 'direct_normal_radiation',
+                         'diffuse_horizontal_radiation')
+        optional_keys = ('timestep',)
 
-        return cls(location, direct_normal_radiation, diffuse_horizontal_radiation)
+        for key in required_keys:
+            assert key in data, 'Required key "{}" is missing!'.format(key)
+
+        for key in optional_keys:
+            if key not in data:
+                data[key] = None
+
+        location = Location.from_json(data['location'])
+        direct_normal_radiation = \
+            DataCollection.from_json(data['direct_normal_radiation'])
+        diffuse_horizontal_radiation = \
+            DataCollection.from_json(data['diffuse_horizontal_radiation'])
+        timestep = data['timestep']
+
+        return cls(location, direct_normal_radiation, diffuse_horizontal_radiation,
+                   timestep)
 
     @classmethod
     def from_epw_file(cls, epwfile):
@@ -48,8 +64,9 @@ class Wea(object):
             epwfile: Full path to epw weather file.
         """
         epw = EPW(epwfile)
-        return cls(epw.location, tuple(epw.direct_normal_radiation),
-                   tuple(epw.diffuse_horizontal_radiation))
+        return cls(epw.location,
+                   epw.direct_normal_radiation,
+                   epw.diffuse_horizontal_radiation)
 
     @property
     def isWea(self):
@@ -89,11 +106,11 @@ class Wea(object):
             }
         """
         return {
-                "location": self.location.to_json(),
-                "direct_normal_radiation": self.direct_normal_radiation,
-                "diffuse_horizontal_radiation": self.diffuse_horizontal_radiation,
-                "timestep": self.timestep
-                }
+            'location': self.location.to_json(),
+            'direct_normal_radiation': self.direct_normal_radiation.to_json(),
+            'diffuse_horizontal_radiation': self.diffuse_horizontal_radiation.to_json(),
+            'timestep': self.timestep
+        }
 
     def write(self, file_path, hoys=None, write_hours=False):
         """Write the wea file.

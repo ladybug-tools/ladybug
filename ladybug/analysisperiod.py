@@ -104,6 +104,32 @@ class AnalysisPeriod(object):
         self._calculate_timestamps()
 
     @classmethod
+    def from_json(cls, data):
+        """Create an analysis period from a dictionary.
+        Args:
+            data: {
+            st_month: An integer between 1-12 for starting month (default = 1)
+            st_day: An integer between 1-31 for starting day (default = 1).
+                    Note that some months are shorter than 31 days.
+            st_hour: An integer between 0-23 for starting hour (default = 0)
+            end_month: An integer between 1-12 for ending month (default = 12)
+            end_day: An integer between 1-31 for ending day (default = 31)
+                    Note that some months are shorter than 31 days.
+            end_hour: An integer between 0-23 for ending hour (default = 23)
+            timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+            }
+        """
+        keys = ('st_month', 'st_day', 'st_hour', 'end_month',
+                'end_day', 'end_hour', 'timestep')
+        for key in keys:
+            if key not in data:
+                data[key] = None
+
+        return cls(
+            data['st_month'], data['st_day'], data['st_hour'], data['end_month'],
+            data['end_day'], data['end_hour'], data['timestep'])
+
+    @classmethod
     def from_analysis_period(cls, analysis_period=None):
         """Create and AnalysisPeriod from an analysis period.
 
@@ -281,6 +307,18 @@ class AnalysisPeriod(object):
         # For instance 2/20 9am to 2/22 5pm means hour between 9-17
         # during 20, 21 and 22 of Feb.
         return time.moy in self._timestampsData
+
+    def to_json(self):
+        """Convert the analysis period to a dictionary."""
+        return {
+            'st_month': self.st_month,
+            'st_day': self.st_day,
+            'st_hour': self.st_hour,
+            'end_month': self.end_month,
+            'end_day': self.end_day,
+            'end_hour': self.end_hour,
+            'timestep': self.timestep
+        }
 
     def ToString(self):
         """Overwrite .NET representation."""

@@ -1,7 +1,8 @@
 """Ladybug data types."""
 # from abc import ABCMeta, abstractmethod
 import math
-from euclid import Vector3
+from .euclid import Vector3
+from .dt import DateTime
 
 PI = math.pi
 
@@ -32,6 +33,35 @@ class DataTypeBase(object):
         self.standard = standard
         self.datetime = datetime
         self.value = value
+
+    # TODO: Add support for type
+    @classmethod
+    def from_json(cls, data):
+        """Create a data point from a dictionary.
+
+        Args:
+            json_data: Data as a dictionary.
+                {
+                    "value": A number or a string,
+                    "standard": SI/IP,
+                    "datetime": {}, // A ladybug datetime schema
+                    "nickname": A string for nickname
+                }
+        """
+        # check for value to be available
+        assert 'value' in data, 'Required keyword "value" is missing!'
+
+        if 'datetime' not in data:
+            data['dateTime'] = {}
+
+        if 'standard' not in data:
+            data['standard'] = 'SI'
+
+        if 'nickname' not in data:
+            data['nickname'] = None
+
+        datetime = DateTime.from_json(data['datetime'])
+        return cls(data['value'], datetime, data['standard'], data['nickname'])
 
     @property
     def value(self):
@@ -139,6 +169,16 @@ class DataTypeBase(object):
                     self.__class__.__name__, self.minimum, self.maximum
                 )
             )
+
+    def to_json(self):
+        "Get data point as a json object"
+        return {
+            'value': self.value,
+            'datetime': self.datetime.to_json(),
+            'standard': self.standard,
+            'nickname': self.nickname,
+            'type': self.__class__.__name__
+        }
 
     def ToString(self):
         """Overwrite .NET representation."""
