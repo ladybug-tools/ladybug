@@ -4,12 +4,8 @@ from ladybug.epw import EPW
 
 class WindRose(object):
     """
-    Performs calculations for the Ladybug WindRose
+    Draws the Ladybug windrose
     Usage:
-        import ladybug.windrose as windrose
-        rose = windrose.WindRose(epw_filePath)
-        # Gives wind speed, wind direction, and the annualHourlyData
-        print rose.parse_wind_data()
     """
     __slots__ = ("epw", "HOYs", "annualHourlyData",
                  "windCondition", "dataCondition",
