@@ -1,6 +1,7 @@
 """This is not a unit test for the windrose"""
 
 import os
+from ladybug.windroseplus import *
 from ladybug.windrose import WindRose
 from ladybug.epw import EPW
 
@@ -17,4 +18,4 @@ wind = WindRose(epw_filePath,
                 annualHourlyData=[dryBulbTemp],
                 windCondition=None,
                 dataCondition=["x<3"])
-print wind.parse_wind_data()
+print makeRanges(16)
