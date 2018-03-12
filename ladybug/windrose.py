@@ -14,7 +14,7 @@ class WindRose(object):
 
     def __init__(self,
                  epw_filePath,
-                 HOYs=range(0, 8761),
+                 HOYs=range(0, 8760),
                  annualHourlyData=None,
                  windCondition=None,
                  dataCondition=None,
@@ -104,11 +104,13 @@ class WindRose(object):
             A Ladybug WindRose isinstance
         Returns:
             wsOut : A Ladybug DataCollection object of filtered \
-                wind speed data.
+            wind speed data.
             wdOut : A Ladybug DataCollection object of filtered \
-                wind direction data
+            wind direction data.
+            HOYs: Hours of the year for which the wind speed and \
+            wind directions are being provided by the function.
             annualHourlyData : A Ladybug DataCollection object of filtered \
-                annualHourlyData
+            annualHourlyData
         """
 
         # Getting the full wind data from the weather file
@@ -151,4 +153,4 @@ class WindRose(object):
         else:
             annualHourlyData = self.annualHourlyData
 
-        return (wsOut, wdOut, annualHourlyData)
+        return (wsOut, wdOut, HOYs, annualHourlyData)
