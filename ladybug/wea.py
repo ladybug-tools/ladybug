@@ -3,9 +3,11 @@ from .epw import EPW
 from .dt import DateTime
 from .location import Location
 from .datacollection import DataCollection
+from .stat import STAT
+from .sunpath import Sunpath
 
 import itertools
-
+import math
 
 class Wea(object):
     """An annual WEA data for a location."""
@@ -67,6 +69,65 @@ class Wea(object):
         return cls(epw.location,
                    epw.direct_normal_radiation,
                    epw.diffuse_horizontal_radiation)
+
+    @classmethod
+    def from_stat_file(cls, statfile, timestep=1):
+        """Create a wea object from a .stat file.
+
+        This wea object represents an ASHRAE Revised Clear Sky ("Tau Model"), which
+        is intended to determine peak solar load and sizing parmeters for HVAC systems.
+        The "Tau Model" uses monthly optical depths found within a .stat file.
+
+        Args:
+            statfile: Full path to the .stat file.
+            timestep: An optional integer to set the number of time steps per hour.
+                Default is 1 for one value per hour.
+        """
+        stat = STAT(statfile)
+
+        sp = Sunpath.from_location(stat.location)
+
+        altitudes = []
+        months = []
+        for h in range(8760*timestep):
+            sun = sp.calculate_sun_from_hoy(h/timestep)
+            months.append(sun.datetime.month-1)
+            altitudes.append(sun.altitude)
+
+        # Calculate the hourly air mass between the sun at the top of the atmosphere and the surface of the earth.
+        airMasses = []
+        for alt in altitudes:
+            airMass = 0
+            if alt > 0:
+                airMass = 1/(math.sin(math.radians(alt)) + (0.50572 * math.pow((6.07995 + alt), -1.6364)))
+            airMasses.append(airMass)
+
+        # Calculate monthly air mass exponents.
+        beamEpxs = []
+        diffuseExps = []
+        for count, tb in enumerate(stat.monthly_tau_beam):
+            td = stat.monthly_tau_diffuse[count]
+            ab = 1.219 - (0.043*tb) - (0.151*td) - (0.204*tb*td)
+            ad = 0.202 + (0.852*tb) - (0.007*td) - (0.357*tb*td)
+            beamEpxs.append(ab)
+            diffuseExps.append(ad)
+
+        # compute the clear sky radiation values
+        directNormRad, diffuseHorizRad = [], []
+        for i, airMass in enumerate(airMasses):
+            alt = altitudes[i]
+            if alt > 0:
+                m = months[i]
+                eBeam = 1415 * math.exp(-stat.monthly_tau_beam[m] * math.pow(airMass, beamEpxs[m]))
+                eDiff = 1415 * math.exp(-stat.monthly_tau_diffuse[m] * math.pow(airMass, diffuseExps[m]))
+                eGlob = eDiff + eBeam*math.cos(math.radians(90-alt))
+                directNormRad.append(eBeam)
+                diffuseHorizRad.append(eDiff)
+            else:
+                directNormRad.append(0)
+                diffuseHorizRad.append(0)
+
+        return cls(stat.location, directNormRad, diffuseHorizRad, timestep)
 
     @property
     def isWea(self):
