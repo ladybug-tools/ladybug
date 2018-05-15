@@ -10,7 +10,17 @@ import itertools
 import math
 
 class Wea(object):
-    """An annual WEA data for a location."""
+    """An annual WEA object containing solar radiation.
+
+    Attributes:
+        location: Ladybug location object.
+        direct_normal_radiation: A list of direct normal radiation values for every
+            hourly timestep of the year.
+        diffuse_horizontal_radiation: A list of diffuse horizontal radiation values
+            for every hourly timestep of the year.
+        timestep: An optional integer to set the number of time steps per hour.
+            Default is 1 for one value per hour.
+    """
 
     def __init__(self, location, direct_normal_radiation, diffuse_horizontal_radiation,
                  timestep=1):
@@ -60,7 +70,7 @@ class Wea(object):
 
     @classmethod
     def from_epw_file(cls, epwfile):
-        """Create a wea object from an epw file.
+        """Create a wea object using the solar radiation values in an epw file.
 
         Args:
             epwfile: Full path to epw weather file.
@@ -72,11 +82,8 @@ class Wea(object):
 
     @classmethod
     def from_stat_file(cls, statfile, timestep=1):
-        """Create a wea object from a .stat file.
-
-        This wea object represents an ASHRAE Revised Clear Sky ("Tau Model"), which
-        is intended to determine peak solar load and sizing parmeters for HVAC systems.
-        The "Tau Model" uses monthly optical depths found within a .stat file.
+        """Create an ASHRAE Revised Clear Sky wea object from the monthly sky
+        optical depths in a .stat file.
 
         Args:
             statfile: Full path to the .stat file.
@@ -85,8 +92,42 @@ class Wea(object):
         """
         stat = STAT(statfile)
 
-        sp = Sunpath.from_location(stat.location)
+        # check to be sure the stat file has all tau values (some have missing data)
+        def checkMissing(optData, dataName):
+            for i, x in enumerate(optData):
+                if x == None:
+                    raise ValueError(
+                        'Missing optical depth data for {} at month {}'.format(dataName, str(i))
+                        )
+        checkMissing(stat.monthly_tau_beam, 'monthly_tau_beam')
+        checkMissing(stat.monthly_tau_diffuse, 'monthly_tau_diffuse')
 
+        return cls.ashrae_revised_clear_sky(stat.location, stat.monthly_tau_beam, \
+            stat.monthly_tau_diffuse, timestep)
+
+
+
+    @classmethod
+    def ashrae_revised_clear_sky(cls, location, monthly_tau_beam, monthly_tau_diffuse, timestep=1):
+        """Create a wea object that represents an ASHRAE Revised Clear Sky ("Tau Model"), which
+        is intended to determine peak solar load and sizing parmeters for HVAC systems.
+
+        This revised clear sky is currently the default recommended sky model used to
+        autosize HVAC systems in EnergyPlus. For more information on the ASHRAE Revised
+        Clear Sky model, see the EnergyPlus Engineering Reference:
+        https://bigladdersoftware.com/epx/docs/8-9/engineering-reference/climate-calculations.html
+
+        Args:
+            location: Ladybug location object.
+            monthly_tau_beam: A list of 12 float values indicating the beam optical
+                depth of the sky at each month of the year.
+            monthly_tau_diffuse: A list of 12 float values indicating the diffuse optical
+                depth of the sky at each month of the year.
+            timestep: An optional integer to set the number of time steps per hour.
+                Default is 1 for one value per hour.
+        """
+        # create sunpath and get altitude at every timestep of the year
+        sp = Sunpath.from_location(location)
         altitudes = []
         months = []
         for h in range(8760*timestep):
@@ -94,7 +135,7 @@ class Wea(object):
             months.append(sun.datetime.month-1)
             altitudes.append(sun.altitude)
 
-        # Calculate the hourly air mass between the sun at the top of the atmosphere and the surface of the earth.
+        # calculate the hourly air mass between the sun at the top of the atmosphere and the surface of the earth.
         airMasses = []
         for alt in altitudes:
             airMass = 0
@@ -102,11 +143,11 @@ class Wea(object):
                 airMass = 1/(math.sin(math.radians(alt)) + (0.50572 * math.pow((6.07995 + alt), -1.6364)))
             airMasses.append(airMass)
 
-        # Calculate monthly air mass exponents.
+        # calculate monthly air mass exponents.
         beamEpxs = []
         diffuseExps = []
-        for count, tb in enumerate(stat.monthly_tau_beam):
-            td = stat.monthly_tau_diffuse[count]
+        for count, tb in enumerate(monthly_tau_beam):
+            td = monthly_tau_diffuse[count]
             ab = 1.219 - (0.043*tb) - (0.151*td) - (0.204*tb*td)
             ad = 0.202 + (0.852*tb) - (0.007*td) - (0.357*tb*td)
             beamEpxs.append(ab)
@@ -118,8 +159,8 @@ class Wea(object):
             alt = altitudes[i]
             if alt > 0:
                 m = months[i]
-                eBeam = 1415 * math.exp(-stat.monthly_tau_beam[m] * math.pow(airMass, beamEpxs[m]))
-                eDiff = 1415 * math.exp(-stat.monthly_tau_diffuse[m] * math.pow(airMass, diffuseExps[m]))
+                eBeam = 1415 * math.exp(-monthly_tau_beam[m] * math.pow(airMass, beamEpxs[m]))
+                eDiff = 1415 * math.exp(-monthly_tau_diffuse[m] * math.pow(airMass, diffuseExps[m]))
                 eGlob = eDiff + eBeam*math.cos(math.radians(90-alt))
                 directNormRad.append(eBeam)
                 diffuseHorizRad.append(eDiff)
@@ -127,7 +168,61 @@ class Wea(object):
                 directNormRad.append(0)
                 diffuseHorizRad.append(0)
 
-        return cls(stat.location, directNormRad, diffuseHorizRad, timestep)
+        return cls(location, directNormRad, diffuseHorizRad, timestep)
+
+
+    @classmethod
+    def ashrae_clear_sky(cls, location, sky_clearness=1, timestep=1):
+        """Create a wea object representing an original ASHRAE Clear Sky.
+
+        The original ASHRAE Clear Sky is intended to determine peak solar load and
+        sizing parmeters for HVAC systems.  It is not the sky model currently
+        recommended by ASHRAE since it usually overestimates the amount of solar
+        radiation in comparison to the newer ASHRAE Revised Clear Sky ("Tau Model").
+        However, the original model here is still useful for cases where monthly
+        optical depth values are not known. For more information on the ASHRAE
+        Clear Sky model, see the EnergyPlus Engineering Reference:
+        https://bigladdersoftware.com/epx/docs/8-9/engineering-reference/climate-calculations.html
+
+        Args:
+            location: Ladybug location object.
+            sky_clearness: A factor that will be multiplied by the output of the model.
+                This is to help account for locations where clear, dry skies predominate
+                (e.g., at high elevations) or, conversely, where hazy and humid conditions
+                are frequent. See Threlkeld and Jordan (1958) for recommended values.
+                Typical values range from 0.95 to 1.05 and are usually never more than 1.2.
+                Default is set to 1.0.
+            timestep: An optional integer to set the number of time steps per hour.
+                Default is 1 for one value per hour.
+        """
+        # default parameters that approximate clear sky solar radiation across the planet
+        monthly_a = [1202, 1187, 1164, 1130, 1106, 1092, 1093, 1107, 1136, 1166, \
+            1190, 1204] # apparent solar irradiation at air mass m = 0
+        monthly_b = [0.141, 0.142, 0.149, 0.164, 0.177, 0.185, 0.186, 0.182, 0.165, 0.152, \
+            0.144, 0.141] # atmospheric extinction coefficient
+
+        # create sunpath and get altitude at every timestep of the year
+        sp = Sunpath.from_location(location)
+        altitudes = []
+        months = []
+        for h in range(8760*timestep):
+            sun = sp.calculate_sun_from_hoy(h/timestep)
+            months.append(sun.datetime.month-1)
+            altitudes.append(sun.altitude)
+
+        # compute hourly direct normal and diffuse horizontal radiation
+        directNormRad, diffuseHorizRad = [], []
+        for i, alt in enumerate(altitudes):
+            if alt > 0.1:
+                dirNorm = monthly_a[months[i]] / (math.exp(monthly_b[months[i]] /
+                    (math.sin(math.radians(alt)))))
+                directNormRad.append(dirNorm)
+                diffuseHorizRad.append(0.17 * dirNorm * math.sin(math.radians(alt)))
+            else:
+                directNormRad.append(0)
+                diffuseHorizRad.append(0)
+
+        return cls(location, directNormRad, diffuseHorizRad, timestep)
 
     @property
     def isWea(self):
