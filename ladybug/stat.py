@@ -2,6 +2,7 @@ from .location import Location
 
 import os
 
+
 class STAT(object):
     """Import data from a local .stat file.
 
@@ -79,7 +80,8 @@ class STAT(object):
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
             coorStr = self._header[3].strip().split('} {')
-            latStr = coorStr[0].replace('\xb0', '').replace('{', '').replace("'", '').split(' ')
+            latStr = coorStr[0].replace('\xb0', '').replace('{', '') \
+                .replace("'", '').split(' ')
             lonStr = coorStr[1].replace('\xb0', '').replace("'", '').split(' ')
             latitude = float(latStr[1]) + (float(latStr[2])/60)
             if latStr[0] == 'S':
@@ -87,10 +89,11 @@ class STAT(object):
             longitude = float(lonStr[-2]) + (float(lonStr[-1])/60)
             if lonStr[0] == 'W':
                 longitude = -longitude
-            time_zone = float(coorStr[2].replace('GMT ', '').replace(" Hours}", ''))
+            time_zone = float(coorStr[2].replace('GMT ', '')
+                              .replace(" Hours}", ''))
             elevStr = self._header[4].replace('Elevation --', '').strip() \
                 .replace(' sea level', '').split(' ')
-            elevation = int(elevStr[0].replace('m',''))
+            elevation = int(elevStr[0].replace('m', ''))
             if elevStr[-1].strip().lower() == 'below':
                 elevation = -elevation
 
@@ -111,11 +114,15 @@ class STAT(object):
             # move through the document and pull out the relevant data
             while line:
                 if 'taub (beam)' in line:
-                    taubRaw = line.replace('taub (beam)','').strip().split('\t')
-                    self._monthly_tau_beam = [float(i) if 'N' not in i else None for i in taubRaw]
+                    taubRaw = line.replace('taub (beam)', '').strip() \
+                        .split('\t')
+                    self._monthly_tau_beam = [float(i) if 'N' not in i
+                                              else None for i in taubRaw]
                 elif 'taud (diffuse)' in line:
-                    taudRaw = line.replace('taud (diffuse)','').strip().split('\t')
-                    self._monthly_tau_diffuse = [float(i) if 'N' not in i else None for i in taudRaw]
+                    taudRaw = line.replace('taud (diffuse)', '').strip() \
+                        .split('\t')
+                    self._monthly_tau_diffuse = [float(i) if 'N' not in i
+                                                 else None for i in taudRaw]
                 elif 'Climate type' in line and 'ASHRAE' in line:
                     self._ashrae_climate_zone = line.split('"')[1]
                 elif 'Climate type' in line:
@@ -141,9 +148,11 @@ class STAT(object):
 
     @property
     def ashrae_climate_zone(self):
-        """Return a text string indicating the ASHRAE climate zone.  ASHRAE climate
-        zones are frequently used to make suggestions for heating and cooling
-        systems and correspond to recommendations for insulation levels of a building.
+        """Return a text string indicating the ASHRAE climate zone.
+
+        ASHRAE climate zones are frequently used to make suggestions for
+        heating and cooling systems and correspond to recommendations for
+        insulation levels of a building.
         """
         if not self.is_data_loaded:
             self.import_data()
@@ -151,10 +160,11 @@ class STAT(object):
 
     @property
     def koppen_climate_zone(self):
-        """Return a text string indicating the Koppen climate zone.  The Koppen
-            climate classification is the most widely used climate classification
-            system and combines average annual and monthly temperatures, precipitation,
-            and the seasonality of precipitation.
+        """Return a text string indicating the Koppen climate zone.
+
+        The Koppen climate classification is the most widely used climate
+        classification system and combines average annual and monthly
+        temperatures, precipitation, and the seasonality of precipitation.
         """
         if not self.is_data_loaded:
             self.import_data()
@@ -162,10 +172,11 @@ class STAT(object):
 
     @property
     def monthly_tau_beam(self):
-        """Return a list of 12 float values indicating the beam optical sky depth for
-            each of the 12 months of the year.  These values can be used to generate
-            ASHRAE Revised Clear Skies, which are intended to determine peak solar
-            load and sizing parmeters for HVAC systems.
+        """Return a list of 12 float values for monthly beam optical depth.
+
+        These values can be used to generate ASHRAE Revised Clear Skies, which
+        are intended to determine peak solar load and sizing parmeters for
+        HVAC systems.
         """
         if not self.is_data_loaded:
             self.import_data()
@@ -173,10 +184,11 @@ class STAT(object):
 
     @property
     def monthly_tau_diffuse(self):
-        """Return a list of 12 float values indicating the diffuse optical sky depth for
-            each of the 12 months of the year.  These values can be used to generate
-            ASHRAE Revised Clear Skies, which are intended to determine peak solar
-            load and sizing parmeters for HVAC systems.
+        """Return a list of 12 float values for monthly diffuse optical depth.
+
+        These values can be used to generate ASHRAE Revised Clear Skies, which
+        are intended to determine peak solar load and sizing parmeters for
+        HVAC systems.
         """
         if not self.is_data_loaded:
             self.import_data()
