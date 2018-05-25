@@ -1,11 +1,16 @@
 import math
-from location import Location
-from dt import DateTime
-from euclid import Vector3
+from .location import Location
+from .dt import DateTime
+
+try:
+    from euclid3 import Vector3
+except ModuleNotFoundError:
+    from euclid import Vector3
 from collections import namedtuple
 
 
 import ladybug
+
 try:
     import sunpathplus as plus
 except ImportError as e:
@@ -359,7 +364,7 @@ class Sunpath(object):
 
             """Making the total of all the days in preceding months\
             in the same year"""
-            keys = month_dict.keys()
+            keys = list(month_dict.keys())
             days_in_precending_months = 0
             for i in range(month - 1):
                 days_in_precending_months += month_dict[keys[i]]
