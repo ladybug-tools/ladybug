@@ -780,7 +780,7 @@ class Sun(object):
             .rotate_around(z_axis, self.azimuth_in_radians) \
             .rotate_around(z_axis, math.radians(-1 * self.north_angle))
 
-        _sun_vector.normalize().flip()
+        _sun_vector.normalize()  #.flip()
 
         self._sun_vector = _sun_vector
 
