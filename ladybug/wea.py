@@ -1,9 +1,10 @@
 """Wea weather file."""
 from .epw import EPW
-from .dt import DateTime
-from .location import Location
-from .datacollection import DataCollection
 from .stat import STAT
+from .location import Location
+from .dt import DateTime
+from .datacollection import DataCollection
+from .datatype import DataPoint
 from .sunpath import Sunpath
 from .euclid import Vector3
 
@@ -107,12 +108,12 @@ class Wea(object):
         check_missing(stat.monthly_tau_beam, 'monthly_tau_beam')
         check_missing(stat.monthly_tau_diffuse, 'monthly_tau_diffuse')
 
-        return cls.ashrae_revised_clear_sky(stat.location,
+        return cls.from_ashrae_revised_clear_sky(stat.location,
                                             stat.monthly_tau_beam,
                                             stat.monthly_tau_diffuse, timestep)
 
     @classmethod
-    def ashrae_revised_clear_sky(cls, location, monthly_tau_beam,
+    def from_ashrae_revised_clear_sky(cls, location, monthly_tau_beam,
                                  monthly_tau_diffuse, timestep=1):
         """Create a wea object representing an ASHRAE Revised Clear Sky ("Tau Model")
 
@@ -136,8 +137,10 @@ class Wea(object):
         sp = Sunpath.from_location(location)
         altitudes = []
         months = []
+        dates = []
         for h in range(8760 * timestep):
             sun = sp.calculate_sun_from_hoy(h / timestep)
+            dates.append(sun.datetime)
             months.append(sun.datetime.month - 1)
             altitudes.append(sun.altitude)
 
@@ -170,16 +173,22 @@ class Wea(object):
                     air_mass, beam_epxs[m]))
                 e_diff = 1415 * math.exp(-monthly_tau_diffuse[m] * math.pow(
                     air_mass, diffuse_exps[m]))
-                direct_norm_rad.append(e_beam)
-                diffuse_horiz_rad.append(e_diff)
+                direct_norm_rad.append(
+                    DataPoint(e_beam, dates[i],'SI',
+                              'Direct Normal Radiation'))
+                diffuse_horiz_rad.append(
+                    DataPoint(e_diff, dates[i], 'SI',
+                              'Diffuse Horizontal Radiation'))
             else:
-                direct_norm_rad.append(0)
-                diffuse_horiz_rad.append(0)
+                direct_norm_rad.append(
+                    DataPoint(0, dates[i] ,'SI', 'Direct Normal Radiation'))
+                diffuse_horiz_rad.append(
+                    DataPoint(0, dates[i],'SI', 'Diffuse Horizontal Radiation'))
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep)
 
     @classmethod
-    def ashrae_clear_sky(cls, location, sky_clearness=1, timestep=1):
+    def from_ashrae_clear_sky(cls, location, sky_clearness=1, timestep=1):
         """Create a wea object representing an original ASHRAE Clear Sky.
 
         The original ASHRAE Clear Sky is intended to determine peak solar load
@@ -216,8 +225,10 @@ class Wea(object):
         sp = Sunpath.from_location(location)
         altitudes = []
         months = []
+        dates = []
         for h in range(8760 * timestep):
             sun = sp.calculate_sun_from_hoy(h / timestep)
+            dates.append(sun.datetime)
             months.append(sun.datetime.month - 1)
             altitudes.append(sun.altitude)
 
@@ -227,12 +238,18 @@ class Wea(object):
             if alt > 0.1:
                 dir_norm = monthly_a[months[i]] / (math.exp(
                     monthly_b[months[i]] / (math.sin(math.radians(alt)))))
-                direct_norm_rad.append(dir_norm)
-                diffuse_horiz_rad.append(0.17 * dir_norm * math.sin(
-                    math.radians(alt)))
+                diff_horiz = 0.17 * dir_norm * math.sin(math.radians(alt))
+                direct_norm_rad.append(
+                    DataPoint(dir_norm, dates[i], 'SI',
+                              'Direct Normal Radiation'))
+                diffuse_horiz_rad.append(
+                    DataPoint(diff_horiz, dates[i], 'SI',
+                              'Global Horizontal Radiation'))
             else:
-                direct_norm_rad.append(0)
-                diffuse_horiz_rad.append(0)
+                direct_norm_rad.append(
+                    DataPoint(0, dates[i] ,'SI', 'Direct Normal Radiation'))
+                diffuse_horiz_rad.append(
+                    DataPoint(0, dates[i],'SI', 'Diffuse Horizontal Radiation'))
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep)
 
@@ -260,10 +277,12 @@ class Wea(object):
         sp = Sunpath.from_location(self.location)
         for h in range(8760 * self.timestep):
             sun = sp.calculate_sun_from_hoy(h / self.timestep)
-            global_horizontal_radiation.append(
-                self.diffuse_horizontal_radiation[h] +
+            date_t = sun.datetime
+            glob_h = self.diffuse_horizontal_radiation[h] + \
                 self.direct_normal_radiation[h] * math.cos(
-                    math.radians(90 - sun.altitude)))
+                    math.radians(90 - sun.altitude))
+            global_horizontal_radiation.append(
+                DataPoint(glob_h, date_t ,'SI', 'Global Horizontal Radiation'))
         return global_horizontal_radiation
 
     def get_radiation_values_on_surface(self, surface_altitude=90,
@@ -320,6 +339,7 @@ class Wea(object):
         sp = Sunpath.from_location(self.location)
         for h in range(8760 * self.timestep):
             sun = sp.calculate_sun_from_hoy(h / self.timestep)
+            date_t = sun.datetime
             sun_vec = pol2cart(math.radians(sun.azimuth),
                                math.radians(sun.altitude))
             vec_angle = sun_vec.angle(surface_norm)
@@ -348,10 +368,15 @@ class Wea(object):
                 math.radians(surface_altitude)) / 2))
 
             # add it all together
-            surface_direct_radiation.append(srf_dir)
-            surface_diffuse_radiation.append(srf_dif)
-            surface_reflected_radiation.append(srf_ref)
-            surface_total_radiation.append(srf_dir + srf_dif + srf_ref)
+            surface_direct_radiation.append(
+                DataPoint(srf_dir, date_t ,'SI', 'Radiation'))
+            surface_diffuse_radiation.append(
+                DataPoint(srf_dif, date_t ,'SI', 'Radiation'))
+            surface_reflected_radiation.append(
+                DataPoint(srf_ref, date_t ,'SI', 'Radiation'))
+            surface_total_radiation.append(
+                DataPoint(srf_dir + srf_dif + srf_ref, date_t ,'SI',
+                          'Radiation'))
 
         return surface_total_radiation, surface_direct_radiation, \
             surface_diffuse_radiation, surface_reflected_radiation
