@@ -289,6 +289,16 @@ class Wea(object):
                 assummes an even distribution of diffuse radiation across the
                 sky while an anisotrophic sky places more diffuse radiation
                 near the solar disc. Default is set to True for isotrophic
+
+        Returns:
+            surface_total_radiation: A list of total solar radiation on the
+                surface at each timestep.
+            surface_direct_radiation: A list of direct solar radiation on the
+                surface at each timestep.
+            surface_diffuse_radiation: A list of diffuse sky solar radiation on
+                the surface at each timestep.
+            surface_reflected_radiation: A list of ground reflected solar
+                radiation on the surface at each timestep.
         """
         # function to convert polar coordinates to xyz.
         def pol2cart(phi, theta):
@@ -303,6 +313,9 @@ class Wea(object):
                                math.radians(surface_altitude))
 
         # create sunpath and get altitude at every timestep of the year
+        surface_direct_radiation = []
+        surface_diffuse_radiation = []
+        surface_reflected_radiation = []
         surface_total_radiation = []
         sp = Sunpath.from_location(self.location)
         for h in range(8760*self.timestep):
@@ -335,9 +348,13 @@ class Wea(object):
                 math.radians(surface_altitude))/2))
 
             # add it all together
+            surface_direct_radiation.append(srfDir)
+            surface_diffuse_radiation.append(srfDif)
+            surface_reflected_radiation.append(srfRef)
             surface_total_radiation.append(srfDir + srfDif + srfRef)
 
-        return surface_total_radiation
+        return surface_total_radiation, surface_direct_radiation, \
+            surface_diffuse_radiation, surface_reflected_radiation
 
     @property
     def header(self):
