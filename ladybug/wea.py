@@ -36,6 +36,8 @@ class Wea(object):
         self.direct_normal_radiation = direct_normal_radiation
         self.diffuse_horizontal_radiation = diffuse_horizontal_radiation
         self.timestep = timestep
+        assert isinstance(timestep, int), 'timestep must be an'
+        ' integer. Got {}'.format(type(timestep))
 
     @classmethod
     def from_json(cls, data):
@@ -251,6 +253,18 @@ class Wea(object):
         hoy = int(hoy * self.timestep)
         return self.direct_normal_radiation[hoy],
         self.diffuse_horizontal_radiation[hoy]
+
+    def get_global_horizontal_radiation(self):
+        """Returns the global horizontal radiation at each timestep."""
+        global_horizontal_radiation = []
+        sp = Sunpath.from_location(self.location)
+        for h in range(8760*self.timestep):
+            sun = sp.calculate_sun_from_hoy(h/self.timestep)
+            global_horizontal_radiation.append(
+                self.diffuse_horizontal_radiation[h] +
+                self.direct_normal_radiation[h]*math.cos(
+                    math.radians(90-sun.altitude)))
+        return global_horizontal_radiation
 
     def get_radiation_values_on_surface(self, surface_altitude=90,
                                         surface_azimuth=180,
