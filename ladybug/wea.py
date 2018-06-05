@@ -97,15 +97,15 @@ class Wea(object):
         stat = STAT(statfile)
 
         # check to be sure the stat file does not have missing tau values
-        def checkMissing(optData, dataName):
-            for i, x in enumerate(optData):
+        def check_missing(opt_data, data_name):
+            for i, x in enumerate(opt_data):
                 if x is None:
                     raise ValueError(
                         'Missing optical depth data for {} at month {}'.format(
-                            dataName, str(i))
-                        )
-        checkMissing(stat.monthly_tau_beam, 'monthly_tau_beam')
-        checkMissing(stat.monthly_tau_diffuse, 'monthly_tau_diffuse')
+                            data_name, i)
+                    )
+        check_missing(stat.monthly_tau_beam, 'monthly_tau_beam')
+        check_missing(stat.monthly_tau_diffuse, 'monthly_tau_diffuse')
 
         return cls.ashrae_revised_clear_sky(stat.location,
                                             stat.monthly_tau_beam,
@@ -136,47 +136,47 @@ class Wea(object):
         sp = Sunpath.from_location(location)
         altitudes = []
         months = []
-        for h in range(8760*timestep):
-            sun = sp.calculate_sun_from_hoy(h/timestep)
-            months.append(sun.datetime.month-1)
+        for h in range(8760 * timestep):
+            sun = sp.calculate_sun_from_hoy(h / timestep)
+            months.append(sun.datetime.month - 1)
             altitudes.append(sun.altitude)
 
         # calculate hourly air mass between top of the atmosphere and earth
-        airMasses = []
+        air_masses = []
         for alt in altitudes:
-            airMass = 0
+            air_mass = 0
             if alt > 0:
-                airMass = 1/(math.sin(math.radians(alt)) + (0.50572 * math.pow(
+                air_mass = 1 / (math.sin(math.radians(alt)) + (0.50572 * math.pow(
                     (6.07995 + alt), -1.6364)))
-            airMasses.append(airMass)
+            air_masses.append(air_mass)
 
         # calculate monthly air mass exponents.
-        beamEpxs = []
-        diffuseExps = []
+        beam_epxs = []
+        diffuse_exps = []
         for count, tb in enumerate(monthly_tau_beam):
             td = monthly_tau_diffuse[count]
-            ab = 1.219 - (0.043*tb) - (0.151*td) - (0.204*tb*td)
-            ad = 0.202 + (0.852*tb) - (0.007*td) - (0.357*tb*td)
-            beamEpxs.append(ab)
-            diffuseExps.append(ad)
+            ab = 1.219 - (0.043 * tb) - (0.151 * td) - (0.204 * tb * td)
+            ad = 0.202 + (0.852 * tb) - (0.007 * td) - (0.357 * tb * td)
+            beam_epxs.append(ab)
+            diffuse_exps.append(ad)
 
         # compute the clear sky radiation values
-        directNormRad, diffuseHorizRad = [], []
-        for i, airMass in enumerate(airMasses):
+        direct_norm_rad, diffuse_horiz_rad = [], []
+        for i, air_mass in enumerate(air_masses):
             alt = altitudes[i]
             if alt > 0:
                 m = months[i]
-                eBeam = 1415 * math.exp(-monthly_tau_beam[m] * math.pow(
-                    airMass, beamEpxs[m]))
-                eDiff = 1415 * math.exp(-monthly_tau_diffuse[m] * math.pow(
-                    airMass, diffuseExps[m]))
-                directNormRad.append(eBeam)
-                diffuseHorizRad.append(eDiff)
+                e_beam = 1415 * math.exp(-monthly_tau_beam[m] * math.pow(
+                    air_mass, beam_epxs[m]))
+                e_diff = 1415 * math.exp(-monthly_tau_diffuse[m] * math.pow(
+                    air_mass, diffuse_exps[m]))
+                direct_norm_rad.append(e_beam)
+                diffuse_horiz_rad.append(e_diff)
             else:
-                directNormRad.append(0)
-                diffuseHorizRad.append(0)
+                direct_norm_rad.append(0)
+                diffuse_horiz_rad.append(0)
 
-        return cls(location, directNormRad, diffuseHorizRad, timestep)
+        return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep)
 
     @classmethod
     def ashrae_clear_sky(cls, location, sky_clearness=1, timestep=1):
@@ -216,25 +216,25 @@ class Wea(object):
         sp = Sunpath.from_location(location)
         altitudes = []
         months = []
-        for h in range(8760*timestep):
-            sun = sp.calculate_sun_from_hoy(h/timestep)
-            months.append(sun.datetime.month-1)
+        for h in range(8760 * timestep):
+            sun = sp.calculate_sun_from_hoy(h / timestep)
+            months.append(sun.datetime.month - 1)
             altitudes.append(sun.altitude)
 
         # compute hourly direct normal and diffuse horizontal radiation
-        directNormRad, diffuseHorizRad = [], []
+        direct_norm_rad, diffuse_horiz_rad = [], []
         for i, alt in enumerate(altitudes):
             if alt > 0.1:
-                dirNorm = monthly_a[months[i]] / (math.exp(
-                    monthly_b[months[i]]/(math.sin(math.radians(alt)))))
-                directNormRad.append(dirNorm)
-                diffuseHorizRad.append(0.17 * dirNorm * math.sin(
+                dir_norm = monthly_a[months[i]] / (math.exp(
+                    monthly_b[months[i]] / (math.sin(math.radians(alt)))))
+                direct_norm_rad.append(dir_norm)
+                diffuse_horiz_rad.append(0.17 * dir_norm * math.sin(
                     math.radians(alt)))
             else:
-                directNormRad.append(0)
-                diffuseHorizRad.append(0)
+                direct_norm_rad.append(0)
+                diffuse_horiz_rad.append(0)
 
-        return cls(location, directNormRad, diffuseHorizRad, timestep)
+        return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep)
 
     @property
     def isWea(self):
@@ -258,12 +258,12 @@ class Wea(object):
         """Returns the global horizontal radiation at each timestep."""
         global_horizontal_radiation = []
         sp = Sunpath.from_location(self.location)
-        for h in range(8760*self.timestep):
-            sun = sp.calculate_sun_from_hoy(h/self.timestep)
+        for h in range(8760 * self.timestep):
+            sun = sp.calculate_sun_from_hoy(h / self.timestep)
             global_horizontal_radiation.append(
                 self.diffuse_horizontal_radiation[h] +
-                self.direct_normal_radiation[h]*math.cos(
-                    math.radians(90-sun.altitude)))
+                self.direct_normal_radiation[h] * math.cos(
+                    math.radians(90 - sun.altitude)))
         return global_horizontal_radiation
 
     def get_radiation_values_on_surface(self, surface_altitude=90,
@@ -309,8 +309,8 @@ class Wea(object):
             return Vector3(x, y, z)
 
         # convert the surface altitude and azimuth to a normal vector
-        surfaceNorm = pol2cart(math.radians(surface_azimuth),
-                               math.radians(surface_altitude))
+        surface_norm = pol2cart(math.radians(surface_azimuth),
+                                math.radians(surface_altitude))
 
         # create sunpath and get altitude at every timestep of the year
         surface_direct_radiation = []
@@ -318,40 +318,40 @@ class Wea(object):
         surface_reflected_radiation = []
         surface_total_radiation = []
         sp = Sunpath.from_location(self.location)
-        for h in range(8760*self.timestep):
-            sun = sp.calculate_sun_from_hoy(h/self.timestep)
-            sunVec = pol2cart(math.radians(sun.azimuth),
-                              math.radians(sun.altitude))
-            vecAngle = sunVec.angle(surfaceNorm)
+        for h in range(8760 * self.timestep):
+            sun = sp.calculate_sun_from_hoy(h / self.timestep)
+            sun_vec = pol2cart(math.radians(sun.azimuth),
+                               math.radians(sun.altitude))
+            vec_angle = sun_vec.angle(surface_norm)
 
             # direct radiation on surface
-            srfDir = 0
-            if sun.altitude > 0 and vecAngle < math.pi/2:
-                srfDir = self.direct_normal_radiation[h]*math.cos(vecAngle)
+            srf_dir = 0
+            if sun.altitude > 0 and vec_angle < math.pi / 2:
+                srf_dir = self.direct_normal_radiation[h] * math.cos(vec_angle)
 
             # diffuse radiation on surface
             if isotrophic is True:
-                srfDif = self.diffuse_horizontal_radiation[h] * ((math.sin(
-                    math.radians(surface_altitude))/2) + 0.5)
+                srf_dif = self.diffuse_horizontal_radiation[h] * ((math.sin(
+                    math.radians(surface_altitude)) / 2) + 0.5)
             else:
-                y = max(0.45, 0.55 + (0.437*math.cos(vecAngle)) + 0.313 *
-                        math.cos(vecAngle) * 0.313 * math.cos(vecAngle))
-                srfDif = self.diffuse_horizontal_radiation[h] * (y*(
-                    math.sin(math.radians(abs(90-surface_altitude)))) +
-                    math.cos(math.radians(abs(90-surface_altitude))))
+                y = max(0.45, 0.55 + (0.437 * math.cos(vec_angle)) + 0.313 *
+                        math.cos(vec_angle) * 0.313 * math.cos(vec_angle))
+                srf_dif = self.diffuse_horizontal_radiation[h] * (y * (
+                    math.sin(math.radians(abs(90 - surface_altitude)))) +
+                    math.cos(math.radians(abs(90 - surface_altitude))))
 
             # reflected radiation on surface.
-            eGlob = self.diffuse_horizontal_radiation[h] + \
-                self.direct_normal_radiation[h]*math.cos(
-                    math.radians(90-sun.altitude))
-            srfRef = eGlob * ground_reflectance * (0.5 - (math.sin(
-                math.radians(surface_altitude))/2))
+            e_glob = self.diffuse_horizontal_radiation[h] + \
+                self.direct_normal_radiation[h] * math.cos(
+                    math.radians(90 - sun.altitude))
+            srf_ref = e_glob * ground_reflectance * (0.5 - (math.sin(
+                math.radians(surface_altitude)) / 2))
 
             # add it all together
-            surface_direct_radiation.append(srfDir)
-            surface_diffuse_radiation.append(srfDif)
-            surface_reflected_radiation.append(srfRef)
-            surface_total_radiation.append(srfDir + srfDif + srfRef)
+            surface_direct_radiation.append(srf_dir)
+            surface_diffuse_radiation.append(srf_dif)
+            surface_reflected_radiation.append(srf_ref)
+            surface_total_radiation.append(srf_dir + srf_dif + srf_ref)
 
         return surface_total_radiation, surface_direct_radiation, \
             surface_diffuse_radiation, surface_reflected_radiation
