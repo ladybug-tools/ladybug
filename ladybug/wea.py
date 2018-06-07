@@ -5,6 +5,8 @@ from .location import Location
 from .dt import DateTime
 from .datacollection import DataCollection
 from .datatype import DataPoint
+from .header import Header
+from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
 
@@ -29,16 +31,14 @@ class Wea(object):
                  diffuse_horizontal_radiation, timestep=1):
         """Create a wea object."""
         timestep = timestep or 1
-        assert len(direct_normal_radiation) / timestep == \
-            len(diffuse_horizontal_radiation) / timestep == 8760, \
-            'direct_normal_radiation and diffuse_horizontal_radiation data ' \
-            'must be annual.'
+        self._timestep = timestep
+        assert isinstance(timestep, int), 'timestep must be an'
+        ' integer. Got {}'.format(type(timestep))
+
         self.location = location
         self.direct_normal_radiation = direct_normal_radiation
         self.diffuse_horizontal_radiation = diffuse_horizontal_radiation
-        self.timestep = timestep
-        assert isinstance(timestep, int), 'timestep must be an'
-        ' integer. Got {}'.format(type(timestep))
+        self._global_horizontal_radiation = []
 
     @classmethod
     def from_json(cls, data):
@@ -258,6 +258,77 @@ class Wea(object):
         """Return True."""
         return True
 
+    @property
+    def is_global_computed(self):
+        """Return whether global horizontal has been calculated."""
+        return self._is_global_computed
+
+    @property
+    def timestep(self):
+        """Return the timestep."""
+        return self._timestep
+
+    @property
+    def direct_normal_radiation(self):
+        """Get or set the direct normal radiation."""
+        return self._direct_normal_radiation
+
+    @direct_normal_radiation.setter
+    def direct_normal_radiation(self, data):
+        assert len(data) / self.timestep == 8760, \
+            'direct_normal_radiation data must be annual.'
+        self._direct_normal_radiation = data
+        self._is_global_computed = False
+
+    @property
+    def diffuse_horizontal_radiation(self):
+        """Get or set the diffuse horizontal radiation."""
+        return self._diffuse_horizontal_radiation
+
+    @diffuse_horizontal_radiation.setter
+    def diffuse_horizontal_radiation(self, data):
+        assert len(data) / self.timestep == 8760, \
+            'diffuse_horizontal_radiation data must be annual.'
+        self._diffuse_horizontal_radiation = data
+        self._is_global_computed = False
+
+    @property
+    def global_horizontal_radiation(self):
+        """Returns the global horizontal radiation at each timestep."""
+        if not self.is_global_computed:
+            self._global_horizontal_radiation = []
+            sp = Sunpath.from_location(self.location)
+            for h in range(8760 * self.timestep):
+                sun = sp.calculate_sun_from_hoy(h / self.timestep)
+                date_t = sun.datetime
+                glob_h = self.diffuse_horizontal_radiation[h] + \
+                    self.direct_normal_radiation[h] * math.cos(
+                        math.radians(90 - sun.altitude))
+                self._global_horizontal_radiation.append(
+                    DataPoint(glob_h, date_t ,'SI', 'Global Horizontal Radiation'))
+        return self._global_horizontal_radiation
+
+    def get_direct_normal_data_collection(self):
+        """Returns an hourly data collection of direct normal radiation."""
+        header = Header(self.location, AnalysisPeriod(),'Direct Normal Radiation')
+        hour_data = [self.direct_normal_radiation[i] for i in range(
+            0, 8760 * self.timestep, self.timestep)]
+        return DataCollection(hour_data, header)
+
+    def get_diffuse_horizontal_data_collection(self):
+        """Returns an hourly data collection of diffuse horizontal radiation."""
+        header = Header(self.location, AnalysisPeriod(),'Diffuse Horizontal Radiation')
+        hour_data = [self.diffuse_horizontal_radiation[i] for i in range(
+            0, 8760 * self.timestep, self.timestep)]
+        return DataCollection(hour_data, header)
+
+    def get_global_horizontal_data_collection(self):
+        """Returns an hourly data collection of global horizontal radiation."""
+        header = Header(self.location, AnalysisPeriod(),'Global Horizontal Radiation')
+        hour_data = [self.global_horizontal_radiation[i] for i in range(
+            0, 8760 * self.timestep, self.timestep)]
+        return DataCollection(hour_data, header)
+
     def get_radiation_values(self, month, day, hour):
         """Get direct and diffuse radiation values for a point in time."""
         dt = DateTime(month, day, hour)
@@ -270,20 +341,6 @@ class Wea(object):
         hoy = int(hoy * self.timestep)
         return self.direct_normal_radiation[hoy],
         self.diffuse_horizontal_radiation[hoy]
-
-    def get_global_horizontal_radiation(self):
-        """Returns the global horizontal radiation at each timestep."""
-        global_horizontal_radiation = []
-        sp = Sunpath.from_location(self.location)
-        for h in range(8760 * self.timestep):
-            sun = sp.calculate_sun_from_hoy(h / self.timestep)
-            date_t = sun.datetime
-            glob_h = self.diffuse_horizontal_radiation[h] + \
-                self.direct_normal_radiation[h] * math.cos(
-                    math.radians(90 - sun.altitude))
-            global_horizontal_radiation.append(
-                DataPoint(glob_h, date_t ,'SI', 'Global Horizontal Radiation'))
-        return global_horizontal_radiation
 
     def get_radiation_values_on_surface(self, surface_altitude=90,
                                         surface_azimuth=180,
