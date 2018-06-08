@@ -74,27 +74,28 @@ class STAT(object):
             # Data Source -- TMY3
             #
             # WMO Station 744860
-            locName = self._header[2].strip().replace('Location -- ', '')
-            city = ' '.join(locName.split(' ')[:-1])
-            country = locName.split(' ')[-1]
+            loc_name = self._header[2].strip().replace('Location -- ', '')
+            city = ' '.join(loc_name.split(' ')[:-1])
+            country = loc_name.split(' ')[-1]
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
-            coorStr = self._header[3].strip().split('} {')
-            latStr = coorStr[0].replace('\xb0', '').replace('{', '') \
+            coor_str = self._header[3].strip().split('} {')
+            lat_str = coor_str[0].replace('\xb0', '').replace('{', '') \
                 .replace("'", '').split(' ')
-            lonStr = coorStr[1].replace('\xb0', '').replace("'", '').split(' ')
-            latitude = float(latStr[1]) + (float(latStr[2])/60)
-            if latStr[0] == 'S':
+            lon_str = coor_str[1].replace(
+                '\xb0', '').replace("'", '').split(' ')
+            latitude = float(lat_str[1]) + (float(lat_str[2])/60)
+            if lat_str[0] == 'S':
                 latitude = -latitude
-            longitude = float(lonStr[-2]) + (float(lonStr[-1])/60)
-            if lonStr[0] == 'W':
+            longitude = float(lon_str[-2]) + (float(lon_str[-1])/60)
+            if lon_str[0] == 'W':
                 longitude = -longitude
-            time_zone = float(coorStr[2].replace('GMT ', '')
+            time_zone = float(coor_str[2].replace('GMT ', '')
                               .replace(" Hours}", ''))
-            elevStr = self._header[4].replace('Elevation --', '').strip() \
+            elev_str = self._header[4].replace('Elevation --', '').strip() \
                 .replace(' sea level', '').split(' ')
-            elevation = int(elevStr[0].replace('m', ''))
-            if elevStr[-1].strip().lower() == 'below':
+            elevation = int(elev_str[0].replace('m', ''))
+            if elev_str[-1].strip().lower() == 'below':
                 elevation = -elevation
 
             self._location = Location()
@@ -114,15 +115,15 @@ class STAT(object):
             # move through the document and pull out the relevant data
             while line:
                 if 'taub (beam)' in line:
-                    taubRaw = line.replace('taub (beam)', '').strip() \
+                    taub_raw = line.replace('taub (beam)', '').strip() \
                         .split('\t')
                     self._monthly_tau_beam = [float(i) if 'N' not in i
-                                              else None for i in taubRaw]
+                                              else None for i in taub_raw]
                 elif 'taud (diffuse)' in line:
-                    taudRaw = line.replace('taud (diffuse)', '').strip() \
+                    taud_raw = line.replace('taud (diffuse)', '').strip() \
                         .split('\t')
                     self._monthly_tau_diffuse = [float(i) if 'N' not in i
-                                                 else None for i in taudRaw]
+                                                 else None for i in taud_raw]
                 elif 'Climate type' in line and 'ASHRAE' in line:
                     self._ashrae_climate_zone = line.split('"')[1]
                 elif 'Climate type' in line:
