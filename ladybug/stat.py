@@ -84,6 +84,10 @@ class STAT(object):
                 .replace("'", '').split(' ')
             lon_str = coor_str[1].replace(
                 '\xb0', '').replace("'", '').split(' ')
+            while '' in lat_str:
+                lat_str.remove('')
+            while '' in lon_str:
+                lon_str.remove('')
             latitude = float(lat_str[1]) + (float(lat_str[2])/60)
             if lat_str[0] == 'S':
                 latitude = -latitude
