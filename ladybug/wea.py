@@ -503,7 +503,16 @@ class Wea(object):
         with open(file_path, "wb") as weaFile:
             # write header
             weaFile.write(self.header)
-            if full_wea:
+            if self.timestep == 1:
+                # not the whole year
+                for dt, hoy in itertools.izip(dts, hoys):
+                    dir_rad = self.direct_normal_radiation[hoy]
+                    dif_rad = self.diffuse_horizontal_radiation[hoy]
+                    line = "%d %d %.3f %d %d\n" \
+                        % (dt.month, dt.day, dt.hour + 0.5, dir_rad, dif_rad)
+
+                    weaFile.write(line)
+            elif full_wea:
                 # there is no input user for hoys, write it for all the hours
                 # write values
                 for dt, dir_rad, dif_rad in itertools.izip(
