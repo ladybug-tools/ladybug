@@ -264,6 +264,11 @@ class Wea(object):
         return True
 
     @property
+    def hoys(self):
+        """Hours of the year in wea file."""
+        return AnalysisPeriod(timestep=self.timestep).hoys
+
+    @property
     def is_global_computed(self):
         """Return whether global horizontal has been calculated."""
         return self._is_global_computed
@@ -343,14 +348,12 @@ class Wea(object):
         """Get direct and diffuse radiation values for a point in time."""
         dt = DateTime(month, day, hour)
         hoy = int(dt.hoy * self.timestep)
-        return self.direct_normal_radiation[hoy],
-        self.diffuse_horizontal_radiation[hoy]
+        return self.direct_normal_radiation[hoy], self.diffuse_horizontal_radiation[hoy]
 
     def get_radiation_values_for_hoy(self, hoy):
         """Get direct and diffuse radiation values for an hoy."""
         hoy = int(hoy * self.timestep)
-        return self.direct_normal_radiation[hoy],
-        self.diffuse_horizontal_radiation[hoy]
+        return self.direct_normal_radiation[hoy], self.diffuse_horizontal_radiation[hoy]
 
     def get_radiation_values_on_surface(self, surface_altitude=90,
                                         surface_azimuth=180,
@@ -456,7 +459,7 @@ class Wea(object):
             "longitude %.2f\n" % -self.location.longitude + \
             "time_zone %d\n" % (-self.location.time_zone * 15) + \
             "site_elevation %.1f\n" % self.location.elevation + \
-            "weather_data_file_units %d\n" % self.timestep
+            "weather_data_file_units 1\n"
 
     def to_json(self):
         """Write Wea to json file
@@ -484,20 +487,45 @@ class Wea(object):
         WEA carries radiation values from epw and is what gendaymtx uses to
         generate the sky.
         """
-        hoys = hoys or xrange(8760)
-        dts = (DateTime.from_hoy(h) for h in hoys)
+        # generate hoys in wea file based on timestep
+        hoys_wea = self.hoys
+        full_wea = False
+
+        if not hoys:
+            hoys = hoys_wea
+            full_wea = True
+
+        if self.timestep == 1:
+            dts = (DateTime.from_hoy(h + 0.5) for h in hoys)
+        else:
+            dts = (DateTime.from_hoy(h) for h in hoys)
 
         with open(file_path, "wb") as weaFile:
             # write header
             weaFile.write(self.header)
-            # write values
-            for dt, hoy in itertools.izip(dts, hoys):
-                dir_rad = self.direct_normal_radiation[hoy]
-                dif_rad = self.diffuse_horizontal_radiation[hoy]
-                line = "%d %d %.3f %d %d\n" \
-                    % (dt.month, dt.day, dt.hour + 0.5, dir_rad, dif_rad)
+            if full_wea:
+                # there is no input user for hoys, write it for all the hours
+                # write values
+                for dt, dir_rad, dif_rad in itertools.izip(
+                    dts, self.direct_normal_radiation,
+                        self.diffuse_horizontal_radiation):
+                    line = "%d %d %.3f %d %d\n" \
+                        % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
+                    weaFile.write(line)
+            else:
+                # output wea hoys based on user request
+                hoys_set = set(hoys_wea)
+                # write values
+                for dt, dir_rad, dif_rad in itertools.izip(
+                        dts, self.direct_normal_radiation,
+                        self.diffuse_horizontal_radiation):
+                    if dt.hoy not in hoys_set:
+                        print('Warn: Wea data for {} is not available!'.format(dt))
+                        continue
+                    line = "%d %d %.3f %d %d\n" \
+                        % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
 
-                weaFile.write(line)
+                    weaFile.write(line)
 
         if write_hours:
             with open(file_path[:-4] + '.hrs', 'wb') as outf:
