@@ -38,7 +38,6 @@ class Wea(object):
         self.location = location
         self.direct_normal_radiation = direct_normal_radiation
         self.diffuse_horizontal_radiation = diffuse_horizontal_radiation
-        self._global_horizontal_radiation = []
 
     @classmethod
     def from_json(cls, data):
@@ -108,10 +107,8 @@ class Wea(object):
         check_missing(stat.monthly_tau_beam, 'monthly_tau_beam')
         check_missing(stat.monthly_tau_diffuse, 'monthly_tau_diffuse')
 
-        return cls.from_ashrae_revised_clear_sky(stat.location,
-                                                 stat.monthly_tau_beam,
-                                                 stat.monthly_tau_diffuse,
-                                                 timestep)
+        return cls.from_ashrae_revised_clear_sky(stat.location, stat.monthly_tau_beam,
+                                                 stat.monthly_tau_diffuse, timestep)
 
     @classmethod
     def from_ashrae_revised_clear_sky(cls, location, monthly_tau_beam,
@@ -175,18 +172,14 @@ class Wea(object):
                 e_diff = 1415 * math.exp(-monthly_tau_diffuse[m] * math.pow(
                     air_mass, diffuse_exps[m]))
                 direct_norm_rad.append(
-                    DataPoint(e_beam, dates[i], 'SI',
-                              'Direct Normal Radiation'))
+                    DataPoint(e_beam, dates[i], 'SI', 'Direct Normal Radiation'))
                 diffuse_horiz_rad.append(
-                    DataPoint(e_diff, dates[i], 'SI',
-                              'Diffuse Horizontal Radiation'))
+                    DataPoint(e_diff, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
             else:
                 direct_norm_rad.append(
-                    DataPoint(0, dates[i], 'SI',
-                              'Direct Normal Radiation'))
+                    DataPoint(0, dates[i], 'SI', 'Direct Normal Radiation'))
                 diffuse_horiz_rad.append(
-                    DataPoint(0, dates[i], 'SI',
-                              'Diffuse Horizontal Radiation'))
+                    DataPoint(0, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep)
 
@@ -269,11 +262,6 @@ class Wea(object):
         return AnalysisPeriod(timestep=self.timestep).hoys
 
     @property
-    def is_global_computed(self):
-        """Return whether global horizontal has been calculated."""
-        return self._is_global_computed
-
-    @property
     def timestep(self):
         """Return the timestep."""
         return self._timestep
@@ -305,44 +293,17 @@ class Wea(object):
     @property
     def global_horizontal_radiation(self):
         """Returns the global horizontal radiation at each timestep."""
-        if not self.is_global_computed:
-            self._global_horizontal_radiation = []
-            sp = Sunpath.from_location(self.location)
-            for h in range(8760 * self.timestep):
-                sun = sp.calculate_sun_from_hoy(h / self.timestep)
-                date_t = sun.datetime
-                glob_h = self.diffuse_horizontal_radiation[h] + \
-                    self.direct_normal_radiation[h] * math.cos(
-                        math.radians(90 - sun.altitude))
-                self._global_horizontal_radiation.append(
-                    DataPoint(glob_h, date_t, 'SI',
-                              'Global Horizontal Radiation'))
-            self._is_global_computed = True
-        return self._global_horizontal_radiation
-
-    def get_direct_normal_data_collection(self):
-        """Returns an hourly data collection of direct normal solar."""
-        header = Header(self.location, AnalysisPeriod(),
-                        'Direct Normal Radiation')
-        hour_data = [self.direct_normal_radiation[i] for i in range(
-            0, 8760 * self.timestep, self.timestep)]
-        return DataCollection(hour_data, header)
-
-    def get_diffuse_horizontal_data_collection(self):
-        """Returns an hourly data collection of diffuse horizontal solar."""
-        header = Header(self.location, AnalysisPeriod(),
-                        'Diffuse Horizontal Radiation')
-        hour_data = [self.diffuse_horizontal_radiation[i] for i in range(
-            0, 8760 * self.timestep, self.timestep)]
-        return DataCollection(hour_data, header)
-
-    def get_global_horizontal_data_collection(self):
-        """Returns an hourly data collection of global horizontal solar."""
-        header = Header(self.location, AnalysisPeriod(),
-                        'Global Horizontal Radiation')
-        hour_data = [self.global_horizontal_radiation[i] for i in range(
-            0, 8760 * self.timestep, self.timestep)]
-        return DataCollection(hour_data, header)
+        global_horizontal_rad = []
+        sp = Sunpath.from_location(self.location)
+        for h in range(8760 * self.timestep):
+            sun = sp.calculate_sun_from_hoy(h / self.timestep)
+            date_t = sun.datetime
+            glob_h = self.diffuse_horizontal_radiation[h] + \
+                self.direct_normal_radiation[h] * math.cos(
+                    math.radians(90 - sun.altitude))
+            global_horizontal_rad.append(
+                DataPoint(glob_h, date_t, 'SI', 'Global Horizontal Radiation'))
+        return global_horizontal_rad
 
     def get_radiation_values(self, month, day, hour):
         """Get direct and diffuse radiation values for a point in time."""
@@ -355,10 +316,8 @@ class Wea(object):
         hoy = int(hoy * self.timestep)
         return self.direct_normal_radiation[hoy], self.diffuse_horizontal_radiation[hoy]
 
-    def get_radiation_values_on_surface(self, surface_altitude=90,
-                                        surface_azimuth=180,
-                                        ground_reflectance=0.2,
-                                        isotrophic=True):
+    def radiation_on_surface(self, surface_altitude=90, surface_azimuth=180,
+                             ground_reflectance=0.2, isotrophic=True):
         """Returns the total radiation falling on a surface at each timestep.
 
         This method computes solar radiation on an unobstructed surface with
@@ -445,8 +404,7 @@ class Wea(object):
             surface_reflected_radiation.append(
                 DataPoint(srf_ref, date_t, 'SI', 'Radiation'))
             surface_total_radiation.append(
-                DataPoint(srf_dir + srf_dif + srf_ref, date_t, 'SI',
-                          'Radiation'))
+                DataPoint(srf_dir + srf_dif + srf_ref, date_t, 'SI', 'Radiation'))
 
         return surface_total_radiation, surface_direct_radiation, \
             surface_diffuse_radiation, surface_reflected_radiation
