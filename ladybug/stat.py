@@ -81,7 +81,7 @@ class Stat(object):
             longitude = lon_sign * float(matches[1][1]) + (float(matches[1][2])/60)
             tz_pattern = re.compile(r"{GMT\s*(\S*)\s*Hours}")
             time_zone = float(tz_pattern.findall(self._header[3])[0])
-            elev_pattern = re.compile(r"Elevation\s*[-]*\s*(\d)m\s*(\S*)")
+            elev_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)m\s*(\S*)")
             elev_matches = elev_pattern.findall(self._header[4])
             elev_sign = -1 if elev_matches[0][-1].lower() == 'below' else 1
             elevation = elev_sign * float(elev_matches[0][0])
