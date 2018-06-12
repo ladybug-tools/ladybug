@@ -1,9 +1,10 @@
 from .location import Location
 
 import os
+import re
 
 
-class STAT(object):
+class Stat(object):
     """Import data from a local .stat file.
 
     args:
@@ -61,46 +62,29 @@ class STAT(object):
     def import_data(self):
         """Import data from a stat file.
         """
-        with open(self.file_path, 'rb') as statwin:
+        with open(self.file_path, 'r') as statwin:
             line = statwin.readline()
+            # import header with location
             self._header = [line] + [statwin.readline() for i in xrange(9)]
 
             # import location data
-            # lines 3-9 alwyas have location data - Here is an example
-            # Location -- New York J F Kennedy IntL Ar NY USA
-            # {N 40 39'} {W  73 48'} {GMT -5.0 Hours}
-            # Elevation --     5m above sea level
-            # Standard Pressure at Elevation -- 101265Pa
-            # Data Source -- TMY3
-            #
-            # WMO Station 744860
             loc_name = self._header[2].strip().replace('Location -- ', '')
             city = ' '.join(loc_name.split(' ')[:-1])
             country = loc_name.split(' ')[-1]
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
-            coor_str = self._header[3].strip().split('} {')
-            lat_str = coor_str[0].replace('\xb0', '').replace('{', '') \
-                .replace("'", '').split(' ')
-            lon_str = coor_str[1].replace(
-                '\xb0', '').replace("'", '').split(' ')
-            while '' in lat_str:
-                lat_str.remove('')
-            while '' in lon_str:
-                lon_str.remove('')
-            latitude = float(lat_str[1]) + (float(lat_str[2])/60)
-            if lat_str[0] == 'S':
-                latitude = -latitude
-            longitude = float(lon_str[-2]) + (float(lon_str[-1])/60)
-            if lon_str[0] == 'W':
-                longitude = -longitude
-            time_zone = float(coor_str[2].replace('GMT ', '')
-                              .replace(" Hours}", ''))
-            elev_str = self._header[4].replace('Elevation --', '').strip() \
-                .replace(' sea level', '').split(' ')
-            elevation = int(elev_str[0].replace('m', ''))
-            if elev_str[-1].strip().lower() == 'below':
-                elevation = -elevation
+            coord_pattern = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)'}")
+            matches = coord_pattern.findall(self._header[3].replace('\xb0', 'deg'))
+            lat_sign = -1 if matches[0][0] == 'S' else 1
+            latitude = lat_sign * float(matches[0][1]) + (float(matches[0][2])/60)
+            lon_sign = -1 if matches[0][0] == 'W' else 1
+            longitude = lon_sign * float(matches[1][1]) + (float(matches[1][2])/60)
+            tz_pattern = re.compile(r"{GMT\s*(\S*)\s*Hours}")
+            time_zone = float(tz_pattern.findall(self._header[3])[0])
+            elev_pattern = re.compile(r"Elevation\s*[-]*\s*(\d)m\s*(\S*)")
+            elev_matches = elev_pattern.findall(self._header[4])
+            elev_sign = -1 if elev_matches[0][-1].lower() == 'below' else 1
+            elevation = elev_sign * float(elev_matches[0][0])
 
             self._location = Location()
             self._location.city = city
@@ -116,23 +100,20 @@ class STAT(object):
             self._ashrae_climate_zone = None
             self._koppen_climate_zone = None
 
-            # move through the document and pull out the relevant data
+            # move through the document and pull out the climate zone and tau values
             while line:
                 if 'taub (beam)' in line:
-                    taub_raw = line.replace('taub (beam)', '').strip() \
-                        .split('\t')
+                    taub_raw = line.replace('taub (beam)', '').strip().split('\t')
                     self._monthly_tau_beam = [float(i) if 'N' not in i
                                               else None for i in taub_raw]
                 elif 'taud (diffuse)' in line:
-                    taud_raw = line.replace('taud (diffuse)', '').strip() \
-                        .split('\t')
+                    taud_raw = line.replace('taud (diffuse)', '').strip().split('\t')
                     self._monthly_tau_diffuse = [float(i) if 'N' not in i
                                                  else None for i in taud_raw]
                 elif 'Climate type' in line and 'ASHRAE' in line:
                     self._ashrae_climate_zone = line.split('"')[1]
                 elif 'Climate type' in line:
                     self._koppen_climate_zone = line.split('"')[1]
-
                 line = statwin.readline()
 
             self._is_data_loaded = True

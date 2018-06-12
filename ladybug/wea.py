@@ -1,11 +1,10 @@
 """Wea weather file."""
 from .epw import EPW
-from .stat import STAT
+from .stat import Stat
 from .location import Location
 from .dt import DateTime
 from .datacollection import DataCollection
 from .datatype import DataPoint
-from .header import Header
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
@@ -94,7 +93,7 @@ class Wea(object):
             timestep: An optional integer to set the number of time steps per
                 hour. Default is 1 for one value per hour.
         """
-        stat = STAT(statfile)
+        stat = Stat(statfile)
 
         # check to be sure the stat file does not have missing tau values
         def check_missing(opt_data, data_name):
