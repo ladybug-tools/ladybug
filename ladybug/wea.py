@@ -136,7 +136,8 @@ class Wea(object):
         months = []
         dates = []
         for h in range(8760 * timestep):
-            sun = sp.calculate_sun_from_hoy(h / timestep)
+            t_date = DateTime.from_moy((h / float(timestep)) * 60)
+            sun = sp.calculate_sun_from_data_time(t_date)
             dates.append(sun.datetime)
             months.append(sun.datetime.month - 1)
             altitudes.append(sun.altitude)
@@ -166,10 +167,10 @@ class Wea(object):
             alt = altitudes[i]
             if alt > 0:
                 m = months[i]
-                e_beam = 1415 * math.exp(-monthly_tau_beam[m] * math.pow(
-                    air_mass, beam_epxs[m]))
-                e_diff = 1415 * math.exp(-monthly_tau_diffuse[m] * math.pow(
-                    air_mass, diffuse_exps[m]))
+                e_beam = (1415 * math.exp(-monthly_tau_beam[m] * math.pow(
+                    air_mass, beam_epxs[m]))) / timestep
+                e_diff = (1415 * math.exp(-monthly_tau_diffuse[m] * math.pow(
+                    air_mass, diffuse_exps[m]))) / timestep
                 direct_norm_rad.append(
                     DataPoint(e_beam, dates[i], 'SI', 'Direct Normal Radiation'))
                 diffuse_horiz_rad.append(
@@ -222,7 +223,8 @@ class Wea(object):
         months = []
         dates = []
         for h in range(8760 * timestep):
-            sun = sp.calculate_sun_from_hoy(h / timestep)
+            t_date = DateTime.from_moy((h / float(timestep)) * 60)
+            sun = sp.calculate_sun_from_data_time(t_date)
             dates.append(sun.datetime)
             months.append(sun.datetime.month - 1)
             altitudes.append(sun.altitude)
@@ -234,6 +236,8 @@ class Wea(object):
                 dir_norm = monthly_a[months[i]] / (math.exp(
                     monthly_b[months[i]] / (math.sin(math.radians(alt)))))
                 diff_horiz = 0.17 * dir_norm * math.sin(math.radians(alt))
+                dir_norm = dir_norm / timestep
+                diff_horiz = diff_horiz / timestep
                 direct_norm_rad.append(
                     DataPoint(dir_norm, dates[i], 'SI',
                               'Direct Normal Radiation'))
@@ -295,7 +299,8 @@ class Wea(object):
         global_horizontal_rad = []
         sp = Sunpath.from_location(self.location)
         for h in range(8760 * self.timestep):
-            sun = sp.calculate_sun_from_hoy(h / self.timestep)
+            t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
+            sun = sp.calculate_sun_from_data_time(t_date)
             date_t = sun.datetime
             glob_h = self.diffuse_horizontal_radiation[h] + \
                 self.direct_normal_radiation[h] * math.cos(
@@ -366,7 +371,8 @@ class Wea(object):
         surface_total_radiation = []
         sp = Sunpath.from_location(self.location)
         for h in range(8760 * self.timestep):
-            sun = sp.calculate_sun_from_hoy(h / self.timestep)
+            t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
+            sun = sp.calculate_sun_from_data_time(t_date)
             date_t = sun.datetime
             sun_vec = pol2cart(math.radians(sun.azimuth),
                                math.radians(sun.altitude))
