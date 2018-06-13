@@ -426,7 +426,7 @@ class DataCollection(object):
            filteredDBT = DBT.filter_by_hoys(hoys)
         """
         _moys = tuple(int(hour * 60) for hour in hoys)
-        return self.filter_by_moys(_moys)
+        return DataCollection(self.filter_by_moys(_moys))
 
     def filter_by_conditional_statement(self, statement):
         """Filter the list based on a conditional statement.
@@ -543,6 +543,24 @@ class DataCollection(object):
         This method returns a dictionary with nested dictionaries for each hour
         """
         return self.average_data_monthly_for_each_hour(self.values)
+
+    def data_to_HOY(self, condition="x>5"):
+        """
+        Provides a list of HOY for the datapoints in the
+        filtered data from a conditional statement.
+        """
+        if isinstance(condition, str):
+            pass
+        else:
+            errorMessage = "The condition you set must be a string." +\
+                " One of the example is 'x>5'." + \
+                " It replaced the non string condition you entered." +\
+                " Please re-enter your condition as a string."
+            raise TypeError(errorMessage)
+            condition = "x>5"
+
+        return [int(item.hoy) for item in self.filter_by_conditional_statement(
+            condition).datetimes]
 
     def __len__(self):
         return len(self._data)
