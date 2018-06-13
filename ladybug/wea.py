@@ -469,8 +469,8 @@ class Wea(object):
             if self.timestep == 1:
                 # not the whole year
                 for dt, hoy in itertools.izip(dts, hoys):
-                    dir_rad = self.direct_normal_radiation[hoy]
-                    dif_rad = self.diffuse_horizontal_radiation[hoy]
+                    dir_rad = self.direct_normal_radiation[int(hoy)]
+                    dif_rad = self.diffuse_horizontal_radiation[int(hoy)]
                     line = "%d %d %.3f %d %d\n" \
                         % (dt.month, dt.day, dt.hour + 0.5, dir_rad, dif_rad)
 
