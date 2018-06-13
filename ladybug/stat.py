@@ -76,9 +76,9 @@ class Stat(object):
             coord_pattern = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)'}")
             matches = coord_pattern.findall(self._header[3].replace('\xb0', 'deg'))
             lat_sign = -1 if matches[0][0] == 'S' else 1
-            latitude = lat_sign * float(matches[0][1]) + (float(matches[0][2])/60)
+            latitude = lat_sign * (float(matches[0][1]) + (float(matches[0][2])/60))
             lon_sign = -1 if matches[1][0] == 'W' else 1
-            longitude = lon_sign * float(matches[1][1]) + (float(matches[1][2])/60)
+            longitude = lon_sign * (float(matches[1][1]) + (float(matches[1][2])/60))
             tz_pattern = re.compile(r"{GMT\s*(\S*)\s*Hours}")
             time_zone = float(tz_pattern.findall(self._header[3])[0])
             elev_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)m\s*(\S*)")
