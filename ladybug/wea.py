@@ -236,21 +236,17 @@ class Wea(object):
                 dir_norm = monthly_a[months[i]] / (math.exp(
                     monthly_b[months[i]] / (math.sin(math.radians(alt)))))
                 diff_horiz = 0.17 * dir_norm * math.sin(math.radians(alt))
-                dir_norm = dir_norm / timestep
-                diff_horiz = diff_horiz / timestep
+                dir_norm = (dir_norm * sky_clearness) / timestep
+                diff_horiz = (diff_horiz * sky_clearness) / timestep
                 direct_norm_rad.append(
-                    DataPoint(dir_norm, dates[i], 'SI',
-                              'Direct Normal Radiation'))
+                    DataPoint(dir_norm, dates[i], 'SI', 'Direct Normal Radiation'))
                 diffuse_horiz_rad.append(
-                    DataPoint(diff_horiz, dates[i], 'SI',
-                              'Global Horizontal Radiation'))
+                    DataPoint(diff_horiz, dates[i], 'SI', 'Global Horizontal Radiation'))
             else:
                 direct_norm_rad.append(
-                    DataPoint(0, dates[i], 'SI',
-                              'Direct Normal Radiation'))
+                    DataPoint(0, dates[i], 'SI', 'Direct Normal Radiation'))
                 diffuse_horiz_rad.append(
-                    DataPoint(0, dates[i], 'SI',
-                              'Diffuse Horizontal Radiation'))
+                    DataPoint(0, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep)
 
