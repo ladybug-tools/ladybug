@@ -135,7 +135,7 @@ class Wea(object):
         altitudes = []
         months = []
         dates = []
-        for h in range(8760 * timestep):
+        for h in xrange(8760 * timestep):
             t_date = DateTime.from_moy((h / float(timestep)) * 60)
             sun = sp.calculate_sun_from_data_time(t_date)
             dates.append(sun.datetime)
@@ -222,7 +222,7 @@ class Wea(object):
         altitudes = []
         months = []
         dates = []
-        for h in range(8760 * timestep):
+        for h in xrange(8760 * timestep):
             t_date = DateTime.from_moy((h / float(timestep)) * 60)
             sun = sp.calculate_sun_from_data_time(t_date)
             dates.append(sun.datetime)
@@ -294,7 +294,7 @@ class Wea(object):
         """Returns the global horizontal radiation at each timestep."""
         global_horizontal_rad = []
         sp = Sunpath.from_location(self.location)
-        for h in range(8760 * self.timestep):
+        for h in xrange(8760 * self.timestep):
             t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
             sun = sp.calculate_sun_from_data_time(t_date)
             date_t = sun.datetime
@@ -366,7 +366,7 @@ class Wea(object):
         surface_reflected_radiation = []
         surface_total_radiation = []
         sp = Sunpath.from_location(self.location)
-        for h in range(8760 * self.timestep):
+        for h in xrange(8760 * self.timestep):
             t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
             sun = sp.calculate_sun_from_data_time(t_date)
             date_t = sun.datetime
