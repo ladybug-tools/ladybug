@@ -32,6 +32,32 @@ class DateTime(datetime):
             ))
 
     @classmethod
+    def from_json(cls, data):
+        """Creat datetime from a dictionary.
+
+        Args:
+            data: {
+                'month': A value for month between 1-12. (Defualt: 1)
+                'day': A value for day between 1-31. (Defualt: 1)
+                'hour': A value for hour between 0-23. (Defualt: 0)
+                'minute': A value for month between 0-59. (Defualt: 0)
+            }
+        """
+        if 'month' not in data:
+            data['month'] = 1
+
+        if 'day' not in data:
+            data['day'] = 1
+
+        if 'hour' not in data:
+            data['hour'] = 0
+
+        if 'minute' not in data:
+            data['minute'] = 0
+
+        return cls(data['month'], data['day'], data['hour'], data['minute'])
+
+    @classmethod
     def from_hoy(cls, hoy):
         """Create Ladybug Datetime from an hour of the year.
 
@@ -161,6 +187,13 @@ class DateTime(datetime):
     def __str__(self):
         """Return date time as a string."""
         return self.strftime('%d %b %H:%M')
+
+    def to_json(self):
+        """Get date time as a dictionary."""
+        return {'month': self.month,
+                'day': self.day,
+                'hour': self.hour,
+                'minute': self.minute}
 
     def ToString(self):
         """Overwrite .NET ToString."""

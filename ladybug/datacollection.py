@@ -1,7 +1,6 @@
 """Ladybug data collection."""
 from .header import Header
 from .datatype import DataPoint
-from .dt import DateTime
 
 from collections import OrderedDict
 from itertools import izip
@@ -10,21 +9,42 @@ from itertools import izip
 class DataCollection(object):
     """A list of data with a header."""
 
-    __slots__ = ('_header', '_values')
+    __slots__ = ('_header', '_data')
 
     def __init__(self, data=None, header=None):
         """Init class."""
         self.header = header
-        self._values = []
 
         if not data:
-            data = ()
+            data = []
         elif not hasattr(data, '__iter__'):
-            data = (data,)
+            data = [data]
+
         for d in data:
             assert hasattr(d, 'isDataPoint'), \
                 'Expected DataPoint got {}'.format(type(d))
-            self._values.append(d)
+
+        self._data = list(data)
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a data collection from a dictionary.
+
+        Args:
+            {
+                "data": [], //An array of Ladybug data points,
+                "header": {} // A Ladybug header
+            }
+        """
+        if 'data' not in data:
+            input_data = []
+        else:
+            input_data = [DataPoint.from_json(d) for d in data['data']]
+
+        if 'header' not in data:
+            data['header'] = {}
+
+        return cls(input_data, Header.from_json(data['header']))
 
     @classmethod
     def from_list(cls, lst, location=None, data_type=None, unit=None,
@@ -72,14 +92,14 @@ class DataCollection(object):
         """Append a single item to the list."""
         assert hasattr(d, 'isDataPoint'), \
             'Expected DataPoint got {}'.format(type(d))
-        self._values.append(d)
+        self._data.append(d)
 
     def extend(self, new_data):
         """Extend a number of items to the end of items."""
         for d in new_data:
             assert hasattr(d, 'isDataPoint'), \
                 'Expected DataPoint got {}'.format(type(d))
-        self._values.extend(new_data)
+        self._data.extend(new_data)
 
     @property
     def datetimes(self):
@@ -96,7 +116,7 @@ class DataCollection(object):
         Return:
             A list of values
         """
-        return self._values
+        return self._data
 
     def duplicate(self):
         """Duplicate current data list."""
@@ -262,7 +282,7 @@ class DataCollection(object):
                 data.value = values[index]
                 updated_count += 1
 
-        print("%s updated for %d hour%s." % \
+        print("%s updated for %d hour%s." %
               ('Values are' if len(values) > 1 else 'Value is',
                updated_count,
                's' if len(values) > 1 else ''))
@@ -375,7 +395,7 @@ class DataCollection(object):
            moys = range(0, 48 * 60)  # The first two days of the year
            epw = EPW("c:/ladybug/weatherdata.epw")
            DBT = epw.dry_bulb_temperature
-           filteredDBT = DBT.filter_bymoys(moys)
+           filteredDBT = DBT.filter_by_moys(moys)
         """
         # There is no guarantee that data is continuous so I iterate through the
         # each data point one by one
@@ -406,11 +426,10 @@ class DataCollection(object):
            filteredDBT = DBT.filter_by_hoys(hoys)
         """
         _moys = tuple(int(hour * 60) for hour in hoys)
-
-        return self.filter_bymoys(_moys)
+        return self.filter_by_moys(_moys)
 
     def filter_by_conditional_statement(self, statement):
-        """Filter the list based on an analysis period.
+        """Filter the list based on a conditional statement.
 
         Args:
            statement: A conditional statement as a string (e.g. x>25 and x%5==0).
@@ -526,25 +545,32 @@ class DataCollection(object):
         return self.average_data_monthly_for_each_hour(self.values)
 
     def __len__(self):
-        return len(self._values)
+        return len(self._data)
 
     def __getitem__(self, key):
-        return self._values[key]
+        return self._data[key]
 
     def __setitem__(self, key, value):
         raise TypeError('Use update_data_for_an_hour to set the values.')
 
     def __delitem__(self, key):
-        del self._values[key]
+        del self._data[key]
 
     def __iter__(self):
-        return iter(self._values)
+        return iter(self._data)
 
     def __reversed__(self):
-        return reversed(self._values)
+        return reversed(self._data)
 
     def __contains__(self, item):
-        return item in self._values
+        return item in self._data
+
+    def to_json(self):
+        """Convert data collection to a dictionary."""
+        return {
+            'data': [d.to_json() for d in self._data],
+            'header': self.header.to_json()
+        }
 
     def ToString(self):
         """Overwrite .NET ToString method."""
@@ -553,6 +579,6 @@ class DataCollection(object):
     def __repr__(self):
         """_data collection representation."""
         if self.header and self.header.data_type:
-            return "{}: #{}".format(self.header.data_type, len(self._values))
+            return "{}: #{}".format(self.header.data_type, len(self._data))
         else:
-            return "DataCollection: #{}".format(len(self._values))
+            return "DataCollection: #{}".format(len(self._data))

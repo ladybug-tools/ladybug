@@ -1,7 +1,8 @@
 """Ladybug data types."""
 # from abc import ABCMeta, abstractmethod
 import math
-from euclid import Vector3
+from .euclid import Vector3
+from .dt import DateTime
 
 PI = math.pi
 
@@ -32,6 +33,35 @@ class DataTypeBase(object):
         self.standard = standard
         self.datetime = datetime
         self.value = value
+
+    # TODO: Add support for type
+    @classmethod
+    def from_json(cls, data):
+        """Create a data point from a dictionary.
+
+        Args:
+            json_data: Data as a dictionary.
+                {
+                    "value": A number or a string,
+                    "standard": SI/IP,
+                    "datetime": {}, // A ladybug datetime schema
+                    "nickname": A string for nickname
+                }
+        """
+        # check for value to be available
+        assert 'value' in data, 'Required keyword "value" is missing!'
+
+        if 'datetime' not in data:
+            data['dateTime'] = {}
+
+        if 'standard' not in data:
+            data['standard'] = 'SI'
+
+        if 'nickname' not in data:
+            data['nickname'] = None
+
+        datetime = DateTime.from_json(data['datetime'])
+        return cls(data['value'], datetime, data['standard'], data['nickname'])
 
     @property
     def value(self):
@@ -139,6 +169,16 @@ class DataTypeBase(object):
                     self.__class__.__name__, self.minimum, self.maximum
                 )
             )
+
+    def to_json(self):
+        "Get data point as a json object"
+        return {
+            'value': self.value,
+            'datetime': self.datetime.to_json(),
+            'standard': self.standard,
+            'nickname': self.nickname,
+            'type': self.__class__.__name__
+        }
 
     def ToString(self):
         """Overwrite .NET representation."""
@@ -270,7 +310,8 @@ class DataPoint(DataTypeBase):
         return True
 
 
-# TODO: Add methods for toKelvin
+# TODO: Add methods for toKelvin for temperature
+# TODO: Add toAtmospheres, toBars, toPsi, toInWater for pressure
 class Temperature(DataPoint):
     """Base type for temperature.
 
@@ -341,6 +382,7 @@ class RelativeHumidity(DataPoint):
         value: Input value
         datetime: Date time data for this value (Default: None)
         standard: 'SI' or 'IP' (Default: 'SI')
+        nickname: Optional nickname for data (e.g. Dew Point Temperature)
     """
 
     __slots__ = ()
@@ -373,6 +415,7 @@ class Pressure(DataPoint):
         value: Input value
         datetime: Date time data for this value (Default: None)
         standard: 'SI' or 'IP' (Default: 'SI')
+        nickname: Optional nickname for data (e.g. Dew Point Temperature)
     """
 
     __slots__ = ()
@@ -381,7 +424,7 @@ class Pressure(DataPoint):
     missing = 999999
     value_type = int
     unitSI = 'Pa'
-    unitIP = 'Pa'
+    unitIP = 'in'
 
     def __init__(self, value, datetime=None, standard='SI', nickname=None):
         """Init class."""
@@ -390,12 +433,12 @@ class Pressure(DataPoint):
     @property
     def to_ip(self):
         """Return the value in IP."""
-        return self.value
+        return self.value * 0.0002953
 
     @property
     def to_si(self):
         """Return the value in SI."""
-        return self.value
+        return self.value / 0.0002953
 
 
 class Radiation(DataPoint):
@@ -688,3 +731,89 @@ class SkyPatch(DataPoint):
     def id(self):
         """Sky patch number."""
         return self.nickname
+
+
+class PredictedMeanVote(DataPoint):
+    """Predicted Mean Vote (PMV).
+
+    Attributes:
+        value: Input value
+        datetime: Date time data for this value (Default: None)
+        standard: 'SI' or 'IP' (Default: 'SI')
+        nickname: Optional nickname for data (e.g. Dew Point Temperature)
+    """
+
+    __slots__ = ()
+    minimum = -50
+    maximum = 50
+    value_type = float
+    unitSI = 'PMV'
+    unitIP = 'PMV'
+
+    def __init__(self, value, datetime=None, standard='SI', nickname=None):
+        """Init class."""
+        DataPoint.__init__(self, value, datetime, standard, nickname)
+
+
+class PercentagePeopleDissatisfied(DataPoint):
+    """Percentage of People Dissatisfied (PPD).
+
+    Attributes:
+        value: Input value
+        datetime: Date time data for this value (Default: None)
+        standard: 'SI' or 'IP' (Default: 'SI')
+        nickname: Optional nickname for data (e.g. Dew Point Temperature)
+    """
+
+    __slots__ = ()
+    minimum = 0
+    maximum = 100
+    value_type = float
+    unitSI = '%'
+    unitIP = '%'
+
+    def __init__(self, value, datetime=None, standard='SI', nickname=None):
+        """Init class."""
+        DataPoint.__init__(self, value, datetime, standard, nickname)
+
+
+class MetabolicRate(DataPoint):
+    """Metabolic Rate (met).
+
+    Attributes:
+        value: Input value
+        datetime: Date time data for this value (Default: None)
+        standard: 'SI' or 'IP' (Default: 'SI')
+        nickname: Optional nickname for data (e.g. Dew Point Temperature)
+    """
+
+    __slots__ = ()
+    minimum = 0
+    value_type = float
+    unitSI = 'met'
+    unitIP = 'met'
+
+    def __init__(self, value, datetime=None, standard='SI', nickname=None):
+        """Init class."""
+        DataPoint.__init__(self, value, datetime, standard, nickname)
+
+
+class Clothing(DataPoint):
+    """Clothing Level (clo).
+
+    Attributes:
+        value: Input value
+        datetime: Date time data for this value (Default: None)
+        standard: 'SI' or 'IP' (Default: 'SI')
+        nickname: Optional nickname for data (e.g. Dew Point Temperature)
+    """
+
+    __slots__ = ()
+    minimum = 0
+    value_type = float
+    unitSI = 'clo'
+    unitIP = 'clo'
+
+    def __init__(self, value, datetime=None, standard='SI', nickname=None):
+        """Init class."""
+        DataPoint.__init__(self, value, datetime, standard, nickname)
