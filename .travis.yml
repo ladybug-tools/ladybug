@@ -1,0 +1,14 @@
+language: python
+
+python: "2.7"
+
+install:
+ - pip install coveralls
+
+# change from 'script: python setup.py test' to this
+script:
+  - coverage run tests.py
+
+after_success:
+  - coverage report
+  - coveralls
