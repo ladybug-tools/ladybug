@@ -1,5 +1,5 @@
 FROM python:2.7
-MAINTAINER Ladybug Tools "info@ladybug.tools"
+MAINTAINER Antoine Dao "antoine.dao@burohappold.com"
 
 WORKDIR /usr/local/lib/python2.7/site-packages
 
