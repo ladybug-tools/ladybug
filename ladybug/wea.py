@@ -136,7 +136,10 @@ class Wea(object):
         months = []
         dates = []
         for h in xrange(8760 * timestep):
-            t_date = DateTime.from_moy((h / float(timestep)) * 60)
+            if timestep == 1:
+                t_date = DateTime.from_moy((h * 60) + 30)
+            else:
+                t_date = DateTime.from_moy((h / float(timestep)) * 60)
             sun = sp.calculate_sun_from_data_time(t_date)
             dates.append(sun.datetime)
             months.append(sun.datetime.month - 1)
@@ -223,7 +226,10 @@ class Wea(object):
         months = []
         dates = []
         for h in xrange(8760 * timestep):
-            t_date = DateTime.from_moy((h / float(timestep)) * 60)
+            if timestep == 1:
+                t_date = DateTime.from_moy((h * 60) + 30)
+            else:
+                t_date = DateTime.from_moy((h / float(timestep)) * 60)
             sun = sp.calculate_sun_from_data_time(t_date)
             dates.append(sun.datetime)
             months.append(sun.datetime.month - 1)
@@ -238,15 +244,119 @@ class Wea(object):
                 diff_horiz = 0.17 * dir_norm * math.sin(math.radians(alt))
                 dir_norm = (dir_norm * sky_clearness) / timestep
                 diff_horiz = (diff_horiz * sky_clearness) / timestep
-                direct_norm_rad.append(
-                    DataPoint(dir_norm, dates[i], 'SI', 'Direct Normal Radiation'))
-                diffuse_horiz_rad.append(
-                    DataPoint(diff_horiz, dates[i], 'SI', 'Global Horizontal Radiation'))
+                direct_norm_rad.append(DataPoint(
+                    dir_norm, dates[i], 'SI', 'Direct Normal Radiation'))
+                diffuse_horiz_rad.append(DataPoint(
+                    diff_horiz, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
             else:
                 direct_norm_rad.append(
                     DataPoint(0, dates[i], 'SI', 'Direct Normal Radiation'))
                 diffuse_horiz_rad.append(
                     DataPoint(0, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
+
+        return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep)
+
+    # TODO: Split golbal into direct and diffuse using Perez method.
+    # Right now, I use an old inaccurate method.
+    @classmethod
+    def from_zhang_huang_solar_model(cls, location, cloud_cover,
+                                     relative_humidity, dry_bulb_temperature,
+                                     wind_speed, timestep=1):
+        """Create a wea object from climate data using the Zhang-Huang model.
+
+        The Zhang-Huang solar model was developed to estimate solar
+        radiation for weather stations that lack such values, which are
+        typically colleted with a pyranometer. Using total cloud cover,
+        dry-bulb temperature, relative humidity, and wind speed as
+        inputs the Zhang-Huang estimates global horizontal radiation
+        by means of a regression model across these variables.
+        For more information on the Zhang-Huang model, see the
+        EnergyPlus Engineering Reference:
+        https://bigladdersoftware.com/epx/docs/8-7/engineering-reference/climate-calculations.html#zhang-huang-solar-model
+
+        Args:
+            location: Ladybug location object.
+            cloud_cover: A list of annual float values between 0 and 1
+                that represent the fraction of the sky dome covered
+                in clouds (0 = clear; 1 = completely overcast)
+            cloud_cover: A list of annual float values between 0 and 1
+                that represent the fraction of the sky dome covered
+                in clouds (0 = clear; 1 = completely overcast)
+            relative_humidity: A list of annual float values between
+                0 and 100 that represent the relative humidity in percent.
+            dry_bulb_temperature: A list of annual float values that
+                represent the dry bulb temperature in degrees Celcius.
+            wind_speed: A list of annual float values that
+                represent the wind speed in meters per second.
+            timestep: An optional integer to set the number of time steps per
+                hour. Default is 1 for one value per hour.
+        """
+        # check input data
+        assert len(cloud_cover) == len(relative_humidity) == \
+            len(dry_bulb_temperature) == len(wind_speed), \
+            'lengths of input climate data must match.'
+        assert len(cloud_cover) / timestep == 8760, \
+            'input climate data must be annual.'
+        assert isinstance(timestep, int), 'timestep must be an' \
+            ' integer. Got {}'.format(type(timestep))
+
+        # solar model regression constants
+        c0, c1, c2, c3, c4, c5, d_coeff, k_coeff = 0.5598, 0.4982, \
+            -0.6762, 0.02842, -0.00317, 0.014, -17.853, 0.843
+
+        # extraterrestrial solar constant (W/m2)
+        irr0 = 1355
+
+        # initiate sunpath based on location
+        sp = Sunpath.from_location(location)
+
+        # calculate zhang-huang radiation
+        direct_norm_rad, diffuse_horiz_rad = [], []
+        for i in xrange(8760 * timestep):
+            # start assuming night time
+            glob_ir = 0
+            dir_ir = 0
+            diff_ir = 0
+
+            # calculate sun altitude
+            t_date = DateTime.from_moy(((i / float(timestep)) * 60) + 30)
+            sun = sp.calculate_sun_from_data_time(t_date)
+            alt = sun.altitude
+
+            if alt > 0.1:
+                # get sin of the altitude
+                sin_alt = math.sin(math.radians(alt))
+
+                # get the values at each timestep
+                cc, rh, n_temp, n3_temp, w_spd = cloud_cover[i] / 10, \
+                    relative_humidity[i], dry_bulb_temperature[i], \
+                    dry_bulb_temperature[i - (3 * timestep)], wind_speed[i]
+
+                # calculate zhang-huang global radiation
+                glob_ir = ((irr0 * sin_alt *
+                            (c0 + (c1 * cc) + (c2 * cc**2)
+                             + (c3 * (n_temp - n3_temp)) +
+                             (c4 * rh) + (c5 * w_spd))) + d_coeff) / k_coeff
+                if glob_ir < 0:
+                    glob_ir = 0
+                else:
+                    # calculate direct and diffuse solar
+                    k_t = glob_ir / (irr0 * sin_alt)
+                    k_tc = 0.4268 + (0.1934 * sin_alt)
+                    if k_t >= k_tc:
+                        k_ds = k_t - ((1.107 + (0.03569 * sin_alt) +
+                                       (1.681 * sin_alt**2)) * (1 - k_t)**2)
+                    else:
+                        k_ds = (3.996 - (3.862 * sin_alt) +
+                                (1.540 * sin_alt**2)) * k_t**3
+                    diff_ir = (irr0 * sin_alt * (k_t - k_ds)) / (1 - k_ds)
+                    dir_horiz_ir = (irr0 * sin_alt * k_ds * (1 - k_t)) / (1 - k_ds)
+                    dir_ir = dir_horiz_ir / math.sin(math.radians(alt))
+
+            direct_norm_rad.append(DataPoint(
+                dir_ir, sun.datetime, 'SI', 'Direct Normal Radiation'))
+            diffuse_horiz_rad.append(DataPoint(
+                diff_ir, sun.datetime, 'SI', 'Diffuse Horizontal Radiation'))
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep)
 
@@ -295,12 +405,15 @@ class Wea(object):
         global_horizontal_rad = []
         sp = Sunpath.from_location(self.location)
         for h in xrange(8760 * self.timestep):
-            t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
+            if self.timestep == 1:
+                t_date = DateTime.from_moy((h * 60) + 30)
+            else:
+                t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
             sun = sp.calculate_sun_from_data_time(t_date)
             date_t = sun.datetime
             glob_h = self.diffuse_horizontal_radiation[h] + \
-                self.direct_normal_radiation[h] * math.cos(
-                    math.radians(90 - sun.altitude))
+                self.direct_normal_radiation[h] * math.sin(
+                    math.radians(sun.altitude))
             global_horizontal_rad.append(
                 DataPoint(glob_h, date_t, 'SI', 'Global Horizontal Radiation'))
         return global_horizontal_rad
@@ -367,7 +480,10 @@ class Wea(object):
         surface_total_radiation = []
         sp = Sunpath.from_location(self.location)
         for h in xrange(8760 * self.timestep):
-            t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
+            if self.timestep == 1:
+                t_date = DateTime.from_moy((h * 60) + 30)
+            else:
+                t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
             sun = sp.calculate_sun_from_data_time(t_date)
             date_t = sun.datetime
             sun_vec = pol2cart(math.radians(sun.azimuth),
