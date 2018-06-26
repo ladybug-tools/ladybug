@@ -56,10 +56,14 @@ class DateTime(datetime):
         if 'minute' not in data:
             data['minute'] = 0
 
-        return cls(data['month'], data['day'], data['hour'], data['minute'])
+        if 'year' not in data:
+            data['year'] = 2017
+
+        leap_year = True if int(data['year']) == 2016 else False
+        return cls(data['month'], data['day'], data['hour'], data['minute'], leap_year)
 
     @classmethod
-    def from_hoy(cls, hoy):
+    def from_hoy(cls, hoy, leap_year=False):
         """Create Ladybug Datetime from an hour of the year.
 
         Args:
@@ -68,7 +72,7 @@ class DateTime(datetime):
         return cls.from_moy(round(hoy * 60))
 
     @classmethod
-    def from_moy(cls, moy):
+    def from_moy(cls, moy, leap_year=False):
         """Create Ladybug Datetime from a minute of the year.
 
         Args:
@@ -93,10 +97,10 @@ class DateTime(datetime):
             hour = int((moy / 60) % 24)
             minute = int(moy % 60)
 
-            return cls(month, day, hour, minute)
+            return cls(month, day, hour, minute, leap_year)
 
     @classmethod
-    def from_date_time_string(cls, datetime_string):
+    def from_date_time_string(cls, datetime_string, leap_year=False):
         """Create Ladybug DateTime from a DateTime string.
 
         Usage:
@@ -104,7 +108,7 @@ class DateTime(datetime):
             dt = DateTime.from_date_time_string("31 Dec 12:00")
         """
         dt = datetime.strptime(datetime_string, '%d %b %H:%M')
-        return cls(dt.month, dt.day, dt.hour, dt.minute)
+        return cls(dt.month, dt.day, dt.hour, dt.minute, leap_year)
 
     @property
     def isDateTime(self):
@@ -191,7 +195,8 @@ class DateTime(datetime):
 
     def to_json(self):
         """Get date time as a dictionary."""
-        return {'month': self.month,
+        return {'year': self.year,
+                'month': self.month,
                 'day': self.day,
                 'hour': self.hour,
                 'minute': self.minute}
