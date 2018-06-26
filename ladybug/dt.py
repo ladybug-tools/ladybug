@@ -14,7 +14,7 @@ class DateTime(datetime):
 
     __slots__ = ()
 
-    def __new__(cls, month=1, day=1, hour=0, minute=0):
+    def __new__(cls, month=1, day=1, hour=0, minute=0, leap_year=False):
         """Create Ladybug datetime.
 
         Args:
@@ -23,9 +23,10 @@ class DateTime(datetime):
             hour: A value for hour between 0-23. (Defualt: 0)
             minute: A value for month between 0-59. (Defualt: 0)
         """
+        year = 2016 if leap_year else 2017
         hour, minute = cls._calculate_hour_and_minute(hour + minute / 60.0)
         try:
-            return datetime.__new__(cls, 2017, month, day, hour, minute)
+            return datetime.__new__(cls, year, month, day, hour, minute)
         except ValueError as e:
             raise ValueError("{}:\n\t({}/{}@{}:{})(m/d@h:m)".format(
                 e, month, day, hour, minute
