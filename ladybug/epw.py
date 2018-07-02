@@ -725,7 +725,7 @@ class EPW(object):
         sky_temp_data = []
         for hor_ir in horiz_ir.values:
             dat = hor_ir.datetime
-            temp = ((float(hor_ir) / (0.95*5.667*(10**(-8))))**(0.25)) - 273.15
+            temp = ((float(hor_ir) / (5.6697*(10**(-8))))**(0.25)) - 273.15
             sky_temp_data.append(DataPoint(temp, dat))
         sky_temp = DataCollection(sky_temp_data, sky_temp_header)
         return sky_temp
