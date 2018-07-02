@@ -6,6 +6,7 @@ from .datacollection import DataCollection
 from .dt import DateTime
 
 import os
+import copy
 
 
 class EPW(object):
@@ -45,6 +46,7 @@ class EPW(object):
         albedo
         liquid_precipitation_depth
         liquid_precipitation_quantity
+        sky_temperature
     """
 
     def __init__(self, file_path=None):
@@ -702,6 +704,31 @@ class EPW(object):
             pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(34)
+
+    @property
+    def sky_temperature(self):
+        """Return annual Sky Temperature as a Ladybug Data List.
+
+        This value in degrees Celcius is derived from the Horizontal Infrared
+        Radiation Intensity in Wh/m2. It represents the long wave radiant
+        temperature of the sky
+        Read more at: https://bigladdersoftware.com/epx/docs/8-9/engineering-reference
+            /climate-calculations.html#energyplus-sky-temperature-calculation
+        """
+        # create sky temperature data collection from horizontal infrared
+        horiz_ir = self._get_data_by_field(12)
+        sky_temp_header = copy.copy(horiz_ir.header)
+        sky_temp_header.data_type = 'Sky Temperature'
+        sky_temp_header.unit = 'C'
+
+        # calculate sy temperature for each hour
+        sky_temp_data = []
+        for hor_ir in horiz_ir.values:
+            dat = hor_ir.datetime
+            temp = (((float(hor_ir)) / (0.95*5.667*(10**(-8))))**(0.25)) - 273
+            sky_temp_data.append(DataPoint(temp, dat))
+        sky_temp = DataCollection(sky_temp_data, sky_temp_header)
+        return sky_temp
 
     def _get_wea_header(self):
         return "place %s\n" % self.location.city + \
