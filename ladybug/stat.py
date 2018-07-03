@@ -69,7 +69,7 @@ class Stat(object):
 
             # import location data
             loc_name = self._header[2].strip().replace('Location -- ', '')
-            city = ' '.join(loc_name.split(' ')[:-1])
+            city = ' '.join(loc_name.split(' - ')[:-1])
             country = loc_name.split(' ')[-1]
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')

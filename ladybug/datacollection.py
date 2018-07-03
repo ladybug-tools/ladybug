@@ -18,6 +18,8 @@ class DataCollection(object):
         if not data:
             data = []
         elif not hasattr(data, '__iter__'):
+            assert hasattr(data, 'isDataPoint'), \
+                'Expected DataPoint got {}'.format(type(data))
             data = [data]
 
         for d in data:

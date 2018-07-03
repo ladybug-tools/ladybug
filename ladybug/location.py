@@ -120,7 +120,7 @@ class Location(object):
 
     @property
     def longitude(self):
-        """Location latitude."""
+        """Location longitude."""
         return self._lon
 
     @longitude.setter
@@ -130,7 +130,7 @@ class Location(object):
 
     @property
     def time_zone(self):
-        """Location latitude."""
+        """Location time zone."""
         return self._tz
 
     @time_zone.setter
@@ -140,7 +140,7 @@ class Location(object):
 
     @property
     def elevation(self):
-        """Location latitude."""
+        """Location elevation."""
         return self._elev
 
     @elevation.setter

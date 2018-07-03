@@ -2,8 +2,8 @@
 import math
 from collections import Iterable
 from .comfortBase import ComfortModel
-from ..psychrometrics import findHumidRatio
-from ..psychrometrics import findSaturatedvapor_pressureTorr
+from ..psychrometrics import find_humid_ratio
+from ..psychrometrics import find_saturated_vapor_pressure_torr
 from ..rootFinding import secant
 from ..rootFinding import bisect
 from ..listoperations import duplicate
@@ -11,7 +11,7 @@ from ..epw import EPW
 
 
 class PMV(ComfortModel):
-    u"""
+    """
     PMV Comfort Object.
 
     Usage:
@@ -160,7 +160,7 @@ class PMV(ComfortModel):
         """
         Boolean value that indicates whether the input data is aligned.
             True = aligned
-            False = not aligned (run the _checkAndAlignLists function to align the data)
+            False = not aligned (run the _check_and_align_lists function to align the data)
         """
         return self.__isDataAligned
 
@@ -348,7 +348,7 @@ class PMV(ComfortModel):
         are considered too dry to be comfortable.  The default is set to 0 kg wather/kg
         air.
         """
-        return self.__humid_ratio_up
+        return self.__humid_ratio_low
 
     @humid_ratio_low.setter
     def humid_ratio_low(self, value):
@@ -362,7 +362,7 @@ class PMV(ComfortModel):
         Effective Temperature (SET) is used to dtermine PMV/PPD (as opposed to Fanger's
         original equation). The default is set to 0.1 m/s.
         """
-        return self.__humid_ratio_up
+        return self.__still_air_threshold
 
     @still_air_threshold.setter
     def still_air_threshold(self, value):
@@ -391,19 +391,19 @@ class PMV(ComfortModel):
         defaults where possible.
         """
         # Check each list to be sure that the contents are what we want.
-        check_data1, air_temp, airMultVal = self._checkInputList(
+        check_data1, air_temp, airMultVal = self._check_input_list(
             self.__air_temperature, [20], "air_temperature", "Temperature")
-        check_data2, rad_temp, radMultVal = self._checkInputList(
+        check_data2, rad_temp, radMultVal = self._check_input_list(
             self.__rad_temperature, air_temp, "rad_temperature", "Temperature")
-        check_data3, wind_speed, windMultVal = self._checkInputList(
+        check_data3, wind_speed, windMultVal = self._check_input_list(
             self.__wind_speed, [0.0], "wind_speed", "Wind Speed")
-        check_data4, rel_humid, humidMultVal = self._checkInputList(
+        check_data4, rel_humid, humidMultVal = self._check_input_list(
             self.__rel_humidity, [50.0], "rel_humidity", "Humidity")
-        check_data5, met_rate, metMultVal = self._checkInputList(
+        check_data5, met_rate, metMultVal = self._check_input_list(
             self.__met_rate, [1.1], "metabolicRate", "Metabolic")
-        check_data6, clo_level, cloMultVal = self._checkInputList(
+        check_data6, clo_level, cloMultVal = self._check_input_list(
             self.__clo_value, [0.85], "clothingValue", "Clothing")
-        check_data7, ex_work, exMultVal = self._checkInputList(
+        check_data7, ex_work, exMultVal = self._check_input_list(
             self.__external_work, [0.0], "external_work", "Work")
 
         # Finally, for those lists of length greater than 1, check to make sure
@@ -628,7 +628,7 @@ class PMV(ComfortModel):
         """
 
         # Key initial variables.
-        vapor_pressure = (rh * findSaturatedvapor_pressureTorr(ta)) / 100
+        vapor_pressure = (rh * find_saturated_vapor_pressure_torr(ta)) / 100
         air_velocity = max(vel, 0.1)
         kclo = 0.25
         bodyweight = 69.9
@@ -740,7 +740,7 @@ class PMV(ComfortModel):
             ersw = 0.68 * regsw
             rea = 1.0 / (LR * facl * chc)  # evaporative resistance of air layer
             recl = rcl / (LR * icl)  # evaporative resistance of clothing (icl=.45)
-            emax = (findSaturatedvapor_pressureTorr(
+            emax = (find_saturated_vapor_pressure_torr(
                 temp_skin) - vapor_pressure) / (rea + recl)
             prsw = ersw / emax
             pwet = 0.06 + 0.94 * prsw
@@ -771,7 +771,7 @@ class PMV(ComfortModel):
             ecomf = 0.0  # from Fanger
         emax = emax * wcrit
         W = pwet
-        pssk = findSaturatedvapor_pressureTorr(temp_skin)
+        pssk = find_saturated_vapor_pressure_torr(temp_skin)
         # Definition of ASHRAE standard environment... denoted "S"
         chrS = chr
         if met < 0.85:
@@ -803,9 +803,9 @@ class PMV(ComfortModel):
         x_old = temp_skin - hsk / hd_s  # lower bound for SET
         while abs(dx) > .01:
             err1 = (hsk - hd_s * (temp_skin - x_old) - W * he_s *
-                    (pssk - 0.5 * findSaturatedvapor_pressureTorr(x_old)))
+                    (pssk - 0.5 * find_saturated_vapor_pressure_torr(x_old)))
             err2 = (hsk - hd_s * (temp_skin - (x_old + delta)) - W * he_s *
-                    (pssk - 0.5 * findSaturatedvapor_pressureTorr((x_old + delta))))
+                    (pssk - 0.5 * find_saturated_vapor_pressure_torr((x_old + delta))))
             x = x_old - delta * err1 / (err2 - err1)
             dx = x - x_old
             x_old = x
@@ -921,7 +921,7 @@ class PMV(ComfortModel):
             self.__coolingEffect.append(pmv_result['ce'])
 
             # determine whether conditions meet the comfort criteria.
-            HR, vapPress, satPress = findHumidRatio(
+            HR, vapPress, satPress = find_humid_ratio(
                 self.__air_temperature[i], self.__rel_humidity[i])
             if pmv_result['ppd'] > self.__ppd_comfort_thresh:
                 self.__isComfortable.append(0)

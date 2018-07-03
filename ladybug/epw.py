@@ -58,7 +58,7 @@ class EPW(object):
 
     @property
     def file_path(self):
-        """Get or set path to epw file."""
+        """Get path to epw file."""
         return self._file_path
 
     @property
@@ -73,6 +73,7 @@ class EPW(object):
 
     @file_path.setter
     def file_path(self, epw_file_path):
+        """Get path to epw file."""
         self._file_path = os.path.normpath(epw_file_path)
 
         if not os.path.isfile(self._file_path):
