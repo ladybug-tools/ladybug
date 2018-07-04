@@ -1,11 +1,18 @@
 import math
-from location import Location
-from dt import DateTime
-from euclid import Vector3
+from .location import Location
+from .dt import DateTime
+
+from builtins import range
+
+try:
+    from euclid3 import Vector3
+except ModuleNotFoundError:
+    from euclid import Vector3
 from collections import namedtuple
 
 
 import ladybug
+
 try:
     import sunpathplus as plus
 except ImportError as e:
@@ -359,7 +366,7 @@ class Sunpath(object):
 
             """Making the total of all the days in preceding months\
             in the same year"""
-            keys = month_dict.keys()
+            keys = list(month_dict.keys())
             days_in_precending_months = 0
             for i in range(month - 1):
                 days_in_precending_months += month_dict[keys[i]]
@@ -540,7 +547,7 @@ class Sunpath(object):
 
         # draw daily sunpath
         if annual:
-            dts = (DateTime(m, 21) for m in xrange(1, 13))
+            dts = (DateTime(m, 21) for m in range(1, 13))
         else:
             dts = (sun.datetime for sun in suns)
 
@@ -585,14 +592,14 @@ class Sunpath(object):
         Returns:
             A list of list of analemma suns.
         """
-        for h in xrange(0, 24):
+        for h in range(0, 24):
             if self._analemma_position(h) < 0:
                 continue
             elif self._analemma_position(h) == 0:
                 chours = []
                 # this is an hour that not all the hours are day or night
                 prevhour = self.latitude <= 0
-                for hoy in xrange(h, 8760, 24):
+                for hoy in range(h, 8760, 24):
                     thishour = self.calculate_sun_from_hoy(hoy).is_during_day
                     if thishour != prevhour:
                         if not thishour:
@@ -607,29 +614,29 @@ class Sunpath(object):
                     if self.latitude >= 0:
                         tt = [self.calculate_sun(*st)] + \
                             [self.calculate_sun(st[0], d, h)
-                             for d in xrange(st[1] + 1, 29, 7)] + \
+                             for d in range(st[1] + 1, 29, 7)] + \
                             [self.calculate_sun(m, d, h)
-                             for m in xrange(st[0] + 1, en[0])
-                             for d in xrange(3, 29, 7)] + \
+                             for m in range(st[0] + 1, en[0])
+                             for d in range(3, 29, 7)] + \
                             [self.calculate_sun(en[0], d, h)
-                             for d in xrange(3, en[1], 7)] + \
+                             for d in range(3, en[1], 7)] + \
                             [self.calculate_sun(*en)]
                     else:
                         tt = [self.calculate_sun(*en)] + \
                             [self.calculate_sun(en[0], d, h)
-                             for d in xrange(en[1] + 1, 29, 7)] + \
-                            [self.calculate_sun(m, d, h) for m in xrange(en[0] +
+                             for d in range(en[1] + 1, 29, 7)] + \
+                            [self.calculate_sun(m, d, h) for m in range(en[0] +
                                                                          1, 13)
-                             for d in xrange(3, 29, 7)] + \
-                            [self.calculate_sun(m, d, h) for m in xrange(1, st[0])
-                             for d in xrange(3, 29, 7)] + \
+                             for d in range(3, 29, 7)] + \
+                            [self.calculate_sun(m, d, h) for m in range(1, st[0])
+                             for d in range(3, 29, 7)] + \
                             [self.calculate_sun(st[0], d, h)
-                             for d in xrange(3, st[1], 7)] + \
+                             for d in range(3, st[1], 7)] + \
                             [self.calculate_sun(*st)]
                     yield tt
             else:
                 yield tuple(self.calculate_sun((m % 12) + 1, d, h)
-                            for m in xrange(0, 13) for d in (7, 14, 21))[:-2]
+                            for m in range(0, 13) for d in (7, 14, 21))[:-2]
 
     def _daily_suns(self, datetimes):
         """Get sun curve for multiple days of the year."""
@@ -773,7 +780,7 @@ class Sun(object):
             .rotate_around(z_axis, self.azimuth_in_radians) \
             .rotate_around(z_axis, math.radians(-1 * self.north_angle))
 
-        _sun_vector.normalize().flip()
+        _sun_vector.normalize()  #.flip()
 
         self._sun_vector = _sun_vector
 

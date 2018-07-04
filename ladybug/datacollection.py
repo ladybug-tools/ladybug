@@ -3,7 +3,13 @@ from .header import Header
 from .datatype import DataPoint
 
 from collections import OrderedDict
-from itertools import izip
+
+from builtins import range
+
+try:
+    from itertools import izip as zip
+except ImportError:  # will be 3.x series
+    pass
 
 
 class DataCollection(object):
@@ -71,7 +77,7 @@ class DataCollection(object):
     @classmethod
     def from_data_and_datetimes(cls, data, datetimes, header=None):
         """Create a list from data and dateteimes."""
-        _d = (DataPoint(v, d) for v, d in izip(data, datetimes))
+        _d = (DataPoint(v, d) for v, d in zip(data, datetimes))
         return cls(_d, header)
 
     @classmethod
@@ -129,7 +135,7 @@ class DataCollection(object):
         return sum(values) / len(data)
 
     @staticmethod
-    def group_data_by_month(data, month_range=xrange(1, 13)):
+    def group_data_by_month(data, month_range=range(1, 13)):
         """Return a dictionary of values where values are grouped for each month.
 
         Key values are between 1-12
@@ -151,7 +157,7 @@ class DataCollection(object):
 
         return hourly_data_by_month
 
-    def group_by_month(self, month_range=xrange(1, 13)):
+    def group_by_month(self, month_range=range(1, 13)):
         """
         Return a dictionary of values where values are grouped for each month.
 
@@ -169,7 +175,7 @@ class DataCollection(object):
         return self.group_data_by_month(self.values, month_range)
 
     @staticmethod
-    def group_data_by_day(data, day_range=xrange(1, 366)):
+    def group_data_by_day(data, day_range=range(1, 366)):
         """
         Return a dictionary of values where values are grouped by each day of year.
 
@@ -192,7 +198,7 @@ class DataCollection(object):
 
         return hourly_data_by_day
 
-    def group_by_day(self, day_range=xrange(1, 366)):
+    def group_by_day(self, day_range=range(1, 366)):
         """
         Return a dictionary of values where values are grouped by each day of year.
 
@@ -211,7 +217,7 @@ class DataCollection(object):
         return self.group_data_by_day(self.values, day_range)
 
     @staticmethod
-    def group_data_by_hour(data, hour_range=xrange(0, 24)):
+    def group_data_by_hour(data, hour_range=range(0, 24)):
         """Return a dictionary of values where values are grouped by each hour of day.
 
         Key values are between 0-23
@@ -233,7 +239,7 @@ class DataCollection(object):
 
         return hourly_data_by_hour
 
-    def group_by_hour(self, hour_range=xrange(0, 24)):
+    def group_by_hour(self, hour_range=range(0, 24)):
         """Return a dictionary of values where values are grouped by each hour of day.
 
         Key values are between 0-23
@@ -328,11 +334,11 @@ class DataCollection(object):
         # generate new data
         _data = tuple(
             self[d].__class__(_v, self[d].datetime.add_minute(step * _minutesStep))
-            for d in xrange(_dataLength)
+            for d in range(_dataLength)
             for _v, step in zip(self.xxrange(self[d],
                                              self[(d + 1) % _dataLength],
                                              timestep),
-                                xrange(timestep))
+                                range(timestep))
         )
         # generate data for last hour
         return _data
@@ -341,7 +347,7 @@ class DataCollection(object):
     def xxrange(start, end, step_count):
         """Generate n values between start and end."""
         _step = (end - start) / float(step_count)
-        return (start + (i * _step) for i in xrange(int(step_count)))
+        return (start + (i * _step) for i in range(int(step_count)))
 
     def filter_by_analysis_period(self, analysis_period=None):
         """
