@@ -7,7 +7,7 @@ install:
 
 # change from 'script: python setup.py test' to this
 script:
-  - py.test --cov==. tests/
+  - py.test --cov=. tests/
 
 after_success:
   - coverage report
