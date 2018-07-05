@@ -792,27 +792,33 @@ class EPWFields(object):
 
     FIELDS = {
         0: {'name': 'Year',
-            'type': int
+            'type': int,
+            'start_time': 1
             },
 
         1: {'name': 'Month',
-            'type': int
+            'type': int,
+            'start_time': 1
             },
 
         2: {'name': 'Day',
-            'type': int
+            'type': int,
+            'start_time': 1
             },
 
         3: {'name': 'Hour',
-            'type': int
+            'type': int,
+            'start_time': 1
             },
 
         4: {'name': 'Minute',
-            'type': int
+            'type': int,
+            'start_time': 1
             },
 
         5: {'name': 'Uncertainty Flags',
-            'type': str
+            'type': str,
+            'start_time': 1
             },
 
         6: {'name': 'Dry Bulb Temperature',
@@ -820,7 +826,8 @@ class EPWFields(object):
             'unit': 'C',
             'min': -70,
             'max': 70,
-            'missing': 99.9
+            'missing': 99.9,
+            'start_time': 1
             },
 
         7: {'name': 'Dew Point Temperature',
@@ -828,7 +835,8 @@ class EPWFields(object):
             'unit': 'C',
             'min': -70,
             'max': 70,
-            'missing': 99.9
+            'missing': 99.9,
+            'start_time': 1
             },
 
         8: {'name': 'Relative Humidity',
@@ -836,7 +844,8 @@ class EPWFields(object):
             'unit': '%',
             'missing': 999,
             'min': 0,
-            'max': 110
+            'max': 110,
+            'start_time': 1
             },
 
         9: {'name': 'Atmospheric Station Pressure',
@@ -844,77 +853,88 @@ class EPWFields(object):
             'unit': 'Pa',
             'missing': 999999,
             'min': 31000,
-            'max': 120000
+            'max': 120000,
+            'start_time': 1
             },
 
         10: {'name': 'Extraterrestrial Horizontal Radiation',
              'type': int,
              'unit': 'Wh/m2',
              'missing': 9999,
-             'min': 0
+             'min': 0,
+             'start_time': 0.5
              },
 
         11: {'name': 'Extraterrestrial Direct Normal Radiation',
              'type': int,
              'unit': 'Wh/m2',
              'missing': 9999,
-             'min': 0
+             'min': 0,
+             'start_time': 0.5
              },
 
         12: {'name': 'Horizontal Infrared Radiation Intensity',
              'type': int,
              'unit': 'Wh/m2',
              'missing': 9999,
-             'min': 0
+             'min': 0,
+             'start_time': 1
              },
 
         13: {'name': 'Global Horizontal Radiation',
              'type': int,
              'unit': 'Wh/m2',
              'missing': 9999,
-             'min': 0
+             'min': 0,
+             'start_time': 0.5
              },
 
         14: {'name': 'Direct Normal Radiation',
              'type': int,
              'unit': 'Wh/m2',
              'missing': 9999,
-             'min': 0
+             'min': 0,
+             'start_time': 0.5
              },
 
         15: {'name': 'Diffuse Horizontal Radiation',
              'type': int,
              'unit': 'Wh/m2',
              'missing': 9999,
-             'min': 0
+             'min': 0,
+             'start_time': 0.5
              },
 
         16: {'name': 'Global Horizontal Illuminance',
              'type': int,
              'unit': 'lux',
              'missing': 999999,  # note will be missing if >= 999900
-             'min': 0
+             'min': 0,
+             'start_time': 0.5
              },
 
         17: {'name': 'Direct Normal Illuminance',
              'type': int,
              'unit': 'lux',
              'missing': 999999,  # note will be missing if >= 999900
-             'min': 0
+             'min': 0,
+             'start_time': 0.5
              },
 
         18: {'name': 'Diffuse Horizontal Illuminance',
              'type': int,
              'unit': 'lux',
              'missing': 999999,  # note will be missing if >= 999900
-             'min': 0
+             'min': 0,
+             'start_time': 0.5
              },
 
         19: {'name': 'Zenith Luminance',
              'type': int,
              'unit': 'Cd/m2',
              'missing': 9999,  # note will be missing if >= 9999
-             'min': 0
+             'min': 0,
+             'start_time': 0.5
              },
 
         20: {'name': 'Wind Direction',
@@ -922,7 +942,8 @@ class EPWFields(object):
              'unit': 'degrees',
              'missing': 999,
              'min': 0,
-             'max': 360
+             'max': 360,
+             'start_time': 1
              },
 
         21: {'name': 'Wind Speed',
@@ -930,79 +951,93 @@ class EPWFields(object):
              'unit': 'm/s',
              'missing': 999,
              'min': 0,
-             'max': 40
+             'max': 40,
+             'start_time': 1
              },
 
         22: {'name': 'Total Sky Cover',  # (used if Horizontal IR Intensity missing)
              'type': int,
              'missing': 99,
              'min': 0,
-             'max': 10
+             'max': 10,
+             'start_time': 1
              },
 
         23: {'name': 'Opaque Sky Cover',  # (used if Horizontal IR Intensity missing)
              'type': int,
-             'missing': 99
+             'missing': 99,
+             'start_time': 1
              },
 
         24: {'name': 'Visibility',
              'type': float,
              'unit': 'km',
-             'missing': 9999
+             'missing': 9999,
+             'start_time': 1
              },
 
         25: {'name': 'Ceiling Height',
              'type': int,
              'unit': 'm',
-             'missing': 99999
+             'missing': 99999,
+             'start_time': 1
              },
 
         26: {'name': 'Present Weather Observation',
-             'type': int
+             'type': int,
+             'start_time': 1
              },
 
         27: {'name': 'Present Weather Codes',
-             'type': int
+             'type': int,
+             'start_time': 1
              },
 
         28: {'name': 'Precipitable Water',
              'type': int,
              'unit': 'mm',
-             'missing': 999
+             'missing': 999,
+             'start_time': 1
              },
 
         29: {'name': 'Aerosol Optical Depth',
              'type': float,
              'unit': 'thousandths',
-             'missing': 999
+             'missing': 999,
+             'start_time': 1
              },
 
         30: {'name': 'Snow Depth',
              'type': int,
              'unit': 'cm',
-             'missing': 999
+             'missing': 999,
+             'start_time': 1
              },
 
         31: {'name': 'Days Since Last Snowfall',
              'type': int,
-             'missing': 99
+             'missing': 99,
+             'start_time': 1
              },
 
         32: {'name': 'Albedo',
              'type': float,
-             'missing': 999
+             'missing': 999,
+             'start_time': 1
              },
 
         33: {'name': 'Liquid Precipitation Depth',
              'type': float,
              'unit': 'mm',
-             'missing': 999
+             'missing': 999,
+             'start_time': 1
              },
 
         34: {'name': 'Liquid Precipitation Quantity',
              'type': float,
              'unit': 'hr',
-             'missing': 99
+             'missing': 99,
+             'start_time': 1
              }
     }
 
