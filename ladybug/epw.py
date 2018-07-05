@@ -173,10 +173,20 @@ class EPW(object):
                 # since I'm using this timestamp as the key and will be using it for
                 # sorting. I'm setting it up to 2015 - the real year will be collected
                 # under modelYear
-                timestamp = DateTime(month, day, hour - 1)
+                timestamp_half_hour = DateTime(month, day, hour - 1)
+                timestamp_hour = DateTime(month, day, hour - 1)
+
+                insert_hour = 0
+                if month == 1 and day == 1 and hour == 24:
+                    insert_hour = 1
+                if month == 12 and day == 31 and hour == 24:
+                    insert_hour = -1
+                else:
+                    timestamp_hour = timestamp_hour.add_hour(1)
 
                 for field_number in xrange(self._num_of_fields):
                     value_type = EPWFields.field_by_number(field_number).value_type
+                    start_time = EPWFields.field_by_number(field_number).start_time
                     try:
                         value = value_type(data[field_number])
                     except ValueError as e:
@@ -185,7 +195,16 @@ class EPW(object):
                             raise ValueError(e)
                         value = int(round(float(data[field_number])))
 
-                    self._data[field_number].append(DataPoint(value, timestamp))
+                    if start_time == 0.5:
+                        self._data[field_number].append(
+                            DataPoint(value, timestamp_half_hour))
+                    else:
+                        if insert_hour != -1:
+                            self._data[field_number].append(
+                                DataPoint(value, timestamp_hour))
+                            if insert_hour == 1:
+                                self._data[field_number].insert(
+                                    0, DataPoint(value, DateTime(1, 1, 0)))
 
                 line = epwin.readline()
 
@@ -1105,6 +1124,7 @@ class EPWField(object):
     def __init__(self, field_dict):
         self.name = field_dict['name']
         self.value_type = field_dict['type']
+        self.start_time = field_dict['start_time']
         if 'unit' in field_dict:
             self.unit = field_dict['unit']
         else:

@@ -101,6 +101,14 @@ class DataCollection(object):
                 'Expected DataPoint got {}'.format(type(d))
         self._data.extend(new_data)
 
+    def insert(self, i, d):
+        """Insert an item at a given position."""
+        assert hasattr(d, 'isDataPoint'), \
+            'Expected DataPoint got {}'.format(type(d))
+        assert isinstance(i, int), \
+            'Expected Integer got {}'.format(type(i))
+        self._data.insert(i, d)
+
     @property
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
@@ -312,29 +320,42 @@ class DataCollection(object):
         """
         return self.update_data_for_hours_of_year(values, analysis_period.hoys)
 
-    def interpolate_data(self, timestep):
+    def interpolate_data(self, timestep, half_hour=False):
         """Interpolate data for a finer timestep.
 
         Args:
             timestep: Target timestep as an integer. Target timestep must be
                 divisable by current timestep.
+            half_hour: A boolean that sets the interpolation to occur
+                on every half hour when set to True.  The default is
+                set to False, which interpolates assuming each DataPoint
+                is on the hour.
         """
         assert timestep % self.header.analysis_period.timestep == 0, \
             'Target timestep({}) must be divisable by current timestep({})' \
             .format(timestep, self.header.analysis_period.timestep)
+        assert isinstance(half_hour, bool), \
+            'Expected Boolean got {}'.format(type(half_hour))
 
-        _minutesStep = int(60 / int(timestep / self.header.analysis_period.timestep))
-        _dataLength = len(self.values)
+        _minutes_step = int(60 / int(timestep / self.header.analysis_period.timestep))
+        _data_length = len(self.values)
         # generate new data
         _data = tuple(
-            self[d].__class__(_v, self[d].datetime.add_minute(step * _minutesStep))
-            for d in xrange(_dataLength)
+            self[d].__class__(_v, self[d].datetime.add_minute(step * _minutes_step))
+            for d in xrange(_data_length)
             for _v, step in zip(self.xxrange(self[d],
-                                             self[(d + 1) % _dataLength],
+                                             self[(d + 1) % _data_length],
                                              timestep),
                                 xrange(timestep))
         )
-        # generate data for last hour
+
+        # shift data if half-hour interpolation has been selected.
+        if half_hour is True:
+            shift_dist = int(timestep / 2)
+            _data = _data[-shift_dist:] + _data[:-shift_dist]
+            for i, d in enumerate(_data):
+                _data[i - shift_dist].datetime = d.datetime
+
         return _data
 
     @staticmethod

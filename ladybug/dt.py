@@ -175,7 +175,7 @@ class DateTime(datetime):
         Args:
             hours: A float value in hours (e.g. .5 = half an hour)
         """
-        return self.add_minute((self.hoy + hour) * 60)
+        return self.add_minute(hour * 60)
 
     def sub_hour(self, hour):
         """Create a new DateTime from this time - timedelta.
