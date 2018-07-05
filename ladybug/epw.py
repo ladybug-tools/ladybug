@@ -176,11 +176,9 @@ class EPW(object):
                 timestamp_half_hour = DateTime(month, day, hour - 1)
                 timestamp_hour = DateTime(month, day, hour - 1)
 
-                insert_hour = 0
-                if month == 1 and day == 1 and hour == 24:
-                    insert_hour = 1
+                insert_hour = False
                 if month == 12 and day == 31 and hour == 24:
-                    insert_hour = -1
+                    insert_hour = True
                 else:
                     timestamp_hour = timestamp_hour.add_hour(1)
 
@@ -199,12 +197,12 @@ class EPW(object):
                         self._data[field_number].append(
                             DataPoint(value, timestamp_half_hour))
                     else:
-                        if insert_hour != -1:
+                        if insert_hour is False:
                             self._data[field_number].append(
                                 DataPoint(value, timestamp_hour))
-                            if insert_hour == 1:
-                                self._data[field_number].insert(
-                                    0, DataPoint(value, DateTime(1, 1, 0)))
+                        else:
+                            self._data[field_number].insert(
+                                0, DataPoint(value, DateTime(1, 1, 0)))
 
                 line = epwin.readline()
 
@@ -256,7 +254,16 @@ class EPW(object):
                 for hour in xrange(0, 8760):
                     line = []
                     for field in range(0, self._num_of_fields):
-                        line.append(str(self._data[field].values[hour].value))
+                        start_time = EPWFields.field_by_number(field).start_time
+                        if start_time == 0.5:
+                            line.append(str(self._data[field].values[hour].value))
+                        else:
+                            if hour == 8759:
+                                line.append(str(
+                                    self._data[field].values[0].value))
+                            else:
+                                line.append(str(
+                                    self._data[field].values[hour + 1].value))
                     lines.append(",".join(line) + "\n")
             except IndexError:
                 # cleaning up
