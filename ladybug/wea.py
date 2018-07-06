@@ -3,6 +3,7 @@ from .epw import EPW
 from .stat import Stat
 from .location import Location
 from .dt import DateTime
+from .header import Header
 from .datacollection import DataCollection
 from .datatype import DataPoint
 from .analysisperiod import AnalysisPeriod
@@ -31,8 +32,8 @@ class Wea(object):
         """Create a wea object."""
         timestep = timestep or 1
         self._timestep = timestep
-        assert isinstance(timestep, int), 'timestep must be an'
-        ' integer. Got {}'.format(type(timestep))
+        assert isinstance(timestep, int), 'timestep must be an' \
+            ' integer. Got {}'.format(type(timestep))
 
         self.location = location
         self.direct_normal_radiation = direct_normal_radiation
@@ -165,7 +166,9 @@ class Wea(object):
             diffuse_exps.append(ad)
 
         # compute the clear sky radiation values
-        direct_norm_rad, diffuse_horiz_rad = [], []
+        direct_norm_rad, diffuse_horiz_rad = \
+            cls._get_data_collections(location, timestep)
+
         for i, air_mass in enumerate(air_masses):
             alt = altitudes[i]
             if alt > 0:
@@ -236,7 +239,9 @@ class Wea(object):
             altitudes.append(sun.altitude)
 
         # compute hourly direct normal and diffuse horizontal radiation
-        direct_norm_rad, diffuse_horiz_rad = [], []
+        direct_norm_rad, diffuse_horiz_rad = \
+            cls._get_data_collections(location, timestep)
+
         for i, alt in enumerate(altitudes):
             if alt > 0.1:
                 dir_norm = monthly_a[months[i]] / (math.exp(
@@ -417,6 +422,26 @@ class Wea(object):
             global_horizontal_rad.append(
                 DataPoint(glob_h, date_t, 'SI', 'Global Horizontal Radiation'))
         return global_horizontal_rad
+
+    @staticmethod
+    def _get_data_collections(location, timestep):
+        """Return two empty data collection.
+
+        Direct Normal Radiation, Diffuse Horizontal Radiation
+        """
+        analysis_period = AnalysisPeriod(timestep=timestep)
+        header_dnr = Header(location=location,
+                            analysis_period=analysis_period,
+                            data_type='Direct Normal Radiation',
+                            unit='Wh/m2')
+        direct_norm_rad = DataCollection(header=header_dnr)
+        header_dhr = Header(location=location,
+                            analysis_period=analysis_period,
+                            data_type='Diffuse Horizontal Radiation',
+                            unit='Wh/m2')
+        diffuse_horiz_rad = DataCollection(header=header_dhr)
+
+        return direct_norm_rad, diffuse_horiz_rad
 
     def get_radiation_values(self, month, day, hour):
         """Get direct and diffuse radiation values for a point in time."""

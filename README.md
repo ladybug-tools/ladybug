@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/AntoineDao/ladybug.svg?branch=master)](https://travis-ci.org/AntoineDao/ladybug)
+[![Coverage Status](https://coveralls.io/repos/github/AntoineDao/ladybug/badge.svg)](https://coveralls.io/github/AntoineDao/ladybug)
+
 ![Ladybug](http://www.ladybug.tools/assets/img/ladybug.png)
 
 # ladybug
