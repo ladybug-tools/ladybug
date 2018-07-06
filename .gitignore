@@ -7,3 +7,5 @@ ladybug/sunpathplus.py
 .pytest_cache
 .ipynb_checkpoints
 *.ipynb
+.tox
+*.egg-info
