@@ -101,18 +101,18 @@ class EPW(object):
     def header(self):
         """Return epw file header."""
         if not self.is_location_loaded:
-            self.import_data(import_location_only=True)
+            self._import_data(import_location_only=True)
         return self._header
 
     @property
     def location(self):
         """Return location data."""
         if not self.is_location_loaded:
-            self.import_data(import_location_only=True)
+            self._import_data(import_location_only=True)
         return self._location
 
     # TODO: import EPW header. Currently I just ignore header data
-    def import_data(self, import_location_only=False):
+    def _import_data(self, import_location_only=False):
         """Import data from an epw file.
 
         Hourly data will be saved in self.data and location data
@@ -223,7 +223,7 @@ class EPW(object):
             An annual Ladybug list
         """
         if not self.is_data_loaded:
-            self.import_data()
+            self._import_data()
 
         # check input data
         if not 0 <= field_number < self._num_of_fields:
@@ -245,7 +245,7 @@ class EPW(object):
 
         # load data if it's  not loaded
         if not self.is_data_loaded:
-            self.import_data()
+            self._import_data()
 
         # write the file
         with open(full_path, 'wb') as modEpwFile:
@@ -752,7 +752,7 @@ class EPW(object):
         sky_temp_data = []
         for hor_ir in horiz_ir.values:
             dat = hor_ir.datetime
-            temp = ((float(hor_ir) / (5.6697*(10**(-8))))**(0.25)) - 273.15
+            temp = ((float(hor_ir) / (5.6697 * (10**(-8))))**(0.25)) - 273.15
             sky_temp_data.append(DataPoint(temp, dat))
         sky_temp = DataCollection(sky_temp_data, sky_temp_header)
         return sky_temp
