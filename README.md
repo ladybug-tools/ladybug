@@ -1,5 +1,5 @@
-[![Build Status](https://travis-ci.org/AntoineDao/ladybug.svg?branch=master)](https://travis-ci.org/AntoineDao/ladybug)
-[![Coverage Status](https://coveralls.io/repos/github/AntoineDao/ladybug/badge.svg)](https://coveralls.io/github/AntoineDao/ladybug)
+[![Build Status](https://travis-ci.org/ladybug-tools/ladybug.svg?branch=master)](https://travis-ci.org/ladybug-tools/ladybug)
+[![Coverage Status](https://coveralls.io/repos/github/ladybug-tools/ladybug/badge.svg)](https://coveralls.io/github/ladybug-tools/ladybug)
 
 ![Ladybug](http://www.ladybug.tools/assets/img/ladybug.png)
 
