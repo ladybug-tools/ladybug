@@ -1,11 +1,12 @@
 language: python
 
-python: "2.7"
+python:
+  - "2.7"
+  - "3.6"
 
 install:
  - pip install pytest pytest-cov
 
-# change from 'script: python setup.py test' to this
 script:
   - py.test --cov=. tests/
 

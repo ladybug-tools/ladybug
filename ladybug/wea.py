@@ -339,8 +339,8 @@ class Wea(object):
 
                 # calculate zhang-huang global radiation
                 glob_ir = ((irr0 * sin_alt *
-                            (c0 + (c1 * cc) + (c2 * cc**2)
-                             + (c3 * (n_temp - n3_temp)) +
+                            (c0 + (c1 * cc) + (c2 * cc**2) +
+                             (c3 * (n_temp - n3_temp)) +
                              (c4 * rh) + (c5 * w_spd))) + d_coeff) / k_coeff
                 if glob_ir < 0:
                     glob_ir = 0
