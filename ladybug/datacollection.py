@@ -67,13 +67,13 @@ class DataCollection(object):
         if analysis_period:
             return cls.from_data_and_datetimes(lst, analysis_period.datetimes, header)
         else:
-            data = (DataPoint.from_data(d) for d in lst)
+            data = tuple(DataPoint.from_data(d) for d in lst)
             return cls(data, header)
 
     @classmethod
     def from_data_and_datetimes(cls, data, datetimes, header=None):
         """Create a list from data and dateteimes."""
-        _d = (DataPoint(v, d) for v, d in izip(data, datetimes))
+        _d = tuple(DataPoint(v, d) for v, d in izip(data, datetimes))
         return cls(_d, header)
 
     @classmethod
@@ -514,6 +514,10 @@ class DataCollection(object):
 
         return average_values
 
+    def average_data(self):
+        """Return average value for data collection."""
+        return self.average(self.values)
+
     def average_monthly(self):
         """Return a dictionary of values for average values for available months."""
         return self.average_data_monthly(self.values)
@@ -571,7 +575,7 @@ class DataCollection(object):
         """Convert data collection to a dictionary."""
         return {
             'data': [d.to_json() for d in self._data],
-            'header': self.header.to_json()
+            'header': self.header.to_json() if self.header else {}
         }
 
     def ToString(self):

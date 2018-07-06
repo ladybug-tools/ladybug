@@ -45,6 +45,8 @@ class Location(object):
         d = loc_json
         if 'city' not in d:
             d['city'] = None
+        if 'country' not in d:
+            d['country'] = None
         if 'latitude' not in d:
             d['latitude'] = None
         if 'longitude' not in d:
@@ -54,7 +56,7 @@ class Location(object):
         if 'elevation' not in d:
             d['elevation'] = None
 
-        return cls(d['city'], None, d['latitude'], d['longitude'],
+        return cls(d['city'], d['country'], d['latitude'], d['longitude'],
                    d['time_zone'], d['elevation'])
 
     @classmethod
@@ -190,6 +192,7 @@ class Location(object):
         """
         return {
             "city": self.city,
+            "country": self.country,
             "latitude": self.latitude,
             "longitude": self.longitude,
             "time_zone": self.time_zone,

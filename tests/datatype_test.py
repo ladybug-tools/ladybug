@@ -3,7 +3,8 @@
 import unittest
 import pytest
 from ladybug.dt import DateTime
-from ladybug.datatype import DataTypeBase, DataPoint, DryBulbTemperature
+from ladybug.datatype import DataTypeBase, DryBulbTemperature
+
 
 class DataTypeBaseTestCase(unittest.TestCase):
     """Test for (ladybug/datatype.py)"""
@@ -11,7 +12,6 @@ class DataTypeBaseTestCase(unittest.TestCase):
     # preparing to test.
     def setUp(self):
         """set up."""
-
 
     def tearDown(self):
         """Nothing to tear down as nothing gets written to file."""
@@ -29,7 +29,7 @@ class DataTypeBaseTestCase(unittest.TestCase):
         standard = 'International System of Units'
         nickname = 'myFavouriteUnit'
         with pytest.raises(Exception):
-            DataTypeBase(value,datetime=dt, standard=standard, nickname=nickname)
+            DataTypeBase(value, datetime=dt, standard=standard, nickname=nickname)
 
     def test__init__success(self):
         """Can init with just value or with extra data"""
@@ -38,7 +38,7 @@ class DataTypeBaseTestCase(unittest.TestCase):
         standard = 'SI'
         nickname = 'myFavouriteUnit'
 
-        dtb = DataTypeBase(value,datetime=dt, standard=standard, nickname=nickname)
+        dtb = DataTypeBase(value, datetime=dt, standard=standard, nickname=nickname)
 
         assert dtb.value == value
         assert dtb.datetime == dt
@@ -46,7 +46,7 @@ class DataTypeBaseTestCase(unittest.TestCase):
         assert dtb.nickname == nickname
 
         dtb = DataTypeBase(value)
-        assert dtb.value ==value
+        assert dtb.value == value
 
     def test_json_methods(self):
         """Test the JSON serialization functions"""
@@ -55,13 +55,14 @@ class DataTypeBaseTestCase(unittest.TestCase):
         standard = 'SI'
         nickname = 'myFavouriteUnit'
 
-        dtb = DataTypeBase(value,datetime=dt, standard=standard, nickname=nickname)
+        dtb = DataTypeBase(value, datetime=dt, standard=standard, nickname=nickname)
         dtb_from_json = DataTypeBase.from_json(dtb.to_json())
 
         assert dtb_from_json.value == value
         assert dtb_from_json.datetime == dt
         assert dtb_from_json.standard == standard
         assert dtb_from_json.nickname == nickname
+
 
 class DataPointTestCase(unittest.TestCase):
     """Test for (ladybug/datatype.py)"""
@@ -70,10 +71,10 @@ class DataPointTestCase(unittest.TestCase):
     def setUp(self):
         """set up."""
 
-
     def tearDown(self):
         """Nothing to tear down as nothing gets written to file."""
         pass
+
 
 class DryBulbTemperatureTestCase(unittest.TestCase):
     """Test for DrybulbTemperature class of ladybug/datatype.py)"""
@@ -86,7 +87,7 @@ class DryBulbTemperatureTestCase(unittest.TestCase):
         temp = DryBulbTemperature(t)
         json_data = {
             'value': t,
-            'datetime': None,
+            'datetime': {},
             'standard': 'SI',
             'nickname': None,
             'type': 'DryBulbTemperature'

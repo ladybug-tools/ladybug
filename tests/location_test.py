@@ -24,8 +24,8 @@ class LocationTestCase(unittest.TestCase):
         assert loc.latitude == 0
         assert loc.longitude == 0
         assert loc.time_zone == 0
-        assert loc.station_id == None
-        assert loc.source == None
+        assert loc.station_id is None
+        assert loc.source is None
 
     def test_from__init__(self):
         """Test if the command correctly creates location based on individual values"""
@@ -62,16 +62,15 @@ class LocationTestCase(unittest.TestCase):
         new_time_zone = 5
         new_elevation = 20
 
-        loc.latitude(new_latitude)
-        loc.longitude(new_longitude)
-        loc.time_zone(new_time_zone)
-        loc.elevation(new_elevation)
+        loc.latitude = new_latitude
+        loc.longitude = new_longitude
+        loc.time_zone = new_time_zone
+        loc.elevation = new_elevation
 
         assert loc.latitude == new_latitude
         assert loc.longitude == new_longitude
         assert loc.time_zone == new_time_zone
         assert loc.elevation == new_elevation
-
 
     def test_from_location(self):
         """Test the from_location() class method"""
@@ -108,9 +107,9 @@ class LocationTestCase(unittest.TestCase):
                        longitude=longitude, time_zone=time_zone,
                        elevation=elevation)
 
-        assert loc.to_json() == {"city": city, "latitude": latitude,
-                                "longitude": longitude, "time_zone": time_zone,
-                                "elevation": elevation}
+        assert loc.to_json() == {"city": city, "country": country, "latitude": latitude,
+                                 "longitude": longitude, "time_zone": time_zone,
+                                 "elevation": elevation}
 
         loc_from_json = Location.from_json(loc.to_json())
 
@@ -119,8 +118,8 @@ class LocationTestCase(unittest.TestCase):
         assert loc_from_json.longitude == longitude
         assert loc_from_json.time_zone == time_zone
         assert loc_from_json.elevation == elevation
-        # Country is not included in to and from json methods. Is there a reason for this?
-        assert loc_from_json.country == '-'
+        assert loc_from_json.country == country
+
 
 if __name__ == "__main__":
     unittest.main()
