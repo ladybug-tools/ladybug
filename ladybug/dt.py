@@ -1,4 +1,5 @@
 """Ladybug datetime."""
+# coding=utf-8
 from datetime import datetime
 
 

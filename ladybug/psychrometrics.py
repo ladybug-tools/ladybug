@@ -1,3 +1,4 @@
+# coding=utf-8
 """A list of useful functions for psychrometrics"""
 
 import math

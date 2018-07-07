@@ -1,3 +1,4 @@
+# coding=utf-8
 from .location import Location
 from .analysisperiod import AnalysisPeriod
 from .datatype import DataPoint  # Temperature, RelativeHumidity, Radiation, Illuminance
@@ -7,6 +8,16 @@ from .dt import DateTime
 
 import os
 import copy
+import sys
+if (sys.version_info > (3, 0)):
+    # https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files
+    # python 3
+    readmode = 'r'
+    writemode = 'w'
+    xrange = range
+else:
+    readmode = 'rb'
+    writemode = 'wb'
 
 
 class EPW(object):
@@ -118,7 +129,7 @@ class EPW(object):
         Hourly data will be saved in self.data and location data
         will be saved in self.location
         """
-        with open(self.file_path, 'rb') as epwin:
+        with open(self.file_path, readmode) as epwin:
             line = epwin.readline()
 
             # import location data
@@ -248,7 +259,7 @@ class EPW(object):
             self._import_data()
 
         # write the file
-        with open(full_path, 'wb') as modEpwFile:
+        with open(full_path, writemode) as modEpwFile:
             modEpwFile.writelines(self._header)
             lines = []
             try:
@@ -1114,7 +1125,7 @@ class EPWFields(object):
         """EPW fields representation."""
         fields = (
             '{}: {}'.format(key, value['name'])
-            for key, value in self.FIELDS.iteritems()
+            for key, value in self.FIELDS.items()
         )
 
         return '\n'.join(fields)

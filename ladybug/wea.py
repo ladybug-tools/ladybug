@@ -1,3 +1,4 @@
+# coding=utf-8
 """Wea weather file."""
 from .epw import EPW
 from .stat import Stat
@@ -10,8 +11,12 @@ from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
 
-import itertools
 import math
+try:
+    from itertools import izip as zip
+except ImportError:
+    # python 3
+    xrange = range
 
 
 class Wea(object):
@@ -605,7 +610,7 @@ class Wea(object):
             weaFile.write(self.header)
             if self.timestep == 1:
                 # not the whole year
-                for dt, hoy in itertools.izip(dts, hoys):
+                for dt, hoy in zip(dts, hoys):
                     dir_rad = self.direct_normal_radiation[int(hoy)]
                     dif_rad = self.diffuse_horizontal_radiation[int(hoy)]
                     line = "%d %d %.3f %d %d\n" \
@@ -615,7 +620,7 @@ class Wea(object):
             elif full_wea:
                 # there is no input user for hoys, write it for all the hours
                 # write values
-                for dt, dir_rad, dif_rad in itertools.izip(
+                for dt, dir_rad, dif_rad in zip(
                     dts, self.direct_normal_radiation,
                         self.diffuse_horizontal_radiation):
                     line = "%d %d %.3f %d %d\n" \
@@ -625,7 +630,7 @@ class Wea(object):
                 # output wea hoys based on user request
                 hoys_set = set(hoys_wea)
                 # write values
-                for dt, dir_rad, dif_rad in itertools.izip(
+                for dt, dir_rad, dif_rad in zip(
                         dts, self.direct_normal_radiation,
                         self.diffuse_horizontal_radiation):
                     if dt.hoy not in hoys_set:

@@ -2,6 +2,7 @@ from .location import Location
 
 import os
 import re
+import codecs
 
 
 class Stat(object):
@@ -62,11 +63,11 @@ class Stat(object):
     def import_data(self):
         """Import data from a stat file.
         """
-        with open(self.file_path, 'r') as statwin:
+        statwin = codecs.open(self.file_path, 'r', encoding='utf-8', errors='ignore')
+        try:
             line = statwin.readline()
             # import header with location
-            self._header = [line] + [statwin.readline() for i in xrange(9)]
-
+            self._header = [line] + [statwin.readline() for i in range(9)]
             # import location data
             loc_name = self._header[2].strip().replace('Location -- ', '')
             if ' - ' in loc_name:
@@ -80,8 +81,8 @@ class Stat(object):
 
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
-            coord_pattern = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)'}")
-            matches = coord_pattern.findall(self._header[3].replace('\xb0', 'deg'))
+            coord_pattern = re.compile(r"{([NSEW])(\s*\d*) (\s*\d*)'}")
+            matches = coord_pattern.findall(self._header[3])
             lat_sign = -1 if matches[0][0] == 'S' else 1
             latitude = lat_sign * (float(matches[0][1]) + (float(matches[0][2]) / 60))
             lon_sign = -1 if matches[1][0] == 'W' else 1
@@ -108,7 +109,7 @@ class Stat(object):
             self._koppen_climate_zone = None
 
             # move through the document and pull out the climate zone and tau values
-            while line:
+            for line in statwin:
                 if 'taub (beam)' in line:
                     taub_raw = line.replace('taub (beam)', '').strip().split('\t')
                     self._monthly_tau_beam = [float(i) if 'N' not in i
@@ -121,9 +122,11 @@ class Stat(object):
                     self._ashrae_climate_zone = line.split('"')[1]
                 elif 'Climate type' in line:
                     self._koppen_climate_zone = line.split('"')[1]
-                line = statwin.readline()
-
-            self._is_data_loaded = True
+        except Exception as e:
+            raise Exception(e)
+        finally:
+            statwin.close()
+        self._is_data_loaded = True
 
     @property
     def header(self):
