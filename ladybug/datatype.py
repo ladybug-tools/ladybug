@@ -1,3 +1,4 @@
+# coding=utf-8
 """Ladybug data types."""
 # from abc import ABCMeta, abstractmethod
 import math
@@ -78,7 +79,7 @@ class DataTypeBase(object):
                 if self.value_type is str:
                     _v = str(v)
                 else:
-                    _v = map(self.value_type, (v,))[0]
+                    _v = self.value_type(v)
             except Exception:
                 raise ValueError(
                     "Failed to convert {} to {}".format(v, self.value_type))

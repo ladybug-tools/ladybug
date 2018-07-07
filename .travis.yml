@@ -5,7 +5,7 @@ python:
   - "3.6"
 
 install:
- - pip install pytest pytest-cov
+ - pip install pytest pytest-cov euclid3
 
 script:
   - py.test --cov=. tests/

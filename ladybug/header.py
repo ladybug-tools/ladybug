@@ -1,3 +1,4 @@
+# coding=utf-8
 """Ladybug Header.
 
 Header is useful for creating list of ladybug data.

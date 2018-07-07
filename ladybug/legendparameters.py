@@ -1,3 +1,4 @@
+# coding=utf-8
 from color import ColorRange
 from listoperations import flatten, unflatten
 

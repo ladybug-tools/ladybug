@@ -1,3 +1,4 @@
+# coding=utf-8
 """Ladybug color, colorsets and colorrange."""
 
 
@@ -371,7 +372,7 @@ class ColorRange(object):
                 dom = sorted(map(float, dom))
             except ValueError:
                 if self._ctype != 2:
-                    print("Text domains can only be used in ordinal mode.\n" + \
+                    print("Text domains can only be used in ordinal mode.\n" +
                           "Type is changed to ordinal.")
                     self.ctype == 2
 

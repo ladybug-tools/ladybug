@@ -3,7 +3,12 @@ from .header import Header
 from .datatype import DataPoint
 
 from collections import OrderedDict
-from itertools import izip
+
+try:
+    from itertools import izip as zip
+except ImportError:
+    # python 3
+    xrange = range
 
 
 class DataCollection(object):
@@ -73,7 +78,7 @@ class DataCollection(object):
     @classmethod
     def from_data_and_datetimes(cls, data, datetimes, header=None):
         """Create a list from data and dateteimes."""
-        _d = tuple(DataPoint(v, d) for v, d in izip(data, datetimes))
+        _d = tuple(DataPoint(v, d) for v, d in zip(data, datetimes))
         return cls(_d, header)
 
     @classmethod
@@ -530,7 +535,7 @@ class DataCollection(object):
         average_values = OrderedDict()
 
         # average values for each month
-        for month, values in monthly_values.iteritems():
+        for month, values in monthly_values.items():
             average_values[month] = self.average(values)
 
         return average_values
@@ -553,7 +558,7 @@ class DataCollection(object):
 
         # group data for each hour in each month and collect them in a dictionary
         averaged_monthly_values_per_hour = OrderedDict()
-        for month, monthly_values in monthly_hourly_values.iteritems():
+        for month, monthly_values in monthly_hourly_values.items():
             if month not in averaged_monthly_values_per_hour:
                 averaged_monthly_values_per_hour[month] = OrderedDict()
 

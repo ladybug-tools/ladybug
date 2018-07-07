@@ -1,9 +1,16 @@
+# coding=utf-8
 import math
-from location import Location
-from dt import DateTime
-from euclid import Vector3
 from collections import namedtuple
+from .location import Location
+from .dt import DateTime
 
+import sys
+if (sys.version_info > (3, 0)):
+    # python 3
+    from euclid3 import Vector3
+    xrange = range
+else:
+    from euclid import Vector3
 
 import ladybug
 try:
@@ -171,7 +178,6 @@ class Sunpath(object):
         else:
             hour_angle = sol_time / 4 - 180
 
-
         # Degrees
         zenith = math.degrees(math.acos
                               (math.sin(self._latitude) *
@@ -179,7 +185,6 @@ class Sunpath(object):
                                math.cos(self._latitude) *
                                math.cos(math.radians(sol_dec)) *
                                math.cos(math.radians(hour_angle))))
-
 
         altitude = 90 - zenith
 
@@ -359,7 +364,7 @@ class Sunpath(object):
 
             """Making the total of all the days in preceding months\
             in the same year"""
-            keys = month_dict.keys()
+            keys = tuple(month_dict.keys())
             days_in_precending_months = 0
             for i in range(month - 1):
                 days_in_precending_months += month_dict[keys[i]]
@@ -469,7 +474,6 @@ class Sunpath(object):
         """Calculate hour and minutes as integers from a float hour."""
         hour = int(float_hour)
         minute = int(round((float_hour - int(float_hour)) * 60))
-
 
         if minute == 60:
             return hour + 1, 0
@@ -773,7 +777,14 @@ class Sun(object):
             .rotate_around(z_axis, self.azimuth_in_radians) \
             .rotate_around(z_axis, math.radians(-1 * self.north_angle))
 
-        _sun_vector.normalize().flip()
+        _sun_vector.normalize()
+        try:
+            _sun_vector.flip()
+        except AttributeError:
+            # euclid3
+            _sun_vector = Vector3(-1 * _sun_vector.x,
+                                  -1 * _sun_vector.y,
+                                  -1 * _sun_vector.z)
 
         self._sun_vector = _sun_vector
 
