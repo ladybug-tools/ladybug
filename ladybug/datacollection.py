@@ -14,11 +14,12 @@ except ImportError:
 class DataCollection(object):
     """A list of data with a header."""
 
-    __slots__ = ('_header', '_data')
+    __slots__ = ('_header', '_data', '_middle_hour')
 
-    def __init__(self, data=None, header=None):
+    def __init__(self, data=None, header=None, middle_hour=None):
         """Init class."""
         self.header = header
+        self.middle_hour = middle_hour
 
         if not data:
             data = []
@@ -55,7 +56,7 @@ class DataCollection(object):
 
     @classmethod
     def from_list(cls, lst, location=None, data_type=None, unit=None,
-                  analysis_period=None):
+                  analysis_period=None, middle_hour=None):
         """Create a data collection from a list.
 
         lst items can be DataPoint or other values.
@@ -73,18 +74,21 @@ class DataCollection(object):
             return cls.from_data_and_datetimes(lst, analysis_period.datetimes, header)
         else:
             data = tuple(DataPoint.from_data(d) for d in lst)
-            return cls(data, header)
+            return cls(data, header, middle_hour)
 
     @classmethod
-    def from_data_and_datetimes(cls, data, datetimes, header=None):
+    def from_data_and_datetimes(cls, data, datetimes, header=None,
+                                middle_hour=None):
         """Create a list from data and dateteimes."""
         _d = tuple(DataPoint(v, d) for v, d in zip(data, datetimes))
-        return cls(_d, header)
+        return cls(_d, header, middle_hour)
 
     @classmethod
-    def from_data_and_analysis_period(cls, data, analysis_period, header=None):
+    def from_data_and_analysis_period(cls, data, analysis_period,
+                                      header=None, middle_hour=None):
         """Create a list from data and analysis period."""
-        return cls.from_data_and_datetimes(data, analysis_period.datetimes, header)
+        return cls.from_data_and_datetimes(
+            data, analysis_period.datetimes, header, middle_hour)
 
     @property
     def header(self):
@@ -94,6 +98,25 @@ class DataCollection(object):
     @header.setter
     def header(self, h):
         self._header = None if not h else Header.from_header(h)
+
+    @property
+    def middle_hour(self):
+        """Get or set whether the values are interpreted as falling on the half hour.
+
+        This is a boolean that sets whether the values in the data collection
+        are interpreted as falling on the half hour (True) or the hour (False).
+        The default is set to False to be interpreted as fallin on the hour.
+        Note that all EnergyPlus and Radiance results are totalled or averaged
+        values over the hour and so are better characterized by having this
+        input set to True."""
+        return self._middle_hour
+
+    @middle_hour.setter
+    def middle_hour(self, mh):
+        if mh:
+            assert isinstance(mh, bool), \
+                'Expected Boolean got {}'.format(type(mh))
+        self._middle_hour = False if not mh else mh
 
     def append(self, d):
         """Append a single item to the list."""
@@ -116,6 +139,19 @@ class DataCollection(object):
             'Expected Integer got {}'.format(type(i))
         self._data.insert(i, d)
 
+    def pop(self, i=-1):
+        """Remove the item at the given position in the data collection, and return it.
+
+        If no index is specified, a.pop() removes and returns the last
+        item in the list.
+        """
+        assert isinstance(i, int), \
+            'Expected Integer got {}'.format(type(i))
+        assert i < len(self._data), \
+            'Item({}) is larger than the length of the data collection({})' \
+            .format(i, len(self._data))
+        return self._data.pop(i)
+
     @property
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
@@ -123,14 +159,7 @@ class DataCollection(object):
 
     @property
     def values(self):
-        """Return the list of values.
-
-        Args:
-            header: A boolean that indicates if values should include the header
-
-        Return:
-            A list of values
-        """
+        """Return the list of values."""
         return self._data
 
     def duplicate(self):
@@ -327,22 +356,23 @@ class DataCollection(object):
         """
         return self.update_data_for_hours_of_year(values, analysis_period.hoys)
 
-    def interpolate_data(self, timestep, half_hour=False):
-        """Interpolate data for a finer timestep.
+    def interpolate_data(self, timestep, cumulative=False):
+        """Interpolate data for a finer timestep using a linear interpolation.
 
         Args:
             timestep: Target timestep as an integer. Target timestep must be
                 divisable by current timestep.
-            half_hour: A boolean that sets the interpolation to occur
-                on every half hour when set to True.  The default is
-                set to False, which interpolates assuming each DataPoint
-                is on the hour.
+            cumulative: A boolean that sets whether the interpolation
+                should treat the data colection values as cumulative, in
+                which case the value at each timestep is the value over
+                that timestep (instead of over the hour). The default is set to
+                False to yeild average values in between each of the hours.
         """
         assert timestep % self.header.analysis_period.timestep == 0, \
             'Target timestep({}) must be divisable by current timestep({})' \
             .format(timestep, self.header.analysis_period.timestep)
-        assert isinstance(half_hour, bool), \
-            'Expected Boolean got {}'.format(type(half_hour))
+        assert isinstance(cumulative, bool), \
+            'Expected Boolean got {}'.format(type(cumulative))
 
         _minutes_step = int(60 / int(timestep / self.header.analysis_period.timestep))
         _data_length = len(self.values)
@@ -356,8 +386,13 @@ class DataCollection(object):
                                 xrange(timestep))
         )
 
+        # divide cumulative values by timestep
+        if cumulative is True:
+            for i, d in enumerate(_data):
+                _data[i].value = d.value / timestep
+
         # shift data if half-hour interpolation has been selected.
-        if half_hour is True:
+        if self.middle_hour is True:
             shift_dist = int(timestep / 2)
             _data = _data[-shift_dist:] + _data[:-shift_dist]
             for i, d in enumerate(_data):
