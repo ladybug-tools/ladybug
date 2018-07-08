@@ -345,6 +345,7 @@ class DataCollection(object):
                 that timestep (instead of over the hour). The default is set to
                 False to yeild average values in between each of the hours.
         """
+        assert self.header is not None, 'Header cannot be None for interpolation.'
         assert timestep % self.header.analysis_period.timestep == 0, \
             'Target timestep({}) must be divisable by current timestep({})' \
             .format(timestep, self.header.analysis_period.timestep)
