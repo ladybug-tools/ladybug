@@ -78,16 +78,32 @@ class Wea(object):
                    diffuse_horizontal_radiation, timestep)
 
     @classmethod
-    def from_epw_file(cls, epwfile):
+    def from_epw_file(cls, epwfile, timestep=1):
         """Create a wea object using the solar radiation values in an epw file.
 
         Args:
             epwfile: Full path to epw weather file.
+            timestep: An optional integer to set the number of time steps per hour.
+                Default is 1 for one value per hour. Note that this input
+                will only do a linear interpolation over the data in the EPW
+                file.  While such linear interpolations are suitable for most
+                thermal simulations, where thermal lag "smooths over" the effect
+                of momentary increases in solar energy, it is not recommended
+                for daylight simulations, where momentary increases in solar
+                energy can mean the difference between glare and visual comfort.
         """
         epw = EPW(epwfile)
-        return cls(epw.location,
-                   epw.direct_normal_radiation,
-                   epw.diffuse_horizontal_radiation)
+        direct_normal = epw.direct_normal_radiation
+        diffuse_horizontal = epw.diffuse_horizontal_radiation
+        if timestep is not 1:
+            print ("Note: timesteps greater than 1 on epw-generated Wea's \n" +
+                   "are suitable for thermal models but are not recommended \n" +
+                   "for daylight models.")
+            direct_normal = direct_normal.interpolate_data(timestep, True)
+            diffuse_horizontal = diffuse_horizontal.interpolate_data(timestep, True)
+
+        return cls(epw.location, direct_normal, diffuse_horizontal,
+                   timestep)
 
     @classmethod
     def from_stat_file(cls, statfile, timestep=1):

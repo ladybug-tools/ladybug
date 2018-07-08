@@ -169,9 +169,9 @@ class EPW(object):
                 # create header
                 field = EPWFields.field_by_number(field_number)
                 # the header of data collection
-                header = Header(location=self.location,
-                                analysis_period=analysis_period,
-                                data_type=field.name, unit=field.unit)
+                header = Header(location=self.location, analysis_period=analysis_period,
+                                data_type=field.name, unit=field.unit,
+                                middle_hour=field.middle_hour)
 
                 # create an empty data list with the header
                 self._data.append(DataCollection(header=header))
@@ -185,18 +185,10 @@ class EPW(object):
                 # since I'm using this timestamp as the key and will be using it for
                 # sorting. I'm setting it up to 2015 - the real year will be collected
                 # under modelYear
-                timestamp_half_hour = DateTime(month, day, hour - 1)
-                timestamp_hour = DateTime(month, day, hour - 1)
-
-                insert_hour = False
-                if month == 12 and day == 31 and hour == 24:
-                    insert_hour = True
-                else:
-                    timestamp_hour = timestamp_hour.add_hour(1)
+                timestamp = DateTime(month, day, hour - 1)
 
                 for field_number in xrange(self._num_of_fields):
                     value_type = EPWFields.field_by_number(field_number).value_type
-                    start_time = EPWFields.field_by_number(field_number).start_time
                     try:
                         value = value_type(data[field_number])
                     except ValueError as e:
@@ -205,18 +197,25 @@ class EPW(object):
                             raise ValueError(e)
                         value = int(round(float(data[field_number])))
 
-                    if start_time == 0.5:
-                        self._data[field_number].append(
-                            DataPoint(value, timestamp_half_hour))
-                    else:
-                        if insert_hour is False:
-                            self._data[field_number].append(
-                                DataPoint(value, timestamp_hour))
-                        else:
-                            self._data[field_number].insert(
-                                0, DataPoint(value, DateTime(1, 1, 0)))
+                    self._data[field_number].append(DataPoint(value, timestamp))
 
                 line = epwin.readline()
+
+            # move last item to start position for fields on the hour
+            for field_number in xrange(self._num_of_fields):
+                middle_hour = EPWFields.field_by_number(field_number).middle_hour
+                if middle_hour is False:
+                    # shift datetimes for an hour
+                    for data in self._data[field_number]:
+                        try:
+                            data.datetime = data.datetime.add_hour(1)
+                        except ValueError:
+                            # this is the last hour
+                            data.datetime = DateTime(1, 1, 0)
+
+                    # now move the last hour to first
+                    last_hour = self._data[field_number].pop()
+                    self._data[field_number].insert(0, last_hour)
 
             self._is_data_loaded = True
 
@@ -263,19 +262,17 @@ class EPW(object):
             modEpwFile.writelines(self._header)
             lines = []
             try:
+                # move first item to end position for fields on the hour
+                for field in range(0, self._num_of_fields):
+                    middle_hour = EPWFields.field_by_number(field).middle_hour
+                    if middle_hour is False:
+                        first_hour = self._data[field].pop(0)
+                        self._data[field].append(first_hour)
+
                 for hour in xrange(0, 8760):
                     line = []
                     for field in range(0, self._num_of_fields):
-                        start_time = EPWFields.field_by_number(field).start_time
-                        if start_time == 0.5:
-                            line.append(str(self._data[field].values[hour].value))
-                        else:
-                            if hour == 8759:
-                                line.append(str(
-                                    self._data[field].values[0].value))
-                            else:
-                                line.append(str(
-                                    self._data[field].values[hour + 1].value))
+                        line.append(str(self._data[field].values[hour].value))
                     lines.append(",".join(line) + "\n")
             except IndexError:
                 # cleaning up
@@ -287,6 +284,12 @@ class EPW(object):
                 modEpwFile.writelines(lines)
             finally:
                 del(lines)
+                # move last item to start position for fields on the hour
+                for field in range(0, self._num_of_fields):
+                    middle_hour = EPWFields.field_by_number(field).middle_hour
+                    if middle_hour is False:
+                        last_hour = self._data[field].pop()
+                        self._data[field].insert(0, last_hour)
 
         return full_path
 
@@ -831,32 +834,32 @@ class EPWFields(object):
     FIELDS = {
         0: {'name': 'Year',
             'type': int,
-            'start_time': 1
+            'middle_hour': False
             },
 
         1: {'name': 'Month',
             'type': int,
-            'start_time': 1
+            'middle_hour': False
             },
 
         2: {'name': 'Day',
             'type': int,
-            'start_time': 1
+            'middle_hour': False
             },
 
         3: {'name': 'Hour',
             'type': int,
-            'start_time': 1
+            'middle_hour': False
             },
 
         4: {'name': 'Minute',
             'type': int,
-            'start_time': 1
+            'middle_hour': False
             },
 
         5: {'name': 'Uncertainty Flags',
             'type': str,
-            'start_time': 1
+            'middle_hour': False
             },
 
         6: {'name': 'Dry Bulb Temperature',
@@ -865,7 +868,7 @@ class EPWFields(object):
             'min': -70,
             'max': 70,
             'missing': 99.9,
-            'start_time': 1
+            'middle_hour': False
             },
 
         7: {'name': 'Dew Point Temperature',
@@ -874,7 +877,7 @@ class EPWFields(object):
             'min': -70,
             'max': 70,
             'missing': 99.9,
-            'start_time': 1
+            'middle_hour': False
             },
 
         8: {'name': 'Relative Humidity',
@@ -883,7 +886,7 @@ class EPWFields(object):
             'missing': 999,
             'min': 0,
             'max': 110,
-            'start_time': 1
+            'middle_hour': False
             },
 
         9: {'name': 'Atmospheric Station Pressure',
@@ -892,7 +895,7 @@ class EPWFields(object):
             'missing': 999999,
             'min': 31000,
             'max': 120000,
-            'start_time': 1
+            'middle_hour': False
             },
 
         10: {'name': 'Extraterrestrial Horizontal Radiation',
@@ -900,7 +903,7 @@ class EPWFields(object):
              'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0,
-             'start_time': 0.5
+             'middle_hour': True
              },
 
         11: {'name': 'Extraterrestrial Direct Normal Radiation',
@@ -908,7 +911,7 @@ class EPWFields(object):
              'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0,
-             'start_time': 0.5
+             'middle_hour': True
              },
 
         12: {'name': 'Horizontal Infrared Radiation Intensity',
@@ -916,7 +919,7 @@ class EPWFields(object):
              'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0,
-             'start_time': 1
+             'middle_hour': False
              },
 
         13: {'name': 'Global Horizontal Radiation',
@@ -924,7 +927,7 @@ class EPWFields(object):
              'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0,
-             'start_time': 0.5
+             'middle_hour': True
              },
 
         14: {'name': 'Direct Normal Radiation',
@@ -932,7 +935,7 @@ class EPWFields(object):
              'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0,
-             'start_time': 0.5
+             'middle_hour': True
              },
 
         15: {'name': 'Diffuse Horizontal Radiation',
@@ -940,7 +943,7 @@ class EPWFields(object):
              'unit': 'Wh/m2',
              'missing': 9999,
              'min': 0,
-             'start_time': 0.5
+             'middle_hour': True
              },
 
         16: {'name': 'Global Horizontal Illuminance',
@@ -948,7 +951,7 @@ class EPWFields(object):
              'unit': 'lux',
              'missing': 999999,  # note will be missing if >= 999900
              'min': 0,
-             'start_time': 0.5
+             'middle_hour': True
              },
 
         17: {'name': 'Direct Normal Illuminance',
@@ -956,7 +959,7 @@ class EPWFields(object):
              'unit': 'lux',
              'missing': 999999,  # note will be missing if >= 999900
              'min': 0,
-             'start_time': 0.5
+             'middle_hour': True
              },
 
         18: {'name': 'Diffuse Horizontal Illuminance',
@@ -964,7 +967,7 @@ class EPWFields(object):
              'unit': 'lux',
              'missing': 999999,  # note will be missing if >= 999900
              'min': 0,
-             'start_time': 0.5
+             'middle_hour': True
              },
 
         19: {'name': 'Zenith Luminance',
@@ -972,7 +975,7 @@ class EPWFields(object):
              'unit': 'Cd/m2',
              'missing': 9999,  # note will be missing if >= 9999
              'min': 0,
-             'start_time': 0.5
+             'middle_hour': True
              },
 
         20: {'name': 'Wind Direction',
@@ -981,7 +984,7 @@ class EPWFields(object):
              'missing': 999,
              'min': 0,
              'max': 360,
-             'start_time': 1
+             'middle_hour': False
              },
 
         21: {'name': 'Wind Speed',
@@ -990,7 +993,7 @@ class EPWFields(object):
              'missing': 999,
              'min': 0,
              'max': 40,
-             'start_time': 1
+             'middle_hour': False
              },
 
         22: {'name': 'Total Sky Cover',  # (used if Horizontal IR Intensity missing)
@@ -998,84 +1001,84 @@ class EPWFields(object):
              'missing': 99,
              'min': 0,
              'max': 10,
-             'start_time': 1
+             'middle_hour': False
              },
 
         23: {'name': 'Opaque Sky Cover',  # (used if Horizontal IR Intensity missing)
              'type': int,
              'missing': 99,
-             'start_time': 1
+             'middle_hour': False
              },
 
         24: {'name': 'Visibility',
              'type': float,
              'unit': 'km',
              'missing': 9999,
-             'start_time': 1
+             'middle_hour': False
              },
 
         25: {'name': 'Ceiling Height',
              'type': int,
              'unit': 'm',
              'missing': 99999,
-             'start_time': 1
+             'middle_hour': False
              },
 
         26: {'name': 'Present Weather Observation',
              'type': int,
-             'start_time': 1
+             'middle_hour': False
              },
 
         27: {'name': 'Present Weather Codes',
              'type': int,
-             'start_time': 1
+             'middle_hour': False
              },
 
         28: {'name': 'Precipitable Water',
              'type': int,
              'unit': 'mm',
              'missing': 999,
-             'start_time': 1
+             'middle_hour': False
              },
 
         29: {'name': 'Aerosol Optical Depth',
              'type': float,
              'unit': 'thousandths',
              'missing': 999,
-             'start_time': 1
+             'middle_hour': False
              },
 
         30: {'name': 'Snow Depth',
              'type': int,
              'unit': 'cm',
              'missing': 999,
-             'start_time': 1
+             'middle_hour': False
              },
 
         31: {'name': 'Days Since Last Snowfall',
              'type': int,
              'missing': 99,
-             'start_time': 1
+             'middle_hour': False
              },
 
         32: {'name': 'Albedo',
              'type': float,
              'missing': 999,
-             'start_time': 1
+             'middle_hour': False
              },
 
         33: {'name': 'Liquid Precipitation Depth',
              'type': float,
              'unit': 'mm',
              'missing': 999,
-             'start_time': 1
+             'middle_hour': False
              },
 
         34: {'name': 'Liquid Precipitation Quantity',
              'type': float,
              'unit': 'hr',
              'missing': 99,
-             'start_time': 1
+             'middle_hour': False
              }
     }
 
@@ -1143,7 +1146,7 @@ class EPWField(object):
     def __init__(self, field_dict):
         self.name = field_dict['name']
         self.value_type = field_dict['type']
-        self.start_time = field_dict['start_time']
+        self.middle_hour = field_dict['middle_hour']
         if 'unit' in field_dict:
             self.unit = field_dict['unit']
         else:

@@ -5,6 +5,8 @@ import pytest
 from ladybug.datatype import DryBulbTemperature
 from ladybug.dt import DateTime
 from ladybug.datacollection import DataCollection
+from ladybug.header import Header
+from ladybug.analysisperiod import AnalysisPeriod
 
 
 class DataCollectionTestCase(unittest.TestCase):
@@ -36,13 +38,26 @@ class DataCollectionTestCase(unittest.TestCase):
         with pytest.raises(Exception):
             DataCollection([t1, 2, 3, 4])
 
-        dc = DataCollection([t1, t2])
+        dc1 = DataCollection([t1, t2])
         # dc_from_data_and_datetimes = \
         # DataCollection.from_data_and_datetimes([v1, v2], [dt1, dt2])
-        assert dc.datetimes == (dt1, dt2)
-        assert dc.values == [v1, v2]
-        assert dc.average_data() == average
-        # This won't pass since data generated from data and datetime is generic
+        assert dc1.datetimes == (dt1, dt2)
+        assert dc1.values == [v1, v2]
+        assert dc1.average_data() == average
+
+    def test_interpolation(self):
+        # To test an annual data collection, we will just use a range of values
+        test_data = range(8760)
+        ap = AnalysisPeriod()
+        test_header = Header(None, None, None, ap, False)
+        dc2 = DataCollection.from_data_and_analysis_period(test_data, ap, test_header)
+
+        # check the interpolate data functions
+        assert dc2.interpolate_data(2)[1] == 0.5
+        assert dc2.interpolate_data(2, True)[1] == 0.25
+
+    def test_json_methods(self):
+        pass
         # I leave the test here as a TODO
         # assert dc.to_json() == dc_from_data_and_datetimes.to_json()
 

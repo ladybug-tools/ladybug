@@ -116,6 +116,19 @@ class DataCollection(object):
             'Expected Integer got {}'.format(type(i))
         self._data.insert(i, d)
 
+    def pop(self, i=-1):
+        """Remove the item at the given position in the data collection, and return it.
+
+        If no index is specified, a.pop() removes and returns the last
+        item in the list.
+        """
+        assert isinstance(i, int), \
+            'Expected Integer got {}'.format(type(i))
+        assert i < len(self._data), \
+            'Item({}) is larger than the length of the data collection({})' \
+            .format(i, len(self._data))
+        return self._data.pop(i)
+
     @property
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
@@ -123,14 +136,7 @@ class DataCollection(object):
 
     @property
     def values(self):
-        """Return the list of values.
-
-        Args:
-            header: A boolean that indicates if values should include the header
-
-        Return:
-            A list of values
-        """
+        """Return the list of values."""
         return self._data
 
     def duplicate(self):
@@ -327,22 +333,24 @@ class DataCollection(object):
         """
         return self.update_data_for_hours_of_year(values, analysis_period.hoys)
 
-    def interpolate_data(self, timestep, half_hour=False):
-        """Interpolate data for a finer timestep.
+    def interpolate_data(self, timestep, cumulative=False):
+        """Interpolate data for a finer timestep using a linear interpolation.
 
         Args:
             timestep: Target timestep as an integer. Target timestep must be
                 divisable by current timestep.
-            half_hour: A boolean that sets the interpolation to occur
-                on every half hour when set to True.  The default is
-                set to False, which interpolates assuming each DataPoint
-                is on the hour.
+            cumulative: A boolean that sets whether the interpolation
+                should treat the data colection values as cumulative, in
+                which case the value at each timestep is the value over
+                that timestep (instead of over the hour). The default is set to
+                False to yeild average values in between each of the hours.
         """
+        assert self.header is not None, 'Header cannot be None for interpolation.'
         assert timestep % self.header.analysis_period.timestep == 0, \
             'Target timestep({}) must be divisable by current timestep({})' \
             .format(timestep, self.header.analysis_period.timestep)
-        assert isinstance(half_hour, bool), \
-            'Expected Boolean got {}'.format(type(half_hour))
+        assert isinstance(cumulative, bool), \
+            'Expected Boolean got {}'.format(type(cumulative))
 
         _minutes_step = int(60 / int(timestep / self.header.analysis_period.timestep))
         _data_length = len(self.values)
@@ -356,8 +364,13 @@ class DataCollection(object):
                                 xrange(timestep))
         )
 
+        # divide cumulative values by timestep
+        if cumulative is True:
+            for i, d in enumerate(_data):
+                _data[i].value = d.value / timestep
+
         # shift data if half-hour interpolation has been selected.
-        if half_hour is True:
+        if self.header.middle_hour is True:
             shift_dist = int(timestep / 2)
             _data = _data[-shift_dist:] + _data[:-shift_dist]
             for i, d in enumerate(_data):
