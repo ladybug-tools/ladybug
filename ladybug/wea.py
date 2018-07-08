@@ -96,6 +96,9 @@ class Wea(object):
         direct_normal = epw.direct_normal_radiation
         diffuse_horizontal = epw.diffuse_horizontal_radiation
         if timestep is not 1:
+            print ("Note: timesteps greater than 1 on epw-generated Wea's \n" +
+                   "are suitable for thermal models but are not recommended \n" +
+                   "for daylight models.")
             direct_normal = direct_normal.interpolate_data(timestep, True)
             diffuse_horizontal = diffuse_horizontal.interpolate_data(timestep, True)
 
