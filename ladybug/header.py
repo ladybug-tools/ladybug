@@ -18,9 +18,13 @@ class Header(object):
         data_type: Type of data (e.g. Temperature) (Default: None).
         unit: data_type unit (Default: None).
         analysis_period: A Ladybug analysis period (Defualt: None)
+        middle_hour: A boolean to set whether the values are interpreted
+            as falling on the middle of the hour (True) or the start of
+            the hour (False). (Default: False)
     """
 
-    def __init__(self, location=None, data_type=None, unit=None, analysis_period=None):
+    def __init__(self, location=None, data_type=None, unit=None,
+                 analysis_period=None, middle_hour=None):
         """Initiate Ladybug header for lists.
 
         Args:
@@ -29,11 +33,15 @@ class Header(object):
             data_type: Type of data (e.g. Temperature) (Default: None).
             unit: data_type unit (Default: None).
             analysis_period: A Ladybug analysis period (Defualt: None)
+            middle_hour: A boolean to set whether the values are interpreted
+                as falling on the middle of the hour (True) or the start of
+                the hour (False). (Default: False)
         """
         self.location = Location.from_location(location)
         self.data_type = data_type if data_type else None
         self.unit = unit if unit else None
         self.analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
+        self.middle_hour = middle_hour if middle_hour else False
 
     @classmethod
     def from_json(cls, data):
@@ -44,18 +52,19 @@ class Header(object):
                 "location": {}, // A Ladybug location
                 "data_type": string, //Type of data (e.g. Temperature) (Default: None).
                 "unit": string,
-                "analysis_period": {}, // A Ladybug AnalysisPeriod
+                "analysis_period": {}, // A Ladybug AnalysisPeriod,
+                "middle_hour": {} // Whether values fall in the middle of the hour
             }
         """
         # assign default values
-        keys = ('location', 'data_type', 'unit', 'analysis_period')
+        keys = ('location', 'data_type', 'unit', 'analysis_period', 'middle_hour')
         for key in keys:
             if key not in data:
                 data[key] = None
 
         location = Location.from_json(data['location'])
         ap = AnalysisPeriod.from_json(data['analysis_period'])
-        return cls(location, data['data_type'], data['unit'], ap)
+        return cls(location, data['data_type'], data['unit'], ap, data['middle_hour'])
 
     @classmethod
     def from_header(cls, header):
@@ -79,7 +88,7 @@ class Header(object):
     def duplicate(self):
         """Duplicate header."""
         return self.__class__(self.location, self.data_type, self.unit,
-                              self.analysis_period)
+                              self.analysis_period, self.middle_hour)
 
     def to_tuple(self):
         """Return Ladybug header as a list."""
@@ -87,7 +96,8 @@ class Header(object):
             self.location,
             self.data_type,
             self.unit,
-            self.analysis_period
+            self.analysis_period,
+            self.middle_hour
         )
 
     def __iter__(self):
@@ -99,7 +109,8 @@ class Header(object):
         return {'location': self.location.to_json(),
                 'data_type': self.data_type,
                 'unit': self.unit,
-                'analysis_period': self.analysis_period.to_json()}
+                'analysis_period': self.analysis_period.to_json(),
+                'middle_hour': self.middle_hour}
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -107,5 +118,6 @@ class Header(object):
 
     def __repr__(self):
         """Return Ladybug header as a string."""
-        return "%s|%s(%s)|%s" % (
-            repr(self.location), self.data_type, self.unit, self.analysis_period)
+        return "%s|%s(%s)|%s|%s" % (
+            repr(self.location), self.data_type, self.unit,
+            self.analysis_period, self.middle_hour)

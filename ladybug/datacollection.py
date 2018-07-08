@@ -14,12 +14,11 @@ except ImportError:
 class DataCollection(object):
     """A list of data with a header."""
 
-    __slots__ = ('_header', '_data', '_middle_hour')
+    __slots__ = ('_header', '_data')
 
-    def __init__(self, data=None, header=None, middle_hour=None):
+    def __init__(self, data=None, header=None):
         """Init class."""
         self.header = header
-        self.middle_hour = middle_hour
 
         if not data:
             data = []
@@ -56,7 +55,7 @@ class DataCollection(object):
 
     @classmethod
     def from_list(cls, lst, location=None, data_type=None, unit=None,
-                  analysis_period=None, middle_hour=None):
+                  analysis_period=None):
         """Create a data collection from a list.
 
         lst items can be DataPoint or other values.
@@ -74,21 +73,18 @@ class DataCollection(object):
             return cls.from_data_and_datetimes(lst, analysis_period.datetimes, header)
         else:
             data = tuple(DataPoint.from_data(d) for d in lst)
-            return cls(data, header, middle_hour)
+            return cls(data, header)
 
     @classmethod
-    def from_data_and_datetimes(cls, data, datetimes, header=None,
-                                middle_hour=None):
+    def from_data_and_datetimes(cls, data, datetimes, header=None):
         """Create a list from data and dateteimes."""
         _d = tuple(DataPoint(v, d) for v, d in zip(data, datetimes))
-        return cls(_d, header, middle_hour)
+        return cls(_d, header)
 
     @classmethod
-    def from_data_and_analysis_period(cls, data, analysis_period,
-                                      header=None, middle_hour=None):
+    def from_data_and_analysis_period(cls, data, analysis_period, header=None):
         """Create a list from data and analysis period."""
-        return cls.from_data_and_datetimes(
-            data, analysis_period.datetimes, header, middle_hour)
+        return cls.from_data_and_datetimes(data, analysis_period.datetimes, header)
 
     @property
     def header(self):
@@ -98,25 +94,6 @@ class DataCollection(object):
     @header.setter
     def header(self, h):
         self._header = None if not h else Header.from_header(h)
-
-    @property
-    def middle_hour(self):
-        """Get or set whether the values are interpreted as falling on the half hour.
-
-        This is a boolean that sets whether the values in the data collection
-        are interpreted as falling on the half hour (True) or the hour (False).
-        The default is set to False to be interpreted as fallin on the hour.
-        Note that all EnergyPlus and Radiance results are totalled or averaged
-        values over the hour and so are better characterized by having this
-        input set to True."""
-        return self._middle_hour
-
-    @middle_hour.setter
-    def middle_hour(self, mh):
-        if mh:
-            assert isinstance(mh, bool), \
-                'Expected Boolean got {}'.format(type(mh))
-        self._middle_hour = False if not mh else mh
 
     def append(self, d):
         """Append a single item to the list."""
@@ -392,7 +369,7 @@ class DataCollection(object):
                 _data[i].value = d.value / timestep
 
         # shift data if half-hour interpolation has been selected.
-        if self.middle_hour is True:
+        if self.header.middle_hour is True:
             shift_dist = int(timestep / 2)
             _data = _data[-shift_dist:] + _data[:-shift_dist]
             for i, d in enumerate(_data):

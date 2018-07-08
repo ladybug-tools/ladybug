@@ -84,7 +84,13 @@ class Wea(object):
         Args:
             epwfile: Full path to epw weather file.
             timestep: An optional integer to set the number of time steps per hour.
-                Default is 1 for one value per hour.
+                Default is 1 for one value per hour. Note that this input
+                will only do a linear interpolation over the data in the EPW
+                file.  While such linear interpolations are suitable for most
+                thermal simulations, where thermal lag "smooths over" the effect
+                of momentary increases in solar energy, it is not recommended
+                for daylight simulations, where momentary increases in solar
+                energy can mean the difference between glare and visual comfort.
         """
         epw = EPW(epwfile)
         direct_normal = epw.direct_normal_radiation

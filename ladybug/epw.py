@@ -169,13 +169,12 @@ class EPW(object):
                 # create header
                 field = EPWFields.field_by_number(field_number)
                 # the header of data collection
-                header = Header(location=self.location,
-                                analysis_period=analysis_period,
-                                data_type=field.name, unit=field.unit)
+                header = Header(location=self.location, analysis_period=analysis_period,
+                                data_type=field.name, unit=field.unit,
+                                middle_hour=field.middle_hour)
 
                 # create an empty data list with the header
-                self._data.append(DataCollection(
-                    header=header, middle_hour=field.middle_hour))
+                self._data.append(DataCollection(header=header))
 
             # collect hourly data
             while line:
@@ -186,17 +185,10 @@ class EPW(object):
                 # since I'm using this timestamp as the key and will be using it for
                 # sorting. I'm setting it up to 2015 - the real year will be collected
                 # under modelYear
-                timestamp_middle_hour = DateTime(month, day, hour - 1)
-
-                if month == 12 and day == 31 and hour == 24:
-                    timestamp_hour = DateTime(1, 1, 0)
-                else:
-                    timestamp_hour = DateTime(month, day, hour - 1)
-                    timestamp_hour = timestamp_hour.add_hour(1)
+                timestamp = DateTime(month, day, hour - 1)
 
                 for field_number in xrange(self._num_of_fields):
                     value_type = EPWFields.field_by_number(field_number).value_type
-                    middle_hour = EPWFields.field_by_number(field_number).middle_hour
                     try:
                         value = value_type(data[field_number])
                     except ValueError as e:
@@ -205,12 +197,7 @@ class EPW(object):
                             raise ValueError(e)
                         value = int(round(float(data[field_number])))
 
-                    if middle_hour is True:
-                        self._data[field_number].append(
-                            DataPoint(value, timestamp_middle_hour))
-                    else:
-                        self._data[field_number].append(
-                            DataPoint(value, timestamp_hour))
+                    self._data[field_number].append(DataPoint(value, timestamp))
 
                 line = epwin.readline()
 
@@ -218,7 +205,17 @@ class EPW(object):
             for field_number in xrange(self._num_of_fields):
                 middle_hour = EPWFields.field_by_number(field_number).middle_hour
                 if middle_hour is False:
-                    self._data[field_number].insert(0, self._data[field_number].pop())
+                    # shift datetimes for an hour
+                    for data in self._data[field_number]:
+                        try:
+                            data.datetime = data.datetime.add_hour(1)
+                        except ValueError:
+                            # this is the last hour
+                            data.datetime = DateTime(1, 1, 0)
+
+                    # now move the last hour to first
+                    last_hour = self._data[field_number].pop()
+                    self._data[field_number].insert(0, last_hour)
 
             self._is_data_loaded = True
 
@@ -269,7 +266,8 @@ class EPW(object):
                 for field in range(0, self._num_of_fields):
                     middle_hour = EPWFields.field_by_number(field).middle_hour
                     if middle_hour is False:
-                        self._data[field].append(self._data[field].pop(0))
+                        first_hour = self._data[field].pop(0)
+                        self._data[field].append(first_hour)
 
                 for hour in xrange(0, 8760):
                     line = []
@@ -286,6 +284,12 @@ class EPW(object):
                 modEpwFile.writelines(lines)
             finally:
                 del(lines)
+                # move last item to start position for fields on the hour
+                for field in range(0, self._num_of_fields):
+                    middle_hour = EPWFields.field_by_number(field).middle_hour
+                    if middle_hour is False:
+                        last_hour = self._data[field].pop()
+                        self._data[field].insert(0, last_hour)
 
         return full_path
 
