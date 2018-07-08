@@ -8,6 +8,7 @@ from ladybug.datacollection import DataCollection
 from ladybug.header import Header
 from ladybug.analysisperiod import AnalysisPeriod
 
+
 class DataCollectionTestCase(unittest.TestCase):
     """Test for (ladybug/datacollection.py)"""
 
@@ -44,6 +45,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.values == [v1, v2]
         assert dc1.average_data() == average
 
+    def test_interpolation(self):
         # To test an annual data collection, we will just use a range of values
         test_data = range(8760)
         ap = AnalysisPeriod()
@@ -54,6 +56,8 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc2.interpolate_data(2)[1] == 0.5
         assert dc2.interpolate_data(2, True)[1] == 0.25
 
+    def test_json_methods(self):
+        pass
         # I leave the test here as a TODO
         # assert dc.to_json() == dc_from_data_and_datetimes.to_json()
 
