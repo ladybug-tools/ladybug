@@ -59,6 +59,14 @@ class SunpathTestCase(unittest.TestCase):
         assert sp.is_daylight_saving_hour(dt1) is False
         assert sp.is_daylight_saving_hour(dt2) is False
 
+    def test_leap_year(self):
+        nyc = Location('New_York', 'USA', latitude=40.72, longitude=-74.02,
+                       time_zone=-5)
+        sp = Sunpath.from_location(nyc)
+        sp.is_leap_year = True
+        sun = sp.calculate_sun(month=2, day=29, hour=11.0)
+        assert sun.datetime == DateTime(2, 29, 11, leap_year=True)
+
 
 if __name__ == "__main__":
     unittest.main()
