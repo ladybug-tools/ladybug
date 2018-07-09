@@ -1,7 +1,8 @@
 # coding=utf-8
 
 import unittest
-import os
+import pytest
+
 from ladybug.wea import Wea
 
 
@@ -57,6 +58,7 @@ class WeaTestCase(unittest.TestCase):
 
         assert wea_from_zh.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_zh.timestep == 1
+        # TODO: Add checks for the values produced by the model
 
     def test_json_methods(self):
         """Test JSON serialization methods"""
@@ -99,7 +101,8 @@ class WeaTestCase(unittest.TestCase):
         direct_horiz_rad = wea_from_stat.direct_horizontal_radiation
         glob_horiz_rad = wea_from_stat.global_horizontal_radiation
 
-        assert glob_horiz_rad[12] == diffuse_horiz_rad[12] + direct_horiz_rad[12]
+        assert [x.value for x in glob_horiz_rad] == pytest.approx(
+            [x + y for x, y in zip(diffuse_horiz_rad, direct_horiz_rad)], rel=1e-3)
 
     def test_radiation_on_surface(self):
         """Test the radiation on surface method."""
@@ -112,10 +115,14 @@ class WeaTestCase(unittest.TestCase):
         direct_horiz_rad = wea_from_stat.direct_horizontal_radiation
         glob_horiz_rad = wea_from_stat.global_horizontal_radiation
 
-        assert srf_total[12] == glob_horiz_rad[12]
-        assert srf_direct[12] == direct_horiz_rad[12]
-        assert srf_diffuse[12] == diffuse_horiz_rad[12]
-        assert srf_reflect[12] == 0
+        assert [x.value for x in srf_total] == pytest.approx(
+            [x.value for x in glob_horiz_rad], rel=1e-3)
+        assert [x.value for x in srf_direct] == pytest.approx(
+            [x.value for x in direct_horiz_rad], rel=1e-3)
+        assert [x.value for x in srf_diffuse] == pytest.approx(
+            [x.value for x in diffuse_horiz_rad], rel=1e-3)
+        assert [x.value for x in srf_reflect] == pytest.approx(
+            [0] * 8760, rel=1e-3)
 
     def test_write(self):
         pass
