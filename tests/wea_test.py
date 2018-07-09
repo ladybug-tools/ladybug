@@ -33,6 +33,31 @@ class EPWTestCase(unittest.TestCase):
         assert wea_from_stat.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_stat.timestep == 1
 
+    def test_from_clear_sky(self):
+        """Test from original clear sky"""
+        stat_path = './tests/stat/chicago.stat'
+        wea_from_stat = Wea.from_stat_file(stat_path)
+        location = wea_from_stat.location
+        wea_from_clear_sky = Wea.from_ashrae_clear_sky(location)
+
+        assert wea_from_clear_sky.location.city == 'Chicago Ohare Intl Ap'
+        assert wea_from_clear_sky.timestep == 1
+
+    def test_from_zhang_huang(self):
+        """Test from zhang huang solar model"""
+        stat_path = './tests/stat/chicago.stat'
+        wea_from_stat = Wea.from_stat_file(stat_path)
+        location = wea_from_stat.location
+
+        cc = [0.5] * 8760
+        rh = [50] * 8760
+        dbt = [20] * 8760
+        ws = [2] * 8760
+        wea_from_zh = Wea.from_zhang_huang_solar_model(location, cc, rh, dbt, ws)
+
+        assert wea_from_zh.location.city == 'Chicago Ohare Intl Ap'
+        assert wea_from_zh.timestep == 1
+
     def test_json_methods(self):
         """Test JSON serialization methods"""
         epw_path = './tests/epw/chicago.epw'
@@ -65,8 +90,32 @@ class EPWTestCase(unittest.TestCase):
         assert wea_from_json.diffuse_horizontal_radiation.values == \
             wea_from_stat.diffuse_horizontal_radiation.values
 
+    def test_global_horizontal(self):
+        """Test the global horizontal radiation on method."""
+        stat_path = './tests/stat/chicago.stat'
+        wea_from_stat = Wea.from_stat_file(stat_path)
+
+        diffuse_horiz_rad = wea_from_stat.diffuse_horizontal_radiation
+        direct_horiz_rad = wea_from_stat.direct_horizontal_radiation
+        glob_horiz_rad = wea_from_stat.global_horizontal_radiation
+
+        assert glob_horiz_rad[12] == diffuse_horiz_rad[12] + direct_horiz_rad[12]
+
     def test_radiation_on_surface(self):
-        pass
+        """Test the radiation on surface method."""
+        stat_path = './tests/stat/chicago.stat'
+        wea_from_stat = Wea.from_stat_file(stat_path)
+
+        srf_total, srf_direct, srf_diffuse, srf_reflect = \
+            wea_from_stat.radiation_on_surface(90)
+        diffuse_horiz_rad = wea_from_stat.diffuse_horizontal_radiation
+        direct_horiz_rad = wea_from_stat.direct_horizontal_radiation
+        glob_horiz_rad = wea_from_stat.global_horizontal_radiation
+
+        assert srf_total[12] == glob_horiz_rad[12]
+        assert srf_direct[12] == direct_horiz_rad[12]
+        assert srf_diffuse[12] == diffuse_horiz_rad[12]
+        assert srf_reflect[12] == 0
 
     def test_write(self):
         pass
