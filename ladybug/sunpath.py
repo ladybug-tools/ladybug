@@ -142,7 +142,7 @@ class Sunpath(object):
         """
         datetime = DateTime(month, day, *self._calculate_hour_and_minute(hour),
                             leap_year=self.is_leap_year)
-        return self.calculate_sun_from_data_time(datetime, is_solar_time)
+        return self.calculate_sun_from_date_time(datetime, is_solar_time)
 
     def calculate_sun_from_hoy(self, hoy, is_solar_time=False):
         """Get Sun data for an hour of the year.
@@ -156,9 +156,9 @@ class Sunpath(object):
             A sun object for this particular time
         """
         datetime = DateTime.from_hoy(hoy, self.is_leap_year)
-        return self.calculate_sun_from_data_time(datetime, is_solar_time)
+        return self.calculate_sun_from_date_time(datetime, is_solar_time)
 
-    def calculate_sun_from_data_time(self, datetime, is_solar_time=False):
+    def calculate_sun_from_date_time(self, datetime, is_solar_time=False):
         """Get Sun for an hour of the year.
 
         This code is originally written by Trygve Wastvedt \
@@ -670,7 +670,7 @@ class Sunpath(object):
                     False
             else:
                 # Arc
-                yield (self.calculate_sun_from_data_time(dt) for dt in dts), True
+                yield (self.calculate_sun_from_date_time(dt) for dt in dts), True
 
 
 class Sun(object):
