@@ -5,7 +5,7 @@ import os
 from ladybug.wea import Wea
 
 
-class EPWTestCase(unittest.TestCase):
+class WeaTestCase(unittest.TestCase):
     """Test for (ladybug/epw.py)"""
 
     # preparing to test.
