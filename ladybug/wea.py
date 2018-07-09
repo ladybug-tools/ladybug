@@ -444,6 +444,27 @@ class Wea(object):
                 DataPoint(glob_h, date_t, 'SI', 'Global Horizontal Radiation'))
         return global_horizontal_rad
 
+    @property
+    def direct_horizontal_radiation(self):
+        """Returns the direct radiation on a horizontal surface at each timestep.
+
+        Note that this is different from the direct_normal_radiation needed
+        to construct a Wea, which is NORMAL and not HORIZONTAL."""
+        direct_horizontal_rad = []
+        sp = Sunpath.from_location(self.location)
+        for h in xrange(8760 * self.timestep):
+            if self.timestep == 1:
+                t_date = DateTime.from_moy((h * 60) + 30)
+            else:
+                t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
+            sun = sp.calculate_sun_from_date_time(t_date)
+            date_t = sun.datetime
+            dir_h = self.direct_normal_radiation[h] * math.sin(
+                math.radians(sun.altitude))
+            direct_horizontal_rad.append(
+                DataPoint(dir_h, date_t, 'SI', 'Direct Horizontal Radiation'))
+        return direct_horizontal_rad
+
     @staticmethod
     def _get_data_collections(location, timestep):
         """Return two empty data collection.
