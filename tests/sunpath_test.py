@@ -66,6 +66,10 @@ class SunpathTestCase(unittest.TestCase):
         sp.is_leap_year = True
         sun = sp.calculate_sun(month=2, day=29, hour=11.0)
         assert sun.datetime == DateTime(2, 29, 11, leap_year=True)
+        assert sun.datetime.year == 2016
+        assert sun.datetime.month == 2
+        assert sun.datetime.day == 29
+        assert sun.datetime.hour == 11
 
 
 if __name__ == "__main__":

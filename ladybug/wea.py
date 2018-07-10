@@ -162,7 +162,7 @@ class Wea(object):
                 t_date = DateTime.from_moy((h * 60) + 30)
             else:
                 t_date = DateTime.from_moy((h / float(timestep)) * 60)
-            sun = sp.calculate_sun_from_data_time(t_date)
+            sun = sp.calculate_sun_from_date_time(t_date)
             dates.append(sun.datetime)
             months.append(sun.datetime.month - 1)
             altitudes.append(sun.altitude)
@@ -254,7 +254,7 @@ class Wea(object):
                 t_date = DateTime.from_moy((h * 60) + 30)
             else:
                 t_date = DateTime.from_moy((h / float(timestep)) * 60)
-            sun = sp.calculate_sun_from_data_time(t_date)
+            sun = sp.calculate_sun_from_date_time(t_date)
             dates.append(sun.datetime)
             months.append(sun.datetime.month - 1)
             altitudes.append(sun.altitude)
@@ -346,7 +346,7 @@ class Wea(object):
 
             # calculate sun altitude
             t_date = DateTime.from_moy(((i / float(timestep)) * 60) + 30)
-            sun = sp.calculate_sun_from_data_time(t_date)
+            sun = sp.calculate_sun_from_date_time(t_date)
             alt = sun.altitude
 
             if alt > 0.1:
@@ -435,7 +435,7 @@ class Wea(object):
                 t_date = DateTime.from_moy((h * 60) + 30)
             else:
                 t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
-            sun = sp.calculate_sun_from_data_time(t_date)
+            sun = sp.calculate_sun_from_date_time(t_date)
             date_t = sun.datetime
             glob_h = self.diffuse_horizontal_radiation[h] + \
                 self.direct_normal_radiation[h] * math.sin(
@@ -457,7 +457,7 @@ class Wea(object):
                 t_date = DateTime.from_moy((h * 60) + 30)
             else:
                 t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
-            sun = sp.calculate_sun_from_data_time(t_date)
+            sun = sp.calculate_sun_from_date_time(t_date)
             date_t = sun.datetime
             dir_h = self.direct_normal_radiation[h] * math.sin(
                 math.radians(sun.altitude))
@@ -551,7 +551,7 @@ class Wea(object):
                 t_date = DateTime.from_moy((h * 60) + 30)
             else:
                 t_date = DateTime.from_moy((h / float(self.timestep)) * 60)
-            sun = sp.calculate_sun_from_data_time(t_date)
+            sun = sp.calculate_sun_from_date_time(t_date)
             date_t = sun.datetime
             sun_vec = pol2cart(math.radians(sun.azimuth),
                                math.radians(sun.altitude))

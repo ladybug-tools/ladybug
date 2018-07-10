@@ -70,7 +70,7 @@ class DateTime(datetime):
         Args:
             hoy: A float value 0 <= and < 8760
         """
-        return cls.from_moy(round(hoy * 60))
+        return cls.from_moy(round(hoy * 60), leap_year)
 
     @classmethod
     def from_moy(cls, moy, leap_year=False):
@@ -79,10 +79,15 @@ class DateTime(datetime):
         Args:
             moy: An integer value 0 <= and < 525600
         """
-        num_of_minutes_until_month = (0, 44640, 84960, 129600, 172800, 217440,
-                                      260640, 305280, 349920, 393120, 437760,
-                                      480960, 525600)
-
+        if not leap_year:
+            num_of_minutes_until_month = (0, 44640, 84960, 129600, 172800, 217440,
+                                          260640, 305280, 349920, 393120, 437760,
+                                          480960, 525600)
+        else:
+            num_of_minutes_until_month = (0, 44640, 84960 + 1440, 129600 + 1440,
+                                          172800 + 1440, 217440 + 1440, 260640 + 1440,
+                                          305280 + 1440, 349920 + 1440, 393120 + 1440,
+                                          437760 + 1440, 480960 + 1440, 525600 + 1440)
         # find month
         for monthCount in range(12):
             if int(moy) < num_of_minutes_until_month[monthCount + 1]:
