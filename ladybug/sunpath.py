@@ -298,7 +298,8 @@ class Sunpath(object):
             return {
                 "sunrise": None,
                 "noon": DateTime(datetime.month, datetime.day,
-                                 *self._calculate_hour_and_minute(noon)),
+                                 *self._calculate_hour_and_minute(noon),
+                                 leap_year=self.is_leap_year),
                 "sunset": None
             }
         else:
@@ -310,11 +311,14 @@ class Sunpath(object):
 
             return {
                 "sunrise": DateTime(datetime.month, datetime.day,
-                                    *self._calculate_hour_and_minute(sunrise)),
+                                    *self._calculate_hour_and_minute(sunrise),
+                                    leap_year=self.is_leap_year),
                 "noon": DateTime(datetime.month, datetime.day,
-                                 *self._calculate_hour_and_minute(noon)),
+                                 *self._calculate_hour_and_minute(noon),
+                                 leap_year=self.is_leap_year),
                 "sunset": DateTime(datetime.month, datetime.day,
-                                   *self._calculate_hour_and_minute(sunset))
+                                   *self._calculate_hour_and_minute(sunset),
+                                   leap_year=self.is_leap_year)
             }
 
     def _calculate_solar_geometry(self, datetime):
@@ -618,12 +622,13 @@ class Sunpath(object):
                 chours = []
                 # this is an hour that not all the hours are day or night
                 prevhour = self.latitude <= 0
-                for hoy in xrange(h, 8760, 24):
+                num_of_days = 8760 if not self.is_leap_year else 8760 + 24
+                for hoy in xrange(h, num_of_days, 24):
                     thishour = self.calculate_sun_from_hoy(hoy).is_during_day
                     if thishour != prevhour:
                         if not thishour:
                             hoy -= 24
-                        dt = DateTime.from_hoy(hoy)
+                        dt = DateTime.from_hoy(hoy, self.is_leap_year)
                         chours.append((dt.month, dt.day, dt.hour))
                     prevhour = thishour
                 tt = []
