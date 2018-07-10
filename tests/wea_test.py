@@ -6,6 +6,7 @@ import pytest
 from ladybug.wea import Wea
 from ladybug.location import Location
 
+
 class WeaTestCase(unittest.TestCase):
     """Test for (ladybug/epw.py)"""
 
@@ -33,6 +34,10 @@ class WeaTestCase(unittest.TestCase):
 
         assert wea_from_stat.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_stat.timestep == 1
+        assert wea_from_stat.diffuse_horizontal_radiation[0].value == \
+            pytest.approx(0, rel=1e-3)
+        assert wea_from_stat.direct_normal_radiation[0].value == \
+            pytest.approx(0, rel=1e-3)
         assert wea_from_stat.diffuse_horizontal_radiation[12].value == \
             pytest.approx(87.44171, rel=1e-3)
         assert wea_from_stat.direct_normal_radiation[12].value == \
@@ -46,6 +51,10 @@ class WeaTestCase(unittest.TestCase):
 
         assert wea_from_clear_sky.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_clear_sky.timestep == 1
+        assert wea_from_clear_sky.diffuse_horizontal_radiation[0].value == \
+            pytest.approx(0, rel=1e-3)
+        assert wea_from_clear_sky.direct_normal_radiation[0].value == \
+            pytest.approx(0, rel=1e-3)
         assert wea_from_clear_sky.diffuse_horizontal_radiation[12].value == \
             pytest.approx(60.72258, rel=1e-3)
         assert wea_from_clear_sky.direct_normal_radiation[12].value == \
@@ -64,9 +73,11 @@ class WeaTestCase(unittest.TestCase):
 
         assert wea_from_zh.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_zh.timestep == 1
-        #print wea_from_zh.diffuse_horizontal_radiation[12].value
-        #print wea_from_zh.direct_normal_radiation[12].value
-        # TODO: Add checks for the values produced by the model
+        assert wea_from_zh.global_horizontal_radiation[0].value == \
+            pytest.approx(0, rel=1e-3)
+        assert wea_from_zh.global_horizontal_radiation[12].value == \
+            pytest.approx(281.97887, rel=1e-3)
+        # TODO: Add checks for direct normal and diffuse once perez split is finished
 
     def test_json_methods(self):
         """Test JSON serialization methods"""
@@ -112,13 +123,13 @@ class WeaTestCase(unittest.TestCase):
         assert [x.value for x in glob_horiz_rad] == pytest.approx(
             [x + y for x, y in zip(diffuse_horiz_rad, direct_horiz_rad)], rel=1e-3)
 
-    def test_radiation_on_surface(self):
-        """Test the radiation on surface method."""
+    def test_directional_radiation(self):
+        """Test the directinal radiation method."""
         stat_path = './tests/stat/chicago.stat'
         wea_from_stat = Wea.from_stat_file(stat_path)
 
         srf_total, srf_direct, srf_diffuse, srf_reflect = \
-            wea_from_stat.radiation_on_surface(90)
+            wea_from_stat.directional_radiation(90)
         diffuse_horiz_rad = wea_from_stat.diffuse_horizontal_radiation
         direct_horiz_rad = wea_from_stat.direct_horizontal_radiation
         glob_horiz_rad = wea_from_stat.global_horizontal_radiation

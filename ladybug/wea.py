@@ -496,20 +496,19 @@ class Wea(object):
         hoy = int(hoy * self.timestep)
         return self.direct_normal_radiation[hoy], self.diffuse_horizontal_radiation[hoy]
 
-    def radiation_on_surface(self, surface_altitude=90, surface_azimuth=180,
-                             ground_reflectance=0.2, isotrophic=True):
-        """Returns the total radiation falling on a surface at each timestep.
+    def directional_radiation(self, altitude=90, azimuth=180,
+                              ground_reflectance=0.2, isotrophic=True):
+        """Returns the radiation components facing a given altitude and azimuth.
 
-        This method computes solar radiation on an unobstructed surface with
-        the input surface_altitude and surface_azimuth. The default is set to
-        return the golbal horizontal radiation, assuming a surface altitude
-        facing straight up (90 degrees).
+        This method computes unobstructed solar flux facing a given
+        altitude and azimuth. The default is set to return the golbal horizontal
+        radiation, assuming an altitude facing straight up (90 degrees).
 
         Args:
-            surface_altitude: A number between -90 and 90 that represents the
-                altitude that the surface is facing in degrees.
-            surface_azimuth: A number between 0 and 360 that represents the
-                azimuth that the surface is facing in degrees.
+            altitude: A number between -90 and 90 that represents the
+                altitude at which radiation is being evaluated in degrees.
+            azimuth: A number between 0 and 360 that represents the
+                azimuth at wich radiation is being evaluated in degrees.
             ground_reflectance: A number between 0 and 1 that represents the
                 reflectance of the ground. Default is set to 0.2.
             isotrophic: A boolean value that sets whether an istotrophic sky is
@@ -519,14 +518,12 @@ class Wea(object):
                 near the solar disc. Default is set to True for isotrophic
 
         Returns:
-            surface_total_radiation: A list of total solar radiation on the
-                surface at each timestep.
-            surface_direct_radiation: A list of direct solar radiation on the
-                surface at each timestep.
-            surface_diffuse_radiation: A list of diffuse sky solar radiation on
-                the surface at each timestep.
-            surface_reflected_radiation: A list of ground reflected solar
-                radiation on the surface at each timestep.
+            total_radiation: A list of total solar radiation at each timestep.
+            direct_radiation: A list of direct solar radiation at each timestep.
+            diffuse_radiation: A list of diffuse sky solar radiation
+                at each timestep.
+            reflected_radiation: A list of ground reflected solar radiation
+                at each timestep.
         """
         # function to convert polar coordinates to xyz.
         def pol2cart(phi, theta):
@@ -536,15 +533,14 @@ class Wea(object):
             z = math.sin(theta)
             return Vector3(x, y, z)
 
-        # convert the surface altitude and azimuth to a normal vector
-        surface_norm = pol2cart(math.radians(surface_azimuth),
-                                math.radians(surface_altitude))
+        # convert the altitude and azimuth to a normal vector
+        normal = pol2cart(math.radians(azimuth), math.radians(altitude))
 
         # create sunpath and get altitude at every timestep of the year
-        surface_direct_radiation = []
-        surface_diffuse_radiation = []
-        surface_reflected_radiation = []
-        surface_total_radiation = []
+        direct_radiation = []
+        diffuse_radiation = []
+        reflected_radiation = []
+        total_radiation = []
         sp = Sunpath.from_location(self.location)
         for h in xrange(8760 * self.timestep):
             if self.timestep == 1:
@@ -555,43 +551,43 @@ class Wea(object):
             date_t = sun.datetime
             sun_vec = pol2cart(math.radians(sun.azimuth),
                                math.radians(sun.altitude))
-            vec_angle = sun_vec.angle(surface_norm)
+            vec_angle = sun_vec.angle(normal)
 
-            # direct radiation on surface
+            # direct radiation
             srf_dir = 0
             if sun.altitude > 0 and vec_angle < math.pi / 2:
                 srf_dir = self.direct_normal_radiation[h] * math.cos(vec_angle)
 
-            # diffuse radiation on surface
+            # diffuse radiation on
             if isotrophic is True:
                 srf_dif = self.diffuse_horizontal_radiation[h] * ((math.sin(
-                    math.radians(surface_altitude)) / 2) + 0.5)
+                    math.radians(altitude)) / 2) + 0.5)
             else:
                 y = max(0.45, 0.55 + (0.437 * math.cos(vec_angle)) + 0.313 *
                         math.cos(vec_angle) * 0.313 * math.cos(vec_angle))
                 srf_dif = self.diffuse_horizontal_radiation[h] * (y * (
-                    math.sin(math.radians(abs(90 - surface_altitude)))) +
-                    math.cos(math.radians(abs(90 - surface_altitude))))
+                    math.sin(math.radians(abs(90 - altitude)))) +
+                    math.cos(math.radians(abs(90 - altitude))))
 
-            # reflected radiation on surface.
+            # reflected radiation
             e_glob = self.diffuse_horizontal_radiation[h] + \
                 self.direct_normal_radiation[h] * math.cos(
                     math.radians(90 - sun.altitude))
             srf_ref = e_glob * ground_reflectance * (0.5 - (math.sin(
-                math.radians(surface_altitude)) / 2))
+                math.radians(altitude)) / 2))
 
             # add it all together
-            surface_direct_radiation.append(
+            direct_radiation.append(
                 DataPoint(srf_dir, date_t, 'SI', 'Radiation'))
-            surface_diffuse_radiation.append(
+            diffuse_radiation.append(
                 DataPoint(srf_dif, date_t, 'SI', 'Radiation'))
-            surface_reflected_radiation.append(
+            reflected_radiation.append(
                 DataPoint(srf_ref, date_t, 'SI', 'Radiation'))
-            surface_total_radiation.append(
+            total_radiation.append(
                 DataPoint(srf_dir + srf_dif + srf_ref, date_t, 'SI', 'Radiation'))
 
-        return surface_total_radiation, surface_direct_radiation, \
-            surface_diffuse_radiation, surface_reflected_radiation
+        return total_radiation, direct_radiation, \
+            diffuse_radiation, reflected_radiation
 
     @property
     def header(self):
