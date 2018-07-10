@@ -4,7 +4,7 @@ import unittest
 import pytest
 
 from ladybug.wea import Wea
-
+from ladybug.location import Location
 
 class WeaTestCase(unittest.TestCase):
     """Test for (ladybug/epw.py)"""
@@ -33,22 +33,28 @@ class WeaTestCase(unittest.TestCase):
 
         assert wea_from_stat.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_stat.timestep == 1
+        assert wea_from_stat.diffuse_horizontal_radiation[12].value == \
+            pytest.approx(87.44171, rel=1e-3)
+        assert wea_from_stat.direct_normal_radiation[12].value == \
+            pytest.approx(810.693919, rel=1e-3)
 
     def test_from_clear_sky(self):
         """Test from original clear sky"""
-        stat_path = './tests/stat/chicago.stat'
-        wea_from_stat = Wea.from_stat_file(stat_path)
-        location = wea_from_stat.location
+        location = Location(
+            'Chicago Ohare Intl Ap', 'USA', 41.98, -87.92, -6.0, 201.0)
         wea_from_clear_sky = Wea.from_ashrae_clear_sky(location)
 
         assert wea_from_clear_sky.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_clear_sky.timestep == 1
+        assert wea_from_clear_sky.diffuse_horizontal_radiation[12].value == \
+            pytest.approx(60.72258, rel=1e-3)
+        assert wea_from_clear_sky.direct_normal_radiation[12].value == \
+            pytest.approx(857.00439, rel=1e-3)
 
     def test_from_zhang_huang(self):
         """Test from zhang huang solar model"""
-        stat_path = './tests/stat/chicago.stat'
-        wea_from_stat = Wea.from_stat_file(stat_path)
-        location = wea_from_stat.location
+        location = Location(
+            'Chicago Ohare Intl Ap', 'USA', 41.98, -87.92, -6.0, 201.0)
 
         cc = [0.5] * 8760
         rh = [50] * 8760
@@ -58,6 +64,8 @@ class WeaTestCase(unittest.TestCase):
 
         assert wea_from_zh.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_zh.timestep == 1
+        #print wea_from_zh.diffuse_horizontal_radiation[12].value
+        #print wea_from_zh.direct_normal_radiation[12].value
         # TODO: Add checks for the values produced by the model
 
     def test_json_methods(self):
