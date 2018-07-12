@@ -26,6 +26,19 @@ class WeaTestCase(unittest.TestCase):
 
         assert wea_from_epw.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_epw.timestep == 1
+        assert wea_from_epw.direct_normal_radiation[7] == 22
+        assert wea_from_epw.direct_normal_radiation[7].datetime.hour == 7
+        assert wea_from_epw.direct_normal_radiation[7].datetime.minute == 30
+        assert wea_from_epw.direct_normal_radiation[8] == 397
+        assert wea_from_epw.direct_normal_radiation[8].datetime.hour == 8
+        assert wea_from_epw.direct_normal_radiation[8].datetime.minute == 30
+        # diffuse horizontal radiation
+        assert wea_from_epw.diffuse_horizontal_radiation[7] == 10
+        assert wea_from_epw.diffuse_horizontal_radiation[7].datetime.hour == 7
+        assert wea_from_epw.diffuse_horizontal_radiation[7].datetime.minute == 30
+        assert wea_from_epw.diffuse_horizontal_radiation[8] == 47
+        assert wea_from_epw.diffuse_horizontal_radiation[8].datetime.hour == 8
+        assert wea_from_epw.diffuse_horizontal_radiation[8].datetime.minute == 30
 
     def test_from_stat(self):
         """Test import from stat"""
@@ -143,8 +156,21 @@ class WeaTestCase(unittest.TestCase):
         assert [x.value for x in srf_reflect] == pytest.approx(
             [0] * 8760, rel=1e-3)
 
-    def test_write(self):
-        pass
+    def test_leap_year(self):
+        """Test clear sky with leap year."""
+        location = Location(
+            'Chicago Ohare Intl Ap', 'USA', 41.98, -87.92, -6.0, 201.0)
+        wea = Wea.from_ashrae_clear_sky(location, is_leap_year=True)
+
+        assert wea.diffuse_horizontal_radiation[1416].datetime.month == 2
+        assert wea.diffuse_horizontal_radiation[1416].datetime.day == 29
+        assert wea.diffuse_horizontal_radiation[1416].datetime.hour == 0
+        assert wea.diffuse_horizontal_radiation[1416].datetime.minute == 30
+
+        assert wea.diffuse_horizontal_radiation[1416 + 12].datetime.month == 2
+        assert wea.diffuse_horizontal_radiation[1416 + 12].datetime.day == 29
+        assert wea.diffuse_horizontal_radiation[1416 + 12].datetime.hour == 12
+        assert wea.diffuse_horizontal_radiation[1416 + 12].datetime.minute == 30
 
 
 if __name__ == "__main__":
