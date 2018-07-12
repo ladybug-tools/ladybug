@@ -7,10 +7,12 @@ class DateTime(datetime):
     """Create Ladybug Date time.
 
     Args:
-        month: A value for month between 1-12. (Defualt: 1)
-        day: A value for day between 1-31. (Defualt: 1)
-        hour: A value for hour between 0-23. (Defualt: 0)
-        minute: A value for month between 0-59. (Defualt: 0)
+        month: A value for month between 1-12 (Defualt: 1).
+        day: A value for day between 1-31 (Defualt: 1).
+        hour: A value for hour between 0-23 (Defualt: 0).
+        minute: A value for month between 0-59 (Defualt: 0).
+        leap_year: A boolean to indicate if datetime is for a leap year
+            (Default: False).
     """
 
     __slots__ = ()
@@ -19,10 +21,12 @@ class DateTime(datetime):
         """Create Ladybug datetime.
 
         Args:
-            month: A value for month between 1-12. (Defualt: 1)
-            day: A value for day between 1-31. (Defualt: 1)
-            hour: A value for hour between 0-23. (Defualt: 0)
-            minute: A value for month between 0-59. (Defualt: 0)
+            month: A value for month between 1-12 (Defualt: 1).
+            day: A value for day between 1-31 (Defualt: 1).
+            hour: A value for hour between 0-23 (Defualt: 0).
+            minute: A value for month between 0-59 (Defualt: 0).
+            leap_year: A boolean to indicate if datetime is for a leap year
+                (Default: False).
         """
         year = 2016 if leap_year else 2017
         hour, minute = cls._calculate_hour_and_minute(hour + minute / 60.0)
