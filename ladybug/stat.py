@@ -63,7 +63,7 @@ class Stat(object):
     def import_data(self):
         """Import data from a stat file.
         """
-        statwin = codecs.open(self.file_path, 'r', encoding='utf-8', errors='ignore')
+        statwin = codecs.open(self.file_path, 'r')
         try:
             line = statwin.readline()
             # import header with location
@@ -81,8 +81,8 @@ class Stat(object):
 
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
-            coord_pattern = re.compile(r"{([NSEW])(\s*\d*) (\s*\d*)'}")
-            matches = coord_pattern.findall(self._header[3])
+            coord_pattern = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)'}")
+            matches = coord_pattern.findall(self._header[3].replace('\xb0', 'deg'))
             lat_sign = -1 if matches[0][0] == 'S' else 1
             latitude = lat_sign * (float(matches[0][1]) + (float(matches[0][2]) / 60))
             lon_sign = -1 if matches[1][0] == 'W' else 1
