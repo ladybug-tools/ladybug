@@ -64,7 +64,16 @@ class Stat(object):
     def import_data(self):
         """Import data from a stat file.
         """
-        iron_python = True if platform.python_implementation() == 'IronPython' else False
+        try:
+            iron_python = True if platform.python_implementation() == 'IronPython' \
+                else False
+        except ValueError as e:
+            # older version of IronPython failse to parse version correctly
+            # failed to parse IronPython sys.version: '2.7.5 (IronPython 2.7.5 (2.7.5.0)
+            # on .NET 4.0.30319.42000 (64-bit))'
+            if 'IronPython' in str(e):
+                iron_python = True
+
         if iron_python:
             statwin = codecs.open(self.file_path, 'r')
         else:

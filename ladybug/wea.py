@@ -434,12 +434,12 @@ class Wea(object):
     @property
     def hoys(self):
         """Hours of the year in wea file."""
-        return tuple(data.dt.hoy for data in self.direct_normal_radiation)
+        return tuple(data.datetime.hoy for data in self.direct_normal_radiation)
 
     @property
     def datetimes(self):
         """Datetimes in wea file."""
-        return tuple(data.dt for data in self.direct_normal_radiation)
+        return tuple(data.datetime for data in self.direct_normal_radiation)
 
     @property
     def timestep(self):
