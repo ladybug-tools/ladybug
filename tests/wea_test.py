@@ -19,6 +19,18 @@ class WeaTestCase(unittest.TestCase):
         """Nothing to tear down as nothing gets written to file."""
         pass
 
+    def test_from_file(self):
+        """Test import from wea file."""
+        wea_file = './tests/wea/san_francisco_10min.wea'
+        with pytest.raises(Exception):
+            Wea.from_file(wea_file)  # wrong timestep
+
+        wea = Wea.from_file(wea_file, 6)
+        assert wea.direct_normal_radiation[45] == 88
+        assert wea.diffuse_horizontal_radiation[45] == 1
+        assert wea.direct_normal_radiation[46] == 313
+        assert wea.diffuse_horizontal_radiation[46] == 3
+
     def test_from_epw(self):
         """Test import from epw"""
         epw_path = './tests/epw/chicago.epw'
