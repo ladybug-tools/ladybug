@@ -64,6 +64,8 @@ class Stat(object):
     def import_data(self):
         """Import data from a stat file.
         """
+        # set default state to ironpython for very old ironpython (2.7.0)
+        iron_python = True
         try:
             iron_python = True if platform.python_implementation() == 'IronPython' \
                 else False
