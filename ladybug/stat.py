@@ -3,6 +3,7 @@ from .location import Location
 import os
 import re
 import codecs
+import platform
 
 
 class Stat(object):
@@ -63,11 +64,28 @@ class Stat(object):
     def import_data(self):
         """Import data from a stat file.
         """
-        statwin = codecs.open(self.file_path, 'r', encoding='utf-8', errors='ignore')
+        try:
+            iron_python = True if platform.python_implementation() == 'IronPython' \
+                else False
+        except ValueError as e:
+            # older versions of IronPython fail to parse version correctly
+            # failed to parse IronPython sys.version: '2.7.5 (IronPython 2.7.5 (2.7.5.0)
+            # on .NET 4.0.30319.42000 (64-bit))'
+            if 'IronPython' in str(e):
+                iron_python = True
+
+        if iron_python:
+            statwin = codecs.open(self.file_path, 'r')
+        else:
+            statwin = codecs.open(self.file_path, 'r', encoding='utf-8', errors='ignore')
         try:
             line = statwin.readline()
             # import header with location
             self._header = [line] + [statwin.readline() for i in range(9)]
+        except Exception as e:
+            import traceback
+            raise Exception('{}\n{}'.format(e, traceback.format_exc()))
+        else:
             # import location data
             loc_name = self._header[2].strip().replace('Location -- ', '')
             if ' - ' in loc_name:
@@ -81,8 +99,14 @@ class Stat(object):
 
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
-            coord_pattern = re.compile(r"{([NSEW])(\s*\d*) (\s*\d*)'}")
-            matches = coord_pattern.findall(self._header[3])
+            if iron_python:
+                # IronPython
+                coord_pattern = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)'}")
+                matches = coord_pattern.findall(self._header[3].replace('\xb0', 'deg'))
+            else:
+                # CPython
+                coord_pattern = re.compile(r"{([NSEW])(\s*\d*) (\s*\d*)'}")
+                matches = coord_pattern.findall(self._header[3])
             lat_sign = -1 if matches[0][0] == 'S' else 1
             latitude = lat_sign * (float(matches[0][1]) + (float(matches[0][2]) / 60))
             lon_sign = -1 if matches[1][0] == 'W' else 1
@@ -122,8 +146,6 @@ class Stat(object):
                     self._ashrae_climate_zone = line.split('"')[1]
                 elif 'Climate type' in line:
                     self._koppen_climate_zone = line.split('"')[1]
-        except Exception as e:
-            raise Exception(e)
         finally:
             statwin.close()
         self._is_data_loaded = True
