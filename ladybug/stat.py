@@ -98,7 +98,6 @@ class Stat(object):
                 city = ' '.join(loc_name.split()[:-2])
 
             country = loc_name.split(' ')[-1]
-
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
             if iron_python:
@@ -134,7 +133,10 @@ class Stat(object):
             self._ashrae_climate_zone = None
             self._koppen_climate_zone = None
 
-            # move through the document and pull out the climate zone and tau values
+            # move through the document and pull out:
+            # The tau values for the sky model
+            # The monthly temperatures (for design days)
+            # The climate zone
             for line in statwin:
                 if 'taub (beam)' in line:
                     taub_raw = line.replace('taub (beam)', '').strip().split('\t')
