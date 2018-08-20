@@ -1,4 +1,5 @@
 from .location import Location
+from .futil import write_to_file
 
 import os
 import re
@@ -46,7 +47,137 @@ class Ddy(object):
     properties:
         location: A Ladybug location object
         design_days: A list of the design days in the ddy file.
+        file_path: Optional file path into which ddy file can be written.
     """
+    def __init__(self, location, design_days=[], file_path=None):
+        """Initalize the class."""
+        self.location = location
+        self.design_days = design_days
+        self.file_path = file_path or 'C:\\ladybug\\unnamed.ddy'
+
+    @classmethod
+    def from_ddy_file(cls, file_path):
+        """Initalize from a ddy file object from an existing ddy file.
+
+        args:
+            file_path: A full string to the .ddy file.
+        """
+        # defaults
+        location = None
+        design_days = []
+
+        # check that the file is there
+        if not os.path.isfile(file_path):
+            raise ValueError(
+                'Cannot find an ddy file at {}'.format(file_path))
+
+        # check the python version and open the file
+        try:
+            iron_python = True if platform.python_implementation() == 'IronPython' \
+                else False
+        except:
+            iron_python = True
+
+        if iron_python:
+            ddywin = codecs.open(file_path, 'r')
+        else:
+            ddywin = codecs.open(file_path, 'r', encoding='utf-8', errors='ignore')
+
+        try:
+            ddytxt = ddywin.read()
+            design_day_format = re.compile(
+                r"(SizingPeriod:DesignDay,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
+            location_format = re.compile(
+                r"(Site:Location,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
+
+            des_day_matches = design_day_format.findall(ddytxt)
+            location_matches = location_format.findall(ddytxt)
+        except Exception as e:
+            import traceback
+            raise Exception('{}\n{}'.format(e, traceback.format_exc()))
+        else:
+            # build design day and location objects
+            design_days = [DesignDay.from_ep_string(
+                match[0]) for match in des_day_matches]
+            location = Location.from_location(location_matches[0][0])
+        finally:
+            ddywin.close()
+
+        return cls(location, design_days, file_path)
+
+    def save(self, folder=None, file_name=None):
+        """Save ddy object as a ddy file."""
+        # check file_path
+        if not folder:
+            folder = self.folder
+        if not file_name:
+            file_name = os.path.splitext(self.file_name)[0] + '_modified.ddy'
+        full_path = os.path.join(folder, file_name)
+
+        # write all data into the file
+        # write the file
+        with open(full_path, 'w') as modDdyFile:
+            modDdyFile.writelines(self.location.ep_style_location_string + '\n\n')
+            for d_day in self.design_days:
+                modDdyFile.writelines(d_day.ep_style_string + '\n\n')
+
+    @property
+    def file_path(self):
+        """Get or set path to ddy file."""
+        return self._file_path
+
+    @property
+    def folder(self):
+        """Get ddy file folder."""
+        return self._folder
+
+    @property
+    def file_name(self):
+        """Get ddy file name."""
+        return self._file_name
+
+    @file_path.setter
+    def file_path(self, ddy_file_path):
+        self._file_path = os.path.normpath(ddy_file_path)
+
+        if not ddy_file_path.lower().endswith('.ddy'):
+            self._file_path = self._file_path + '.ddy'
+
+        self._folder, self._file_name = os.path.split(self.file_path)
+
+    @property
+    def location(self):
+        """Get or set the location."""
+        return self._location
+
+    @location.setter
+    def location(self, data):
+        assert hasattr(data, 'isLocation'), 'Expected' \
+            ' Location type. Got {}'.format(str(data))
+        self._location = data
+
+    @property
+    def design_days(self):
+        """Get or set the design_days."""
+        return self._design_days
+
+    @design_days.setter
+    def design_days(self, data):
+        assert isinstance(data, list), 'Expected' \
+            ' a list of design days. Got {}'.format(str(data))
+        for item in data:
+            assert hasattr(item, 'isDesignDay'), 'Expected' \
+                ' DesignDay type. Got {}'.format(str(item))
+        self._design_days = data
+
+    def ToString(self):
+        """Overwrite .NET ToString."""
+        return self.__repr__()
+
+    def __repr__(self):
+        """dry bulb condition representation."""
+        return "Ddy File - {} [# days: {}]".format(
+            self.location.city, str(len(self._design_days)))
 
 
 
@@ -85,8 +216,9 @@ class DesignDay(object):
         lines = [l.split('!')[0].strip().replace(',','') for l in ep_lines]
 
         # check to be sure that we have a valid ddy object
-        assert len(lines) == 27, "Number of lines of text [{}]" \
-            " does not correspond to an EP Design Day [27]".format(
+        assert len(lines) == 27 or len(lines) == 26, "Number " \
+            "of lines of text [{}] does not correspond" \
+            " to an EP Design Day [26 or 27]".format(
                 len(lines))
 
         # extract primary properties
@@ -131,7 +263,8 @@ class DesignDay(object):
         return cls(name, day_type, dry_bulb_condition,
                    humidity_condition, wind_condition, sky_condition)
 
-    def to_ep_string(self):
+    @property
+    def ep_style_string(self):
         """Serialize object to an EnerygPlus SizingPeriod:DesignDay.
 
         returns:
@@ -249,7 +382,7 @@ class DesignDay(object):
         return self.__repr__()
 
     def __repr__(self):
-        """dry bulb condition representation."""
+        """Design day representation."""
         return "Design Day - {} [{}]".format(
             self.name, self._day_type)
 
@@ -534,7 +667,7 @@ class RevisedClearSkyCondition(SkyCondition):
         """Init class."""
         self.tau_b = tau_b
         self.tau_d = tau_d
-        _SkyCondition.__init__(self, 'ASHRAEClearSky', month, day_of_month,
+        SkyCondition.__init__(self, 'ASHRAETau', month, day_of_month,
                                daylight_savings_indicator)
     @property
     def tau_b(self):
@@ -557,3 +690,6 @@ class RevisedClearSkyCondition(SkyCondition):
         assert isinstance(data, (float, int)), 'tau_d must be a' \
             ' number. Got {}'.format(type(data))
         self._tau_d = data
+
+ddy_file = 'C:\\ladybug\\USA_NY_Binghamton-Edwin.A.Link.Field.725150_TMY3\\USA_NY_Binghamton-Edwin.A.Link.Field.725150_TMY3.ddy'
+myfile = Ddy.from_ddy_file(ddy_file)
