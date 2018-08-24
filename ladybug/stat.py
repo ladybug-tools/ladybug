@@ -146,12 +146,13 @@ class Stat(object):
                     taud_raw = line.replace('taud (diffuse)', '').strip().split('\t')
                     self._monthly_tau_diffuse = [float(i) if 'N' not in i
                                                  else None for i in taud_raw]
-                elif 'Drybulb 5.0%' in line and not '=' in line:
+                elif 'Drybulb 5.0%' in line and '=' not in line:
                     db_50_raw = line.replace('Drybulb 5.0%', '').strip().split('\t')
                     self._monthly_db_50 = [float(i) if 'N' not in i
                                            else None for i in db_50_raw]
-                elif 'Coincident Wetbulb 5.0%' in line and not '=' in line:
-                    wb_50_raw = line.replace('Coincident Wetbulb 5.0%', '').strip().split('\t')
+                elif 'Coincident Wetbulb 5.0%' in line and '=' not in line:
+                    wb_50_raw = line.replace(
+                        'Coincident Wetbulb 5.0%', '').strip().split('\t')
                     self._monthly_wb_50 = [float(i) if 'N' not in i
                                            else None for i in wb_50_raw]
                 elif 'Climate type' in line and 'ASHRAE' in line:
