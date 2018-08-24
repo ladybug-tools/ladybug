@@ -1,9 +1,20 @@
 from .location import Location
+from .designday import DesignDay
+from .designday import DryBulbCondition
+from .designday import HumidityCondition
+from .designday import WindCondition
+from .designday import RevisedClearSkyCondition
 
 import os
 import re
 import codecs
 import platform
+
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+          'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+wind_dirs = [0, 45, 90, 135, 180, 225, 270, 315]
+wind_dir_names = ['North', 'NorthEast', 'East', 'SouthEast', 'South',
+                  'SouthWest', 'West', 'NorthWest']
 
 
 class Stat(object):
@@ -25,6 +36,7 @@ class Stat(object):
         self.file_path = file_path
         self._is_data_loaded = False
         self._header = None  # epw header
+        self._monthly_wind_dirs = []
 
     @property
     def file_path(self):
@@ -59,7 +71,7 @@ class Stat(object):
         """Return True if data is loaded."""
         return self._is_data_loaded
 
-    # TODO: import heating + cooling design temperatures
+    # TODO: import annual heating + cooling design days
     # TODO: import hot, cold and typical weeks
     def import_data(self):
         """Import data from a stat file.
@@ -118,6 +130,8 @@ class Stat(object):
             elev_matches = elev_pattern.findall(self._header[4])
             elev_sign = -1 if elev_matches[0][-1].lower() == 'below' else 1
             elevation = elev_sign * float(elev_matches[0][0])
+            press_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)Pa")
+            self._stand_press_at_elev = float(press_pattern.findall(self._header[5])[0])
 
             self._location = Location()
             self._location.city = city
@@ -137,23 +151,59 @@ class Stat(object):
             # The tau values for the sky model
             # The monthly temperatures (for design days)
             # The climate zone
+            wind_spd_section = False
+            wind_dir_section = -1
             for line in statwin:
                 if 'taub (beam)' in line:
-                    taub_raw = line.replace('taub (beam)', '').strip().split('\t')
-                    self._monthly_tau_beam = [float(i) if 'N' not in i
-                                              else None for i in taub_raw]
+                    self._monthly_tau_beam = self._split_monthly_row(
+                        line, 'taub (beam)')
                 elif 'taud (diffuse)' in line:
-                    taud_raw = line.replace('taud (diffuse)', '').strip().split('\t')
-                    self._monthly_tau_diffuse = [float(i) if 'N' not in i
-                                                 else None for i in taud_raw]
-                elif 'Drybulb 5.0%' in line and not '=' in line:
-                    db_50_raw = line.replace('Drybulb 5.0%', '').strip().split('\t')
-                    self._monthly_db_50 = [float(i) if 'N' not in i
-                                           else None for i in db_50_raw]
-                elif 'Coincident Wetbulb 5.0%' in line and not '=' in line:
-                    wb_50_raw = line.replace('Coincident Wetbulb 5.0%', '').strip().split('\t')
-                    self._monthly_wb_50 = [float(i) if 'N' not in i
-                                           else None for i in wb_50_raw]
+                    self._monthly_tau_diffuse = self._split_monthly_row(
+                        line, 'taud (diffuse)')
+                elif 'Drybulb 5.0%' in line and '=' not in line:
+                    self._monthly_db_50 = self._split_monthly_row(
+                        line, 'Drybulb 5.0%')
+                elif 'Coincident Wetbulb 5.0%' in line and '=' not in line:
+                    self._monthly_wb_50 = self._split_monthly_row(
+                        line, 'Coincident Wetbulb 5.0%')
+                elif 'Drybulb 10.%' in line and '=' not in line:
+                    self._monthly_db_100 = self._split_monthly_row(
+                        line, 'Drybulb 10.%')
+                elif 'Coincident Wetbulb 10.%' in line and '=' not in line:
+                    self._monthly_wb_100 = self._split_monthly_row(
+                        line, 'Coincident Wetbulb 10.%')
+                elif 'Drybulb 2.0%' in line and '=' not in line:
+                    self._monthly_db_20 = self._split_monthly_row(
+                        line, 'Drybulb 2.0%')
+                elif 'Coincident Wetbulb 2.0%' in line and '=' not in line:
+                    self._monthly_wb_20 = self._split_monthly_row(
+                        line, 'Coincident Wetbulb 2.0%')
+                elif 'Drybulb 0.4%' in line and '=' not in line:
+                    self._monthly_db_04 = self._split_monthly_row(
+                        line, 'Drybulb 0.4%')
+                elif 'Coincident Wetbulb 0.4%' in line and '=' not in line:
+                    self._monthly_wb_04 = self._split_monthly_row(
+                        line, 'Coincident Wetbulb 0.4%')
+                elif 'Drybulb range - DB 5%' in line and '=' not in line:
+                    self._monthly_db_range_50 = self._split_monthly_row(
+                        line, 'Drybulb range - DB 5%')
+                elif 'Wetbulb range - DB 5%' in line and '=' not in line:
+                    self._monthly_wb_range_50 = self._split_monthly_row(
+                        line, 'Wetbulb range - DB 5%')
+                elif 'Monthly Statistics for Wind Speed m/s' in line:
+                    wind_spd_section = True
+                elif wind_spd_section is True and 'Daily Avg' in line:
+                    wind_spd_section = False
+                    self._monthly_wind = self._split_monthly_row(
+                        line, 'Daily Avg')
+                elif 'Monthly Wind Direction %' in line:
+                    wind_dir_section += 1
+                elif wind_dir_section > -1 and 'Jan' not in line:
+                    self._monthly_wind_dirs.append(self._split_monthly_row(
+                        line, wind_dir_names[wind_dir_section]))
+                    wind_dir_section += 1
+                    if wind_dir_section == 8:
+                        wind_dir_section = -1
                 elif 'Climate type' in line and 'ASHRAE' in line:
                     self._ashrae_climate_zone = line.split('"')[1]
                 elif 'Climate type' in line:
@@ -161,6 +211,10 @@ class Stat(object):
         finally:
             statwin.close()
         self._is_data_loaded = True
+
+    def _split_monthly_row(self, row, text):
+        raw_txt = row.replace(text, '').strip().split('\t')
+        return [float(i) if 'N' not in i else None for i in raw_txt]
 
     @property
     def header(self):
@@ -201,8 +255,155 @@ class Stat(object):
         return self._koppen_climate_zone
 
     @property
+    def monthly_cooling_design_days_50(self):
+        """A list of 12 objects representing monthly 5.0% cooling design days.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        db_conds = [DryBulbCondition(x, y) for x, y in zip(
+            self._monthly_db_50, self._monthly_db_range_50)]
+        hu_conds = [HumidityCondition(
+            'Wetbulb', x, y, self._stand_press_at_elev) for x, y in zip(
+                self._monthly_wb_50, self._monthly_wb_range_50)]
+        ws_conds = self.monthly_wind_conditions
+        sky_conds = self.monthly_clear_sky_conditions
+        return [DesignDay(
+            '5% Cooling Design Day for {}'.format(months[i]), 'SummerDesignDay',
+            db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
+                       for i in range(12)]
+
+    @property
+    def monthly_cooling_design_days_100(self):
+        """A list of 12 objects representing monthly 10.0% cooling design days.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        db_conds = [DryBulbCondition(x, y) for x, y in zip(
+            self._monthly_db_100, self._monthly_db_range_50)]
+        hu_conds = [HumidityCondition(
+            'Wetbulb', x, y, self._stand_press_at_elev) for x, y in zip(
+                self._monthly_wb_100, self._monthly_wb_range_50)]
+        ws_conds = self.monthly_wind_conditions
+        sky_conds = self.monthly_clear_sky_conditions
+        return [DesignDay(
+            '10% Cooling Design Day for {}'.format(months[i]), 'SummerDesignDay',
+            db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
+                       for i in range(12)]
+
+    @property
+    def monthly_cooling_design_days_20(self):
+        """A list of 12 objects representing monthly 2.0% cooling design days.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        db_conds = [DryBulbCondition(x, y) for x, y in zip(
+            self._monthly_db_20, self._monthly_db_range_50)]
+        hu_conds = [HumidityCondition(
+            'Wetbulb', x, y, self._stand_press_at_elev) for x, y in zip(
+                self._monthly_wb_20, self._monthly_wb_range_50)]
+        ws_conds = self.monthly_wind_conditions
+        sky_conds = self.monthly_clear_sky_conditions
+        return [DesignDay(
+            '2% Cooling Design Day for {}'.format(months[i]), 'SummerDesignDay',
+            db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
+                       for i in range(12)]
+
+    @property
+    def monthly_cooling_design_days_04(self):
+        """A list of 12 objects representing monthly 0.4% cooling design days.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        db_conds = [DryBulbCondition(x, y) for x, y in zip(
+            self._monthly_db_04, self._monthly_db_range_50)]
+        hu_conds = [HumidityCondition(
+            'Wetbulb', x, y, self._stand_press_at_elev) for x, y in zip(
+                self._monthly_wb_04, self._monthly_wb_range_50)]
+        ws_conds = self.monthly_wind_conditions
+        sky_conds = self.monthly_clear_sky_conditions
+        return [DesignDay(
+            '0.4% Cooling Design Day for {}'.format(months[i]), 'SummerDesignDay',
+            db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
+                       for i in range(12)]
+
+    @property
+    def monthly_db_temp_50(self):
+        """A list of 12 float values for monthly 5.0% dry bulb temperature.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        return self._monthly_db_50
+
+    @property
+    def monthly_wb_temp_50(self):
+        """A list of 12 float values for monthly 5.0% wet bulb temperature.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        return self._monthly_wb_50
+
+    @property
+    def monthly_db_temp_range_50(self):
+        """A list of 12 values for monthly ranges of dry bulb temperatures at 5.0%.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        return self._monthly_db_range_50
+
+    @property
+    def monthly_wb_temp_range_50(self):
+        """A list of 12 values for monthly ranges of wet bulb temperatures at 5.0%.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        return self._monthly_wb_range_50
+
+    @property
+    def standard_pressure_at_elev(self):
+        """The standard pressure on pascals at the elevation of the location.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        return self._stand_press_at_elev
+
+    @property
+    def monthly_wind_conditions(self):
+        """A list of 12 monthly wind conditions that are used on the design days.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        return [WindCondition(x, y) for x, y in zip(
+            self._monthly_wind, self.monthly_wind_dirs)]
+
+    @property
+    def monthly_ws_avg(self):
+        """A list of 12 float values for monthly average wind speeds.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        return self._monthly_wind
+
+    @property
+    def monthly_wind_dirs(self):
+        """A list of prevailing wind directions for each month.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        mwd = zip(*self._monthly_wind_dirs)
+        return [wind_dirs[mon.index(max(mon))] for mon in mwd]
+
+    @property
+    def monthly_clear_sky_conditions(self):
+        """A list of 12 monthly clear sky conditions that are used on the design days.
+        """
+        if not self.is_data_loaded:
+            self.import_data()
+        return [RevisedClearSkyCondition(i, 21, x, y) for i, x, y in zip(
+            range(1, 13), self._monthly_tau_beam, self._monthly_tau_diffuse)]
+
+    @property
     def monthly_tau_beam(self):
-        """Return a list of 12 float values for monthly beam optical depth.
+        """A list of 12 float values for monthly beam optical depth.
 
         These values can be used to generate ASHRAE Revised Clear Skies, which
         are intended to determine peak solar load and sizing parmeters for
