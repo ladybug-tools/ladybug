@@ -1,5 +1,5 @@
 from .location import Location
-from honeybee.futil import write_to_file
+from .futil import write_to_file
 
 import os
 import re
@@ -41,7 +41,6 @@ ep_com = ['!- Name',
           '!- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)',
           '!- Clearness [0.0 to 1.2]']
 
-
 class Ddy(object):
     """Import data from a local .ddy file.
 
@@ -76,7 +75,7 @@ class Ddy(object):
         try:
             iron_python = True if platform.python_implementation() == 'IronPython' \
                 else False
-        except Exception:
+        except:
             iron_python = True
 
         if iron_python:
@@ -117,10 +116,10 @@ class Ddy(object):
 
         # write all data into the file
         # write the file
-        data = self.location.ep_style_location_string + '\n\n'
-        for d_day in self.design_days:
-            data = data + d_day.ep_style_string + '\n\n'
-        write_to_file(full_path, data, True)
+        with open(full_path, 'w') as modDdyFile:
+            modDdyFile.writelines(self.location.ep_style_location_string + '\n\n')
+            for d_day in self.design_days:
+                modDdyFile.writelines(d_day.ep_style_string + '\n\n')
 
     @property
     def file_path(self):
@@ -181,6 +180,7 @@ class Ddy(object):
             self.location.city, str(len(self._design_days)))
 
 
+
 class DesignDay(object):
     """Represents design day conditions.
 
@@ -213,7 +213,7 @@ class DesignDay(object):
         """
         # format the object into a list of properties
         ep_lines = ep_string.split('\n')
-        lines = [l.split('!')[0].strip().replace(',', '') for l in ep_lines]
+        lines = [l.split('!')[0].strip().replace(',','') for l in ep_lines]
 
         # check to be sure that we have a valid ddy object
         assert len(lines) == 27 or len(lines) == 26, "Number " \
@@ -272,30 +272,30 @@ class DesignDay(object):
         """
         # Put together the values in the order that they exist in the ddy file
         ep_vals = [self.name,
-                   self.sky_condition.month,
-                   self.sky_condition.day_of_month,
-                   self.day_type,
-                   self.dry_bulb_condition.max_dry_bulb,
-                   self.dry_bulb_condition.dry_bulb_range,
-                   self.dry_bulb_condition.modifier_type,
-                   self.dry_bulb_condition.modifier_schedule,
-                   self.humidity_condition.hum_type, '',
-                   self.humidity_condition.schedule, '', '',
-                   self.humidity_condition.value_range,
-                   self.humidity_condition.barometric_pressure,
-                   self.wind_condition.wind_speed,
-                   self.wind_condition.wind_direction,
-                   self.wind_condition.rain,
-                   self.wind_condition.snow_on_ground,
-                   self.sky_condition.daylight_savings_indicator,
-                   self.sky_condition.solar_model,
-                   self.sky_condition.beam_shced,
-                   self.sky_condition.diff_sched, '', '', '']
+        self.sky_condition.month,
+        self.sky_condition.day_of_month,
+        self.day_type,
+        self.dry_bulb_condition.max_dry_bulb,
+        self.dry_bulb_condition.dry_bulb_range,
+        self.dry_bulb_condition.modifier_type,
+        self.dry_bulb_condition.modifier_schedule,
+        self.humidity_condition.hum_type, '',
+        self.humidity_condition.schedule, '', '',
+        self.humidity_condition.value_range,
+        self.humidity_condition.barometric_pressure,
+        self.wind_condition.wind_speed,
+        self.wind_condition.wind_direction,
+        self.wind_condition.rain,
+        self.wind_condition.snow_on_ground,
+        self.sky_condition.daylight_savings_indicator,
+        self.sky_condition.solar_model,
+        self.sky_condition.beam_shced,
+        self.sky_condition.diff_sched, '', '', '']
 
         # assign humidity values based on the type of criteria
         if self.humidity_condition.hum_type == 'Wetbulb' or \
-                self.humidity_condition.hum_type == 'Dewpoint':
-                    ep_vals[9] = self.humidity_condition.hum_value
+            self.humidity_condition.hum_type == 'Dewpoint':
+            ep_vals[9] = self.humidity_condition.hum_value
         elif self.humidity_condition.hum_type == 'HumidityRatio':
             ep_vals[11] = self.humidity_condition.hum_value
         elif self.humidity_condition.hum_type == 'Enthalpy':
@@ -495,7 +495,7 @@ class HumidityCondition(object):
     def __repr__(self):
         """humidity condition representation."""
         return "HumidityCondition [{}: {}]".format(
-            self._hum_type, str(self._hum_value))
+            self._hum_type,str(self._hum_value))
 
 
 class WindCondition(object):
@@ -552,7 +552,6 @@ class WindCondition(object):
         """wind condition representation."""
         return "WindCondition [Speed: {}; Dir: {}]".format(
             str(self._wind_speed), str(self._wind_direction))
-
 
 class SkyCondition(object):
     """An object representing a sky on the design day.
@@ -625,7 +624,6 @@ class SkyCondition(object):
         return "SkyCondition {} [Month: {}, Day: {}]".format(
             self._solar_model, str(self._month), str(self._day_of_month))
 
-
 class OriginalClearSkyCondition(SkyCondition):
     """An object representing an original ASHRAE Clear Sky.
 
@@ -641,7 +639,6 @@ class OriginalClearSkyCondition(SkyCondition):
         self.clearness = clearness
         SkyCondition.__init__(self, 'ASHRAEClearSky', month, day_of_month,
                               daylight_savings_indicator)
-
     @property
     def clearness(self):
         """Get or set the sky clearness."""
@@ -654,7 +651,6 @@ class OriginalClearSkyCondition(SkyCondition):
         assert 0 <= data <= 1.2, 'clearness {} is not between' \
             ' 0 and 1.2'.format(str(data))
         self._clearness = data
-
 
 class RevisedClearSkyCondition(SkyCondition):
     """An object representing an ASHRAE Revised Clear Sky (Tau model).
@@ -672,8 +668,7 @@ class RevisedClearSkyCondition(SkyCondition):
         self.tau_b = tau_b
         self.tau_d = tau_d
         SkyCondition.__init__(self, 'ASHRAETau', month, day_of_month,
-                              daylight_savings_indicator)
-
+                               daylight_savings_indicator)
     @property
     def tau_b(self):
         """Get or set the beam optical sky depth."""
