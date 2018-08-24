@@ -1,5 +1,5 @@
 from .location import Location
-from honeybee.futil import write_to_file
+from .futil import write_to_file
 
 import os
 import re
@@ -690,3 +690,6 @@ class RevisedClearSkyCondition(SkyCondition):
         assert isinstance(data, (float, int)), 'tau_d must be a' \
             ' number. Got {}'.format(type(data))
         self._tau_d = data
+
+ddy_file = 'C:\\ladybug\\USA_NY_Binghamton-Edwin.A.Link.Field.725150_TMY3\\USA_NY_Binghamton-Edwin.A.Link.Field.725150_TMY3.ddy'
+myfile = Ddy.from_ddy_file(ddy_file)
