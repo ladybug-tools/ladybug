@@ -149,6 +149,9 @@ class Wea(object):
 
         # check to be sure the stat file does not have missing tau values
         def check_missing(opt_data, data_name):
+            if opt_data is []:
+                raise ValueError('Stat file contains no optical data with ' +
+                                 'which to build an ASHRAE Revised Clear Sky.')
             for i, x in enumerate(opt_data):
                 if x is None:
                     raise ValueError(

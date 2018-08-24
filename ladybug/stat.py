@@ -4,6 +4,7 @@ from .designday import DryBulbCondition
 from .designday import HumidityCondition
 from .designday import WindCondition
 from .designday import RevisedClearSkyCondition
+from .designday import OriginalClearSkyCondition
 
 import os
 import re
@@ -35,8 +36,28 @@ class Stat(object):
         """Initalize the class."""
         self.file_path = file_path
         self._is_data_loaded = False
-        self._header = None  # epw header
+        self._header = None  # stat header
+        self._location = None
+        self._stand_press_at_elev = None
+
+        # defaults in case some climate parameters are unclassifiable
+        self._ashrae_climate_zone = None
+        self._koppen_climate_zone = None
+        self._monthly_db_04 = []
+        self._monthly_wb_04 = []
+        self._monthly_db_20 = []
+        self._monthly_wb_20 = []
+        self._monthly_db_50 = []
+        self._monthly_wb_50 = []
+        self._monthly_db_100 = []
+        self._monthly_wb_100 = []
+        self._monthly_db_range_50 = []
+        self._monthly_wb_range_50 = []
+
+        self._monthly_wind = []
         self._monthly_wind_dirs = []
+        self._monthly_tau_beam = []
+        self._monthly_tau_diffuse = []
 
     @property
     def file_path(self):
@@ -142,10 +163,6 @@ class Stat(object):
             self._location.longitude = longitude
             self._location.time_zone = time_zone
             self._location.elevation = elevation
-
-            # defaults in case the climate is unclassifiable
-            self._ashrae_climate_zone = None
-            self._koppen_climate_zone = None
 
             # move through the document and pull out:
             # The tau values for the sky model
@@ -398,6 +415,8 @@ class Stat(object):
         """
         if not self.is_data_loaded:
             self.import_data()
+        if self._monthly_tau_diffuse is [] or self._monthly_tau_beam is []:
+            return [OriginalClearSkyCondition(i, 21) for i in range(1, 13)]
         return [RevisedClearSkyCondition(i, 21, x, y) for i, x, y in zip(
             range(1, 13), self._monthly_tau_beam, self._monthly_tau_diffuse)]
 
