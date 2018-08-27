@@ -60,7 +60,17 @@ class DataCollectionTestCase(unittest.TestCase):
         pass
         # I leave the test here as a TODO
         # assert dc.to_json() == dc_from_data_and_datetimes.to_json()
-
-
+        
+    def test_get_highest_values(self):
+    # To test get_highest_values, a range of yearly-hour values will be used
+        test_data = range(8760)
+        test_number_of_highest_values = len(test_data)/2
+        
+        test_highest_values, test_is_data_in_highest_values = DataCollection.get_highest_values(test_data, test_number_of_highest_values)
+        
+        assert test_highest_values == list(reversed(range(4380,8760)))
+        assert test_is_data_in_highest_values == [0]*4380+[1]*4380
+        
+        
 if __name__ == "__main__":
     unittest.main()

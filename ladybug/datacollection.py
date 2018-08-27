@@ -148,7 +148,7 @@ class DataCollection(object):
         """Return average value for a list of ladybug data."""
         values = (value.value for value in data)
         return sum(values) / len(data)
-    
+
     @staticmethod
     def get_highest_values(data, number_of_highest_values):
         """
@@ -163,13 +163,13 @@ class DataCollection(object):
         """
         lenght_data = len(data)
         
-        highest_values_index = sorted(range(lenght_data), key = lambda k: data[k], reverse = True)[0:number_of_highest_values]
+        highest_values_index = sorted(range(lenght_data), key = lambda k: data[k], reverse = True)[0:int(number_of_highest_values)]
         
         is_data_in_highest_values = [0]*lenght_data 
-        for i in range(number_of_highest_values):
+        for i in range(int(number_of_highest_values)):
             is_data_in_highest_values[highest_values_index[i]]=1
             
-        highest_values = sorted(data, reverse = True)[0:number_of_highest_values]
+        highest_values = sorted(data, reverse = True)[0:int(number_of_highest_values)]
         
         return highest_values, is_data_in_highest_values
 
