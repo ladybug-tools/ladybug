@@ -248,51 +248,32 @@ class Wea(object):
             is_leap_year: A boolean to indicate if values are representing a leap year.
                 Default is False.
         """
-        # apparent solar irradiation at air mass m = 0
-        monthly_a = [1202, 1187, 1164, 1130, 1106, 1092, 1093, 1107, 1136,
-                     1166, 1190, 1204]
-        # atmospheric extinction coefficient
-        monthly_b = [0.141, 0.142, 0.149, 0.164, 0.177, 0.185, 0.186, 0.182,
-                     0.165, 0.152, 0.144, 0.141]
+        # build empty dta collections
+        direct_norm_rad, diffuse_horiz_rad = \
+            cls._get_empty_data_collections(location, timestep, is_leap_year)
 
         # create sunpath and get altitude at every timestep of the year
         sp = Sunpath.from_location(location)
         sp.is_leap_year = is_leap_year
-        altitudes = []
-        months = []
+        altitudes = [[] for i in range(12)]
         dates = cls._get_datetimes(timestep, is_leap_year)
         for t_date in dates:
             sun = sp.calculate_sun_from_date_time(t_date)
-            months.append(sun.datetime.month - 1)
-            altitudes.append(sun.altitude)
+            altitudes[sun.datetime.month - 1].append(sun.altitude)
 
         # compute hourly direct normal and diffuse horizontal radiation
-        direct_norm_rad, diffuse_horiz_rad = \
-            cls._get_empty_data_collections(location, timestep, is_leap_year)
-
-        for i, alt in enumerate(altitudes):
-            if alt > 0:
-                try:
-                    dir_norm = monthly_a[months[i]] / (math.exp(
-                        monthly_b[months[i]] / (math.sin(math.radians(alt)))))
-                    diff_horiz = 0.17 * dir_norm * math.sin(math.radians(alt))
-                    dir_norm = (dir_norm * sky_clearness) / timestep
-                    diff_horiz = (diff_horiz * sky_clearness) / timestep
-                    direct_norm_rad.append(DataPoint(
-                        dir_norm, dates[i], 'SI', 'Direct Normal Radiation'))
-                    diffuse_horiz_rad.append(DataPoint(
-                        diff_horiz, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
-                except OverflowError:
-                    # very small altitude values
-                    direct_norm_rad.append(
-                        DataPoint(0, dates[i], 'SI', 'Direct Normal Radiation'))
-                    diffuse_horiz_rad.append(
-                        DataPoint(0, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
-            else:
-                direct_norm_rad.append(
-                    DataPoint(0, dates[i], 'SI', 'Direct Normal Radiation'))
-                diffuse_horiz_rad.append(
-                    DataPoint(0, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
+        i_dt = 0
+        for i_mon, alt_list in enumerate(altitudes):
+            dir_norm_rad, dif_horiz_rad = ashrae_clear_sky(
+                alt_list, i_mon + 1, sky_clearness)
+            for e_beam, e_diff in zip(dir_norm_rad, dif_horiz_rad):
+                direct_norm_rad.append(DataPoint(
+                    e_beam / timestep, dates[i_dt],
+                    'SI', 'Direct Normal Radiation'))
+                diffuse_horiz_rad.append(DataPoint(
+                    e_diff / timestep, dates[i_dt],
+                    'SI', 'Diffuse Horizontal Radiation'))
+                i_dt += 1
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
 
