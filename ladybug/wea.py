@@ -10,6 +10,8 @@ from .datatype import DataPoint
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
+from .skymodels import ashrae_revised_clear_sky
+from .skymodels import ashrae_clear_sky
 
 import math
 try:
@@ -188,57 +190,32 @@ class Wea(object):
             is_leap_year: A boolean to indicate if values are representing a leap year.
                 Default is False.
         """
-        # create sunpath and get altitude at every timestep of the year
-        sp = Sunpath.from_location(location)
-        sp.is_leap_year = is_leap_year
-        altitudes = []
-        months = []
-        dates = cls._get_datetimes(timestep, is_leap_year)
-        for t_date in dates:
-            sun = sp.calculate_sun_from_date_time(t_date)
-            months.append(sun.datetime.month - 1)
-            altitudes.append(sun.altitude)
-
-        # calculate hourly air mass between top of the atmosphere and earth
-        air_masses = []
-        for alt in altitudes:
-            air_mass = 0
-            if alt > 0:
-                air_mass = 1 / (math.sin(math.radians(alt)) +
-                                (0.50572 * math.pow((6.07995 + alt), -1.6364)))
-            air_masses.append(air_mass)
-
-        # calculate monthly air mass exponents.
-        beam_epxs = []
-        diffuse_exps = []
-        for count, tb in enumerate(monthly_tau_beam):
-            td = monthly_tau_diffuse[count]
-            ab = 1.219 - (0.043 * tb) - (0.151 * td) - (0.204 * tb * td)
-            ad = 0.202 + (0.852 * tb) - (0.007 * td) - (0.357 * tb * td)
-            beam_epxs.append(ab)
-            diffuse_exps.append(ad)
-
-        # compute the clear sky radiation values
+        # build empty dta collections
         direct_norm_rad, diffuse_horiz_rad = \
             cls._get_empty_data_collections(location, timestep, is_leap_year)
 
-        for i, air_mass in enumerate(air_masses):
-            alt = altitudes[i]
-            if alt > 0:
-                m = months[i]
-                e_beam = (1415 * math.exp(-monthly_tau_beam[m] * math.pow(
-                    air_mass, beam_epxs[m]))) / timestep
-                e_diff = (1415 * math.exp(-monthly_tau_diffuse[m] * math.pow(
-                    air_mass, diffuse_exps[m]))) / timestep
-                direct_norm_rad.append(
-                    DataPoint(e_beam, dates[i], 'SI', 'Direct Normal Radiation'))
-                diffuse_horiz_rad.append(
-                    DataPoint(e_diff, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
-            else:
-                direct_norm_rad.append(
-                    DataPoint(0, dates[i], 'SI', 'Direct Normal Radiation'))
-                diffuse_horiz_rad.append(
-                    DataPoint(0, dates[i], 'SI', 'Diffuse Horizontal Radiation'))
+        # create sunpath and get altitude at every timestep of the year
+        sp = Sunpath.from_location(location)
+        sp.is_leap_year = is_leap_year
+        altitudes = [[] for i in range(12)]
+        dates = cls._get_datetimes(timestep, is_leap_year)
+        for t_date in dates:
+            sun = sp.calculate_sun_from_date_time(t_date)
+            altitudes[sun.datetime.month - 1].append(sun.altitude)
+
+        # run all of the months through the ashrae_revised_clear_sky model
+        i_dt = 0
+        for i_mon, alt_list in enumerate(altitudes):
+            dir_norm_rad, dif_horiz_rad = ashrae_revised_clear_sky(
+                alt_list, monthly_tau_beam[i_mon], monthly_tau_diffuse[i_mon])
+            for e_beam, e_diff in zip(dir_norm_rad, dif_horiz_rad):
+                direct_norm_rad.append(DataPoint(
+                    e_beam / timestep, dates[i_dt],
+                    'SI', 'Direct Normal Radiation'))
+                diffuse_horiz_rad.append(DataPoint(
+                    e_diff / timestep, dates[i_dt],
+                    'SI', 'Diffuse Horizontal Radiation'))
+                i_dt += 1
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
 
