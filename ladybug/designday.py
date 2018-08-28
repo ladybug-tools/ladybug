@@ -1,5 +1,14 @@
 from .location import Location
 from .futil import write_to_file
+from .dt import DateTime
+from .header import Header
+from .datacollection import DataCollection
+from .datatype import DataPoint
+from .analysisperiod import AnalysisPeriod
+from .sunpath import Sunpath
+from .skymodels import ashrae_revised_clear_sky
+from .skymodels import ashrae_clear_sky
+from .skymodels import global_horizontal
 
 import os
 import re
@@ -9,10 +18,7 @@ import platform
 day_types = ['SummerDesignDay', 'WinterDesignDay', 'Sunday', 'Monday',
              'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Holiday',
              'CustomDay1', 'CustomDay2']
-h_types = ['Wetbulb', 'Dewpoint', 'HumidityRatio', 'Enthalpy',
-           'RelativeHumiditySchedule', 'WetBulbProfileMultiplierSchedule',
-           'WetBulbProfileDifferenceSchedule',
-           'WetBulbProfileDefaultMultipliers']
+h_types = ['Wetbulb', 'Dewpoint', 'HumidityRatio', 'Enthalpy']
 sky_types = ['ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule']
 ep_com = ['!- Name',
           '!- Month',
@@ -40,6 +46,9 @@ ep_com = ['!- Name',
           '!- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)',
           '!- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)',
           '!- Clearness [0.0 to 1.2]']
+temp_multipliers = [0.82, 0.88, 0.92, 0.95, 0.98, 1, 0.98, 0.91, 0.74,
+                    0.55, 0.38, 0.23, 0.13, 0.05, 0, 0, 0.06, 0.14, 0.24,
+                    0.39, 0.5, 0.59, 0.68, 0.75]
 
 
 class Ddy(object):
@@ -322,11 +331,6 @@ class DesignDay(object):
         return ep_string
 
     @property
-    def isDesignDay(self):
-        """Get or set Ture."""
-        return True
-
-    @property
     def day_type(self):
         """Get or set the type of design day."""
         return self._day_type
@@ -381,6 +385,83 @@ class DesignDay(object):
             ' SkyCondition type. Got {}'.format(str(data))
         self._sky_condition = data
 
+    def hourly_dry_bulb_data(self, location):
+        """A data collection containing hourly dry bulb temperature over they day."""
+        date_times = self._get_datetimes(self)
+        hourly_data = [DataPoint(
+            x, date_times[i], 'SI', 'Dry Bulb Temperature')
+                       for i, x in enumerate(
+                           self._dry_bulb_condition.hourly_values)]
+        return self._get_empty_data_collections(
+            self, location, 'Dry Bulb Temperature', 'C', hourly_data)
+
+    def hourly_wind_speed_data(self, location):
+        """A data collection containing hourly wind speeds over they day."""
+        date_times = self._get_datetimes(self)
+        hourly_data = [DataPoint(
+            x, date_times[i], 'SI', 'Wind Speed')
+                       for i, x in enumerate(
+                           self._wind_condition.hourly_values)]
+        return self._get_empty_data_collections(
+            self, location, 'Wind Speed', 'm/s', hourly_data)
+
+    def hourly_wind_direction_data(self, location):
+        """A data collection containing hourly wind directions over they day."""
+        date_times = self._get_datetimes(self)
+        hourly_data = [DataPoint(
+            x, date_times[i], 'SI', 'Wind Direction')
+                       for i, x in enumerate(
+                           self._wind_condition.hourly_wind_dirs)]
+        return self._get_empty_data_collections(
+            self, location, 'Wind Direction', 'degrees', hourly_data)
+
+    def hourly_solar_radiation_data(self, location):
+        """Three data collections containing hourly direct normal, diffuse horizontal,
+        and global horizontal radiation.
+        """
+        date_times = self._get_datetimes(self)
+        dir_norm, diff_horiz, glob_horiz = self._sky_condition.radiation_values(location)
+        dir_norm_data = [DataPoint(
+            x, date_times[i], 'SI', 'Direct Normal Radiation')
+                         for i, x in enumerate(dir_norm)]
+        dir_norm_collect = self._get_empty_data_collections(
+            self, location, 'Direct Normal Radiation', 'Wh/m2', dir_norm_data)
+        diff_horiz_data = [DataPoint(
+            x, date_times[i], 'SI', 'Diffuse Horizontal Radiation')
+                           for i, x in enumerate(diff_horiz)]
+        diff_horiz_collect = self._get_empty_data_collections(
+            self, location, 'Diffuse Horizontal Radiation', 'Wh/m2', diff_horiz_data)
+        glob_horiz_data = [DataPoint(
+            x, date_times[i], 'SI', 'Global Horizontal Radiation')
+                           for i, x in enumerate(glob_horiz)]
+        glob_horiz_collect = self._get_empty_data_collections(
+            self, location, 'Global Horizontal Radiation', 'Wh/m2', glob_horiz_data)
+
+        return dir_norm_collect, diff_horiz_collect, glob_horiz_collect
+
+    @property
+    def isDesignDay(self):
+        """Get or set Ture."""
+        return True
+
+    @staticmethod
+    def _get_empty_data_collections(self, location, data_type, unit, data=None):
+        """Return an empty data collection.
+        """
+        analysis_period = AnalysisPeriod(
+            self.sky_condition.month,
+            self.sky_condition.day_of_month,
+            0,
+            self.sky_condition.month,
+            self.sky_condition.day_of_month,
+            23)
+        data_header = Header(location, data_type, unit, analysis_period)
+        return DataCollection(data=data, header=data_header)
+
+    @staticmethod
+    def _get_datetimes(self):
+        return self._sky_condition._get_datetimes(self._sky_condition)
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -409,9 +490,10 @@ class DryBulbCondition(object):
         self.modifier_schedule = str(modifier_schedule)
 
     @property
-    def isDryBulbCondition(self):
-        """Get or set Ture."""
-        return True
+    def hourly_values(self):
+        """A list of temperature values for each hour over the design day."""
+        return [self._max_dry_bulb - self._dry_bulb_range * x for
+                x in temp_multipliers]
 
     @property
     def max_dry_bulb(self):
@@ -433,7 +515,14 @@ class DryBulbCondition(object):
     def dry_bulb_range(self, data):
         assert isinstance(data, (float, int)), 'dry_bulb_range must be a' \
             ' number. Got {}'.format(type(data))
+        assert data >= 0, 'dry_bulb_range must be greater than or equal to' \
+            ' zero. Got {}'.format(str(data))
         self._dry_bulb_range = data
+
+    @property
+    def isDryBulbCondition(self):
+        """Get or set Ture."""
+        return True
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -457,7 +546,7 @@ class HumidityCondition(object):
         schedule: Optional humidity schedule
     """
     def __init__(self, hum_type, hum_value,
-                 value_range='', barometric_pressure=101325, schedule=''):
+                 value_range=0, barometric_pressure=101325, schedule=''):
         """Initalize the class."""
         self.hum_type = hum_type
         self.hum_value = hum_value
@@ -466,9 +555,10 @@ class HumidityCondition(object):
         self.schedule = schedule
 
     @property
-    def isHumidityCondition(self):
-        """Get or set Ture."""
-        return True
+    def hourly_values(self):
+        """A list of humidity values for each hour over the design day."""
+        return [self._hum_value - self._value_range * x for
+                x in temp_multipliers]
 
     @property
     def hum_type(self):
@@ -491,6 +581,27 @@ class HumidityCondition(object):
         assert isinstance(data, (float, int)), 'hum_value must be a' \
             ' number. Got {}'.format(type(data))
         self._hum_value = data
+
+    @property
+    def value_range(self):
+        """Get or set the value of the humidity range over the day."""
+        return '' if self._value_range is 0 else self._value_range
+
+    @value_range.setter
+    def value_range(self, data):
+        if data is '':
+            self._value_range = 0
+        else:
+            assert isinstance(data, (float, int)), 'value_range must be a' \
+                ' number. Got {}'.format(type(data))
+            assert data >= 0, 'value_range must be greater than or equal to' \
+                ' zero. Got {}'.format(str(data))
+            self._value_range = data
+
+    @property
+    def isHumidityCondition(self):
+        """Get or set Ture."""
+        return True
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -520,9 +631,14 @@ class WindCondition(object):
         self.snow_on_ground = snow_on_ground
 
     @property
-    def isWindCondition(self):
-        """Get or set Ture."""
-        return True
+    def hourly_values(self):
+        """A list of wind speed values for each hour over the design day."""
+        return [self._wind_speed for i in range(24)]
+
+    @property
+    def hourly_wind_dirs(self):
+        """A list of wind directions for each hour over the design day."""
+        return [self._wind_direction for i in range(24)]
 
     @property
     def wind_speed(self):
@@ -547,6 +663,11 @@ class WindCondition(object):
         assert 0 <= data <= 360, 'wind_direction {} is not between' \
             ' 0 and 360'.format(str(data))
         self._wind_direction = data
+
+    @property
+    def isWindCondition(self):
+        """Get or set Ture."""
+        return True
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -577,11 +698,6 @@ class SkyCondition(object):
         self.daylight_savings_indicator = daylight_savings_indicator
         self.beam_shced = beam_shced
         self.diff_sched = diff_sched
-
-    @property
-    def isSkyCondition(self):
-        """Get or set Ture."""
-        return True
 
     @property
     def solar_model(self):
@@ -619,6 +735,21 @@ class SkyCondition(object):
         assert 1 <= data <= 31, 'day_of_month {} is not between' \
             ' 1 and 31'.format(str(data))
         self._day_of_month = data
+
+    @staticmethod
+    def _get_datetimes(self, timestep=1):
+        """List of datetimes based on design day date and timestep."""
+        start_moy = DateTime(self._month, self._day_of_month).moy
+        num_moys = 24 * timestep
+        return tuple(
+            DateTime.from_moy(start_moy + (i * (1 / timestep) * 60))
+            for i in range(num_moys)
+        )
+
+    @property
+    def isSkyCondition(self):
+        """Get or set Ture."""
+        return True
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -658,6 +789,21 @@ class OriginalClearSkyCondition(SkyCondition):
         assert 0 <= data <= 1.2, 'clearness {} is not between' \
             ' 0 and 1.2'.format(str(data))
         self._clearness = data
+
+    def radiation_values(self, location, timestep=1):
+        """Lists of driect normal, diffuse horiz, and global horiz rad at each timestep.
+        """
+        # create sunpath and get altitude at every timestep of the design day
+        sp = Sunpath.from_location(location)
+        altitudes = []
+        dates = self._get_datetimes(self, timestep)
+        for t_date in dates:
+            sun = sp.calculate_sun_from_date_time(t_date)
+            altitudes.append(sun.altitude)
+        dir_norm, diff_horiz = ashrae_clear_sky(
+            altitudes, self._month, self._clearness)
+        glob_horiz = global_horizontal(altitudes, dir_norm, diff_horiz)
+        return dir_norm, diff_horiz, glob_horiz
 
 
 class RevisedClearSkyCondition(SkyCondition):
@@ -699,3 +845,18 @@ class RevisedClearSkyCondition(SkyCondition):
         assert isinstance(data, (float, int)), 'tau_d must be a' \
             ' number. Got {}'.format(type(data))
         self._tau_d = data
+
+    def radiation_values(self, location, timestep=1):
+        """Lists of driect normal, diffuse horiz, and global horiz rad at each timestep.
+        """
+        # create sunpath and get altitude at every timestep of the design day
+        sp = Sunpath.from_location(location)
+        altitudes = []
+        dates = self._get_datetimes(self, timestep)
+        for t_date in dates:
+            sun = sp.calculate_sun_from_date_time(t_date)
+            altitudes.append(sun.altitude)
+        dir_norm, diff_horiz = ashrae_revised_clear_sky(
+            altitudes, self._tau_b, self._tau_d)
+        glob_horiz = global_horizontal(altitudes, dir_norm, diff_horiz)
+        return dir_norm, diff_horiz, glob_horiz

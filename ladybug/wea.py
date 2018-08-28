@@ -150,8 +150,7 @@ class Wea(object):
         # check to be sure the stat file does not have missing tau values
         def check_missing(opt_data, data_name):
             if opt_data is []:
-                raise ValueError('Stat file contains no optical data with ' +
-                                 'which to build an ASHRAE Revised Clear Sky.')
+                raise ValueError('Stat file contains no optical data.')
             for i, x in enumerate(opt_data):
                 if x is None:
                     raise ValueError(
@@ -272,7 +271,6 @@ class Wea(object):
             is_leap_year: A boolean to indicate if values are representing a leap year.
                 Default is False.
         """
-        # parameters that approximate clear conditions across the planet
         # apparent solar irradiation at air mass m = 0
         monthly_a = [1202, 1187, 1164, 1130, 1106, 1092, 1093, 1107, 1136,
                      1166, 1190, 1204]
@@ -461,7 +459,6 @@ class Wea(object):
         assert isinstance(data, DataCollection), \
             'direct_normal_radiation data must be a data collection.'
         self._direct_normal_radiation = data
-        self._is_global_computed = False
 
     @property
     def diffuse_horizontal_radiation(self):
@@ -475,7 +472,6 @@ class Wea(object):
         assert isinstance(data, DataCollection), \
             'diffuse_horizontal_radiation data must be a data collection.'
         self._diffuse_horizontal_radiation = data
-        self._is_global_computed = False
 
     @property
     def global_horizontal_radiation(self):
