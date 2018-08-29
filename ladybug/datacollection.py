@@ -151,7 +151,8 @@ class DataCollection(object):
 
     @staticmethod
     def get_highest_values(data, count):
-        """
+        """Find highest values in a list of DataPoints
+        
         Args:
             data: A list of DataPoint to be processed
             count: Number of highest values to account for
@@ -168,7 +169,8 @@ class DataCollection(object):
         
         highest_values = sorted(data, reverse = True)[0:count]
         
-        highest_values_index = sorted(range(lenght_data), key = lambda k: data[k], reverse = True)[0:count]
+        highest_values_index = sorted(range(lenght_data), key = lambda k: data[k],
+                                                         reverse = True)[0:count]
         
         return highest_values, highest_values_index
 
