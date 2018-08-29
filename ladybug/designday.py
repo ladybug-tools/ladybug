@@ -6,10 +6,19 @@ from .datacollection import DataCollection
 from .datatype import DataPoint
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
+
 from .skymodels import ashrae_revised_clear_sky
 from .skymodels import ashrae_clear_sky
-from .skymodels import global_horizontal
 
+from .psychrometrics import rel_humid_from_db_hr
+from .psychrometrics import rel_humid_from_db_enth
+from .psychrometrics import rel_humid_from_db_dpt
+from .psychrometrics import rel_humid_from_db_wb
+from .psychrometrics import dew_point_from_db_hr
+from .psychrometrics import dew_point_from_db_enth
+from .psychrometrics import dew_point_from_db_wb
+
+import math
 import os
 import re
 import codecs
@@ -242,12 +251,12 @@ class DesignDay(object):
         # extract humidity conditions
         h_type = lines[9]
         h_val = 0 if lines[10] == '' else float(lines[10])
-        if h_type is 'HumidityRatio':
+        if h_type == 'HumidityRatio':
             h_val = float(lines[12])
-        elif h_type is 'Enthalpy':
+        elif h_type == 'Enthalpy':
             h_val = float(lines[13])
         humidity_condition = HumidityCondition(
-            h_type, h_val, lines[14], lines[15], lines[11])
+            h_type, h_val, lines[14], float(lines[15]), lines[11])
 
         # extract wind conditions
         wind_condition = WindCondition(
@@ -385,67 +394,112 @@ class DesignDay(object):
             ' SkyCondition type. Got {}'.format(str(data))
         self._sky_condition = data
 
+    @property
+    def hourly_datetimes(self):
+        return self._sky_condition._get_datetimes()
+
     def hourly_dry_bulb_data(self, location):
         """A data collection containing hourly dry bulb temperature over they day."""
-        date_times = self._get_datetimes(self)
+        date_times = self.hourly_datetimes
         hourly_data = [DataPoint(
             x, date_times[i], 'SI', 'Dry Bulb Temperature')
                        for i, x in enumerate(
                            self._dry_bulb_condition.hourly_values)]
-        return self._get_empty_data_collections(
-            self, location, 'Dry Bulb Temperature', 'C', hourly_data)
+        return self._get_daily_data_collections(
+            location, 'Dry Bulb Temperature', 'C', hourly_data)
+
+    def hourly_relative_humidity_data(self, location):
+        """A data collection containing hourly relative humidity over they day."""
+        date_times = self.hourly_datetimes
+        h_vals = self._humidity_condition.hourly_values
+        db_vals = self._dry_bulb_condition.hourly_values
+        press = self._humidity_condition.barometric_pressure
+        if self._humidity_condition.hum_type == 'Wetbulb':
+            rh_data = [rel_humid_from_db_wb(db, wb, press)
+                       for db, wb in zip(db_vals, h_vals)]
+        elif self._humidity_condition.hum_type == 'Dewpoint':
+            rh_data = [rel_humid_from_db_dpt(db, dpt)
+                       for db, dpt in zip(db_vals, h_vals)]
+        elif self._humidity_condition.hum_type == 'HumidityRatio':
+            rh_data = [rel_humid_from_db_hr(db, hr, press)
+                       for db, hr in zip(db_vals, h_vals)]
+        elif self._humidity_condition.hum_type == 'Enthalpy':
+            rh_data = [rel_humid_from_db_enth(db, enth / 1000, press)
+                       for db, enth in zip(db_vals, h_vals)]
+        hourly_data = [DataPoint(
+            x, date_times[i], 'SI', 'Relative Humidity')
+                       for i, x in enumerate(rh_data)]
+        return self._get_daily_data_collections(
+            location, 'Relative Humidity', '%', hourly_data)
+
+    def hourly_dew_point_data(self, location):
+        """A data collection containing hourly dew points over they day."""
+        date_times = self.hourly_datetimes
+        h_vals = self._humidity_condition.hourly_values
+        db_vals = self._dry_bulb_condition.hourly_values
+        press = self._humidity_condition.barometric_pressure
+        if self._humidity_condition.hum_type == 'Wetbulb':
+            dp_data = [dew_point_from_db_wb(db, wb, press)
+                       for db, wb in zip(db_vals, h_vals)]
+        elif self._humidity_condition.hum_type == 'Dewpoint':
+            dp_data = h_vals
+        elif self._humidity_condition.hum_type == 'HumidityRatio':
+            dp_data = [dew_point_from_db_hr(db, hr, press)
+                       for db, hr in zip(db_vals, h_vals)]
+        elif self._humidity_condition.hum_type == 'Enthalpy':
+            dp_data = [dew_point_from_db_enth(db, enth / 1000, press)
+                       for db, enth in zip(db_vals, h_vals)]
+        hourly_data = [DataPoint(
+            x, date_times[i], 'SI', 'Dew Point Temperature')
+                       for i, x in enumerate(dp_data)]
+        return self._get_daily_data_collections(
+            location, 'Dew Point Temperature', '%', hourly_data)
 
     def hourly_wind_speed_data(self, location):
         """A data collection containing hourly wind speeds over they day."""
-        date_times = self._get_datetimes(self)
+        date_times = self.hourly_datetimes
         hourly_data = [DataPoint(
             x, date_times[i], 'SI', 'Wind Speed')
                        for i, x in enumerate(
                            self._wind_condition.hourly_values)]
-        return self._get_empty_data_collections(
-            self, location, 'Wind Speed', 'm/s', hourly_data)
+        return self._get_daily_data_collections(
+            location, 'Wind Speed', 'm/s', hourly_data)
 
     def hourly_wind_direction_data(self, location):
         """A data collection containing hourly wind directions over they day."""
-        date_times = self._get_datetimes(self)
+        date_times = self.hourly_datetimes
         hourly_data = [DataPoint(
             x, date_times[i], 'SI', 'Wind Direction')
                        for i, x in enumerate(
                            self._wind_condition.hourly_wind_dirs)]
-        return self._get_empty_data_collections(
-            self, location, 'Wind Direction', 'degrees', hourly_data)
+        return self._get_daily_data_collections(
+            location, 'Wind Direction', 'degrees', hourly_data)
 
     def hourly_solar_radiation_data(self, location):
         """Three data collections containing hourly direct normal, diffuse horizontal,
         and global horizontal radiation.
         """
-        date_times = self._get_datetimes(self)
+        date_times = self.hourly_datetimes
         dir_norm, diff_horiz, glob_horiz = self._sky_condition.radiation_values(location)
         dir_norm_data = [DataPoint(
             x, date_times[i], 'SI', 'Direct Normal Radiation')
                          for i, x in enumerate(dir_norm)]
-        dir_norm_collect = self._get_empty_data_collections(
-            self, location, 'Direct Normal Radiation', 'Wh/m2', dir_norm_data)
+        dir_norm_collect = self._get_daily_data_collections(
+            location, 'Direct Normal Radiation', 'Wh/m2', dir_norm_data)
         diff_horiz_data = [DataPoint(
             x, date_times[i], 'SI', 'Diffuse Horizontal Radiation')
                            for i, x in enumerate(diff_horiz)]
-        diff_horiz_collect = self._get_empty_data_collections(
-            self, location, 'Diffuse Horizontal Radiation', 'Wh/m2', diff_horiz_data)
+        diff_horiz_collect = self._get_daily_data_collections(
+            location, 'Diffuse Horizontal Radiation', 'Wh/m2', diff_horiz_data)
         glob_horiz_data = [DataPoint(
             x, date_times[i], 'SI', 'Global Horizontal Radiation')
                            for i, x in enumerate(glob_horiz)]
-        glob_horiz_collect = self._get_empty_data_collections(
-            self, location, 'Global Horizontal Radiation', 'Wh/m2', glob_horiz_data)
+        glob_horiz_collect = self._get_daily_data_collections(
+            location, 'Global Horizontal Radiation', 'Wh/m2', glob_horiz_data)
 
         return dir_norm_collect, diff_horiz_collect, glob_horiz_collect
 
-    @property
-    def isDesignDay(self):
-        """Get or set Ture."""
-        return True
-
-    @staticmethod
-    def _get_empty_data_collections(self, location, data_type, unit, data=None):
+    def _get_daily_data_collections(self, location, data_type, unit, data=None):
         """Return an empty data collection.
         """
         analysis_period = AnalysisPeriod(
@@ -458,9 +512,10 @@ class DesignDay(object):
         data_header = Header(location, data_type, unit, analysis_period)
         return DataCollection(data=data, header=data_header)
 
-    @staticmethod
-    def _get_datetimes(self):
-        return self._sky_condition._get_datetimes(self._sky_condition)
+    @property
+    def isDesignDay(self):
+        """Get or set Ture."""
+        return True
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -557,8 +612,16 @@ class HumidityCondition(object):
     @property
     def hourly_values(self):
         """A list of humidity values for each hour over the design day."""
-        return [self._hum_value - self._value_range * x for
-                x in temp_multipliers]
+        if self.hum_type == 'Wetbulb':
+            return [self._hum_value - self._value_range * x for
+                    x in temp_multipliers]
+        else:
+            return [self._hum_value for x in temp_multipliers]
+
+    @property
+    def hourly_pressure(self):
+        """A list of barometric pressures for each hour over the design day."""
+        return [self._barometric_pressure for x in temp_multipliers]
 
     @property
     def hum_type(self):
@@ -589,7 +652,7 @@ class HumidityCondition(object):
 
     @value_range.setter
     def value_range(self, data):
-        if data is '':
+        if data == '':
             self._value_range = 0
         else:
             assert isinstance(data, (float, int)), 'value_range must be a' \
@@ -597,6 +660,17 @@ class HumidityCondition(object):
             assert data >= 0, 'value_range must be greater than or equal to' \
                 ' zero. Got {}'.format(str(data))
             self._value_range = data
+
+    @property
+    def barometric_pressure(self):
+        """Get or set the value of the barometric pressure."""
+        return self._barometric_pressure
+
+    @barometric_pressure.setter
+    def barometric_pressure(self, data):
+        assert isinstance(data, (float, int)), 'barometric_pressure must be a' \
+            ' number. Got {}'.format(type(data))
+        self._barometric_pressure = data
 
     @property
     def isHumidityCondition(self):
@@ -736,7 +810,6 @@ class SkyCondition(object):
             ' 1 and 31'.format(str(data))
         self._day_of_month = data
 
-    @staticmethod
     def _get_datetimes(self, timestep=1):
         """List of datetimes based on design day date and timestep."""
         start_moy = DateTime(self._month, self._day_of_month).moy
@@ -796,13 +869,14 @@ class OriginalClearSkyCondition(SkyCondition):
         # create sunpath and get altitude at every timestep of the design day
         sp = Sunpath.from_location(location)
         altitudes = []
-        dates = self._get_datetimes(self, timestep)
+        dates = self._get_datetimes(timestep)
         for t_date in dates:
             sun = sp.calculate_sun_from_date_time(t_date)
             altitudes.append(sun.altitude)
         dir_norm, diff_horiz = ashrae_clear_sky(
             altitudes, self._month, self._clearness)
-        glob_horiz = global_horizontal(altitudes, dir_norm, diff_horiz)
+        glob_horiz = [dhr + dnr * math.sin(math.radians(alt)) for
+                      alt, dnr, dhr in zip(altitudes, dir_norm, diff_horiz)]
         return dir_norm, diff_horiz, glob_horiz
 
 
@@ -852,11 +926,12 @@ class RevisedClearSkyCondition(SkyCondition):
         # create sunpath and get altitude at every timestep of the design day
         sp = Sunpath.from_location(location)
         altitudes = []
-        dates = self._get_datetimes(self, timestep)
+        dates = self._get_datetimes(timestep)
         for t_date in dates:
             sun = sp.calculate_sun_from_date_time(t_date)
             altitudes.append(sun.altitude)
         dir_norm, diff_horiz = ashrae_revised_clear_sky(
             altitudes, self._tau_b, self._tau_d)
-        glob_horiz = global_horizontal(altitudes, dir_norm, diff_horiz)
+        glob_horiz = [dhr + dnr * math.sin(math.radians(alt)) for
+                      alt, dnr, dhr in zip(altitudes, dir_norm, diff_horiz)]
         return dir_norm, diff_horiz, glob_horiz

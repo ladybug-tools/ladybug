@@ -1,19 +1,10 @@
 # coding=utf-8
-"""A list of useful functions for psychrometrics"""
-
+"""Functions for converting between various humidity metrics"""
 import math
 
 
-def saturated_vapor_pressure_torr(temperature):
-    """Saturated Vapor Pressure (Torr) at temperature (C)
-
-    Used frequently throughtout the pmv comfort functions.
-    """
-    return math.exp(18.6686 - 4030.183 / (temperature + 235.0))
-
-
-def saturated_vapor_pressure_high_accuracy(t_kelvin):
-    """Saturated Vapor Pressure (Pa) at t_kelvin (K) to a high accuracy.
+def saturated_vapor_pressure(t_kelvin):
+    """Saturated Vapor Pressure (Pa) at t_kelvin (K).
 
     This function accounts for the different behaviour above vs. below
     the freezing point of water.
@@ -29,49 +20,43 @@ def saturated_vapor_pressure_high_accuracy(t_kelvin):
         crit_temp = 647.096 / t_kelvin
         exponent = crit_temp * express_result
         power = math.exp(exponent)
-        saturation_pressure = power * 22064000
+        p_ws = power * 22064000
     else:
         # Calculate saturation vapor pressure below freezing
         theta = t_kelvin / 273.16
         exponent2 = ((1 - (theta**(-1.5))) * (-13.928169)) + \
             ((1 - (theta**(-1.25))) * 34.707823)
         power = math.exp(exponent2)
-        saturation_pressure = power * 611.657
+        p_ws = power * 611.657
+    return p_ws
 
-    return saturation_pressure
 
-
-def humid_ratio_from_db_rh(air_temp, rel_humid, psta=101325):
-    """humidity_ratio (kg water/kg air), partial_pressure (Pa), and saturation_pressure
-    (Pa) at a given air_temp (C), rel_humid (%) and Pressure psta (Pa).
+def humid_ratio_from_db_rh(db_temp, rel_humid, b_press=101325):
+    """Humidity Ratio (kg water/kg air) at a db_temp (C),
+    rel_humid (%) and Pressure b_press (Pa).
     """
     # Find saturation pressure
-    t_kelvin = air_temp + 273
-    saturation_pressure = saturated_vapor_pressure_high_accuracy(t_kelvin)
+    p_ws = saturated_vapor_pressure(db_temp + 273)
     # Calculate partial pressure
     decrh = rel_humid * 0.01
-    partial_pressure = decrh * saturation_pressure
+    p_w = decrh * p_ws
     # Calculate humidity ratio
-    press_differ = psta - partial_pressure
-    constant = partial_pressure * 0.621991
+    press_differ = b_press - p_w
+    constant = p_w * 0.621991
     humidity_ratio = constant / press_differ
+    return humidity_ratio
 
-    return humidity_ratio, partial_pressure, saturation_pressure
 
-
-def enthalpy_from_db_hr(air_temp, humid_ratio):
-    """Enthalpy (kJ/kg) at humid_ratio (kg water/kg air) and at air_temp (C).
+def enthalpy_from_db_hr(db_temp, humid_ratio):
+    """Enthalpy (kJ/kg) at humid_ratio (kg water/kg air) and at db_temp (C).
     """
-    enthalpy = ((1.01 + (1.89 * humid_ratio)) * air_temp) + (2500 * humid_ratio)
-    if enthalpy >= 0:
-        return enthalpy
-    else:
-        return 0
+    enthalpy = ((1.01 + (1.89 * humid_ratio)) * db_temp) + (2500 * humid_ratio)
+    return enthalpy if enthalpy >= 0 else 0
 
 
-def wet_bulb_from_db_rh(db_temp, rh, psta=101325):
+def wet_bulb_from_db_rh(db_temp, rh, b_press=101325):
     """Wet Bulb Temperature (C) at db_temp (C),
-    Relative Humidity rh (%), and Pressure psta (Pa).
+    Relative Humidity rh (%), and Pressure b_press (Pa).
     """
     es = 6.112 * math.e**((17.67 * db_temp) / (db_temp + 243.5))
     e = (es * rh) / 100
@@ -79,10 +64,9 @@ def wet_bulb_from_db_rh(db_temp, rh, psta=101325):
     increse = 10
     previoussign = 1
     ed = 1
-
     while math.fabs(tw) > 0.005:
         ewg = 6.112 * math.e**((17.67 * tw) / (tw + 243.5))
-        eg = ewg - (psta / 100) * (db_temp - tw) * 0.00066 * (1 + (0.00155 * tw))
+        eg = ewg - (b_press / 100) * (db_temp - tw) * 0.00066 * (1 + (0.00155 * tw))
         ed = e - eg
         if ed == 0:
             break
@@ -102,40 +86,42 @@ def wet_bulb_from_db_rh(db_temp, rh, psta=101325):
                 else:
                     increse = increse
         tw = tw + increse * previoussign
-
     return tw
 
 
 def dew_point_from_db_rh(db_temp, rh):
-    """
-    Calculates Dew Point Temperature (C) at Temperature db_temp (C) and
+    """Dew Point Temperature (C) at Dry Bulb Temperature db_temp (C) and
     Relative Humidity rh (%).
     """
     es = 6.112 * math.e**((17.67 * db_temp) / (db_temp + 243.5))
     e = (es * rh) / 100
     td = (243.5 * math.log(e / 6.112)) / (17.67 - math.log(e / 6.112))
-
     return td
 
 
-def rel_humid_from_hr_db(humid_ratio, air_temp, psta=101325):
-    """Relative Humidity (%) at humid_ratio (kg water/kg air), air_temp (C),
-    and Pressure psta (Pa).
+def rel_humid_from_db_hr(db_temp, humid_ratio, b_press=101325):
+    """Relative Humidity (%) at humid_ratio (kg water/kg air), db_temp (C),
+    and Pressure b_press (Pa).
     """
-    # Calculate the partial pressure of water in the atmostphere.
-    pw = (humid_ratio * 1000 * psta) / (621.9907 + (humid_ratio * 1000))
-    # Convert Temperature to Kelvin
-    t_kelvin = air_temp + 273
-    # Calculate saturation pressure.
-    pws = saturated_vapor_pressure_high_accuracy(t_kelvin)
-    # Calculate the relative humidity.
+    pw = (humid_ratio * 1000 * b_press) / (621.9907 + (humid_ratio * 1000))
+    pws = saturated_vapor_pressure(db_temp + 273)
     rel_humid = (pw / pws) * 100
-
     return rel_humid
 
 
-def rel_humid_from_db_dpt(air_temp, dew_pt):
-    """Relative Humidity (%) at air_temp (C), and dew_pt (C).
+def rel_humid_from_db_enth(db_temp, enthalpy, b_press=101325):
+    """Relative Humidity (%) at db_temp (C), enthalpy (kJ/kg)
+    and Pressure b_press (Pa).
+    """
+    assert enthalpy >= 0, 'enthalpy must be' \
+        'greater than 0. Got {}'.format(str(enthalpy))
+    hr = (enthalpy - (1.006 * db_temp)) / ((1.84 * db_temp) + 2501)
+    rel_humid = rel_humid_from_db_hr(db_temp, hr, b_press)
+    return rel_humid
+
+
+def rel_humid_from_db_dpt(db_temp, dew_pt):
+    """Relative Humidity (%) at db_temp (C), and dew_pt (C).
     """
     # Calculate the partial pressure of water in the atmosphere.
     a = 6.11657
@@ -143,32 +129,71 @@ def rel_humid_from_db_dpt(air_temp, dew_pt):
     tn = 240.7263
     td = dew_pt + 273
     pw = ((math.pow(10, (m / ((tn / td) + 1)))) * a) / 100
-    # Convert Temperature to Kelvin
-    t_kelvin = air_temp + 273
     # Calculate saturation pressure.
-    pws = saturated_vapor_pressure_high_accuracy(t_kelvin)
+    pws = saturated_vapor_pressure(db_temp + 273)
     # Calculate the relative humidity.
     rel_humid = (pw / pws) * 100
-
     return rel_humid
 
 
-def air_temp_from_enth_hr(enthalpy, humid_ratio):
-    """Air Temperature (C) at Enthalpy enthalpy (kJ/kg) and humid_ratio (kg water/kg air).
+def rel_humid_from_db_wb(db_temp, wet_bulb, b_press=101325):
+    """Relative Humidity (%) at db_temp(C), wet_bulb (C), and Pressure b_press (Pa).
     """
-    air_temp = (enthalpy - 2.5 * (humid_ratio * 1000)) / \
+    # Calculate saturation pressure.
+    p_ws = saturated_vapor_pressure(db_temp + 273)
+    p_ws_wb = saturated_vapor_pressure(wet_bulb + 273)
+    # calculate partial vapor pressure
+    p_w = p_ws_wb - (b_press * 0.000662 * (db_temp - wet_bulb))
+    # Calculate the relative humidity.
+    rel_humid = (p_w / p_ws) * 100
+    return rel_humid
+
+
+def dew_point_from_db_hr(db_temp, hr, b_press=101325):
+    """Dew Point Temperature (C) at Temperature db_temp (C),
+    Humidity Ratio hr (kg water/kg air) and Pressure b_press (Pa).
+    """
+    rh = rel_humid_from_db_hr(db_temp, hr, b_press)
+    td = dew_point_from_db_rh(db_temp, rh)
+    return td
+
+
+def dew_point_from_db_enth(db_temp, enthlpy, b_press=101325):
+    """Dew Point Temperature (C) at Temperature db_temp (C), enthalpy (kJ/kg)
+    and Pressure b_press (Pa).
+    """
+    rh = rel_humid_from_db_enth(db_temp, enthlpy, b_press)
+    td = dew_point_from_db_rh(db_temp, rh)
+    return td
+
+
+def dew_point_from_db_wb(db_temp, wet_bulb, b_press=101325):
+    """Dew Point Temperature (C) at Temperature db_temp (C), wet_bulb (C)
+    and Pressure b_press (Pa).
+    """
+    rh = rel_humid_from_db_wb(db_temp, wet_bulb, b_press)
+    td = dew_point_from_db_rh(db_temp, rh)
+    return td
+
+
+def db_temp_from_enth_hr(enthalpy, humid_ratio):
+    """Dry Bulb Temperature (C) at Enthalpy enthalpy (kJ/kg) and
+    humid_ratio (kg water/kg air).
+    """
+    db_temp = (enthalpy - 2.5 * (humid_ratio * 1000)) / \
         (1.01 + (0.00189 * humid_ratio * 1000))
+    return db_temp
 
-    return air_temp
 
+def db_temp_from_wb_rh(wet_bulb, rel_humid, b_press=101325):
+    """Dry Bulb Temperature (C) and humidity_ratio at at wet_bulb (C),
+    rel_humid (%) and Pressure b_press (Pa).
 
-def air_temp_from_wb_rh(wet_bulb, rel_humid, avg_psta=101325):
-    """Air Temperature (C) at wet_bulb (C), rel_humid (%) and Pressure avg_psta (Pa).
+    Formula is only valid for rel_humid == 0 or rel_humid == 100.
     """
-    humidity_ratio, partial_pressure, saturation_pressure = humid_ratio_from_db_rh(
-        wet_bulb, rel_humid, avg_psta)
-    humid_ratio, partial_pressure, saturation_pressure = humid_ratio_from_db_rh(
-        wet_bulb, 100, avg_psta)
-    air_temp = wet_bulb + (((humid_ratio - humidity_ratio) * 2260000) / (1005))
-
-    return air_temp, humidity_ratio
+    assert rel_humid == 0 or rel_humid == 100, 'formula is only valid for' \
+        ' rel_humid == 0 or rel_humid == 100'
+    humidity_ratio = humid_ratio_from_db_rh(wet_bulb, rel_humid, b_press)
+    hr_saturation = humid_ratio_from_db_rh(wet_bulb, 100, b_press)
+    db_temp = wet_bulb + (((hr_saturation - humidity_ratio) * 2260000) / (1005))
+    return db_temp, humidity_ratio

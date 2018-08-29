@@ -1,3 +1,4 @@
+"""Functions for computing solar radiation for different idealized skies"""
 import math
 
 
