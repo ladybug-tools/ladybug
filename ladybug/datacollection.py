@@ -150,28 +150,27 @@ class DataCollection(object):
         return sum(values) / len(data)
 
     @staticmethod
-    def get_highest_values(data, number_of_highest_values):
+    def get_highest_values(data, count):
         """
         Args:
             data: A list of DataPoint to be processed
-            number_of_highest_values: Number of highest values to account for
+            count: Number of highest values to account for
             
         Return:
             highest_values: The n highest values in data list, ordered from
                 highest to lowest
-            is_data_in_highest_values: Binary list with same lenght as data
+            highest_values_index: Indicies of the n highest values in data 
+                list, ordered from highest to lowest
         """
         lenght_data = len(data)
         
-        highest_values_index = sorted(range(lenght_data), key = lambda k: data[k], reverse = True)[0:int(number_of_highest_values)]
+        count = int(count)
         
-        is_data_in_highest_values = [0]*lenght_data 
-        for i in range(int(number_of_highest_values)):
-            is_data_in_highest_values[highest_values_index[i]]=1
-            
-        highest_values = sorted(data, reverse = True)[0:int(number_of_highest_values)]
+        highest_values = sorted(data, reverse = True)[0:count]
         
-        return highest_values, is_data_in_highest_values
+        highest_values_index = sorted(range(lenght_data), key = lambda k: data[k], reverse = True)[0:count]
+        
+        return highest_values, highest_values_index
 
     @staticmethod
     def group_data_by_month(data, month_range=xrange(1, 13)):

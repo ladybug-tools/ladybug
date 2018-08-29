@@ -63,13 +63,14 @@ class DataCollectionTestCase(unittest.TestCase):
         
     def test_get_highest_values(self):
     # To test get_highest_values, a range of yearly-hour values will be used
-        test_data = range(8760)
-        test_number_of_highest_values = len(test_data)/2
+        test_data = list(range(8760))
+        test_data = [i * 5 for i in test_data]
+        test_count = len(test_data)/2
         
-        test_highest_values, test_is_data_in_highest_values = DataCollection.get_highest_values(test_data, test_number_of_highest_values)
+        test_highest_values, test_highest_values_index = DataCollection.get_highest_values(test_data, test_count)
         
-        assert test_highest_values == list(reversed(range(4380,8760)))
-        assert test_is_data_in_highest_values == [0]*4380+[1]*4380
+        assert test_highest_values == list(reversed(test_data[4380:8760]))
+        assert test_highest_values_index == list(range(8759,4379,-1))
         
         
 if __name__ == "__main__":
