@@ -280,8 +280,7 @@ class Stat(object):
         db_conds = [DryBulbCondition(x, y) for x, y in zip(
             self._monthly_db_50, self._monthly_db_range_50)]
         hu_conds = [HumidityCondition(
-            'Wetbulb', x, y, self._stand_press_at_elev) for x, y in zip(
-                self._monthly_wb_50, self._monthly_wb_range_50)]
+            'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_50]
         ws_conds = self.monthly_wind_conditions
         sky_conds = self.monthly_clear_sky_conditions
         return [DesignDay(
@@ -298,8 +297,7 @@ class Stat(object):
         db_conds = [DryBulbCondition(x, y) for x, y in zip(
             self._monthly_db_100, self._monthly_db_range_50)]
         hu_conds = [HumidityCondition(
-            'Wetbulb', x, y, self._stand_press_at_elev) for x, y in zip(
-                self._monthly_wb_100, self._monthly_wb_range_50)]
+            'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_100]
         ws_conds = self.monthly_wind_conditions
         sky_conds = self.monthly_clear_sky_conditions
         return [DesignDay(
@@ -316,8 +314,7 @@ class Stat(object):
         db_conds = [DryBulbCondition(x, y) for x, y in zip(
             self._monthly_db_20, self._monthly_db_range_50)]
         hu_conds = [HumidityCondition(
-            'Wetbulb', x, y, self._stand_press_at_elev) for x, y in zip(
-                self._monthly_wb_20, self._monthly_wb_range_50)]
+            'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_20]
         ws_conds = self.monthly_wind_conditions
         sky_conds = self.monthly_clear_sky_conditions
         return [DesignDay(
@@ -334,8 +331,7 @@ class Stat(object):
         db_conds = [DryBulbCondition(x, y) for x, y in zip(
             self._monthly_db_04, self._monthly_db_range_50)]
         hu_conds = [HumidityCondition(
-            'Wetbulb', x, y, self._stand_press_at_elev) for x, y in zip(
-                self._monthly_wb_04, self._monthly_wb_range_50)]
+            'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_04]
         ws_conds = self.monthly_wind_conditions
         sky_conds = self.monthly_clear_sky_conditions
         return [DesignDay(

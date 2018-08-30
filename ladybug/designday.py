@@ -10,10 +10,7 @@ from .sunpath import Sunpath
 from .skymodels import ashrae_revised_clear_sky
 from .skymodels import ashrae_clear_sky
 
-from .psychrometrics import rel_humid_from_db_hr
-from .psychrometrics import rel_humid_from_db_enth
 from .psychrometrics import rel_humid_from_db_dpt
-from .psychrometrics import rel_humid_from_db_wb
 from .psychrometrics import dew_point_from_db_hr
 from .psychrometrics import dew_point_from_db_enth
 from .psychrometrics import dew_point_from_db_wb
@@ -256,7 +253,7 @@ class DesignDay(object):
         elif h_type == 'Enthalpy':
             h_val = float(lines[13])
         humidity_condition = HumidityCondition(
-            h_type, h_val, lines[14], float(lines[15]), lines[11])
+            h_type, h_val, float(lines[15]), lines[11])
 
         # extract wind conditions
         wind_condition = WindCondition(
@@ -299,7 +296,7 @@ class DesignDay(object):
                    self.dry_bulb_condition.modifier_schedule,
                    self.humidity_condition.hum_type, '',
                    self.humidity_condition.schedule, '', '',
-                   self.humidity_condition.value_range,
+                   self.humidity_condition.wet_bulb_range,
                    self.humidity_condition.barometric_pressure,
                    self.wind_condition.wind_speed,
                    self.wind_condition.wind_direction,
@@ -408,52 +405,29 @@ class DesignDay(object):
         return self._get_daily_data_collections(
             location, 'Dry Bulb Temperature', 'C', hourly_data)
 
+    def hourly_dew_point_data(self, location):
+        """A data collection containing hourly dew points over they day."""
+        date_times = self.hourly_datetimes
+        hourly_data = [DataPoint(
+            x, date_times[i], 'SI', 'Dew Point Temperature')
+                       for i, x in enumerate(
+                           self._humidity_condition.hourly_dew_point_values(
+                               self._dry_bulb_condition))]
+        return self._get_daily_data_collections(
+            location, 'Dew Point Temperature', 'C', hourly_data)
+
     def hourly_relative_humidity_data(self, location):
         """A data collection containing hourly relative humidity over they day."""
         date_times = self.hourly_datetimes
-        h_vals = self._humidity_condition.hourly_values
-        db_vals = self._dry_bulb_condition.hourly_values
-        press = self._humidity_condition.barometric_pressure
-        if self._humidity_condition.hum_type == 'Wetbulb':
-            rh_data = [rel_humid_from_db_wb(db, wb, press)
-                       for db, wb in zip(db_vals, h_vals)]
-        elif self._humidity_condition.hum_type == 'Dewpoint':
-            rh_data = [rel_humid_from_db_dpt(db, dpt)
-                       for db, dpt in zip(db_vals, h_vals)]
-        elif self._humidity_condition.hum_type == 'HumidityRatio':
-            rh_data = [rel_humid_from_db_hr(db, hr, press)
-                       for db, hr in zip(db_vals, h_vals)]
-        elif self._humidity_condition.hum_type == 'Enthalpy':
-            rh_data = [rel_humid_from_db_enth(db, enth / 1000, press)
-                       for db, enth in zip(db_vals, h_vals)]
+        dpt_data = self._humidity_condition.hourly_dew_point_values(
+            self._dry_bulb_condition)
+        rh_data = [rel_humid_from_db_dpt(x, y) for x, y in zip(
+            self._dry_bulb_condition.hourly_values, dpt_data)]
         hourly_data = [DataPoint(
             x, date_times[i], 'SI', 'Relative Humidity')
                        for i, x in enumerate(rh_data)]
         return self._get_daily_data_collections(
             location, 'Relative Humidity', '%', hourly_data)
-
-    def hourly_dew_point_data(self, location):
-        """A data collection containing hourly dew points over they day."""
-        date_times = self.hourly_datetimes
-        h_vals = self._humidity_condition.hourly_values
-        db_vals = self._dry_bulb_condition.hourly_values
-        press = self._humidity_condition.barometric_pressure
-        if self._humidity_condition.hum_type == 'Wetbulb':
-            dp_data = [dew_point_from_db_wb(db, wb, press)
-                       for db, wb in zip(db_vals, h_vals)]
-        elif self._humidity_condition.hum_type == 'Dewpoint':
-            dp_data = h_vals
-        elif self._humidity_condition.hum_type == 'HumidityRatio':
-            dp_data = [dew_point_from_db_hr(db, hr, press)
-                       for db, hr in zip(db_vals, h_vals)]
-        elif self._humidity_condition.hum_type == 'Enthalpy':
-            dp_data = [dew_point_from_db_enth(db, enth / 1000, press)
-                       for db, enth in zip(db_vals, h_vals)]
-        hourly_data = [DataPoint(
-            x, date_times[i], 'SI', 'Dew Point Temperature')
-                       for i, x in enumerate(dp_data)]
-        return self._get_daily_data_collections(
-            location, 'Dew Point Temperature', '%', hourly_data)
 
     def hourly_wind_speed_data(self, location):
         """A data collection containing hourly wind speeds over they day."""
@@ -596,27 +570,51 @@ class HumidityCondition(object):
         hum_type: Choose from
             Wetbulb, Dewpoint, HumidityRatio, Enthalpy
         hum_value: The value of the condition above
-        value_range: Optional range of the value supplied above
         barometric_pressure: Default is to use pressure at sea level
         schedule: Optional humidity schedule
+        wet_bulb_range: Optional wet bulb temperature range
     """
-    def __init__(self, hum_type, hum_value,
-                 value_range=0, barometric_pressure=101325, schedule=''):
+    def __init__(self, hum_type, hum_value, barometric_pressure=101325,
+                 schedule='', wet_bulb_range=''):
         """Initalize the class."""
         self.hum_type = hum_type
         self.hum_value = hum_value
-        self.value_range = value_range
         self.barometric_pressure = barometric_pressure
         self.schedule = schedule
+        self.wet_bulb_range = wet_bulb_range
 
-    @property
-    def hourly_values(self):
-        """A list of humidity values for each hour over the design day."""
-        if self.hum_type == 'Wetbulb':
-            return [self._hum_value - self._value_range * x for
-                    x in temp_multipliers]
-        else:
-            return [self._hum_value for x in temp_multipliers]
+    def hourly_dew_point_values(self, dry_bulb_condition):
+        """Get a list of dew points (C) at each hour over the design day.
+
+        args:
+            dry_bulb_condition: The dry bulb condition for the day.
+        """
+        hourly_dew_point = []
+        max_dpt = self.dew_point(dry_bulb_condition.max_dry_bulb)
+        for db in dry_bulb_condition.hourly_values:
+            if db >= max_dpt:
+                hourly_dew_point.append(max_dpt)
+            else:
+                hourly_dew_point.append(db)
+        return hourly_dew_point
+
+    def dew_point(self, db):
+        """Get the dew point (C), which is constant throughout the day (except at saturation).
+
+        args:
+            db: The maximum dry bulb temperature over the day.
+        """
+        if self._hum_type == 'Dewpoint':
+            return self._hum_value
+        elif self._hum_type == 'Wetbulb':
+            return dew_point_from_db_wb(
+                db, self._hum_value, self._barometric_pressure)
+        elif self._hum_type == 'HumidityRatio':
+            return dew_point_from_db_hr(
+                db, self._hum_value, self._barometric_pressure)
+        elif self._hum_type == 'Enthalpy':
+            return dew_point_from_db_enth(
+                db, self._hum_value / 1000,  self._barometric_pressure)
 
     @property
     def hourly_pressure(self):
@@ -644,22 +642,6 @@ class HumidityCondition(object):
         assert isinstance(data, (float, int)), 'hum_value must be a' \
             ' number. Got {}'.format(type(data))
         self._hum_value = data
-
-    @property
-    def value_range(self):
-        """Get or set the value of the humidity range over the day."""
-        return '' if self._value_range is 0 else self._value_range
-
-    @value_range.setter
-    def value_range(self, data):
-        if data == '':
-            self._value_range = 0
-        else:
-            assert isinstance(data, (float, int)), 'value_range must be a' \
-                ' number. Got {}'.format(type(data))
-            assert data >= 0, 'value_range must be greater than or equal to' \
-                ' zero. Got {}'.format(str(data))
-            self._value_range = data
 
     @property
     def barometric_pressure(self):

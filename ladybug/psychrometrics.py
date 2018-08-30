@@ -123,17 +123,12 @@ def rel_humid_from_db_enth(db_temp, enthalpy, b_press=101325):
 def rel_humid_from_db_dpt(db_temp, dew_pt):
     """Relative Humidity (%) at db_temp (C), and dew_pt (C).
     """
-    # Calculate the partial pressure of water in the atmosphere.
-    a = 6.11657
     m = 7.591386
     tn = 240.7263
     td = dew_pt + 273
-    pw = ((math.pow(10, (m / ((tn / td) + 1)))) * a) / 100
-    # Calculate saturation pressure.
-    pws = saturated_vapor_pressure(db_temp + 273)
-    # Calculate the relative humidity.
-    rel_humid = (pw / pws) * 100
-    return rel_humid
+    ta = db_temp + 273
+    rh = 100 * math.pow(10, m * ((td / (td + tn)) - (ta / (ta + tn))))
+    return rh
 
 
 def rel_humid_from_db_wb(db_temp, wet_bulb, b_press=101325):
