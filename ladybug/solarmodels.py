@@ -1,0 +1,154 @@
+"""Functions for computing solar radiation for different idealized skies"""
+import math
+
+
+"""ORIGINAL AHSRAE CLEAR SKY SOLAR MODEL"""
+# apparent solar irradiation at air mass m = 0
+monthly_a = [1202, 1187, 1164, 1130, 1106, 1092, 1093, 1107, 1136,
+             1166, 1190, 1204]
+# atmospheric extinction coefficient
+monthly_b = [0.141, 0.142, 0.149, 0.164, 0.177, 0.185, 0.186, 0.182,
+             0.165, 0.152, 0.144, 0.141]
+
+
+def ashrae_clear_sky(altitudes, month, sky_clearness=1):
+    """Calculate solar flux for an original ASHRAE Clear Sky
+
+    Args:
+        altitudes = A list of solar altitudes in degrees
+        month: An integer (1-12) indicating the month the altitudes belong to
+        sky_clearness: A factor that will be multiplied by the output of
+            the model. This is to help account for locations where clear,
+            dry skies predominate (e.g., at high elevations) or,
+            conversely, where hazy and humid conditions are frequent. See
+            Threlkeld and Jordan (1958) for recommended values. Typical
+            values range from 0.95 to 1.05 and are usually never more
+            than 1.2. Default is set to 1.0.
+
+    Returns:
+        dir_norm_rad: A list of direct normal radiation values for each
+            of the connected altitudes
+        dif_horiz_rad: A list of diffuse horizontall radiation values for each
+            of the connected altitudes
+    """
+    dir_norm_rad = []
+    dif_horiz_rad = []
+    for i, alt in enumerate(altitudes):
+        if alt > 0:
+            try:
+                dir_norm = monthly_a[month - 1] / (math.exp(
+                    monthly_b[month - 1] / (math.sin(math.radians(alt)))))
+                diff_horiz = 0.17 * dir_norm * math.sin(math.radians(alt))
+                dir_norm_rad.append(dir_norm * sky_clearness)
+                dif_horiz_rad.append(diff_horiz * sky_clearness)
+            except OverflowError:
+                # very small altitude values
+                dir_norm_rad.append(0)
+                dif_horiz_rad.append(0)
+        else:
+            # night time
+            dir_norm_rad.append(0)
+            dif_horiz_rad.append(0)
+
+    return dir_norm_rad, dif_horiz_rad
+
+
+"""AHSRAE REVISED CLEAR SKY SOLAR MODEL (TAU MODEL)"""
+
+
+def ashrae_revised_clear_sky(altitudes, tb, td):
+    """Calculate solar flux for an ASHRAE Revised Clear Sky ("Tau Model")
+
+    Args:
+        altitudes = A list of solar altitudes in degrees.
+        tb: A value indicating the beam optical depth of the sky.
+        td: A value indicating the diffuse optical depth of the sky.
+
+    Returns:
+        dir_norm_rad: A list of direct normal radiation values for each
+            of the connected altitudes
+        dif_horiz_rad: A list of diffuse horizontall radiation values for each
+            of the connected altitudes
+    """
+    dir_norm_rad = []
+    dif_horiz_rad = []
+
+    ab = 1.219 - (0.043 * tb) - (0.151 * td) - (0.204 * tb * td)
+    ad = 0.202 + (0.852 * tb) - (0.007 * td) - (0.357 * tb * td)
+    for alt in altitudes:
+        # calculate hourly air mass between top of the atmosphere and earth
+        air_mass = 0
+        if alt > 0:
+            air_mass = 1 / (math.sin(math.radians(alt)) +
+                            (0.50572 * math.pow((6.07995 + alt), -1.6364)))
+            dir_norm_rad.append(1415 * math.exp(-tb * math.pow(air_mass, ab)))
+            dif_horiz_rad.append(1415 * math.exp(-td * math.pow(air_mass, ad)))
+        else:
+            dir_norm_rad.append(0)
+            dif_horiz_rad.append(0)
+
+    return dir_norm_rad, dif_horiz_rad
+
+
+"""ZHANG-HUANG SOLAR MODEL"""
+# TODO: Split golbal into direct and diffuse using Perez method.
+
+# extraterrestrial solar constant (W/m2)
+irr0 = 1355
+
+# zhang-huang solar model regression constants
+c0, c1, c2, c3, c4, c5, d_coeff, k_coeff = 0.5598, 0.4982, \
+    -0.6762, 0.02842, -0.00317, 0.014, -17.853, 0.843
+
+
+def zhang_huang_solar_model(alt, cloud_cover, relative_humidity,
+                            dry_bulb_present, dry_bulb_t3_hrs, wind_speed):
+    """Calculate solar flux using the Zhang-Huang model.
+
+    Args:
+        alt = A solar altitudes in degrees.
+        cloud_cover: A float value between 0 and 1 that represents the fraction
+            of the sky dome covered in clouds (0 = clear; 1 = completely overcast)
+        relative_humidity: A float value between 0 and 100 that represents
+            the relative humidity in percent.
+        dry_bulb_present: A float values that represents the dry bulb
+            temperature at the time of interest (in degrees C).
+        dry_bulb_t3_hrs: A float values that represents the dry bulb
+            temperature at three hours before the time of interest (in degrees C).
+        wind_speed: A float value that represents the wind speed in m\s.
+    """
+    # start assuming night time
+    glob_ir = 0
+    dir_ir = 0
+    diff_ir = 0
+
+    if alt > 0:
+        # get sin of the altitude
+        sin_alt = math.sin(math.radians(alt))
+
+        # shortened and converted versions of the input parameters
+        cc, rh, n_temp, n3_temp, w_spd = cloud_cover / 10.0, \
+            relative_humidity, dry_bulb_present, dry_bulb_t3_hrs, wind_speed
+
+        # calculate zhang-huang global radiation
+        glob_ir = ((irr0 * sin_alt *
+                    (c0 + (c1 * cc) + (c2 * cc**2) +
+                     (c3 * (n_temp - n3_temp)) +
+                     (c4 * rh) + (c5 * w_spd))) + d_coeff) / k_coeff
+        if glob_ir < 0:
+            glob_ir = 0
+        else:
+            # calculate direct and diffuse solar
+            k_t = glob_ir / (irr0 * sin_alt)
+            k_tc = 0.4268 + (0.1934 * sin_alt)
+            if k_t >= k_tc:
+                k_ds = k_t - ((1.107 + (0.03569 * sin_alt) +
+                               (1.681 * sin_alt**2)) * (1 - k_t)**2)
+            else:
+                k_ds = (3.996 - (3.862 * sin_alt) +
+                        (1.540 * sin_alt**2)) * k_t**3
+            diff_ir = (irr0 * sin_alt * (k_t - k_ds)) / (1 - k_ds)
+            dir_horiz_ir = (irr0 * sin_alt * k_ds * (1 - k_t)) / (1 - k_ds)
+            dir_ir = dir_horiz_ir / math.sin(math.radians(alt))
+
+    return dir_ir, diff_ir

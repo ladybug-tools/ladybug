@@ -7,8 +7,8 @@ from .datatype import DataPoint
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 
-from .skymodels import ashrae_revised_clear_sky
-from .skymodels import ashrae_clear_sky
+from .solarmodels import ashrae_revised_clear_sky
+from .solarmodels import ashrae_clear_sky
 
 from .psychrometrics import rel_humid_from_db_dpt
 from .psychrometrics import dew_point_from_db_hr
@@ -26,32 +26,32 @@ day_types = ['SummerDesignDay', 'WinterDesignDay', 'Sunday', 'Monday',
              'CustomDay1', 'CustomDay2']
 h_types = ['Wetbulb', 'Dewpoint', 'HumidityRatio', 'Enthalpy']
 sky_types = ['ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule']
-ep_com = ['!- Name',
-          '!- Month',
-          '!- Day of Month',
-          '!- Day Type',
-          '!- Max Dry-Bulb Temp [C]',
-          '!- Daily Dry-Bulb Temp Range [C]',
-          '!- Dry-Bulb Temp Range Modifier Type',
-          '!- Dry-Bulb Temp Range Modifier Schedule Name',
-          '!- Humidity Condition Type',
-          '!- Wetbulb/Dewpoint at Max Dry-Bulb [C]',
-          '!- Humidity Indicating Day Schedule Name',
-          '!- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}',
-          '!- Enthalpy at Maximum Dry-Bulb {J/kg}',
-          '!- Daily Wet-Bulb Temperature Range [deltaC]',
-          '!- Barometric Pressure [Pa]',
-          '!- Wind Speed {m/s}',
-          '!- Wind Direction [Degrees; N=0, S=180]',
-          '!- Rain [Yes/No]',
-          '!- Snow on ground [Yes/No]',
-          '!- Daylight Savings Time Indicator',
-          '!- Solar Model Indicator',
-          '!- Beam Solar Day Schedule Name',
-          '!- Diffuse Solar Day Schedule Name',
-          '!- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)',
-          '!- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)',
-          '!- Clearness [0.0 to 1.2]']
+comments = ['!- Name',
+            '!- Month',
+            '!- Day of Month',
+            '!- Day Type',
+            '!- Max Dry-Bulb Temp [C]',
+            '!- Daily Dry-Bulb Temp Range [C]',
+            '!- Dry-Bulb Temp Range Modifier Type',
+            '!- Dry-Bulb Temp Range Modifier Schedule Name',
+            '!- Humidity Condition Type',
+            '!- Wetbulb/Dewpoint at Max Dry-Bulb [C]',
+            '!- Humidity Indicating Day Schedule Name',
+            '!- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}',
+            '!- Enthalpy at Maximum Dry-Bulb {J/kg}',
+            '!- Daily Wet-Bulb Temperature Range [deltaC]',
+            '!- Barometric Pressure [Pa]',
+            '!- Wind Speed {m/s}',
+            '!- Wind Direction [Degrees; N=0, S=180]',
+            '!- Rain [Yes/No]',
+            '!- Snow on ground [Yes/No]',
+            '!- Daylight Savings Time Indicator',
+            '!- Solar Model Indicator',
+            '!- Beam Solar Day Schedule Name',
+            '!- Diffuse Solar Day Schedule Name',
+            '!- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)',
+            '!- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)',
+            '!- Clearness [0.0 to 1.2]']
 temp_multipliers = [0.82, 0.88, 0.92, 0.95, 0.98, 1, 0.98, 0.91, 0.74,
                     0.55, 0.38, 0.23, 0.13, 0.05, 0, 0, 0.06, 0.14, 0.24,
                     0.39, 0.5, 0.59, 0.68, 0.75]
@@ -65,6 +65,7 @@ class Ddy(object):
         design_days: A list of the design days in the ddy file.
         file_path: Optional file path into which ddy file can be written.
     """
+    # TODO: set the default file path to use the ladybug default folder.
     def __init__(self, location, design_days=[], file_path=None):
         """Initalize the class."""
         self.location = location
@@ -101,25 +102,30 @@ class Ddy(object):
 
         try:
             ddytxt = ddywin.read()
-            design_day_format = re.compile(
-                r"(SizingPeriod:DesignDay,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
             location_format = re.compile(
                 r"(Site:Location,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
-
-            des_day_matches = design_day_format.findall(ddytxt)
+            design_day_format = re.compile(
+                r"(SizingPeriod:DesignDay,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
             location_matches = location_format.findall(ddytxt)
+            des_day_matches = design_day_format.findall(ddytxt)
         except Exception as e:
             import traceback
             raise Exception('{}\n{}'.format(e, traceback.format_exc()))
         else:
             # build design day and location objects
-            design_days = [DesignDay.from_ep_string(
-                match[0]) for match in des_day_matches]
             location = Location.from_location(location_matches[0][0])
+            design_days = [DesignDay.from_ep_string(
+                match[0], location) for match in des_day_matches]
         finally:
             ddywin.close()
 
         return cls(location, design_days, file_path)
+
+    @classmethod
+    def from_design_day(cls, design_day):
+        """Initalize from a ddy file object from a ladybug design day object.
+        """
+        return cls(design_day.location, [design_day])
 
     def save(self, folder=None, file_name=None):
         """Save ddy object as a ddy file."""
@@ -185,6 +191,8 @@ class Ddy(object):
             assert hasattr(item, 'isDesignDay'), 'Expected' \
                 ' DesignDay type. Got {}'.format(str(item))
         self._design_days = data
+        for dd in self._design_days:
+            dd.location = self._location
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -195,32 +203,34 @@ class Ddy(object):
         return "Ddy File - {} [# days: {}]".format(
             self.location.city, str(len(self._design_days)))
 
-
+# TODO: add a property for hourly horizontal infrared radiation.
 class DesignDay(object):
-    """Represents design day conditions.
+    """An object representing design day conditions.
 
     properties:
         name: A text string to set the name of the design day
         day_type: Choose from 'SummerDesignDay', 'WinterDesignDay' or other
             EnergyPlus days
+        location: Location for the design day
         dry_bulb_condition: Ladyubug DryBulbCondition object
         humidity_condition: Ladyubug HumidityCondition object
         wind_condition: Ladyubug WindCondition object
         sky_condition: Ladybug SkyCondition object
     """
 
-    def __init__(self, name, day_type, dry_bulb_condition, humidity_condition,
+    def __init__(self, name, day_type, location, dry_bulb_condition, humidity_condition,
                  wind_condition, sky_condition):
         """Initalize the class."""
         self.name = str(name)
         self.day_type = day_type
+        self.location = location
         self.dry_bulb_condition = dry_bulb_condition
         self.humidity_condition = humidity_condition
         self.wind_condition = wind_condition
         self.sky_condition = sky_condition
 
     @classmethod
-    def from_ep_string(cls, ep_string):
+    def from_ep_string(cls, ep_string, location):
         """Initalize from an EnergyPlus string of a SizingPeriod:DesignDay.
 
         args:
@@ -275,7 +285,49 @@ class DesignDay(object):
             sky_condition.beam_shced = lines[22]
             sky_condition.diff_shced = lines[23]
 
-        return cls(name, day_type, dry_bulb_condition,
+        return cls(name, day_type, location, dry_bulb_condition,
+                   humidity_condition, wind_condition, sky_condition)
+
+    @classmethod
+    def from_design_day_properties(cls, name, day_type, location, analysis_period,
+                                   dry_bulb_max, dry_bulb_range, humidity_type,
+                                   humidity_value, barometric_p, wind_speed, wind_dir,
+                                   sky_model, sky_properties):
+        """Create a design day object from various key properties.
+
+        Args:
+            name: A text string to set the name of the design day
+            day_type: Choose from 'SummerDesignDay', 'WinterDesignDay' or other
+                EnergyPlus days
+            location: Location for the design day
+            analysis_period: Analysis period for the design day
+            dry_bulb_max: Maximum dry bulb temperature over the design day (in C).
+            dry_bulb_range: Dry bulb range over the design day (in C).
+            humidity_type: Type of humidity to use. Choose from
+                Wetbulb, Dewpoint, HumidityRatio, Enthalpy
+            humidity_value: The value of the condition above.
+            barometric_p: Barometric pressure in Pa.
+            wind_speed: Wind speed over the design day in m/s.
+            wind_dir: Wind direction over the design day in degrees.
+            sky_model: Type of solar model to use.  Choose from
+                ASHRAEClearSky, ASHRAETau
+            sky_properties: A list of properties describing the sky above.
+                For ASHRAEClearSky this is a single value for clearness
+                For ASHRAETau, this is the tau_beam and tau_diffuse
+        """
+        dry_bulb_condition = DryBulbCondition(
+            dry_bulb_max, dry_bulb_range)
+        humidity_condition = HumidityCondition(
+            humidity_type, humidity_value, barometric_p)
+        wind_condition = WindCondition(
+            wind_speed, wind_dir)
+        if sky_model == 'ASHRAEClearSky':
+            sky_condition = OriginalClearSkyCondition.from_analysis_period(
+                analysis_period, sky_properties[0])
+        elif sky_model == 'ASHRAETau':
+            sky_condition = RevisedClearSkyCondition.from_analysis_period(
+                analysis_period, sky_properties[0], sky_properties[-1])
+        return cls(name, day_type, location, dry_bulb_condition,
                    humidity_condition, wind_condition, sky_condition)
 
     @property
@@ -332,9 +384,20 @@ class DesignDay(object):
                 separator = ';'
             spacer = ' ' * (60 - len(str(val)))
             ep_string = ep_string + '  ' + str(val) + separator + \
-                spacer + ep_com[i] + '\n'
+                spacer + comments[i] + '\n'
 
         return ep_string
+
+    @property
+    def name(self):
+        """Get or set the name."""
+        return self._name
+
+    @name.setter
+    def name(self, data):
+        assert isinstance(data, str), 'Design day name must be' \
+            ' text. Got {}'.format(type(data))
+        self._name = data
 
     @property
     def day_type(self):
@@ -346,6 +409,17 @@ class DesignDay(object):
         assert data in day_types, 'day_type {} is not' \
             ' recognized'.format(str(data))
         self._day_type = data
+
+    @property
+    def location(self):
+        """Get or set the location."""
+        return self._location
+
+    @location.setter
+    def location(self, data):
+        assert hasattr(data, 'isLocation'), 'Expected' \
+            ' isLocation type. Got {}'.format(str(data))
+        self._location = data
 
     @property
     def dry_bulb_condition(self):
@@ -392,10 +466,22 @@ class DesignDay(object):
         self._sky_condition = data
 
     @property
+    def analysis_period(self):
+        """The analysisperiod of the design day."""
+        return AnalysisPeriod(
+            self.sky_condition.month,
+            self.sky_condition.day_of_month,
+            0,
+            self.sky_condition.month,
+            self.sky_condition.day_of_month,
+            23)
+
+    @property
     def hourly_datetimes(self):
         return self._sky_condition._get_datetimes()
 
-    def hourly_dry_bulb_data(self, location):
+    @property
+    def hourly_dry_bulb_data(self):
         """A data collection containing hourly dry bulb temperature over they day."""
         date_times = self.hourly_datetimes
         hourly_data = [DataPoint(
@@ -403,9 +489,10 @@ class DesignDay(object):
                        for i, x in enumerate(
                            self._dry_bulb_condition.hourly_values)]
         return self._get_daily_data_collections(
-            location, 'Dry Bulb Temperature', 'C', hourly_data)
+            'Dry Bulb Temperature', 'C', hourly_data)
 
-    def hourly_dew_point_data(self, location):
+    @property
+    def hourly_dew_point_data(self):
         """A data collection containing hourly dew points over they day."""
         date_times = self.hourly_datetimes
         hourly_data = [DataPoint(
@@ -414,9 +501,10 @@ class DesignDay(object):
                            self._humidity_condition.hourly_dew_point_values(
                                self._dry_bulb_condition))]
         return self._get_daily_data_collections(
-            location, 'Dew Point Temperature', 'C', hourly_data)
+            'Dew Point Temperature', 'C', hourly_data)
 
-    def hourly_relative_humidity_data(self, location):
+    @property
+    def hourly_relative_humidity_data(self):
         """A data collection containing hourly relative humidity over they day."""
         date_times = self.hourly_datetimes
         dpt_data = self._humidity_condition.hourly_dew_point_values(
@@ -427,9 +515,21 @@ class DesignDay(object):
             x, date_times[i], 'SI', 'Relative Humidity')
                        for i, x in enumerate(rh_data)]
         return self._get_daily_data_collections(
-            location, 'Relative Humidity', '%', hourly_data)
+            'Relative Humidity', '%', hourly_data)
 
-    def hourly_wind_speed_data(self, location):
+    @property
+    def hourly_barometric_pressure_data(self):
+        """A data collection containing hourly barometric pressures over they day."""
+        date_times = self.hourly_datetimes
+        hourly_data = [DataPoint(
+            x, date_times[i], 'SI', 'Atmospheric Station Pressure')
+                       for i, x in enumerate(
+                           self._humidity_condition.hourly_pressure)]
+        return self._get_daily_data_collections(
+            'Atmospheric Station Pressure', 'Pa', hourly_data)
+
+    @property
+    def hourly_wind_speed_data(self):
         """A data collection containing hourly wind speeds over they day."""
         date_times = self.hourly_datetimes
         hourly_data = [DataPoint(
@@ -437,9 +537,10 @@ class DesignDay(object):
                        for i, x in enumerate(
                            self._wind_condition.hourly_values)]
         return self._get_daily_data_collections(
-            location, 'Wind Speed', 'm/s', hourly_data)
+            'Wind Speed', 'm/s', hourly_data)
 
-    def hourly_wind_direction_data(self, location):
+    @property
+    def hourly_wind_direction_data(self):
         """A data collection containing hourly wind directions over they day."""
         date_times = self.hourly_datetimes
         hourly_data = [DataPoint(
@@ -447,43 +548,38 @@ class DesignDay(object):
                        for i, x in enumerate(
                            self._wind_condition.hourly_wind_dirs)]
         return self._get_daily_data_collections(
-            location, 'Wind Direction', 'degrees', hourly_data)
+            'Wind Direction', 'degrees', hourly_data)
 
-    def hourly_solar_radiation_data(self, location):
+    @property
+    def hourly_solar_radiation_data(self):
         """Three data collections containing hourly direct normal, diffuse horizontal,
         and global horizontal radiation.
         """
         date_times = self.hourly_datetimes
-        dir_norm, diff_horiz, glob_horiz = self._sky_condition.radiation_values(location)
+        dir_norm, diff_horiz, glob_horiz = \
+            self._sky_condition.radiation_values(self._location)
         dir_norm_data = [DataPoint(
             x, date_times[i], 'SI', 'Direct Normal Radiation')
                          for i, x in enumerate(dir_norm)]
         dir_norm_collect = self._get_daily_data_collections(
-            location, 'Direct Normal Radiation', 'Wh/m2', dir_norm_data)
+            'Direct Normal Radiation', 'Wh/m2', dir_norm_data)
         diff_horiz_data = [DataPoint(
             x, date_times[i], 'SI', 'Diffuse Horizontal Radiation')
                            for i, x in enumerate(diff_horiz)]
         diff_horiz_collect = self._get_daily_data_collections(
-            location, 'Diffuse Horizontal Radiation', 'Wh/m2', diff_horiz_data)
+            'Diffuse Horizontal Radiation', 'Wh/m2', diff_horiz_data)
         glob_horiz_data = [DataPoint(
             x, date_times[i], 'SI', 'Global Horizontal Radiation')
                            for i, x in enumerate(glob_horiz)]
         glob_horiz_collect = self._get_daily_data_collections(
-            location, 'Global Horizontal Radiation', 'Wh/m2', glob_horiz_data)
+            'Global Horizontal Radiation', 'Wh/m2', glob_horiz_data)
 
         return dir_norm_collect, diff_horiz_collect, glob_horiz_collect
 
-    def _get_daily_data_collections(self, location, data_type, unit, data=None):
+    def _get_daily_data_collections(self, data_type, unit, data=None):
         """Return an empty data collection.
         """
-        analysis_period = AnalysisPeriod(
-            self.sky_condition.month,
-            self.sky_condition.day_of_month,
-            0,
-            self.sky_condition.month,
-            self.sky_condition.day_of_month,
-            23)
-        data_header = Header(location, data_type, unit, analysis_period)
+        data_header = Header(self._location, data_type, unit, self.analysis_period)
         return DataCollection(data=data, header=data_header)
 
     @property
@@ -735,6 +831,7 @@ class WindCondition(object):
             str(self._wind_speed), str(self._wind_direction))
 
 
+# TODO: add support for zhang huang solar model in sky condition object.
 class SkyCondition(object):
     """An object representing a sky on the design day.
 
@@ -795,6 +892,8 @@ class SkyCondition(object):
     def _get_datetimes(self, timestep=1):
         """List of datetimes based on design day date and timestep."""
         start_moy = DateTime(self._month, self._day_of_month).moy
+        if timestep == 1:
+            start_moy = start_moy + 30
         num_moys = 24 * timestep
         return tuple(
             DateTime.from_moy(start_moy + (i * (1 / timestep) * 60))
@@ -831,6 +930,14 @@ class OriginalClearSkyCondition(SkyCondition):
         self.clearness = clearness
         SkyCondition.__init__(self, 'ASHRAEClearSky', month, day_of_month,
                               daylight_savings_indicator)
+
+    @classmethod
+    def from_analysis_period(cls, analysis_period, clearness=1,
+                             daylight_savings_indicator='No'):
+        """"Initialize a OriginalClearSkyCondition from an analysis_period"""
+        _check_analysis_period(analysis_period)
+        return cls(analysis_period.st_month, analysis_period.st_day, clearness,
+                   daylight_savings_indicator)
 
     @property
     def clearness(self):
@@ -880,6 +987,14 @@ class RevisedClearSkyCondition(SkyCondition):
         SkyCondition.__init__(self, 'ASHRAETau', month, day_of_month,
                               daylight_savings_indicator)
 
+    @classmethod
+    def from_analysis_period(cls, analysis_period, tau_b, tau_d,
+                             daylight_savings_indicator='No'):
+        """"Initialize a RevisedClearSkyCondition from an analysis_period"""
+        _check_analysis_period(analysis_period)
+        return cls(analysis_period.st_month, analysis_period.st_day, tau_b, tau_d,
+                   daylight_savings_indicator)
+
     @property
     def tau_b(self):
         """Get or set the beam optical sky depth."""
@@ -917,3 +1032,13 @@ class RevisedClearSkyCondition(SkyCondition):
         glob_horiz = [dhr + dnr * math.sin(math.radians(alt)) for
                       alt, dnr, dhr in zip(altitudes, dir_norm, diff_horiz)]
         return dir_norm, diff_horiz, glob_horiz
+
+
+def _check_analysis_period(analysis_period):
+    assert hasattr(analysis_period, 'isAnalysisPeriod'), 'Expected' \
+        ' AnalysisPeriod type. Got {}'.format(str(analysis_period))
+    assert analysis_period.st_month == analysis_period.end_month and \
+        analysis_period.st_day == analysis_period.end_day and \
+        analysis_period.st_hour == 0 and analysis_period.end_hour == 23, \
+        'analysis_period "{}" does not represent a single day'.format(
+            str(analysis_period))

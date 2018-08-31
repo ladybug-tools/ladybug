@@ -10,8 +10,10 @@ from .datatype import DataPoint
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
-from .skymodels import ashrae_revised_clear_sky
-from .skymodels import ashrae_clear_sky
+
+from .solarmodels import ashrae_revised_clear_sky
+from .solarmodels import ashrae_clear_sky
+from .solarmodels import zhang_huang_solar_model
 
 import math
 try:
@@ -277,8 +279,6 @@ class Wea(object):
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
 
-    # TODO: Split golbal into direct and diffuse using Perez method.
-    # Right now, I use an old inaccurate method.
     @classmethod
     def from_zhang_huang_solar_model(cls, location, cloud_cover,
                                      relative_humidity, dry_bulb_temperature,
@@ -297,9 +297,6 @@ class Wea(object):
 
         Args:
             location: Ladybug location object.
-            cloud_cover: A list of annual float values between 0 and 1
-                that represent the fraction of the sky dome covered
-                in clouds (0 = clear; 1 = completely overcast)
             cloud_cover: A list of annual float values between 0 and 1
                 that represent the fraction of the sky dome covered
                 in clouds (0 = clear; 1 = completely overcast)
@@ -323,13 +320,6 @@ class Wea(object):
         assert isinstance(timestep, int), 'timestep must be an' \
             ' integer. Got {}'.format(type(timestep))
 
-        # solar model regression constants
-        c0, c1, c2, c3, c4, c5, d_coeff, k_coeff = 0.5598, 0.4982, \
-            -0.6762, 0.02842, -0.00317, 0.014, -17.853, 0.843
-
-        # extraterrestrial solar constant (W/m2)
-        irr0 = 1355
-
         # initiate sunpath based on location
         sp = Sunpath.from_location(location)
         sp.is_leap_year = is_leap_year
@@ -339,44 +329,16 @@ class Wea(object):
             cls._get_empty_data_collections(location, timestep, is_leap_year)
 
         for count, t_date in enumerate(cls._get_datetimes(timestep, is_leap_year)):
-            # start assuming night time
-            glob_ir = 0
-            dir_ir = 0
-            diff_ir = 0
-
             # calculate sun altitude
             sun = sp.calculate_sun_from_date_time(t_date)
             alt = sun.altitude
 
-            if alt > 0:
-                # get sin of the altitude
-                sin_alt = math.sin(math.radians(alt))
-
-                # get the values at each timestep
-                cc, rh, n_temp, n3_temp, w_spd = cloud_cover[count] / 10.0, \
-                    relative_humidity[count], dry_bulb_temperature[count], \
-                    dry_bulb_temperature[count - (3 * timestep)], wind_speed[count]
-
-                # calculate zhang-huang global radiation
-                glob_ir = ((irr0 * sin_alt *
-                            (c0 + (c1 * cc) + (c2 * cc**2) +
-                             (c3 * (n_temp - n3_temp)) +
-                             (c4 * rh) + (c5 * w_spd))) + d_coeff) / k_coeff
-                if glob_ir < 0:
-                    glob_ir = 0
-                else:
-                    # calculate direct and diffuse solar
-                    k_t = glob_ir / (irr0 * sin_alt)
-                    k_tc = 0.4268 + (0.1934 * sin_alt)
-                    if k_t >= k_tc:
-                        k_ds = k_t - ((1.107 + (0.03569 * sin_alt) +
-                                       (1.681 * sin_alt**2)) * (1 - k_t)**2)
-                    else:
-                        k_ds = (3.996 - (3.862 * sin_alt) +
-                                (1.540 * sin_alt**2)) * k_t**3
-                    diff_ir = (irr0 * sin_alt * (k_t - k_ds)) / (1 - k_ds)
-                    dir_horiz_ir = (irr0 * sin_alt * k_ds * (1 - k_t)) / (1 - k_ds)
-                    dir_ir = dir_horiz_ir / math.sin(math.radians(alt))
+            dir_ir, diff_ir = zhang_huang_solar_model(
+                alt, cloud_cover[count],
+                relative_humidity[count],
+                dry_bulb_temperature[count],
+                dry_bulb_temperature[count - (3 * timestep)],
+                wind_speed[count])
 
             direct_norm_rad.append(DataPoint(
                 dir_ir, t_date, 'SI', 'Direct Normal Radiation'))
