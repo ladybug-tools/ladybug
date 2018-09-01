@@ -128,7 +128,7 @@ class Ddy(object):
         return cls(design_day.location, [design_day])
 
     def save(self, folder=None, file_name=None):
-        """Save ddy object as a ddy file."""
+        """Save ddy object as a .ddy file."""
         # check file_path
         if not folder:
             folder = self.folder
@@ -142,6 +142,18 @@ class Ddy(object):
         for d_day in self.design_days:
             data = data + d_day.ep_style_string + '\n\n'
         write_to_file(full_path, data, True)
+
+    def filter_by_keyword(self, keyword):
+        """Return a list of ddys that have a certain keyword in their name.
+
+        This is useful for selecting out design days from a ddy file that are
+        for a specific type of condition (for example, .4% cooling design days)
+        """
+        filtered_days = []
+        for des_day in self.design_days:
+            if keyword in des_day.name:
+                filtered_days.append(des_day)
+        return filtered_days
 
     @property
     def file_path(self):
@@ -194,6 +206,11 @@ class Ddy(object):
         for dd in self._design_days:
             dd.location = self._location
 
+    @property
+    def isDdy(self):
+        """Return True."""
+        return True
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -202,6 +219,7 @@ class Ddy(object):
         """dry bulb condition representation."""
         return "Ddy File - {} [# days: {}]".format(
             self.location.city, str(len(self._design_days)))
+
 
 # TODO: add a property for hourly horizontal infrared radiation.
 class DesignDay(object):
@@ -584,7 +602,7 @@ class DesignDay(object):
 
     @property
     def isDesignDay(self):
-        """Get or set Ture."""
+        """Return True."""
         return True
 
     def ToString(self):
@@ -646,7 +664,7 @@ class DryBulbCondition(object):
 
     @property
     def isDryBulbCondition(self):
-        """Get or set Ture."""
+        """Return True."""
         return True
 
     def ToString(self):
@@ -752,7 +770,7 @@ class HumidityCondition(object):
 
     @property
     def isHumidityCondition(self):
-        """Get or set Ture."""
+        """Return True."""
         return True
 
     def ToString(self):
@@ -818,7 +836,7 @@ class WindCondition(object):
 
     @property
     def isWindCondition(self):
-        """Get or set Ture."""
+        """Return True."""
         return True
 
     def ToString(self):
@@ -902,7 +920,7 @@ class SkyCondition(object):
 
     @property
     def isSkyCondition(self):
-        """Get or set Ture."""
+        """Return True."""
         return True
 
     def ToString(self):
