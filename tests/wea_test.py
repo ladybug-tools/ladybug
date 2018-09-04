@@ -124,7 +124,7 @@ class WeaTestCase(unittest.TestCase):
         assert wea_from_json.diffuse_horizontal_radiation.values == \
             wea_from_stat.diffuse_horizontal_radiation.values
 
-    def test_global_horizontal(self):
+    def test_global_and_direct_horizontal(self):
         """Test the global horizontal radiation on method."""
         stat_path = './tests/stat/chicago.stat'
         wea_from_stat = Wea.from_stat_file(stat_path)

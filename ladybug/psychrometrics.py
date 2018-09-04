@@ -60,18 +60,18 @@ def wet_bulb_from_db_rh(db_temp, rh, b_press=101325):
     """
     es = 6.112 * math.e**((17.67 * db_temp) / (db_temp + 243.5))
     e = (es * rh) / 100
-    tw = 0
-    increse = 10
+    t_w = 0
+    increse = 10.0
     previoussign = 1
-    ed = 1
-    while math.fabs(tw) > 0.005:
-        ewg = 6.112 * math.e**((17.67 * tw) / (tw + 243.5))
-        eg = ewg - (b_press / 100) * (db_temp - tw) * 0.00066 * (1 + (0.00155 * tw))
-        ed = e - eg
-        if ed == 0:
+    e_d = 1
+    while math.fabs(e_d) > 0.005:
+        e_wg = 6.112 * (math.e**((17.67 * t_w) / (t_w + 243.5)))
+        eg = e_wg - (b_press/100) * (db_temp - t_w) * 0.00066 * (1 + (0.00155 * t_w))
+        e_d = e - eg
+        if e_d == 0:
             break
         else:
-            if ed < 0:
+            if e_d < 0:
                 cursign = -1
                 if cursign != previoussign:
                     previoussign = cursign
@@ -82,11 +82,11 @@ def wet_bulb_from_db_rh(db_temp, rh, b_press=101325):
                 cursign = 1
                 if cursign != previoussign:
                     previoussign = cursign
-                    increse = increse / 10
+                    increse = increse/10
                 else:
                     increse = increse
-        tw = tw + increse * previoussign
-    return tw
+        t_w = t_w + increse * previoussign
+    return t_w
 
 
 def dew_point_from_db_rh(db_temp, rh):
@@ -123,11 +123,9 @@ def rel_humid_from_db_enth(db_temp, enthalpy, b_press=101325):
 def rel_humid_from_db_dpt(db_temp, dew_pt):
     """Relative Humidity (%) at db_temp (C), and dew_pt (C).
     """
-    m = 7.591386
-    tn = 240.7263
-    td = dew_pt + 273
-    ta = db_temp + 273
-    rh = 100 * math.pow(10, m * ((td / (td + tn)) - (ta / (ta + tn))))
+    pws_ta = saturated_vapor_pressure(db_temp + 273)
+    pws_td = saturated_vapor_pressure(dew_pt + 273)
+    rh = 100 * (pws_td / pws_ta)
     return rh
 
 

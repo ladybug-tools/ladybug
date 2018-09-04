@@ -216,7 +216,7 @@ class Ddy(object):
         return self.__repr__()
 
     def __repr__(self):
-        """dry bulb condition representation."""
+        """Ddy object representation."""
         return "Ddy File - {} [# days: {}]".format(
             self.location.city, str(len(self._design_days)))
 
