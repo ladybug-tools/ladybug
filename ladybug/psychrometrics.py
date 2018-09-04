@@ -3,6 +3,14 @@
 import math
 
 
+def saturated_vapor_pressure_torr(db_temp):
+    """Saturated Vapor Pressure (Torr) at temperature (C)
+
+    Used frequently throughtout the pmv comfort functions.
+    """
+    return math.exp(18.6686 - 4030.183 / (db_temp + 235.0))
+
+
 def saturated_vapor_pressure(t_kelvin):
     """Saturated Vapor Pressure (Pa) at t_kelvin (K).
 
