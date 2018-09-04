@@ -32,7 +32,6 @@ class DdyTestCase(unittest.TestCase):
         # Test imports don't break
         assert ddy.file_path == abs_path
         assert ddy_rel.file_path == os.path.normpath(relative_path)
-        assert ddy.folder.endswith('tests\\ddy')
         assert ddy.file_name == 'chicago.ddy'
 
     def test_ddy_from_design_day(self):
@@ -116,8 +115,8 @@ class DdyTestCase(unittest.TestCase):
 
         # relative humidity values
         rh_data_collect = des_day.hourly_relative_humidity_data.values
-        assert -0.1 < rh_data_collect[5].value - 83.233 < 0.1
-        assert -0.1 < rh_data_collect[14].value - 68.984 < 0.1
+        assert -0.1 < rh_data_collect[5].value - 45.896 < 0.1
+        assert -0.1 < rh_data_collect[14].value - 21.508 < 0.1
 
         # barometric pressure values
         bp_data_collect = des_day.hourly_barometric_pressure_data.values

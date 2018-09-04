@@ -29,7 +29,7 @@ class StatTestCase(unittest.TestCase):
         # Test imports don't break
         assert stat.file_path == abs_path
         assert stat_rel.file_path == os.path.normpath(relative_path)
-        assert hasattr(stat.file_path, 'isStat')
+        assert hasattr(stat, 'isStat')
 
     def test_stat_properties(self):
         relative_path = './tests/stat/tokyo.stat'
