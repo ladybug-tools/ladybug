@@ -4,8 +4,8 @@ from collections import Iterable
 from .comfortBase import ComfortModel
 from ..psychrometrics import humid_ratio_from_db_rh
 from ..psychrometrics import saturated_vapor_pressure_torr
-from ..rootfinding import secant
-from ..rootfinding import bisect
+from ..rootFinding import secant
+from ..rootFinding import bisect
 from ..listoperations import duplicate
 from ..epw import EPW
 
