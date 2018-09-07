@@ -67,7 +67,9 @@ class DataCollectionTestCase(unittest.TestCase):
         test_data = [i * 5 for i in test_data]
         test_count = len(test_data)/2
         
-        test_highest_values, test_highest_values_index = DataCollection.get_highest_values(test_data, test_count)
+        dc3 = DataCollection.from_list(lst = test_data)
+        
+        test_highest_values, test_highest_values_index = dc3.get_highest_values(test_count)
         
         assert test_highest_values == list(reversed(test_data[4380:8760]))
         assert test_highest_values_index == list(range(8759,4379,-1))

@@ -14,7 +14,7 @@ except ImportError:
 class DataCollection(object):
     """A list of data with a header."""
 
-    __slots__ = ('_header', '_data')
+    __slots__ = ('_header', '_data', 'highest_values', 'highest_values_index')
 
     def __init__(self, data=None, header=None):
         """Init class."""
@@ -149,8 +149,7 @@ class DataCollection(object):
         values = (value.value for value in data)
         return sum(values) / len(data)
 
-    @staticmethod
-    def get_highest_values(data, count):
+    def get_highest_values(self, count):
         """Find highest values in a list of DataPoints
         
         Args:
@@ -163,16 +162,27 @@ class DataCollection(object):
             highest_values_index: Indicies of the n highest values in data 
                 list, ordered from highest to lowest
         """
-        lenght_data = len(data)
+        dataPoints = self._data
+        
+        values = list(obj._value for obj in dataPoints)
+        
+        lenght_values = len(values)
         
         count = int(count)
         
-        highest_values = sorted(data, reverse = True)[0:count]
+        assert count <= lenght_values, \
+            'Count must be equal to or smaller than list of data lenght'
+            
+        assert count > 0, \
+            'Count must be higher than zero'
         
-        highest_values_index = sorted(range(lenght_data), key = lambda k: data[k],
-                                                         reverse = True)[0:count]
+        self.highest_values = sorted(values, reverse = True)[0:count]
         
-        return highest_values, highest_values_index
+        self.highest_values_index = sorted(range(lenght_values), 
+                                           key = lambda k: values[k],
+                                           reverse = True)[0:count]
+        
+        return self.highest_values, self.highest_values_index
 
     @staticmethod
     def group_data_by_month(data, month_range=xrange(1, 13)):
