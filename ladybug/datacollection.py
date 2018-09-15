@@ -14,7 +14,7 @@ except ImportError:
 class DataCollection(object):
     """A list of data with a header."""
 
-    __slots__ = ('_header', '_data', 'highest_values', 'highest_values_index')
+    __slots__ = ('_header', '_data')
 
     def __init__(self, data=None, header=None):
         """Init class."""
@@ -164,7 +164,7 @@ class DataCollection(object):
         """
         dataPoints = self._data
         
-        values = list(obj._value for obj in dataPoints)
+        values = [obj._value for obj in dataPoints]
         
         lenght_values = len(values)
         
@@ -176,13 +176,13 @@ class DataCollection(object):
         assert count > 0, \
             'Count must be higher than zero'
         
-        self.highest_values = sorted(values, reverse = True)[0:count]
+        highest_values = sorted(values, reverse = True)[0:count]
         
-        self.highest_values_index = sorted(range(lenght_values), 
-                                           key = lambda k: values[k],
-                                           reverse = True)[0:count]
+        highest_values_index = sorted(range(lenght_values), 
+                                      key = lambda k: values[k],
+                                      reverse = True)[0:count]
         
-        return self.highest_values, self.highest_values_index
+        return highest_values, highest_values_index
 
     @staticmethod
     def group_data_by_month(data, month_range=xrange(1, 13)):
