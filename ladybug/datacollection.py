@@ -162,9 +162,9 @@ class DataCollection(object):
             highest_values_index: Indicies of the n highest values in data 
                 list, ordered from highest to lowest
         """
-        dataPoints = self._data
+        data_points = self._data
         
-        values = [obj._value for obj in dataPoints]
+        values = [obj._value for obj in data_points]
         
         lenght_values = len(values)
         
