@@ -293,6 +293,83 @@ class EPW(object):
 
         return full_path
 
+    def to_json(self):
+        epw_matrix = [
+            self.years.values,
+            self.dry_bulb_temperature.values,
+            self.dew_point_temperature.values,
+            self.relative_humidity.values,
+            self.atmospheric_station_pressure.values,
+            self.extraterrestrial_horizontal_radiation.values,
+            self.extraterrestrial_direct_normal_radiation.values,
+            self.horizontal_infrared_radiation_intensity.values,
+            self.global_horizontal_radiation.values,
+            self.direct_normal_radiation.values,
+            self.diffuse_horizontal_radiation.values,
+            self.global_horizontal_illuminance.values,
+            self.direct_normal_illuminance.values,
+            self.diffuse_horizontal_illuminance.values,
+            self.zenith_luminance.values,
+            self.wind_direction.values,
+            self.wind_speed.values,
+            self.total_sky_cover.values,
+            self.opaque_sky_cover.values,
+            self.visibility.values,
+            self.ceiling_height.values,
+            self.present_weather_observation.values,
+            self.present_weather_codes.values,
+            self.precipitable_water.values,
+            self.aerosol_optical_depth.values,
+            self.snow_depth.values,
+            self.days_since_last_snowfall.values,
+            self.albedo.values,
+            self.liquid_precipitation_depth.values,
+            self.liquid_precipitation_quantity.values
+                     ]
+
+        epw_json = self.location.to_json()
+
+        epw_json["source"] = ""
+        epw_json["station_id"] = ""
+        epw_json["data_points"] = []
+
+        for i, date in enumerate(self._data[0].datetimes):
+            epw_json['data_points'].append({
+                "date_time": date.isoformat(),
+                "years": epw_matrix[0][i].year,
+                "dry_bulb_temperature": epw_matrix[1][i].value,
+                "dew_point_temperature": epw_matrix[2][i].value,
+                "relative_humidity": epw_matrix[3][i].value,
+                "atmospheric_station_pressure": epw_matrix[4][i].value,
+                "extraterrestrial_horizontal_radiation": epw_matrix[5][i].value,
+                "extraterrestrial_direct_normal_radiation": epw_matrix[6][i].value,
+                "horizontal_infrared_radiation_intensity": epw_matrix[7][i].value,
+                "global_horizontal_radiation": epw_matrix[8][i].value,
+                "direct_normal_radiation": epw_matrix[9][i].value,
+                "diffuse_horizontal_radiation": epw_matrix[10][i].value,
+                "global_horizontal_illuminance": epw_matrix[11][i].value,
+                "direct_normal_illuminance": epw_matrix[12][i].value,
+                "diffuse_horizontal_illuminance": epw_matrix[13][i].value,
+                "zenith_luminance": epw_matrix[14][i].value,
+                "wind_direction": epw_matrix[15][i].value,
+                "wind_speed": epw_matrix[16][i].value,
+                "total_sky_cover": epw_matrix[17][i].value,
+                "opaque_sky_cover": epw_matrix[18][i].value,
+                "visibility": epw_matrix[19][i].value,
+                "ceiling_height": epw_matrix[20][i].value,
+                "present_weather_observation": epw_matrix[21][i].value,
+                "present_weather_codes": epw_matrix[22][i].value,
+                "precipitable_water": epw_matrix[23][i].value,
+                "aerosol_optical_depth": epw_matrix[24][i].value,
+                "snow_depth": epw_matrix[25][i].value,
+                "days_since_last_snowfall": epw_matrix[26][i].value,
+                "albedo": epw_matrix[27][i].value,
+                "liquid_precipitation_depth": epw_matrix[28][i].value,
+                "liquid_precipitation_quantity":epw_matrix[29][i].value
+            })
+
+        return epw_json
+
     def import_data_by_field(self, field_number):
         """Return annual values for any field_number in epw file.
 
