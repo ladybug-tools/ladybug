@@ -1,4 +1,4 @@
-"""Functions for computing solar radiation for different idealized skies"""
+"""Functions for computing radiation for different idealized skies"""
 import math
 
 
@@ -27,9 +27,9 @@ def ashrae_clear_sky(altitudes, month, sky_clearness=1):
 
     Returns:
         dir_norm_rad: A list of direct normal radiation values for each
-            of the connected altitudes
+            of the connected altitudes in W/m2.
         dif_horiz_rad: A list of diffuse horizontall radiation values for each
-            of the connected altitudes
+            of the connected altitudes in W/m2.
     """
     dir_norm_rad = []
     dif_horiz_rad = []
@@ -66,9 +66,9 @@ def ashrae_revised_clear_sky(altitudes, tb, td):
 
     Returns:
         dir_norm_rad: A list of direct normal radiation values for each
-            of the connected altitudes
+            of the connected altitudes in W/m2.
         dif_horiz_rad: A list of diffuse horizontall radiation values for each
-            of the connected altitudes
+            of the connected altitudes in W/m2.
     """
     dir_norm_rad = []
     dif_horiz_rad = []
@@ -107,15 +107,19 @@ def zhang_huang_solar_model(alt, cloud_cover, relative_humidity,
 
     Args:
         alt = A solar altitudes in degrees.
-        cloud_cover: A float value between 0 and 1 that represents the fraction
-            of the sky dome covered in clouds (0 = clear; 1 = completely overcast)
+        cloud_cover: A float value between 0 and 10 that represents the sky cloud cover
+            in tenths (0 = clear; 10 = completely overcast)
         relative_humidity: A float value between 0 and 100 that represents
             the relative humidity in percent.
-        dry_bulb_present: A float values that represents the dry bulb
+        dry_bulb_present: A float value that represents the dry bulb
             temperature at the time of interest (in degrees C).
-        dry_bulb_t3_hrs: A float values that represents the dry bulb
+        dry_bulb_t3_hrs: A float value that represents the dry bulb
             temperature at three hours before the time of interest (in degrees C).
         wind_speed: A float value that represents the wind speed in m\s.
+
+    Returns:
+        dir_ir: A direct normal radiation value in W/m2.
+        diff_ir: A diffuse horizontall radiation value in W/m2.
     """
     # start assuming night time
     glob_ir = 0
@@ -152,3 +156,50 @@ def zhang_huang_solar_model(alt, cloud_cover, relative_humidity,
             dir_ir = dir_horiz_ir / math.sin(math.radians(alt))
 
     return dir_ir, diff_ir
+
+
+"""ENERGYPLUS HORIZONTAL INFRARED INTESDITY MODEL"""
+# stefan-boltzmann constant
+sigma = 5.6697e-8
+
+
+def energyplus_horizontal_infrared(sky_cover, dry_bulb, dew_point):
+    """Calculate horizontal infrared radiation intensity.
+
+    Args:
+        sky_cover: A float value between 0 and 10 that represents the opaque
+            sky cover in tenths (0 = clear; 10 = completely overcast)
+        dry_bulb: A float value that represents the dry bulb temperature
+            in degrees C.
+        dew_point: A float value that represents the dew point temperature
+            in degrees C.
+
+    Returns:
+        horiz_ir: A horizontal infrared radiation intensity value in W/m2.
+    """
+    # convert to kelvin
+    db_k = dry_bulb + 273.15
+    dp_k = dew_point + 273.15
+    sky_emiss = (0.787 + (0.764 * math.log(dp_k / 273.15))) * \
+        (1 + (0.022 * sky_cover) - (0.0035 * (sky_cover ** 2)) +
+         (0.00028 * (sky_cover ** 3)))
+    horiz_ir = sky_emiss * sigma * (db_k ** 4)
+    return horiz_ir
+
+
+def energyplus_sky_temperature(horiz_ir, dry_bulb):
+    """Calculate sky temperature in Celcius.
+
+    Args:
+        horiz_ir: A float value that represents horizontal infrared radiation
+            intensity in W/m2.
+        dry_bulb: A float value that represents the dry bulb temperature
+            in degrees C.
+
+    Returns:
+        sky_temp: A sky temperature value in C.
+    """
+    # convert to kelvin
+    db_k = dry_bulb + 273.15
+    sky_temp = ((horiz_ir / sigma) ** 0.25) - db_k
+    return sky_temp

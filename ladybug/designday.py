@@ -7,8 +7,8 @@ from .datatype import DataPoint
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 
-from .solarmodels import ashrae_revised_clear_sky
-from .solarmodels import ashrae_clear_sky
+from .skymodel import ashrae_revised_clear_sky
+from .skymodel import ashrae_clear_sky
 
 from .psychrometrics import rel_humid_from_db_dpt
 from .psychrometrics import dew_point_from_db_hr

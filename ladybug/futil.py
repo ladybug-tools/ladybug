@@ -1,36 +1,6 @@
 """A collection of auxiliary funtions for working with files and directories."""
 import os
 import shutil
-import config
-
-
-def normspace(path):
-    """Norm white spaces in path.
-
-    Return path with quotation marks if there is whitespace in path.
-    """
-    if str(path).strip().find(" ") != -1:
-        return "{0}{1}{0}".format(config.wrapper, path)
-    else:
-        return path
-
-
-def get_radiance_path_lines():
-    """Return path to radiance folders."""
-    if config.radbin_path.find(' ') != -1:
-        msg = 'Radiance path {} has a whitespace. Some of the radiance ' \
-            'commands may fail.\nWe strongly suggest you to install radiance ' \
-            'under a path with no withspace (e.g. c:/radiance)'.format(
-                config.radbin_path
-            )
-        print(msg)
-    if os.name == 'nt':
-        return "SET RAYPATH=.;{}\nPATH={};%PATH%".format(
-            normspace(config.radlib_path),
-            normspace(config.radbin_path))
-    else:
-        return ""
-
 
 def preparedir(target_dir, remove_content=True):
     """Prepare a folder for analysis.

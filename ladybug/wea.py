@@ -11,9 +11,9 @@ from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
 
-from .solarmodels import ashrae_revised_clear_sky
-from .solarmodels import ashrae_clear_sky
-from .solarmodels import zhang_huang_solar_model
+from .skymodel import ashrae_revised_clear_sky
+from .skymodel import ashrae_clear_sky
+from .skymodel import zhang_huang_solar_model
 
 import math
 try:
