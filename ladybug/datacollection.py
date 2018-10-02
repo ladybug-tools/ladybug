@@ -136,8 +136,13 @@ class DataCollection(object):
 
     @property
     def values(self):
-        """Return the list of values."""
+        """Return the list of data points."""
         return self._data
+
+    @property
+    def data(self):
+        """Return the list of values."""
+        return [x.value for x in self._data]
 
     def duplicate(self):
         """Duplicate current data list."""
