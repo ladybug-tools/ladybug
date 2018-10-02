@@ -9,6 +9,7 @@ from .sunpath import Sunpath
 
 from .skymodel import ashrae_revised_clear_sky
 from .skymodel import ashrae_clear_sky
+from .skymodel import energyplus_horizontal_infrared
 
 from .psychrometrics import rel_humid_from_db_dpt
 from .psychrometrics import dew_point_from_db_hr
@@ -594,6 +595,36 @@ class DesignDay(object):
 
         return dir_norm_collect, diff_horiz_collect, glob_horiz_collect
 
+    @property
+    def hourly_sky_cover_data(self):
+        """A data collection containing hourly sky cover values in tenths."""
+        date_times = self.hourly_datetimes
+        hourly_data = [DataPoint(
+            x, date_times[i], 'SI', 'Total Sky Cover')
+                       for i, x in enumerate(
+                           self._sky_condition.hourly_sky_cover)]
+        return self._get_daily_data_collections(
+            'Total Sky Cover', '', hourly_data)
+
+    @property
+    def hourly_horizontal_infrared_data(self):
+        """A data collection containing hourly horizontal infrared intensity in W/m2.
+        """
+        sky_cover = self._sky_condition.hourly_sky_cover
+        db_temp = self._dry_bulb_condition.hourly_values
+        dp_temp = self._humidity_condition.hourly_dew_point_values(
+            self._dry_bulb_condition)
+        horiz_ir = []
+        for i in range(len(sky_cover)):
+            horiz_ir.append(energyplus_horizontal_infrared(
+                sky_cover[i], db_temp[i], dp_temp[i]))
+        date_times = self.hourly_datetimes
+        hourly_data = [DataPoint(
+            x, date_times[i], 'SI', 'Horizontal Infrared Radiation Intensity')
+                       for i, x in enumerate(horiz_ir)]
+        return self._get_daily_data_collections(
+            'Horizontal Infrared Radiation Intensity', 'Wh/m2', hourly_data)
+
     def _get_daily_data_collections(self, data_type, unit, data=None):
         """Return an empty data collection.
         """
@@ -907,6 +938,12 @@ class SkyCondition(object):
             ' 1 and 31'.format(str(data))
         self._day_of_month = data
 
+    @property
+    def hourly_sky_cover(self):
+        """Lists of sky cover values in tenths.
+        """
+        return [0] * 24
+
     def _get_datetimes(self, timestep=1):
         """List of datetimes based on design day date and timestep."""
         start_moy = DateTime(self._month, self._day_of_month).moy
@@ -969,6 +1006,16 @@ class OriginalClearSkyCondition(SkyCondition):
         assert 0 <= data <= 1.2, 'clearness {} is not between' \
             ' 0 and 1.2'.format(str(data))
         self._clearness = data
+
+    @property
+    def hourly_sky_cover(self):
+        """Lists of sky cover values in tenths.
+        """
+        if self._clearness > 1:
+            cover = 0
+        else:
+            cover = (1 - self._clearness) * 10
+        return [cover] * 24
 
     def radiation_values(self, location, timestep=1):
         """Lists of driect normal, diffuse horiz, and global horiz rad at each timestep.
