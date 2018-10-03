@@ -42,7 +42,7 @@ class DataCollectionTestCase(unittest.TestCase):
         # dc_from_data_and_datetimes = \
         # DataCollection.from_data_and_datetimes([v1, v2], [dt1, dt2])
         assert dc1.datetimes == (dt1, dt2)
-        assert dc1.values == [v1, v2]
+        assert dc1.data == [v1, v2]
         assert dc1.average_data() == average
 
     def test_interpolation(self):

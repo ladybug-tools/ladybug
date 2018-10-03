@@ -272,7 +272,7 @@ class EPW(object):
                 for hour in xrange(0, 8760):
                     line = []
                     for field in range(0, self._num_of_fields):
-                        line.append(str(self._data[field].values[hour].value))
+                        line.append(str(self._data[field].data[hour].value))
                     lines.append(",".join(line) + "\n")
             except IndexError:
                 # cleaning up

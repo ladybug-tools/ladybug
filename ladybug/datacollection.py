@@ -58,7 +58,7 @@ class DataCollection(object):
                   analysis_period=None):
         """Create a data collection from a list.
 
-        lst items can be DataPoint or other values.
+        lst items can be DataPoint or numerical values.
 
         Args:
             lst: A list of data.
@@ -136,17 +136,17 @@ class DataCollection(object):
 
     @property
     def values(self):
-        """Return the list of data points."""
-        return self._data
+        """Return the list of numerical values."""
+        return [x.value for x in self._data]
 
     @property
     def data(self):
-        """Return the list of values."""
-        return [x.value for x in self._data]
+        """Return the list of data points."""
+        return self._data
 
     def duplicate(self):
         """Duplicate current data list."""
-        return DataCollection(self.values, self.header)
+        return DataCollection(self.data, self.header)
 
     @staticmethod
     def average(data):
@@ -156,7 +156,7 @@ class DataCollection(object):
 
     @staticmethod
     def group_data_by_month(data, month_range=xrange(1, 13)):
-        """Return a dictionary of values where values are grouped for each month.
+        """Return a dictionary of data points that are grouped for each month.
 
         Key values are between 1-12
 
@@ -179,7 +179,7 @@ class DataCollection(object):
 
     def group_by_month(self, month_range=xrange(1, 13)):
         """
-        Return a dictionary of values where values are grouped for each month.
+        Return a dictionary of data points that are grouped for each month.
 
         Key values are between 1-12
 
@@ -192,12 +192,12 @@ class DataCollection(object):
            monthly_values = epwfile.dry_bulb_temperature.group_by_month()
            print(monthly_values[2]) # returns values for the month of March
         """
-        return self.group_data_by_month(self.values, month_range)
+        return self.group_data_by_month(self.data, month_range)
 
     @staticmethod
     def group_data_by_day(data, day_range=xrange(1, 366)):
         """
-        Return a dictionary of values where values are grouped by each day of year.
+        Return a dictionary of data points that are grouped by each day of year.
 
         Key values are between 1-365
 
@@ -220,7 +220,7 @@ class DataCollection(object):
 
     def group_by_day(self, day_range=xrange(1, 366)):
         """
-        Return a dictionary of values where values are grouped by each day of year.
+        Return a dictionary of data points that are grouped by each day of year.
 
         Key values are between 1-365
 
@@ -234,11 +234,11 @@ class DataCollection(object):
             daily_values = epwfile.dry_bulb_temperature.group_by_day(range(1, 30))
             print(daily_values[2]) # returns values for the second day of year
         """
-        return self.group_data_by_day(self.values, day_range)
+        return self.group_data_by_day(self.data, day_range)
 
     @staticmethod
     def group_data_by_hour(data, hour_range=xrange(0, 24)):
-        """Return a dictionary of values where values are grouped by each hour of day.
+        """Return a dictionary of data points that are grouped by each hour of day.
 
         Key values are between 0-23
 
@@ -260,7 +260,7 @@ class DataCollection(object):
         return hourly_data_by_hour
 
     def group_by_hour(self, hour_range=xrange(0, 24)):
-        """Return a dictionary of values where values are grouped by each hour of day.
+        """Return a dictionary of dtat points that are grouped by each hour of day.
 
         Key values are between 0-23
 
@@ -278,7 +278,7 @@ class DataCollection(object):
                 print("average temperature values for hour {} during JAN is {} {}"
                       .format(hour, core._dataList.average(data), DBT.header.unit))
         """
-        return self.group_data_by_hour(self.values, hour_range)
+        return self.group_data_by_hour(self.data, hour_range)
 
     def update_data_for_hours_of_year(self, values, hours_of_year):
         """Update values new set of values for a list of hours of the year.
@@ -297,7 +297,7 @@ class DataCollection(object):
 
         # update values
         updated_count = 0
-        for data in self.values:
+        for data in self.data:
             try:
                 # find matching index for input data
                 index = hours_of_year.index(data.datetime.hoy)
@@ -358,7 +358,7 @@ class DataCollection(object):
             'Expected Boolean got {}'.format(type(cumulative))
 
         _minutes_step = int(60 / int(timestep / self.header.analysis_period.timestep))
-        _data_length = len(self.values)
+        _data_length = len(self.data)
         # generate new data
         _data = tuple(
             self[d].__class__(_v, self[d].datetime.add_minute(step * _minutes_step))
@@ -445,7 +445,7 @@ class DataCollection(object):
         """
         # There is no guarantee that data is continuous so I iterate through the
         # each data point one by one
-        _filtered_data = [d for d in self.values if d.datetime.moy in moys]
+        _filtered_data = [d for d in self.data if d.datetime.moy in moys]
 
         # create a new filtered_data
         if self.header:
@@ -508,7 +508,7 @@ class DataCollection(object):
         check_input_statement(statement)
 
         statement = statement.replace('x', 'd.value')
-        _filtered_data = [d for d in self.values if eval(statement)]
+        _filtered_data = [d for d in self.data if eval(statement)]
 
         # create a new filtered_data
         if self.header:
@@ -534,7 +534,7 @@ class DataCollection(object):
         except TypeError:
             raise ValueError("pattern should be a list of values.")
 
-        _filtered_data = [d for count, d in enumerate(self.values)
+        _filtered_data = [d for count, d in enumerate(self.data)
                           if pattern[count % _len]]
 
         # create a new filtered_data
@@ -560,11 +560,11 @@ class DataCollection(object):
 
     def average_data(self):
         """Return average value for data collection."""
-        return self.average(self.values)
+        return self.average(self.data)
 
     def average_monthly(self):
         """Return a dictionary of values for average values for available months."""
-        return self.average_data_monthly(self.values)
+        return self.average_data_monthly(self.data)
 
     def average_data_monthly_for_each_hour(self, data):
         """Calculate average value for each hour during each month.
@@ -592,7 +592,7 @@ class DataCollection(object):
 
         This method returns a dictionary with nested dictionaries for each hour
         """
-        return self.average_data_monthly_for_each_hour(self.values)
+        return self.average_data_monthly_for_each_hour(self.data)
 
     def __len__(self):
         return len(self._data)
