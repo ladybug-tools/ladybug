@@ -293,7 +293,7 @@ class DataCollection(object):
         if len(values) != len(hours_of_year):
             raise ValueError("Length of values %d is not equal to " +
                              "number of hours in analysis period %d" %
-                             (len(values), len(hours_of_year)))
+                             (str(len(values)), str(len(hours_of_year))))
 
         # update values
         updated_count = 0
