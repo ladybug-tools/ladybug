@@ -76,20 +76,13 @@ class EPW(object):
         Args:
             json_data: Data as a dictionary.
                 {
-                    "city": "-"
-                    "country": 0
-                    "source": 0
-                    "station_id": "-"
-                    "latitude": 0
-                    "longitude": 0
-                    "time_zone": 0
-                    "elevation": 0
+                    "location": {}
                     "data": [
                         data_collections
                     ]
                 }
         """
-        location = Location.from_json(data)
+        location = Location.from_json(data['location'])
         epw_data = [DataCollection.from_json(dc) for dc in data['data']]
         epw = cls()
         epw._location = location
@@ -329,14 +322,7 @@ class EPW(object):
 
     def to_json(self):
         return {
-            'city': self.location.city,
-            'country': self.location.country,
-            'source': self.location.source,
-            'station_id': self.location.station_id,
-            'latitude': self.location.latitude,
-            'longitude': self.location.longitude,
-            'time_zone': self.location.time_zone,
-            'elevation': self.location.elevation,
+            'location': self._location.to_json(),
             'data': [data.to_json() for data in self._data]
         }
 

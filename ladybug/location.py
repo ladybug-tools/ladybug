@@ -192,7 +192,9 @@ class Location(object):
               "latitude": 0,
               "longitude": 0,
               "time_zone": 0,
-              "elevation": 0
+              "elevation": 0,
+              "station_id": "-",
+              "source": "-"
             }
         """
         return {
@@ -201,7 +203,9 @@ class Location(object):
             "latitude": self.latitude,
             "longitude": self.longitude,
             "time_zone": self.time_zone,
-            "elevation": self.elevation
+            "elevation": self.elevation,
+            "station_id": self.station_id,
+            "source": self.source
         }
 
     def __repr__(self):

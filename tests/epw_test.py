@@ -51,6 +51,30 @@ class EPWTestCase(unittest.TestCase):
         """Test epw location."""
         pass
 
+    def test_to_and_from_json(self):
+        """Test json serialization and deserialization methods"""
+        path = './tests/epw/tokyo.epw'
+        self.maxDiff = None
+        epw = EPW(path)
+        epw._import_data()
+        json_epw = epw.to_json()
+        new_data = []
+
+        # shortening the json file to make it quicker to test
+        for collection in json_epw['data']:
+            new_collection = {
+                'header': collection['header'],
+                'data': collection['data'][0:30]
+            }
+            new_data.append(new_collection)
+
+        json_epw['data'] = new_data
+
+        epw_from_json = EPW.from_json(json_epw)
+        cloned_epw = epw_from_json.to_json()
+        # assert cmp(json_epw, cloned_epw) == 0
+        self.assertDictEqual(json_epw, cloned_epw)
+
 
 if __name__ == "__main__":
     unittest.main()

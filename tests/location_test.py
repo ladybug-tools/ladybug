@@ -109,7 +109,8 @@ class LocationTestCase(unittest.TestCase):
 
         assert loc.to_json() == {"city": city, "country": country, "latitude": latitude,
                                  "longitude": longitude, "time_zone": time_zone,
-                                 "elevation": elevation}
+                                 "elevation": elevation, "source": None,
+                                 "station_id": None}
 
         loc_from_json = Location.from_json(loc.to_json())
 
