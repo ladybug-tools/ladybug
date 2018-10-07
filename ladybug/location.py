@@ -56,9 +56,13 @@ class Location(object):
             d['time_zone'] = None
         if 'elevation' not in d:
             d['elevation'] = None
+        if 'station_id' not in d:
+            d['station_id'] = None
+        if 'source' not in d:
+            d['source'] = None
 
         return cls(d['city'], d['country'], d['latitude'], d['longitude'],
-                   d['time_zone'], d['elevation'])
+                   d['time_zone'], d['elevation'], d['station_id'], d['source'])
 
     @classmethod
     def from_location(cls, location):
