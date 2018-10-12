@@ -96,7 +96,7 @@ class DdyTestCase(unittest.TestCase):
         assert new_period.end_day == a_period.end_day
         assert new_period.end_hour == a_period.end_hour
 
-    def test_design_day_hourly_data_properties(self):
+    def test_design_day_hourly_data(self):
         """Test hourly data properties of a standard ddy."""
         location = Location('Test City', 'USA', 34.20, -118.35, -8, 226)
         a_period = AnalysisPeriod(8, 21, 0, 8, 21, 23)
@@ -105,38 +105,38 @@ class DdyTestCase(unittest.TestCase):
                                                        'Wetbulb', 20.5, 98639, 3.9, 170,
                                                        'ASHRAETau', [0.436, 2.106])
         # dry bulb values
-        db_data_collect = des_day.hourly_dry_bulb_data.values
+        db_data_collect = des_day.hourly_dry_bulb.values
         assert db_data_collect[5] == approx(23.6, rel=1e-1)
         assert db_data_collect[14] == approx(36.8, rel=1e-1)
 
         # dew point values
-        dpt_data_collect = des_day.hourly_dew_point_data.values
+        dpt_data_collect = des_day.hourly_dew_point.values
         assert dpt_data_collect[0] == approx(11.296, rel=1e-1)
         assert dpt_data_collect[-1] == approx(11.296, rel=1e-1)
 
         # relative humidity values
-        rh_data_collect = des_day.hourly_relative_humidity_data.values
+        rh_data_collect = des_day.hourly_relative_humidity.values
         assert rh_data_collect[5] == approx(45.896, rel=1e-1)
         assert rh_data_collect[14] == approx(21.508, rel=1e-1)
 
         # barometric pressure values
-        bp_data_collect = des_day.hourly_barometric_pressure_data.values
+        bp_data_collect = des_day.hourly_barometric_pressure.values
         assert bp_data_collect[0] == approx(98639, rel=1e-1)
         assert bp_data_collect[-1] == approx(98639, rel=1e-1)
 
         # wind speed values
-        ws_data_collect = des_day.hourly_wind_speed_data.values
+        ws_data_collect = des_day.hourly_wind_speed.values
         assert -0.1 < ws_data_collect[0] - 3.9 < 0.1
         assert -0.1 < ws_data_collect[-1] - 3.9 < 0.1
 
         # wind direction values
-        wd_data_collect = des_day.hourly_wind_direction_data.values
+        wd_data_collect = des_day.hourly_wind_direction.values
         assert wd_data_collect[0] == approx(170, rel=1e-1)
         assert wd_data_collect[-1] == approx(170, rel=1e-1)
 
         # radiation values
         direct_normal_rad, diffuse_horizontal_rad, global_horizontal_rad = \
-            des_day.hourly_solar_radiation_data
+            des_day.hourly_solar_radiation
         assert direct_normal_rad.values[0] == 0
         assert direct_normal_rad.values[11] == approx(891.46, rel=1e-1)
         assert diffuse_horizontal_rad.values[0] == 0
