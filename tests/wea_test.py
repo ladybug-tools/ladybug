@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import unittest
-from pytest import approx
+import pytest
 
 from ladybug.wea import Wea
 from ladybug.location import Location
@@ -48,13 +48,13 @@ class WeaTestCase(unittest.TestCase):
         assert wea_from_stat.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_stat.timestep == 1
         assert wea_from_stat.diffuse_horizontal_radiation[0].value == \
-            approx(0, rel=1e-3)
+            pytest.approx(0, rel=1e-3)
         assert wea_from_stat.direct_normal_radiation[0].value == \
-            approx(0, rel=1e-3)
+            pytest.approx(0, rel=1e-3)
         assert wea_from_stat.diffuse_horizontal_radiation[12].value == \
-            approx(87.44171, rel=1e-3)
+            pytest.approx(87.44171, rel=1e-3)
         assert wea_from_stat.direct_normal_radiation[12].value == \
-            approx(810.693919, rel=1e-3)
+            pytest.approx(810.693919, rel=1e-3)
 
     def test_from_clear_sky(self):
         """Test from original clear sky"""
@@ -65,13 +65,13 @@ class WeaTestCase(unittest.TestCase):
         assert wea_from_clear_sky.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_clear_sky.timestep == 1
         assert wea_from_clear_sky.diffuse_horizontal_radiation[0].value == \
-            approx(0, rel=1e-3)
+            pytest.approx(0, rel=1e-3)
         assert wea_from_clear_sky.direct_normal_radiation[0].value == \
-            approx(0, rel=1e-3)
+            pytest.approx(0, rel=1e-3)
         assert wea_from_clear_sky.diffuse_horizontal_radiation[12].value == \
-            approx(60.72258, rel=1e-3)
+            pytest.approx(60.72258, rel=1e-3)
         assert wea_from_clear_sky.direct_normal_radiation[12].value == \
-            approx(857.00439, rel=1e-3)
+            pytest.approx(857.00439, rel=1e-3)
 
     def test_from_zhang_huang(self):
         """Test from zhang huang solar model"""
@@ -87,9 +87,9 @@ class WeaTestCase(unittest.TestCase):
         assert wea_from_zh.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_zh.timestep == 1
         assert wea_from_zh.global_horizontal_radiation[0].value == \
-            approx(0, rel=1e-3)
+            pytest.approx(0, rel=1e-3)
         assert wea_from_zh.global_horizontal_radiation[12].value == \
-            approx(281.97887, rel=1e-3)
+            pytest.approx(281.97887, rel=1e-3)
         # TODO: Add checks for direct normal and diffuse once perez split is finished
 
     def test_json_methods(self):
@@ -133,7 +133,7 @@ class WeaTestCase(unittest.TestCase):
         direct_horiz_rad = wea_from_stat.direct_horizontal_radiation
         glob_horiz_rad = wea_from_stat.global_horizontal_radiation
 
-        assert [x.value for x in glob_horiz_rad] == approx(
+        assert [x.value for x in glob_horiz_rad] == pytest.approx(
             [x + y for x, y in zip(diffuse_horiz_rad, direct_horiz_rad)], rel=1e-3)
 
     def test_directional_radiation(self):
@@ -147,13 +147,13 @@ class WeaTestCase(unittest.TestCase):
         direct_horiz_rad = wea_from_stat.direct_horizontal_radiation
         glob_horiz_rad = wea_from_stat.global_horizontal_radiation
 
-        assert [x.value for x in srf_total] == approx(
+        assert [x.value for x in srf_total] == pytest.approx(
             [x.value for x in glob_horiz_rad], rel=1e-3)
-        assert [x.value for x in srf_direct] == approx(
+        assert [x.value for x in srf_direct] == pytest.approx(
             [x.value for x in direct_horiz_rad], rel=1e-3)
-        assert [x.value for x in srf_diffuse] == approx(
+        assert [x.value for x in srf_diffuse] == pytest.approx(
             [x.value for x in diffuse_horiz_rad], rel=1e-3)
-        assert [x.value for x in srf_reflect] == approx(
+        assert [x.value for x in srf_reflect] == pytest.approx(
             [0] * 8760, rel=1e-3)
 
     def test_leap_year(self):
