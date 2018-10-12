@@ -60,7 +60,7 @@ class Stat(object):
         self._monthly_tau_diffuse = []
 
         # import the data from the file
-        self.import_data()
+        self._import_data()
 
     @property
     def file_path(self):
@@ -91,7 +91,7 @@ class Stat(object):
         self._folder, self._file_name = os.path.split(self.file_path)
 
     # TODO: import extreme and seasonal weeks
-    def import_data(self):
+    def _import_data(self):
         """Import data from a stat file.
         """
         # set default state to ironpython for very old ironpython (2.7.0)

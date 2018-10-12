@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import unittest
+from pytest import approx
 import os
 from ladybug.stat import Stat
 from ladybug.designday import Ddy
@@ -41,8 +42,8 @@ class StatTestCase(unittest.TestCase):
         assert stat.location.country == 'JPN'
         assert stat.location.source == 'IWEC Data'
         assert stat.location.station_id == '477150'
-        assert stat.location.latitude - 36.18 < 0.1
-        assert stat.location.longitude - 140.42 < 0.1
+        assert stat.location.latitude == approx(36.18, rel=1e-1)
+        assert stat.location.longitude == approx(140.42, rel=1e-1)
         assert stat.location.time_zone == 9
         assert stat.location.elevation == 35
 

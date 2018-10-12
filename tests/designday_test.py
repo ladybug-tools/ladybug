@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import unittest
+from pytest import approx
 import os
 from ladybug.location import Location
 from ladybug.analysisperiod import AnalysisPeriod
@@ -50,8 +51,8 @@ class DdyTestCase(unittest.TestCase):
 
         # Test accuracy of import
         assert ddy.location.city == 'TOKYO HYAKURI_JPN Design_Conditions'
-        assert -0.1 < ddy.location.latitude - 36.18 < 0.1
-        assert -0.1 < ddy.location.longitude - 140.42 < 0.1
+        assert ddy.location.latitude == approx(36.18, rel=1e-1)
+        assert ddy.location.longitude == approx(140.42, rel=1e-1)
         assert ddy.location.time_zone == 9
         assert ddy.location.elevation == 35
 
@@ -68,8 +69,8 @@ class DdyTestCase(unittest.TestCase):
 
         # Test accuracy of import
         assert ddy.location.city == 'Chicago Ohare Intl Ap'
-        assert -0.1 < ddy.location.latitude - 41.96 < 0.1
-        assert -0.1 < ddy.location.longitude + 87.92 < 0.1
+        assert ddy.location.latitude == approx(41.96, rel=1e-1)
+        assert ddy.location.longitude == approx(-87.92, rel=1e-1)
         assert ddy.location.time_zone == -6
         assert ddy.location.elevation == 201
 
@@ -105,23 +106,23 @@ class DdyTestCase(unittest.TestCase):
                                                        'ASHRAETau', [0.436, 2.106])
         # dry bulb values
         db_data_collect = des_day.hourly_dry_bulb_data.values
-        assert -0.1 < db_data_collect[5] - 23.6 < 0.1
-        assert -0.1 < db_data_collect[14] - 36.8 < 0.1
+        assert db_data_collect[5] == approx(23.6, rel=1e-1)
+        assert db_data_collect[14] == approx(36.8, rel=1e-1)
 
         # dew point values
         dpt_data_collect = des_day.hourly_dew_point_data.values
-        assert -0.1 < dpt_data_collect[0] - 11.296 < 0.1
-        assert -0.1 < dpt_data_collect[-1] - 11.296 < 0.1
+        assert dpt_data_collect[0] == approx(11.296, rel=1e-1)
+        assert dpt_data_collect[-1] == approx(11.296, rel=1e-1)
 
         # relative humidity values
         rh_data_collect = des_day.hourly_relative_humidity_data.values
-        assert -0.1 < rh_data_collect[5] - 45.896 < 0.1
-        assert -0.1 < rh_data_collect[14] - 21.508 < 0.1
+        assert rh_data_collect[5] == approx(45.896, rel=1e-1)
+        assert rh_data_collect[14] == approx(21.508, rel=1e-1)
 
         # barometric pressure values
         bp_data_collect = des_day.hourly_barometric_pressure_data.values
-        assert -1 < bp_data_collect[0] - 98639 < 1
-        assert -1 < bp_data_collect[-1] - 98639 < 1
+        assert bp_data_collect[0] == approx(98639, rel=1e-1)
+        assert bp_data_collect[-1] == approx(98639, rel=1e-1)
 
         # wind speed values
         ws_data_collect = des_day.hourly_wind_speed_data.values
@@ -130,18 +131,18 @@ class DdyTestCase(unittest.TestCase):
 
         # wind direction values
         wd_data_collect = des_day.hourly_wind_direction_data.values
-        assert -0.1 < wd_data_collect[0] - 170 < 0.1
-        assert -0.1 < wd_data_collect[-1] - 170 < 0.1
+        assert wd_data_collect[0] == approx(170, rel=1e-1)
+        assert wd_data_collect[-1] == approx(170, rel=1e-1)
 
         # radiation values
         direct_normal_rad, diffuse_horizontal_rad, global_horizontal_rad = \
             des_day.hourly_solar_radiation_data
         assert direct_normal_rad.values[0] == 0
-        assert -0.1 < direct_normal_rad.values[11] - 891.46 < 0.1
+        assert direct_normal_rad.values[11] == approx(891.46, rel=1e-1)
         assert diffuse_horizontal_rad.values[0] == 0
-        assert -0.1 < diffuse_horizontal_rad.values[11] - 165.32 < 0.1
+        assert diffuse_horizontal_rad.values[11] == approx(165.32, rel=1e-1)
         assert global_horizontal_rad.values[0] == 0
-        assert -0.1 < global_horizontal_rad.values[11] - 985.05 < 0.1
+        assert global_horizontal_rad.values[11] == approx(985.05, rel=1e-1)
 
 
 if __name__ == "__main__":
