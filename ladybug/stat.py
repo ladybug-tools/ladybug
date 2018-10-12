@@ -11,12 +11,6 @@ import re
 import codecs
 import platform
 
-months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
-          'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-wind_dirs = [0, 45, 90, 135, 180, 225, 270, 315]
-wind_dir_names = ['North', 'NorthEast', 'East', 'SouthEast', 'South',
-                  'SouthWest', 'West', 'NorthWest']
-
 
 class Stat(object):
     """Import data from a local .stat file.
@@ -114,6 +108,7 @@ class Stat(object):
             line = statwin.readline()
             # import header with location
             self._header = [line] + [statwin.readline() for i in range(9)]
+            #self._body = statwin.read()
         except Exception as e:
             import traceback
             raise Exception('{}\n{}'.format(e, traceback.format_exc()))
@@ -161,10 +156,7 @@ class Stat(object):
             self._location.time_zone = time_zone
             self._location.elevation = elevation
 
-            # move through the document and pull out:
-            # The tau values for the sky model
-            # The monthly temperatures (for design days)
-            # The climate zone
+            # Pull out relevant information from the body of the document
             winter_des_section = False
             summer_des_section = False
             wind_spd_section = False
@@ -238,7 +230,7 @@ class Stat(object):
                     wind_dir_section += 1
                 elif wind_dir_section > -1 and 'Jan' not in line:
                     self._monthly_wind_dirs.append(self._split_monthly_row(
-                        line, wind_dir_names[wind_dir_section]))
+                        line, self._wind_dir_names[wind_dir_section]))
                     wind_dir_section += 1
                     if wind_dir_section == 8:
                         wind_dir_section = -1
@@ -386,7 +378,7 @@ class Stat(object):
         ws_conds = self.monthly_wind_conditions
         sky_conds = self.monthly_clear_sky_conditions
         return [DesignDay(
-            '5% Cooling Design Day for {}'.format(months[i]), 'SummerDesignDay',
+            '5% Cooling Design Day for {}'.format(self._months[i]), 'SummerDesignDay',
             self._location, db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
                        for i in range(12)]
 
@@ -401,7 +393,7 @@ class Stat(object):
         ws_conds = self.monthly_wind_conditions
         sky_conds = self.monthly_clear_sky_conditions
         return [DesignDay(
-            '10% Cooling Design Day for {}'.format(months[i]), 'SummerDesignDay',
+            '10% Cooling Design Day for {}'.format(self._months[i]), 'SummerDesignDay',
             self._location, db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
                        for i in range(12)]
 
@@ -416,7 +408,7 @@ class Stat(object):
         ws_conds = self.monthly_wind_conditions
         sky_conds = self.monthly_clear_sky_conditions
         return [DesignDay(
-            '2% Cooling Design Day for {}'.format(months[i]), 'SummerDesignDay',
+            '2% Cooling Design Day for {}'.format(self._months[i]), 'SummerDesignDay',
             self._location, db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
                        for i in range(12)]
 
@@ -431,7 +423,7 @@ class Stat(object):
         ws_conds = self.monthly_wind_conditions
         sky_conds = self.monthly_clear_sky_conditions
         return [DesignDay(
-            '0.4% Cooling Design Day for {}'.format(months[i]), 'SummerDesignDay',
+            '0.4% Cooling Design Day for {}'.format(self._months[i]), 'SummerDesignDay',
             self._location, db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
                        for i in range(12)]
 
@@ -483,7 +475,7 @@ class Stat(object):
         """A list of prevailing wind directions for each month.
         """
         mwd = zip(*self._monthly_wind_dirs)
-        return [wind_dirs[mon.index(max(mon))] for mon in mwd]
+        return [self._wind_dirs[mon.index(max(mon))] for mon in mwd]
 
     @property
     def monthly_clear_sky_conditions(self):
@@ -513,6 +505,20 @@ class Stat(object):
         HVAC systems.
         """
         return self._monthly_tau_diffuse
+
+    @property
+    def _months(self):
+        return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+                'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+    @property
+    def _wind_dirs(self):
+        return [0, 45, 90, 135, 180, 225, 270, 315]
+
+    @property
+    def _wind_dir_names(self):
+        return ['North', 'NorthEast', 'East', 'SouthEast', 'South',
+                'SouthWest', 'West', 'NorthWest']
 
     @property
     def isStat(self):

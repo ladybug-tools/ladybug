@@ -386,7 +386,7 @@ class DesignDay(object):
 
         # put everything together into one string
         comented_str = ['  {},{}{}\n'.format(
-            str(val), ' ' * (60 - len(str(val))), self.comments[i])
+            str(val), ' ' * (60 - len(str(val))), self._comments[i])
                         for i, val in enumerate(ep_vals)]
         comented_str[-1] = comented_str[-1].replace(',', ';')
         comented_str.insert(0, 'SizingPeriod:DesignDay,\n')
@@ -626,7 +626,7 @@ class DesignDay(object):
                 'CustomDay1', 'CustomDay2')
 
     @property
-    def comments(self):
+    def _comments(self):
         """Comments that go along with the EP string representation of the design day."""
         return ('!- Name',
                 '!- Month',
@@ -795,7 +795,7 @@ class HumidityCondition(object):
     @property
     def hourly_pressure(self):
         """A list of barometric pressures for each hour over the design day."""
-        return [self._barometric_pressure for x in range(24)]
+        return [self._barometric_pressure] * 24
 
     @property
     def hum_type(self):
@@ -860,7 +860,7 @@ class WindCondition(object):
         snow_on_ground
     """
     def __init__(self, wind_speed, wind_direction=0,
-                 rain='No', snow_on_ground='No'):
+                 rain=False, snow_on_ground=False):
         """Initalize the class."""
         self.wind_speed = wind_speed
         self.wind_direction = wind_direction
@@ -870,12 +870,12 @@ class WindCondition(object):
     @property
     def hourly_values(self):
         """A list of wind speed values for each hour over the design day."""
-        return [self._wind_speed for i in range(24)]
+        return [self._wind_speed] * 24
 
     @property
     def hourly_wind_dirs(self):
         """A list of wind directions for each hour over the design day."""
-        return [self._wind_direction for i in range(24)]
+        return [self._wind_direction] * 24
 
     @property
     def wind_speed(self):
@@ -900,6 +900,40 @@ class WindCondition(object):
         assert 0 <= data <= 360, 'wind_direction {} is not between' \
             ' 0 and 360'.format(data)
         self._wind_direction = data
+
+    @property
+    def rain(self):
+        """Get or set the presence of rain."""
+        return self._rain
+
+    @rain.setter
+    def rain(self, data):
+        if isinstance(data, bool):
+            if data is True:
+                data = 'Yes'
+            else:
+                data = 'No'
+        else:
+            assert isinstance(data, str), 'rain must be a' \
+                ' boolean or a "Yes" or "No" string. Got {}'.format(type(data))
+        self._rain = data
+
+    @property
+    def snow_on_ground(self):
+        """Get or set the presence of snow on the ground."""
+        return self._snow_on_ground
+
+    @snow_on_ground.setter
+    def snow_on_ground(self, data):
+        if isinstance(data, bool):
+            if data is True:
+                data = 'Yes'
+            else:
+                data = 'No'
+        else:
+            assert isinstance(data, str), 'snow_on_ground must be a' \
+                ' boolean or a "Yes" or "No" string. Got {}'.format(type(data))
+        self._snow_on_ground = data
 
     @property
     def isWindCondition(self):
