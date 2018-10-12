@@ -385,16 +385,14 @@ class DesignDay(object):
             ep_vals.pop()
 
         # put everything together into one string
-        ep_string = ' SizingPeriod:DesignDay,\n'
-        separator = ','
-        for i, val in enumerate(ep_vals):
-            if i == len(ep_vals) - 1:
-                separator = ';'
-            spacer = ' ' * (60 - len(str(val)))
-            ep_string = ep_string + '  ' + str(val) + separator + \
-                spacer + self.comments[i] + '\n'
+        comented_str = ['  {},{}{}\n'.format(
+            str(val), ' ' * (60 - len(str(val))), self.comments[i])
+                        for i, val in enumerate(ep_vals)]
+        comented_str[-1] = comented_str[-1].replace(',', ';')
+        comented_str.insert(0, 'SizingPeriod:DesignDay,\n')
+        comented_str.append('\n')
 
-        return ep_string
+        return ''.join(comented_str)
 
     @property
     def name(self):

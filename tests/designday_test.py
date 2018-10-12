@@ -43,6 +43,13 @@ class DdyTestCase(unittest.TestCase):
         assert ddy.location == new_ddy.location
         assert ddy.design_days[0] == new_ddy.design_days[0]
 
+    def test_write_ddy(self):
+        """Test write ddy."""
+        relative_path = './tests/ddy/chicago.ddy'
+        ddy = Ddy.from_ddy_file(relative_path)
+        new_file_name = 'chicago_edited.ddy'
+        ddy.save(new_file_name)
+
     def test_standard_ddy_properties(self):
         """Test properties of a standard ddy."""
         relative_path = './tests/ddy/tokyo.ddy'
