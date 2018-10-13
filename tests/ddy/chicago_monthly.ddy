@@ -5,7 +5,7 @@ Site:Location,
   -6.0,     !Time Zone
   201.0;       !Elevation
 
- SizingPeriod:DesignDay,
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Jan,                               !- Name
   1,                                                           !- Month
   21,                                                          !- Day of Month
@@ -22,7 +22,7 @@ Site:Location,
   ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
   98934.0,                                                     !- Barometric Pressure [Pa]
   4.9,                                                         !- Wind Speed {m/s}
-  315,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  270,                                                         !- Wind Direction [Degrees; N=0, S=180]
   No,                                                          !- Rain [Yes/No]
   No,                                                          !- Snow on ground [Yes/No]
   No,                                                          !- Daylight Savings Time Indicator
@@ -33,7 +33,8 @@ Site:Location,
   2.364;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Feb,                               !- Name
   2,                                                           !- Month
   21,                                                          !- Day of Month
@@ -50,7 +51,7 @@ Site:Location,
   ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
   98934.0,                                                     !- Barometric Pressure [Pa]
   5.1,                                                         !- Wind Speed {m/s}
-  270,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  225,                                                         !- Wind Direction [Degrees; N=0, S=180]
   No,                                                          !- Rain [Yes/No]
   No,                                                          !- Snow on ground [Yes/No]
   No,                                                          !- Daylight Savings Time Indicator
@@ -61,7 +62,8 @@ Site:Location,
   2.149;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Mar,                               !- Name
   3,                                                           !- Month
   21,                                                          !- Day of Month
@@ -78,7 +80,7 @@ Site:Location,
   ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
   98934.0,                                                     !- Barometric Pressure [Pa]
   5.5,                                                         !- Wind Speed {m/s}
-  270,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  45,                                                          !- Wind Direction [Degrees; N=0, S=180]
   No,                                                          !- Rain [Yes/No]
   No,                                                          !- Snow on ground [Yes/No]
   No,                                                          !- Daylight Savings Time Indicator
@@ -89,7 +91,8 @@ Site:Location,
   2.03;                                                        !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Apr,                               !- Name
   4,                                                           !- Month
   21,                                                          !- Day of Month
@@ -117,7 +120,8 @@ Site:Location,
   1.998;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for May,                               !- Name
   5,                                                           !- Month
   21,                                                          !- Day of Month
@@ -145,7 +149,8 @@ Site:Location,
   1.999;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Jun,                               !- Name
   6,                                                           !- Month
   21,                                                          !- Day of Month
@@ -173,7 +178,8 @@ Site:Location,
   2.001;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Jul,                               !- Name
   7,                                                           !- Month
   21,                                                          !- Day of Month
@@ -201,7 +207,8 @@ Site:Location,
   2.05;                                                        !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Aug,                               !- Name
   8,                                                           !- Month
   21,                                                          !- Day of Month
@@ -229,7 +236,8 @@ Site:Location,
   2.048;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Sep,                               !- Name
   9,                                                           !- Month
   21,                                                          !- Day of Month
@@ -257,7 +265,8 @@ Site:Location,
   2.146;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Oct,                               !- Name
   10,                                                          !- Month
   21,                                                          !- Day of Month
@@ -285,7 +294,8 @@ Site:Location,
   2.259;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Nov,                               !- Name
   11,                                                          !- Month
   21,                                                          !- Day of Month
@@ -313,7 +323,8 @@ Site:Location,
   2.303;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
 
 
- SizingPeriod:DesignDay,
+
+SizingPeriod:DesignDay,
   5% Cooling Design Day for Dec,                               !- Name
   12,                                                          !- Month
   21,                                                          !- Day of Month
@@ -330,7 +341,7 @@ Site:Location,
   ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
   98934.0,                                                     !- Barometric Pressure [Pa]
   4.3,                                                         !- Wind Speed {m/s}
-  315,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  270,                                                         !- Wind Direction [Degrees; N=0, S=180]
   No,                                                          !- Rain [Yes/No]
   No,                                                          !- Snow on ground [Yes/No]
   No,                                                          !- Daylight Savings Time Indicator
@@ -339,5 +350,6 @@ Site:Location,
   ,                                                            !- Diffuse Solar Day Schedule Name
   0.307,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
   2.388;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
 
 

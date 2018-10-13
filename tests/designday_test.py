@@ -33,7 +33,6 @@ class DdyTestCase(unittest.TestCase):
         # Test imports don't break
         assert ddy.file_path == abs_path
         assert ddy_rel.file_path == os.path.normpath(relative_path)
-        assert ddy.file_name == 'chicago.ddy'
 
     def test_ddy_from_design_day(self):
         """Test ddy from design day method."""
@@ -47,8 +46,8 @@ class DdyTestCase(unittest.TestCase):
         """Test write ddy."""
         relative_path = './tests/ddy/chicago.ddy'
         ddy = DDY.from_ddy_file(relative_path)
-        new_file_name = 'chicago_edited.ddy'
-        ddy.save(new_file_name)
+        new_file_path = './tests/ddy/chicago_edited.ddy'
+        ddy.save(new_file_path)
 
     def test_standard_ddy_properties(self):
         """Test properties of a standard ddy."""

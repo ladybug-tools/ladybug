@@ -123,10 +123,9 @@ class StatTestCase(unittest.TestCase):
         assert len(m_ddy_050) == len(m_ddy_100) == len(m_ddy_020) == \
             len(m_ddy_004) == 12
 
-        ddy_path = './tests/ddy'
-        ddy_name = 'chicago_monthly.ddy'
+        ddy_path = './tests/ddy/chicago_monthly.ddy'
         monthly_ddy = DDY(stat.location, m_ddy_050)
-        monthly_ddy.save(ddy_path, ddy_name)
+        monthly_ddy.save(ddy_path)
 
 
 if __name__ == "__main__":

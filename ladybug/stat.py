@@ -36,8 +36,8 @@ class STAT(object):
         self._stand_press_at_elev = None
         self._ashrae_climate_zone = None
         self._koppen_climate_zone = None
-        self._winter_des_day_dict = None
-        self._summer_des_day_dict = None
+        self._winter_des_day_dict = {}
+        self._summer_des_day_dict = {}
         self._monthly_db_04 = []
         self._monthly_wb_04 = []
         self._monthly_db_20 = []
@@ -108,7 +108,7 @@ class STAT(object):
             line = statwin.readline()
             # import header with location
             self._header = [line] + [statwin.readline() for i in range(9)]
-            #self._body = statwin.read()
+            self._body = statwin.read()
         except Exception as e:
             import traceback
             raise Exception('{}\n{}'.format(e, traceback.format_exc()))
@@ -156,98 +156,56 @@ class STAT(object):
             self._location.time_zone = time_zone
             self._location.elevation = elevation
 
-            # Pull out relevant information from the body of the document
-            winter_des_section = False
-            summer_des_section = False
-            wind_spd_section = False
-            wind_dir_section = -1
-            for line in statwin:
-                if 'taub (beam)' in line:
-                    self._monthly_tau_beam = self._split_monthly_row(
-                        line, 'taub (beam)')
-                elif 'taud (diffuse)' in line:
-                    self._monthly_tau_diffuse = self._split_monthly_row(
-                        line, 'taud (diffuse)')
-                elif 'Design Stat	Coldest' in line:
-                    winter_des_section = True
-                    winter_keys = self._split_des_day_row(
-                        line, 'Design Stat	Coldest')
-                elif winter_des_section is True and 'Heating' in line:
-                    winter_des_section = False
-                    winter_vals = self._split_des_day_row(
-                        line, 'Heating')
-                    self._winter_des_day_dict = {}
-                    for key, val in zip(winter_keys, winter_vals):
-                        self._winter_des_day_dict[key] = val
-                elif 'Design Stat	Hottest' in line:
-                    summer_des_section = True
-                    summer_keys = self._split_des_day_row(
-                        line, 'Design Stat	Hottest')
-                elif summer_des_section is True and 'Cooling' in line:
-                    summer_des_section = False
-                    summer_vals = self._split_des_day_row(
-                        line, 'Cooling')
-                    self._summer_des_day_dict = {}
-                    for key, val in zip(summer_keys, summer_vals):
-                        self._summer_des_day_dict[key] = val
-                elif 'Drybulb 5.0%' in line and '=' not in line:
-                    self._monthly_db_50 = self._split_monthly_row(
-                        line, 'Drybulb 5.0%')
-                elif 'Coincident Wetbulb 5.0%' in line and '=' not in line:
-                    self._monthly_wb_50 = self._split_monthly_row(
-                        line, 'Coincident Wetbulb 5.0%')
-                elif 'Drybulb 10.%' in line and '=' not in line:
-                    self._monthly_db_100 = self._split_monthly_row(
-                        line, 'Drybulb 10.%')
-                elif 'Coincident Wetbulb 10.%' in line and '=' not in line:
-                    self._monthly_wb_100 = self._split_monthly_row(
-                        line, 'Coincident Wetbulb 10.%')
-                elif 'Drybulb 2.0%' in line and '=' not in line:
-                    self._monthly_db_20 = self._split_monthly_row(
-                        line, 'Drybulb 2.0%')
-                elif 'Coincident Wetbulb 2.0%' in line and '=' not in line:
-                    self._monthly_wb_20 = self._split_monthly_row(
-                        line, 'Coincident Wetbulb 2.0%')
-                elif 'Drybulb 0.4%' in line and '=' not in line:
-                    self._monthly_db_04 = self._split_monthly_row(
-                        line, 'Drybulb 0.4%')
-                elif 'Coincident Wetbulb 0.4%' in line and '=' not in line:
-                    self._monthly_wb_04 = self._split_monthly_row(
-                        line, 'Coincident Wetbulb 0.4%')
-                elif 'Drybulb range - DB 5%' in line and '=' not in line:
-                    self._monthly_db_range_50 = self._split_monthly_row(
-                        line, 'Drybulb range - DB 5%')
-                elif 'Wetbulb range - DB 5%' in line and '=' not in line:
-                    self._monthly_wb_range_50 = self._split_monthly_row(
-                        line, 'Wetbulb range - DB 5%')
-                elif 'Monthly Statistics for Wind Speed m/s' in line:
-                    wind_spd_section = True
-                elif wind_spd_section is True and 'Daily Avg' in line:
-                    wind_spd_section = False
-                    self._monthly_wind = self._split_monthly_row(
-                        line, 'Daily Avg')
-                elif 'Monthly Wind Direction %' in line:
-                    wind_dir_section += 1
-                elif wind_dir_section > -1 and 'Jan' not in line:
-                    self._monthly_wind_dirs.append(self._split_monthly_row(
-                        line, self._wind_dir_names[wind_dir_section]))
-                    wind_dir_section += 1
-                    if wind_dir_section == 8:
-                        wind_dir_section = -1
-                elif 'Climate type' in line and 'ASHRAE' in line:
-                    self._ashrae_climate_zone = line.split('"')[1]
-                elif 'Climate type' in line:
-                    self._koppen_climate_zone = line.split('"')[1]
+            # Pull out climate zone classifications
+            a_clim_mat = re.compile(r'Climate type\s"(\S*)"\s\(A').findall(self._body)
+            if len(a_clim_mat) > 0:
+                self._ashrae_climate_zone = a_clim_mat[0]
+            k_clim_mat = re.compile(r'Climate type\s"(\S*)"\s\(K').findall(self._body)
+            if len(k_clim_mat) > 0:
+                self._koppen_climate_zone = k_clim_mat[0]
+
+            # Pull out annual design days
+            winter_keys = self._regex_parse(r"Design Stat	Coldest(.*)", False)
+            winter_vals = self._regex_parse(r"Heating(.*)")
+            for key, val in zip(winter_keys, winter_vals):
+                self._winter_des_day_dict[key] = val
+            summer_keys = self._regex_parse(r"Design Stat	Hottest(.*)", False)
+            summer_vals = self._regex_parse(r"Cooling(.*)")
+            for key, val in zip(summer_keys, summer_vals):
+                self._summer_des_day_dict[key] = val
+
+            # Pull out relevant monthly information
+            self._monthly_tau_beam = self._regex_parse(r"taub \(beam\)(.*)")
+            self._monthly_tau_diffuse = self._regex_parse(r"taud \(diffuse\)(.*)")
+            self._monthly_db_50 = self._regex_parse(r"Drybulb 5.0%(.*)")
+            self._monthly_wb_50 = self._regex_parse(r"Coincident Wetbulb 5.0%(.*)")
+            self._monthly_db_100 = self._regex_parse(r"Drybulb 10.%(.*)")
+            self._monthly_wb_100 = self._regex_parse(r"Coincident Wetbulb 10.%(.*)")
+            self._monthly_db_20 = self._regex_parse(r"Drybulb 2.0%(.*)")
+            self._monthly_wb_20 = self._regex_parse(r"Coincident Wetbulb 2.0%(.*)")
+            self._monthly_db_04 = self._regex_parse(r"Drybulb 0.4%(.*)")
+            self._monthly_wb_04 = self._regex_parse(r"Coincident Wetbulb 0.4%(.*)")
+            self._monthly_db_range_50 = self._regex_parse(r"Drybulb range - DB 5%(.*)")
+            self._monthly_wb_range_50 = self._regex_parse(r"Wetbulb range - DB 5%(.*)")
+            self._monthly_wind = self._regex_parse(
+                r"Monthly Statistics for Wind Speed[\s\S]*Daily Avg(.*)")
+            for direction in self._wind_dir_names:
+                re_string = r"Monthly Wind Direction %[\s\S]*" + direction + r"\s(.*)"
+                self._monthly_wind_dirs.append(self._regex_parse(re_string))
         finally:
             statwin.close()
-        self._is_data_loaded = True
 
-    def _split_des_day_row(self, row, text):
-        return row.replace(text, '').strip().split('\t')
-
-    def _split_monthly_row(self, row, text):
-        raw_txt = row.replace(text, '').strip().split('\t')
-        return [float(i) if 'N' not in i else None for i in raw_txt]
+    def _regex_parse(self, regex_str, numbr=True):
+        pattern = re.compile(regex_str)
+        matches = pattern.findall(self._body)
+        if len(matches) > 0:
+            raw_txt = matches[0].strip().split('\t')
+            if numbr is True:
+                return [float(i) if 'N' not in i else None for i in raw_txt]
+            else:
+                return [str(i) for i in raw_txt]
+        else:
+            return []
 
     @property
     def header(self):
@@ -319,7 +277,7 @@ class STAT(object):
     def annual_heating_design_day_996(self):
         """A design day object representing the annual 99.6% heating design day.
         """
-        if self._winter_des_day_dict is None:
+        if self._winter_des_day_dict == {}:
             return None
         else:
             db_cond, hu_cond, ws_cond, sky_cond = self._winter_des_day_conds(
@@ -332,7 +290,7 @@ class STAT(object):
     def annual_heating_design_day_990(self):
         """A design day object representing the annual 99.0% heating design day.
         """
-        if self._winter_des_day_dict is None:
+        if self._winter_des_day_dict == {}:
             return None
         else:
             db_cond, hu_cond, ws_cond, sky_cond = self._winter_des_day_conds(
@@ -345,7 +303,7 @@ class STAT(object):
     def annual_cooling_design_day_004(self):
         """A design day object representing the annual 0.4% cooling design day.
         """
-        if self._summer_des_day_dict is None:
+        if self._summer_des_day_dict == {}:
             return None
         else:
             db_cond, hu_cond, ws_cond, sky_cond = self._summer_des_day_conds(
@@ -358,7 +316,7 @@ class STAT(object):
     def annual_cooling_design_day_010(self):
         """A design day object representing the annual 1.0% cooling design day.
         """
-        if self._summer_des_day_dict is None:
+        if self._summer_des_day_dict == {}:
             return None
         else:
             db_cond, hu_cond, ws_cond, sky_cond = self._summer_des_day_conds(
