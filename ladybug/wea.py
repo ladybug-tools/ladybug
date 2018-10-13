@@ -1,7 +1,7 @@
 # coding=utf-8
 """Wea weather file."""
 from .epw import EPW
-from .stat import Stat
+from .stat import STAT
 from .location import Location
 from .dt import DateTime
 from .header import Header
@@ -149,7 +149,7 @@ class Wea(object):
             is_leap_year: A boolean to indicate if values are representing a leap year.
                 Default is False.
         """
-        stat = Stat(statfile)
+        stat = STAT(statfile)
 
         # check to be sure the stat file does not have missing tau values
         def check_missing(opt_data, data_name):
