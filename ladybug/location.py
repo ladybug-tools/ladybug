@@ -86,9 +86,8 @@ class Location(object):
 
             elif location.startswith('Site:'):
                 loc, city, latitude, longitude, time_zone, elevation = \
-                    re.findall(r'\r*\n*([a-zA-Z0-9.:_-]*)[,|;]',
-                               location,
-                               re.DOTALL)
+                    [x.strip() for x in re.findall(r'\r*\n*([^\r\n]*)[,|;]',
+                                                   location, re.DOTALL)]
             else:
                 try:
                     city, latitude, longitude, time_zone, elevation = \
@@ -166,11 +165,11 @@ class Location(object):
     @property
     def ep_style_location_string(self):
         """Return EnergyPlus's location string."""
-        return "Site:Location,\n" + \
-            self.city + ',\n' + \
-            str(self.latitude) + ',      !Latitude\n' + \
-            str(self.longitude) + ',     !Longitude\n' + \
-            str(self.time_zone) + ',     !Time Zone\n' + \
+        return "Site:Location,\n  " + \
+            self.city + ',\n  ' + \
+            str(self.latitude) + ',      !Latitude\n  ' + \
+            str(self.longitude) + ',     !Longitude\n  ' + \
+            str(self.time_zone) + ',     !Time Zone\n  ' + \
             str(self.elevation) + ';       !Elevation'
 
     def __str__(self):

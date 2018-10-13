@@ -1,11 +1,11 @@
 """PMV Comfort object."""
 import math
 from collections import Iterable
-from .comfortBase import ComfortModel
-from ..psychrometrics import find_humid_ratio
-from ..psychrometrics import find_saturated_vapor_pressure_torr
-from ..rootFinding import secant
-from ..rootFinding import bisect
+from .comfortmodel import ComfortModel
+from ..psychrometrics import humid_ratio_from_db_rh
+from ..psychrometrics import saturated_vapor_pressure_torr
+from ..rootfind import secant
+from ..rootfind import bisect
 from ..listoperations import duplicate
 from ..epw import EPW
 
@@ -628,7 +628,7 @@ class PMV(ComfortModel):
         """
 
         # Key initial variables.
-        vapor_pressure = (rh * find_saturated_vapor_pressure_torr(ta)) / 100
+        vapor_pressure = (rh * saturated_vapor_pressure_torr(ta)) / 100
         air_velocity = max(vel, 0.1)
         kclo = 0.25
         bodyweight = 69.9
@@ -740,7 +740,7 @@ class PMV(ComfortModel):
             ersw = 0.68 * regsw
             rea = 1.0 / (LR * facl * chc)  # evaporative resistance of air layer
             recl = rcl / (LR * icl)  # evaporative resistance of clothing (icl=.45)
-            emax = (find_saturated_vapor_pressure_torr(
+            emax = (saturated_vapor_pressure_torr(
                 temp_skin) - vapor_pressure) / (rea + recl)
             prsw = ersw / emax
             pwet = 0.06 + 0.94 * prsw
@@ -771,7 +771,7 @@ class PMV(ComfortModel):
             ecomf = 0.0  # from Fanger
         emax = emax * wcrit
         W = pwet
-        pssk = find_saturated_vapor_pressure_torr(temp_skin)
+        pssk = saturated_vapor_pressure_torr(temp_skin)
         # Definition of ASHRAE standard environment... denoted "S"
         chrS = chr
         if met < 0.85:
@@ -803,9 +803,9 @@ class PMV(ComfortModel):
         x_old = temp_skin - hsk / hd_s  # lower bound for SET
         while abs(dx) > .01:
             err1 = (hsk - hd_s * (temp_skin - x_old) - W * he_s *
-                    (pssk - 0.5 * find_saturated_vapor_pressure_torr(x_old)))
+                    (pssk - 0.5 * saturated_vapor_pressure_torr(x_old)))
             err2 = (hsk - hd_s * (temp_skin - (x_old + delta)) - W * he_s *
-                    (pssk - 0.5 * find_saturated_vapor_pressure_torr((x_old + delta))))
+                    (pssk - 0.5 * saturated_vapor_pressure_torr((x_old + delta))))
             x = x_old - delta * err1 / (err2 - err1)
             dx = x - x_old
             x_old = x
@@ -921,7 +921,7 @@ class PMV(ComfortModel):
             self.__coolingEffect.append(pmv_result['ce'])
 
             # determine whether conditions meet the comfort criteria.
-            HR, vapPress, satPress = find_humid_ratio(
+            HR = humid_ratio_from_db_rh(
                 self.__air_temperature[i], self.__rel_humidity[i])
             if pmv_result['ppd'] > self.__ppd_comfort_thresh:
                 self.__isComfortable.append(0)

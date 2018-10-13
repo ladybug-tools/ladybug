@@ -1,0 +1,355 @@
+Site:Location,
+  Chicago Ohare Intl Ap,
+  41.9666666667,      !Latitude
+  -87.9166666667,     !Longitude
+  -6.0,     !Time Zone
+  201.0;       !Elevation
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Jan,                               !- Name
+  1,                                                           !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  5.6,                                                         !- Max Dry-Bulb Temp [C]
+  9.0,                                                         !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  3.9,                                                         !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  4.9,                                                         !- Wind Speed {m/s}
+  270,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.302,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.364;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Feb,                               !- Name
+  2,                                                           !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  7.8,                                                         !- Max Dry-Bulb Temp [C]
+  10.9,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  4.8,                                                         !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  5.1,                                                         !- Wind Speed {m/s}
+  225,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.343,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.149;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Mar,                               !- Name
+  3,                                                           !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  15.8,                                                        !- Max Dry-Bulb Temp [C]
+  13.9,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  11.2,                                                        !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  5.5,                                                         !- Wind Speed {m/s}
+  45,                                                          !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.39,                                                        !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.03;                                                        !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Apr,                               !- Name
+  4,                                                           !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  21.6,                                                        !- Max Dry-Bulb Temp [C]
+  14.7,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  14.6,                                                        !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  4.8,                                                         !- Wind Speed {m/s}
+  180,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.417,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  1.998;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for May,                               !- Name
+  5,                                                           !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  26.5,                                                        !- Max Dry-Bulb Temp [C]
+  14.1,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  18.6,                                                        !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  3.7,                                                         !- Wind Speed {m/s}
+  45,                                                          !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.438,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  1.999;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Jun,                               !- Name
+  6,                                                           !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  30.4,                                                        !- Max Dry-Bulb Temp [C]
+  13.4,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  21.6,                                                        !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  4.9,                                                         !- Wind Speed {m/s}
+  180,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.458,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.001;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Jul,                               !- Name
+  7,                                                           !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  31.7,                                                        !- Max Dry-Bulb Temp [C]
+  12.2,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  23.6,                                                        !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  4.2,                                                         !- Wind Speed {m/s}
+  180,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.455,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.05;                                                        !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Aug,                               !- Name
+  8,                                                           !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  30.3,                                                        !- Max Dry-Bulb Temp [C]
+  11.7,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  23.1,                                                        !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  3.8,                                                         !- Wind Speed {m/s}
+  225,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.452,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.048;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Sep,                               !- Name
+  9,                                                           !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  27.8,                                                        !- Max Dry-Bulb Temp [C]
+  12.7,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  20.2,                                                        !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  3.4,                                                         !- Wind Speed {m/s}
+  270,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.412,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.146;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Oct,                               !- Name
+  10,                                                          !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  21.9,                                                        !- Max Dry-Bulb Temp [C]
+  13.6,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  15.8,                                                        !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  4.8,                                                         !- Wind Speed {m/s}
+  180,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.365,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.259;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Nov,                               !- Name
+  11,                                                          !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  15.5,                                                        !- Max Dry-Bulb Temp [C]
+  10.9,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  12.6,                                                        !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  5.3,                                                         !- Wind Speed {m/s}
+  180,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.337,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.303;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+
+SizingPeriod:DesignDay,
+  5% Cooling Design Day for Dec,                               !- Name
+  12,                                                          !- Month
+  21,                                                          !- Day of Month
+  SummerDesignDay,                                             !- Day Type
+  8.7,                                                         !- Max Dry-Bulb Temp [C]
+  10.0,                                                        !- Daily Dry-Bulb Temp Range [C]
+  DefaultMultipliers,                                          !- Dry-Bulb Temp Range Modifier Type
+  ,                                                            !- Dry-Bulb Temp Range Modifier Schedule Name
+  Wetbulb,                                                     !- Humidity Condition Type
+  6.4,                                                         !- Wetbulb/Dewpoint at Max Dry-Bulb [C]
+  ,                                                            !- Humidity Indicating Day Schedule Name
+  ,                                                            !- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}
+  ,                                                            !- Enthalpy at Maximum Dry-Bulb {J/kg}
+  ,                                                            !- Daily Wet-Bulb Temperature Range [deltaC]
+  98934.0,                                                     !- Barometric Pressure [Pa]
+  4.3,                                                         !- Wind Speed {m/s}
+  270,                                                         !- Wind Direction [Degrees; N=0, S=180]
+  No,                                                          !- Rain [Yes/No]
+  No,                                                          !- Snow on ground [Yes/No]
+  No,                                                          !- Daylight Savings Time Indicator
+  ASHRAETau,                                                   !- Solar Model Indicator
+  ,                                                            !- Beam Solar Day Schedule Name
+  ,                                                            !- Diffuse Solar Day Schedule Name
+  0.307,                                                       !- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)
+  2.388;                                                       !- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)
+
+
+

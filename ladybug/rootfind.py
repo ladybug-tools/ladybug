@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-A list of very useful functions for rapid guess-and-test (or root-finding) situations.
+A list of useful functions for rapid guess-and-test (or root-finding) situations.
 Using these functions will typically be much faster than a custom-built guess-and-check
 with a while() loop.
 
