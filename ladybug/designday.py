@@ -29,14 +29,16 @@ class DDY(object):
     properties:
         location: A Ladybug location object
         design_days: A list of the design days in the ddy file.
-        file_path: Optional file path into which ddy file can be written.
     """
     # TODO: set the default file path to use the ladybug default folder.
-    def __init__(self, location, design_days, file_path=None):
+    def __init__(self, location, design_days):
         """Initalize the class."""
-        self.location = location
+        assert hasattr(location, 'isLocation'), 'Expected' \
+            ' Location type. Got {}'.format(type(location))
+
+        self._location = location
         self.design_days = design_days
-        self.file_path = file_path
+        self._file_path = None
 
     @classmethod
     def from_ddy_file(cls, file_path):
@@ -49,6 +51,9 @@ class DDY(object):
         if not os.path.isfile(file_path):
             raise ValueError(
                 'Cannot find a .ddy file at {}'.format(file_path))
+        if not file_path.lower().endswith('.ddy'):
+            raise ValueError(
+                'DDY file does not have a .ddy extension.')
 
         # check the python version and open the file
         try:
@@ -85,7 +90,9 @@ class DDY(object):
         finally:
             ddywin.close()
 
-        return cls(location, design_days, file_path)
+        cls_ = cls(location, design_days)
+        cls_._file_path = os.path.normpath(file_path)
+        return cls_
 
     @classmethod
     def from_design_day(cls, design_day):
@@ -96,34 +103,18 @@ class DDY(object):
         """
         return cls(design_day.location, [design_day])
 
-    def save(self, file_name=None, folder=None):
+    def save(self, file_path):
         """Save ddy object as a .ddy file.
 
         args:
-            file_name: A string representing the name of the file to write.
-            folder: A string representing the folder in which to write the file.
+            file_path: A string representing the file to write the ddy file to.
         """
-        # get default inputs
-        if not folder:
-            assert self.folder is not None, 'No folder location specified ' \
-                'and no folder exists on this Ddy object.'
-            folder = self.folder
-        if not file_name:
-            assert self.file_name is not None, 'No file_name specified ' \
-                'and no file_name exists on this Ddy object.'
-            file_name = self.file_name
-
-        # check the inputs
-        if not file_name.lower().endswith('.ddy'):
-            file_name = file_name + '.ddy'
-        full_path = os.path.join(folder, file_name)
-
         # write all data into the file
         # write the file
         data = self.location.ep_style_location_string + '\n\n'
         for d_day in self.design_days:
             data = data + d_day.ep_style_string + '\n\n'
-        write_to_file(full_path, data, True)
+        write_to_file(file_path, data, True)
 
     def filter_by_keyword(self, keyword):
         """Return a list of ddys that have a certain keyword in their name.
@@ -139,28 +130,8 @@ class DDY(object):
 
     @property
     def file_path(self):
-        """Get or set path to ddy file."""
+        """Return the current ddy ddy file."""
         return self._file_path
-
-    @property
-    def folder(self):
-        """Get ddy file folder."""
-        return self._folder
-
-    @property
-    def file_name(self):
-        """Get ddy file name."""
-        return self._file_name
-
-    @file_path.setter
-    def file_path(self, ddy_file_path):
-        if ddy_file_path is not None:
-            self._file_path = os.path.normpath(ddy_file_path)
-            if not ddy_file_path.lower().endswith('.ddy'):
-                self._file_path = self._file_path + '.ddy'
-            self._folder, self._file_name = os.path.split(self.file_path)
-        else:
-            self._file_path, self._folder, self._file_name = None, None, None
 
     @property
     def location(self):
@@ -172,12 +143,10 @@ class DDY(object):
         assert hasattr(data, 'isLocation'), 'Expected' \
             ' Location type. Got {}'.format(type(data))
         self._location = data
-        try:
-            for dd in self._design_days:
+        for dd in self._design_days:
+            if dd.location != self._location:
                 dd.location = self._location
-        except Exception:
-            # design day objects have not yet been created
-            pass
+                print ('Updating location of {} to {}.'.format(dd, self._location))
 
     @property
     def design_days(self):
@@ -193,7 +162,9 @@ class DDY(object):
                 ' DesignDay type. Got {}'.format(type(item))
         self._design_days = data
         for dd in self._design_days:
-            dd.location = self._location
+            if dd.location != self._location:
+                dd.location = self._location
+                print ('Updating location of {} to {}.'.format(dd, self._location))
 
     @property
     def isDdy(self):
