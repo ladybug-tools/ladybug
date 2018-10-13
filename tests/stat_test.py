@@ -3,8 +3,9 @@
 import unittest
 from pytest import approx
 import os
-from ladybug.stat import Stat
-from ladybug.designday import Ddy
+
+from ladybug.stat import STAT
+from ladybug.designday import DDY
 
 
 class StatTestCase(unittest.TestCase):
@@ -19,13 +20,13 @@ class StatTestCase(unittest.TestCase):
         """Nothing to tear down as nothing gets written to file."""
         pass
 
-    def test_import_stat(self):
+    def test_import_STAT(self):
         """Test import standard stat."""
         relative_path = './tests/stat/chicago.stat'
         abs_path = os.path.abspath(relative_path)
 
-        stat_rel = Stat(relative_path)
-        stat = Stat(abs_path)
+        stat_rel = STAT(relative_path)
+        stat = STAT(abs_path)
 
         # Test imports don't break
         assert stat.file_path == abs_path
@@ -34,7 +35,7 @@ class StatTestCase(unittest.TestCase):
 
     def test_stat_properties(self):
         relative_path = './tests/stat/tokyo.stat'
-        stat = Stat(relative_path)
+        stat = STAT(relative_path)
 
         # Test accuracy of import
         assert len(stat.header) == 10
@@ -58,7 +59,7 @@ class StatTestCase(unittest.TestCase):
 
     def test_annual_heating_design_days(self):
         relative_path = './tests/stat/chicago.stat'
-        stat = Stat(relative_path)
+        stat = STAT(relative_path)
 
         ann_hdd_96 = stat.annual_heating_design_day_996
         ann_hdd_90 = stat.annual_heating_design_day_990
@@ -85,7 +86,7 @@ class StatTestCase(unittest.TestCase):
 
     def test_annual_cooling_design_days(self):
         relative_path = './tests/stat/tokyo.stat'
-        stat = Stat(relative_path)
+        stat = STAT(relative_path)
         ann_cdd_04 = stat.annual_cooling_design_day_004
         ann_cdd_10 = stat.annual_cooling_design_day_010
 
@@ -112,7 +113,7 @@ class StatTestCase(unittest.TestCase):
 
     def test_monthly_cooling_design_days(self):
         relative_path = './tests/stat/chicago.stat'
-        stat = Stat(relative_path)
+        stat = STAT(relative_path)
 
         m_ddy_050 = stat.monthly_cooling_design_days_050
         m_ddy_100 = stat.monthly_cooling_design_days_100
@@ -124,7 +125,7 @@ class StatTestCase(unittest.TestCase):
 
         ddy_path = './tests/ddy'
         ddy_name = 'chicago_monthly.ddy'
-        monthly_ddy = Ddy(stat.location, m_ddy_050)
+        monthly_ddy = DDY(stat.location, m_ddy_050)
         monthly_ddy.save(ddy_path, ddy_name)
 
 

@@ -12,7 +12,7 @@ import codecs
 import platform
 
 
-class Stat(object):
+class STAT(object):
     """Import data from a local .stat file.
 
     args:

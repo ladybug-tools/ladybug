@@ -6,7 +6,7 @@ import os
 from ladybug.location import Location
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.designday import \
-    Ddy, \
+    DDY, \
     DesignDay
 
 
@@ -27,8 +27,8 @@ class DdyTestCase(unittest.TestCase):
         relative_path = './tests/ddy/chicago.ddy'
         abs_path = os.path.abspath(relative_path)
 
-        ddy_rel = Ddy.from_ddy_file(relative_path)
-        ddy = Ddy.from_ddy_file(abs_path)
+        ddy_rel = DDY.from_ddy_file(relative_path)
+        ddy = DDY.from_ddy_file(abs_path)
 
         # Test imports don't break
         assert ddy.file_path == abs_path
@@ -38,15 +38,15 @@ class DdyTestCase(unittest.TestCase):
     def test_ddy_from_design_day(self):
         """Test ddy from design day method."""
         relative_path = './tests/ddy/chicago_monthly.ddy'
-        ddy = Ddy.from_ddy_file(relative_path)
-        new_ddy = Ddy.from_design_day(ddy.design_days[0])
+        ddy = DDY.from_ddy_file(relative_path)
+        new_ddy = DDY.from_design_day(ddy.design_days[0])
         assert ddy.location == new_ddy.location
         assert ddy.design_days[0] == new_ddy.design_days[0]
 
     def test_write_ddy(self):
         """Test write ddy."""
         relative_path = './tests/ddy/chicago.ddy'
-        ddy = Ddy.from_ddy_file(relative_path)
+        ddy = DDY.from_ddy_file(relative_path)
         new_file_name = 'chicago_edited.ddy'
         ddy.save(new_file_name)
 
@@ -54,7 +54,7 @@ class DdyTestCase(unittest.TestCase):
         """Test properties of a standard ddy."""
         relative_path = './tests/ddy/tokyo.ddy'
 
-        ddy = Ddy.from_ddy_file(relative_path)
+        ddy = DDY.from_ddy_file(relative_path)
 
         # Test accuracy of import
         assert ddy.location.city == 'TOKYO HYAKURI_JPN Design_Conditions'
@@ -72,7 +72,7 @@ class DdyTestCase(unittest.TestCase):
     def test_monthly_ddy_properties(self):
         """Test properties of a monthly ddy."""
         relative_path = './tests/ddy/chicago_monthly.ddy'
-        ddy = Ddy.from_ddy_file(relative_path)
+        ddy = DDY.from_ddy_file(relative_path)
 
         # Test accuracy of import
         assert ddy.location.city == 'Chicago Ohare Intl Ap'

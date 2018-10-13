@@ -23,7 +23,7 @@ import codecs
 import platform
 
 
-class Ddy(object):
+class DDY(object):
     """Import data from a local .ddy file.
 
     properties:
@@ -913,9 +913,6 @@ class WindCondition(object):
                 data = 'Yes'
             else:
                 data = 'No'
-        else:
-            assert isinstance(data, str), 'rain must be a' \
-                ' boolean or a "Yes" or "No" string. Got {}'.format(type(data))
         self._rain = data
 
     @property
@@ -930,9 +927,6 @@ class WindCondition(object):
                 data = 'Yes'
             else:
                 data = 'No'
-        else:
-            assert isinstance(data, str), 'snow_on_ground must be a' \
-                ' boolean or a "Yes" or "No" string. Got {}'.format(type(data))
         self._snow_on_ground = data
 
     @property
