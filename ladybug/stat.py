@@ -52,6 +52,7 @@ class STAT(object):
         self._monthly_wind_dirs = []
         self._monthly_tau_beam = []
         self._monthly_tau_diffuse = []
+        self._monthly_found = False
 
         # import the data from the file
         self._import_data()
@@ -192,6 +193,11 @@ class STAT(object):
             for direction in self._wind_dir_names:
                 re_string = r"Monthly Wind Direction %[\s\S]*" + direction + r"\s(.*)"
                 self._monthly_wind_dirs.append(self._regex_parse(re_string))
+
+            # check to see if all monthly data is there
+            if self._monthly_db_range_50 != [] and self._monthly_wb_range_50 != [] \
+                    and self._monthly_wind != [] and self._monthly_wind_dirs:
+                        self._monthly_found = True
         finally:
             statwin.close()
 
@@ -221,9 +227,8 @@ class STAT(object):
     def ashrae_climate_zone(self):
         """Return a text string indicating the ASHRAE climate zone.
 
-        ASHRAE climate zones are frequently used to make suggestions for
-        heating and cooling systems and correspond to recommendations for
-        insulation levels of a building.
+        Numbers in the zone denote average temperature (0 = Hottest; 8 = Coldest)
+        Letters in the zone denote wetness (A = Humid; B = Dry; C = Marine)
         """
         return self._ashrae_climate_zone
 
@@ -265,10 +270,12 @@ class STAT(object):
             float(self._summer_des_day_dict[ws_key]),
             float(self._summer_des_day_dict[wd_key]))
         month_num = int(self._summer_des_day_dict['Month'])
-        if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != []:
-            sky_cond = RevisedClearSkyCondition(
-                month_num, 21, self._monthly_tau_beam[month_num - 1],
-                self._monthly_tau_diffuse[month_num - 1])
+        if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
+                and self._monthly_tau_beam[month_num - 1] is not None and \
+                self._monthly_tau_diffuse[month_num - 1] is not None:
+                    sky_cond = RevisedClearSkyCondition(
+                        month_num, 21, self._monthly_tau_beam[month_num - 1],
+                        self._monthly_tau_diffuse[month_num - 1])
         else:
             sky_cond = OriginalClearSkyCondition(month_num, 21, 0)
         return db_cond, hu_cond, ws_cond, sky_cond
@@ -277,7 +284,7 @@ class STAT(object):
     def annual_heating_design_day_996(self):
         """A design day object representing the annual 99.6% heating design day.
         """
-        if self._winter_des_day_dict == {}:
+        if self._winter_des_day_dict == {} or self._stand_press_at_elev is None:
             return None
         else:
             db_cond, hu_cond, ws_cond, sky_cond = self._winter_des_day_conds(
@@ -290,7 +297,7 @@ class STAT(object):
     def annual_heating_design_day_990(self):
         """A design day object representing the annual 99.0% heating design day.
         """
-        if self._winter_des_day_dict == {}:
+        if self._winter_des_day_dict == {} or self._stand_press_at_elev is None:
             return None
         else:
             db_cond, hu_cond, ws_cond, sky_cond = self._winter_des_day_conds(
@@ -303,7 +310,7 @@ class STAT(object):
     def annual_cooling_design_day_004(self):
         """A design day object representing the annual 0.4% cooling design day.
         """
-        if self._summer_des_day_dict == {}:
+        if self._summer_des_day_dict == {} or self._stand_press_at_elev is None:
             return None
         else:
             db_cond, hu_cond, ws_cond, sky_cond = self._summer_des_day_conds(
@@ -316,7 +323,7 @@ class STAT(object):
     def annual_cooling_design_day_010(self):
         """A design day object representing the annual 1.0% cooling design day.
         """
-        if self._summer_des_day_dict == {}:
+        if self._summer_des_day_dict == {} or self._stand_press_at_elev is None:
             return None
         else:
             db_cond, hu_cond, ws_cond, sky_cond = self._summer_des_day_conds(
@@ -329,61 +336,81 @@ class STAT(object):
     def monthly_cooling_design_days_050(self):
         """A list of 12 objects representing monthly 5.0% cooling design days.
         """
-        db_conds = [DryBulbCondition(x, y) for x, y in zip(
-            self._monthly_db_50, self._monthly_db_range_50)]
-        hu_conds = [HumidityCondition(
-            'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_50]
-        ws_conds = self.monthly_wind_conditions
-        sky_conds = self.monthly_clear_sky_conditions
-        return [DesignDay(
-            '5% Cooling Design Day for {}'.format(self._months[i]), 'SummerDesignDay',
-            self._location, db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                       for i in range(12)]
+        if self._monthly_found is False or self._monthly_db_50 == [] \
+                or self._monthly_wb_50 == []:
+                    return []
+        else:
+            db_conds = [DryBulbCondition(x, y) for x, y in zip(
+                self._monthly_db_50, self._monthly_db_range_50)]
+            hu_conds = [HumidityCondition(
+                'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_50]
+            ws_conds = self.monthly_wind_conditions
+            sky_conds = self.monthly_clear_sky_conditions
+            return [DesignDay(
+                '5% Cooling Design Day for {}'.format(self._months[i]),
+                'SummerDesignDay', self._location,
+                db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
+                    for i in range(12)]
 
     @property
     def monthly_cooling_design_days_100(self):
         """A list of 12 objects representing monthly 10.0% cooling design days.
         """
-        db_conds = [DryBulbCondition(x, y) for x, y in zip(
-            self._monthly_db_100, self._monthly_db_range_50)]
-        hu_conds = [HumidityCondition(
-            'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_100]
-        ws_conds = self.monthly_wind_conditions
-        sky_conds = self.monthly_clear_sky_conditions
-        return [DesignDay(
-            '10% Cooling Design Day for {}'.format(self._months[i]), 'SummerDesignDay',
-            self._location, db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                       for i in range(12)]
+        if self._monthly_found is False or self._monthly_db_100 == [] \
+                or self._monthly_wb_100 == []:
+                    return []
+        else:
+            db_conds = [DryBulbCondition(x, y) for x, y in zip(
+                self._monthly_db_100, self._monthly_db_range_50)]
+            hu_conds = [HumidityCondition(
+                'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_100]
+            ws_conds = self.monthly_wind_conditions
+            sky_conds = self.monthly_clear_sky_conditions
+            return [DesignDay(
+                '10% Cooling Design Day for {}'.format(self._months[i]),
+                'SummerDesignDay', self._location,
+                db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
+                    for i in range(12)]
 
     @property
     def monthly_cooling_design_days_020(self):
         """A list of 12 objects representing monthly 2.0% cooling design days.
         """
-        db_conds = [DryBulbCondition(x, y) for x, y in zip(
-            self._monthly_db_20, self._monthly_db_range_50)]
-        hu_conds = [HumidityCondition(
-            'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_20]
-        ws_conds = self.monthly_wind_conditions
-        sky_conds = self.monthly_clear_sky_conditions
-        return [DesignDay(
-            '2% Cooling Design Day for {}'.format(self._months[i]), 'SummerDesignDay',
-            self._location, db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                       for i in range(12)]
+        if self._monthly_found is False or self._monthly_db_20 == [] \
+                or self._monthly_wb_20 == []:
+                    return []
+        else:
+            db_conds = [DryBulbCondition(x, y) for x, y in zip(
+                self._monthly_db_20, self._monthly_db_range_50)]
+            hu_conds = [HumidityCondition(
+                'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_20]
+            ws_conds = self.monthly_wind_conditions
+            sky_conds = self.monthly_clear_sky_conditions
+            return [DesignDay(
+                '2% Cooling Design Day for {}'.format(self._months[i]),
+                'SummerDesignDay', self._location,
+                db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
+                    for i in range(12)]
 
     @property
     def monthly_cooling_design_days_004(self):
         """A list of 12 objects representing monthly 0.4% cooling design days.
         """
-        db_conds = [DryBulbCondition(x, y) for x, y in zip(
-            self._monthly_db_04, self._monthly_db_range_50)]
-        hu_conds = [HumidityCondition(
-            'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_04]
-        ws_conds = self.monthly_wind_conditions
-        sky_conds = self.monthly_clear_sky_conditions
-        return [DesignDay(
-            '0.4% Cooling Design Day for {}'.format(self._months[i]), 'SummerDesignDay',
-            self._location, db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                       for i in range(12)]
+        if self._monthly_found is False or self._monthly_db_04 == [] \
+                or self._monthly_wb_04 == []:
+                    return []
+        else:
+            db_conds = [DryBulbCondition(x, y) for x, y in zip(
+                self._monthly_db_04, self._monthly_db_range_50)]
+            hu_conds = [HumidityCondition(
+                'Wetbulb', x, self._stand_press_at_elev) for x in self._monthly_wb_04]
+            ws_conds = self.monthly_wind_conditions
+            sky_conds = self.monthly_clear_sky_conditions
+            return [DesignDay(
+                '0.4% Cooling Design Day for {}'.format(self._months[i]),
+                'SummerDesignDay', self._location,
+                db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
+                    for i in range(12)]
 
     @property
     def monthly_db_temp_050(self):

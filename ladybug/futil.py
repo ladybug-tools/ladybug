@@ -1,6 +1,9 @@
 """A collection of auxiliary funtions for working with files and directories."""
 import os
 import shutil
+import System.Net as sys
+import zipfile
+
 
 def preparedir(target_dir, remove_content=True):
     """Prepare a folder for analysis.
@@ -154,3 +157,89 @@ def bat_to_sh(file_path):
     st = os.stat(sh_file)
     os.chmod(sh_file, st.st_mode | 0o111)
     return sh_file
+
+
+def download_file_by_name(url, target_folder, file_name, mkdir=False):
+    """Download a file to a directory.
+
+    Args:
+        url: A string to a valid URL.
+        target_folder: Target folder for download (e.g. c:/ladybug)
+        file_name: File name (e.g. testPts.zip).
+        mkdir: Set to True to create the directory if doesn't exist (Default: False)
+    """
+    # create the target directory.
+    if not os.path.isdir(target_folder):
+        if mkdir:
+            preparedir(target_folder)
+        else:
+            created = preparedir(target_folder, False)
+            if not created:
+                raise ValueError("Failed to find %s." % target_folder)
+
+    # set the security protocol to the most recent version.
+    try:
+        # TLS 1.2 is needed to download over https
+        sys.ServicePointManager.SecurityProtocol = \
+            sys.SecurityProtocolType.Tls12
+    except AttributeError:
+        # TLS 1.2 is not provided by MacOS .NET Core
+        if not url.lower().startswith('https'):
+            # revert to using TLS 1.0
+            sys.Net.ServicePointManager.SecurityProtocol = \
+                sys.SecurityProtocolType.Tls
+        else:
+            raise Exception('This system lacks the necessary security'
+                            ' libraries to download over https.')
+
+    file_path = os.path.join(target_folder, file_name)
+    client = sys.WebClient()
+    try:
+        client.DownloadFile(url, file_path)
+    except Exception, e:
+        raise Exception(' Download failed with the error:\n{}'.format(e))
+
+
+def download_file(url, file_path, mkdir=False):
+    """Write a string of data to file.
+
+    Args:
+        url: A string to a valid URL.
+        file_path: Full path to intended download location (e.g. c:/ladybug/testPts.pts)
+        mkdir: Set to True to create the directory if doesn't exist (Default: False)
+    """
+    folder, fname = os.path.split(file_path)
+    return download_file_by_name(url, folder, fname, mkdir)
+
+
+def unzip_file(source_file, dest_dir=None, mkdir=False):
+    """Unzip a compressed file.
+
+    Args:
+        source_file: Full path to a valid compressed file (e.g. c:/ladybug/testPts.zip)
+        dest_dir: Target folder to extract to (e.g. c:/ladybug).
+            Default is set to the same directory as the source file.
+        mkdir: Set to True to create the directory if doesn't exist (Default: False)
+    """
+    # set default dest_dir and create it if need be.
+    if dest_dir is None:
+        dest_dir, fname = os.path.split(source_file)
+    elif not os.path.isdir(dest_dir):
+        if mkdir:
+            preparedir(dest_dir)
+        else:
+            created = preparedir(dest_dir, False)
+            if not created:
+                raise ValueError("Failed to find %s." % dest_dir)
+
+    # extract files to destination
+    with zipfile.ZipFile(source_file) as zf:
+        for member in zf.infolist():
+            words = member.filename.split('\\')
+            for word in words[:-1]:
+                drive, word = os.path.splitdrive(word)
+                head, word = os.path.split(word)
+                if word in (os.curdir, os.pardir, ''):
+                    continue
+                dest_dir = os.path.join(dest_dir, word)
+            zf.extract(member, dest_dir)

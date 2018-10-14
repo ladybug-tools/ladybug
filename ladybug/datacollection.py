@@ -622,13 +622,20 @@ class DataCollection(object):
             'header': self.header.to_json() if self.header else {}
         }
 
+    def isDataCollection(self):
+        """Return True."""
+        return True
+
     def ToString(self):
         """Overwrite .NET ToString method."""
         return self.__repr__()
 
     def __repr__(self):
         """_data collection representation."""
-        if self.header and self.header.data_type:
-            return "{}: #{}".format(self.header.data_type, len(self._data))
+        if self.header and self.header.data_type and self.header.unit \
+                and self.header.analysis_period:
+                    return "{} ({}) DataCollection\n{}\n...{} values...".format(
+                        self.header.data_type, self.header.unit,
+                        self.header.analysis_period, len(self._data))
         else:
-            return "DataCollection: #{}".format(len(self._data))
+            return "DataCollection\n\n...{} values...".format(len(self._data))
