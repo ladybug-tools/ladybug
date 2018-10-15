@@ -1,4 +1,5 @@
 from .location import Location
+from .analysisperiod import AnalysisPeriod
 from .designday import DesignDay
 from .designday import DryBulbCondition
 from .designday import HumidityCondition
@@ -30,28 +31,10 @@ class STAT(object):
         """Initalize the class."""
         self.file_path = file_path
 
-        # defaults in case some climate parameters are unclassifiable
-        self._header = None
-        self._location = None
-        self._stand_press_at_elev = None
-        self._ashrae_climate_zone = None
-        self._koppen_climate_zone = None
+        # defaults empty state for certain parameters
         self._winter_des_day_dict = {}
         self._summer_des_day_dict = {}
-        self._monthly_db_04 = []
-        self._monthly_wb_04 = []
-        self._monthly_db_20 = []
-        self._monthly_wb_20 = []
-        self._monthly_db_50 = []
-        self._monthly_wb_50 = []
-        self._monthly_db_100 = []
-        self._monthly_wb_100 = []
-        self._monthly_db_range_50 = []
-        self._monthly_wb_range_50 = []
-        self._monthly_wind = []
         self._monthly_wind_dirs = []
-        self._monthly_tau_beam = []
-        self._monthly_tau_diffuse = []
         self._monthly_found = False
 
         # import the data from the file
@@ -85,7 +68,6 @@ class STAT(object):
 
         self._folder, self._file_name = os.path.split(self.file_path)
 
-    # TODO: import extreme and seasonal weeks
     def _import_data(self):
         """Import data from a stat file.
         """
@@ -114,15 +96,14 @@ class STAT(object):
             import traceback
             raise Exception('{}\n{}'.format(e, traceback.format_exc()))
         else:
+
             # import location data
             loc_name = self._header[2].strip().replace('Location -- ', '')
             if ' - ' in loc_name:
                 city = ' '.join(loc_name.split(' - ')[:-1])
             else:
                 # for US stat files it is full name separated by spaces
-                # Chicago Ohare Intl Ap IL USA
                 city = ' '.join(loc_name.split()[:-2])
-
             country = loc_name.split(' ')[-1]
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
@@ -138,15 +119,11 @@ class STAT(object):
             latitude = lat_sign * (float(matches[0][1]) + (float(matches[0][2]) / 60))
             lon_sign = -1 if matches[1][0] == 'W' else 1
             longitude = lon_sign * (float(matches[1][1]) + (float(matches[1][2]) / 60))
-            tz_pattern = re.compile(r"{GMT\s*(\S*)\s*Hours}")
-            time_zone = float(tz_pattern.findall(self._header[3])[0])
+            time_zone = self._regex_check(r"{GMT\s*(\S*)\s*Hours}", self._header[3])
             elev_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)m\s*(\S*)")
             elev_matches = elev_pattern.findall(self._header[4])
             elev_sign = -1 if elev_matches[0][-1].lower() == 'below' else 1
             elevation = elev_sign * float(elev_matches[0][0])
-            press_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)Pa")
-            self._stand_press_at_elev = float(press_pattern.findall(self._header[5])[0])
-
             self._location = Location()
             self._location.city = city
             self._location.country = country
@@ -157,15 +134,22 @@ class STAT(object):
             self._location.time_zone = time_zone
             self._location.elevation = elevation
 
-            # Pull out climate zone classifications
-            a_clim_mat = re.compile(r'Climate type\s"(\S*)"\s\(A').findall(self._body)
-            if len(a_clim_mat) > 0:
-                self._ashrae_climate_zone = a_clim_mat[0]
-            k_clim_mat = re.compile(r'Climate type\s"(\S*)"\s\(K').findall(self._body)
-            if len(k_clim_mat) > 0:
-                self._koppen_climate_zone = k_clim_mat[0]
+            # pull out individual properties
+            self._stand_press_at_elev = self._regex_check(
+                r"Elevation\s*[-]*\s*(\d*)Pa", self._header[5])
+            self._ashrae_climate_zone = self._regex_check(
+                r'Climate type\s"(\S*)"\s\(A', self._body, False)
+            self._koppen_climate_zone = self._regex_check(
+                r'Climate type\s"(\S*)"\s\(K', self._body, False)
 
-            # Pull out annual design days
+            # pull out extreme and seasonal weeks.
+            self._extreme_hot_week = self._regex_week_parse(
+                r"Extreme Hot Week Period selected:\s*(\S*)\s*(\S*):\s*(\S*)\s*(\S*),")
+            self._extreme_cold_week = self._regex_week_parse(
+                r"Extreme Cold Week Period selected:\s*(\S*)\s*(\S*):\s*(\S*)\s*(\S*),")
+            self._seasonal_weeks = self._regex_typical_week_parse()
+
+            # pull out annual design days
             winter_keys = self._regex_parse(r"Design Stat	Coldest(.*)", False)
             winter_vals = self._regex_parse(r"Heating(.*)")
             for key, val in zip(winter_keys, winter_vals):
@@ -192,18 +176,58 @@ class STAT(object):
                 r"Monthly Statistics for Wind Speed[\s\S]*Daily Avg(.*)")
             for direction in self._wind_dir_names:
                 re_string = r"Monthly Wind Direction %[\s\S]*" + direction + r"\s(.*)"
-                self._monthly_wind_dirs.append(self._regex_parse(re_string))
+                dirs = self._regex_parse(re_string)
+                if dirs != []:
+                    self._monthly_wind_dirs.append(dirs)
 
             # check to see if all monthly data is there
             if self._monthly_db_range_50 != [] and self._monthly_wb_range_50 != [] \
-                    and self._monthly_wind != [] and self._monthly_wind_dirs:
+                    and self._monthly_wind != [] and self._monthly_wind_dirs != [] \
+                    and self._stand_press_at_elev is not None:
                         self._monthly_found = True
         finally:
             statwin.close()
 
+    def _regex_check(self, regex_str, search_space, numbr=True):
+        matches = re.compile(regex_str).findall(search_space)
+        if len(matches) > 0:
+            if numbr is True:
+                return float(matches[0])
+            else:
+                return matches[0]
+        else:
+            return None
+
+    def _regex_week(self, match):
+        if len(match) == 4:
+            try:
+                st_mon = int(self._months.index(match[0])) + 1
+                end_mon = int(self._months.index(match[2])) + 1
+                st_day = int(match[1])
+                end_day = int(match[3])
+            except ValueError:
+                return None
+            return AnalysisPeriod(st_mon, st_day, 0, end_mon, end_day, 23)
+        else:
+            return None
+
+    def _regex_week_parse(self, regex_str):
+        matches = re.compile(regex_str).findall(self._body)
+        if len(matches) > 0:
+            return self._regex_week(matches[0])
+        else:
+            return None
+
+    def _regex_typical_week_parse(self):
+        typ_str = r"Typical Week Period selected:\s*(\S*)\s*(\S*):\s*(\S*)\s*(\S*),"
+        matches = re.compile(typ_str).findall(self._body)
+        if len(matches) == 4:
+            return [self._regex_week(match) for match in matches]
+        else:
+            return []
+
     def _regex_parse(self, regex_str, numbr=True):
-        pattern = re.compile(regex_str)
-        matches = pattern.findall(self._body)
+        matches = re.compile(regex_str).findall(self._body)
         if len(matches) > 0:
             raw_txt = matches[0].strip().split('\t')
             if numbr is True:
@@ -241,6 +265,54 @@ class STAT(object):
         temperatures, precipitation, and the seasonality of precipitation.
         """
         return self._koppen_climate_zone
+
+    @property
+    def extreme_cold_week(self):
+        """An AnalysisPeriod representing the coldest week within the corresponding EPW.
+        """
+        return self._extreme_cold_week
+
+    @property
+    def extreme_hot_week(self):
+        """An AnalysisPeriod representing the hottest week within the corresponding EPW.
+        """
+        return self._extreme_hot_week
+
+    @property
+    def typical_winter_week(self):
+        """An AnalysisPeriod representing a typical winter week within the corresponding EPW.
+        """
+        if len(self._seasonal_weeks) >= 2:
+            return self._seasonal_weeks[1]
+        else:
+            return None
+
+    @property
+    def typical_spring_week(self):
+        """An AnalysisPeriod representing a typical spring week within the corresponding EPW.
+        """
+        if len(self._seasonal_weeks) >= 4:
+            return self._seasonal_weeks[3]
+        else:
+            return None
+
+    @property
+    def typical_summer_week(self):
+        """An AnalysisPeriod representing a typical summer week within the corresponding EPW.
+        """
+        if len(self._seasonal_weeks) >= 1:
+            return self._seasonal_weeks[0]
+        else:
+            return None
+
+    @property
+    def typical_autumn_week(self):
+        """An AnalysisPeriod representing a typical autumn week within the corresponding EPW.
+        """
+        if len(self._seasonal_weeks) >= 3:
+            return self._seasonal_weeks[2]
+        else:
+            return None
 
     def _winter_des_day_conds(self, db_key, ws_key, wd_key):
         """Returns winter design day conditions given keys for the winter dictionary
