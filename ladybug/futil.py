@@ -1,9 +1,21 @@
 """A collection of auxiliary funtions for working with files and directories."""
 import os
 import shutil
-import System.Net as sys
 import zipfile
+try:
+    import System.Net as sys
+    iron_python = True
+except ImportError:
+    import urllib2
+    iron_python = False
 
+__hdr__ = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 '
+           '(KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+           'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+           'Accept-Encoding': 'none',
+           'Accept-Language': 'en-US,en;q=0.8',
+           'Connection': 'keep-alive'}
 
 def preparedir(target_dir, remove_content=True):
     """Prepare a folder for analysis.
@@ -158,6 +170,42 @@ def bat_to_sh(file_path):
     os.chmod(sh_file, st.st_mode | 0o111)
     return sh_file
 
+def download_py2(link, path):
+    """Download a file from a link in Python 2."""
+    try:
+        req = urllib2.Request(link, headers=__hdr__)
+        u = urllib2.urlopen(req)
+    except Exception, e:
+        raise Exception(' Download failed with the error:\n{}'.format(e))
+
+    with open(path, 'wb') as outf:
+        for l in u:
+            outf.write(l)
+    u.close()
+
+
+def download_ironpython(link, path):
+    """Download a file from a link in IronPython."""
+    # set the security protocol to the most recent version.
+    try:
+        # TLS 1.2 is needed to download over https
+        sys.ServicePointManager.SecurityProtocol = \
+            sys.SecurityProtocolType.Tls12
+    except AttributeError:
+        # TLS 1.2 is not provided by MacOS .NET Core
+        if not link.lower().startswith('https'):
+            # revert to using TLS 1.0
+            sys.Net.ServicePointManager.SecurityProtocol = \
+                sys.SecurityProtocolType.Tls
+        else:
+            raise Exception('This system lacks the necessary security'
+                            ' libraries to download over https.')
+    client = sys.WebClient()
+    try:
+        client.DownloadFile(link, path)
+    except Exception, e:
+        raise Exception(' Download failed with the error:\n{}'.format(e))
+
 
 def download_file_by_name(url, target_folder, file_name, mkdir=False):
     """Download a file to a directory.
@@ -176,28 +224,13 @@ def download_file_by_name(url, target_folder, file_name, mkdir=False):
             created = preparedir(target_folder, False)
             if not created:
                 raise ValueError("Failed to find %s." % target_folder)
-
-    # set the security protocol to the most recent version.
-    try:
-        # TLS 1.2 is needed to download over https
-        sys.ServicePointManager.SecurityProtocol = \
-            sys.SecurityProtocolType.Tls12
-    except AttributeError:
-        # TLS 1.2 is not provided by MacOS .NET Core
-        if not url.lower().startswith('https'):
-            # revert to using TLS 1.0
-            sys.Net.ServicePointManager.SecurityProtocol = \
-                sys.SecurityProtocolType.Tls
-        else:
-            raise Exception('This system lacks the necessary security'
-                            ' libraries to download over https.')
-
     file_path = os.path.join(target_folder, file_name)
-    client = sys.WebClient()
-    try:
-        client.DownloadFile(url, file_path)
-    except Exception, e:
-        raise Exception(' Download failed with the error:\n{}'.format(e))
+
+    # download the file
+    if iron_python is True:
+        download_ironpython(url, file_path)
+    else:
+        download_py2(url, file_path)
 
 
 def download_file(url, file_path, mkdir=False):
