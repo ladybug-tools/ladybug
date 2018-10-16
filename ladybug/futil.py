@@ -198,6 +198,7 @@ def download_py3(link, path, __hdr__):
 
 def download_cpython(link, path):
     """Download a file from a link in C Python."""
+    # headers to "spoof" the download as coming from a browser (needed for E+ site)
     __hdr__ = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 '
                '(KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
                'Accept': 'text/html,application/xhtml+xml,'
