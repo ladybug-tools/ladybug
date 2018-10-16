@@ -4,18 +4,15 @@ import shutil
 import zipfile
 try:
     import System.Net as sys
-    iron_python = True
+    python_version = 'ironpython'
 except ImportError:
-    import urllib2
-    iron_python = False
+    try:
+        import urllib2
+        python_version = 'python2'
+    except ImportError:
+        import urllib.request
+        python_version = 'python3'
 
-__hdr__ = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 '
-           '(KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-           'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-           'Accept-Encoding': 'none',
-           'Accept-Language': 'en-US,en;q=0.8',
-           'Connection': 'keep-alive'}
 
 def preparedir(target_dir, remove_content=True):
     """Prepare a folder for analysis.
@@ -170,7 +167,8 @@ def bat_to_sh(file_path):
     os.chmod(sh_file, st.st_mode | 0o111)
     return sh_file
 
-def download_py2(link, path):
+
+def download_py2(link, path, __hdr__):
     """Download a file from a link in Python 2."""
     try:
         req = urllib2.Request(link, headers=__hdr__)
@@ -182,6 +180,37 @@ def download_py2(link, path):
         for l in u:
             outf.write(l)
     u.close()
+
+
+def download_py3(link, path, __hdr__):
+    """Download a file from a link in Python 3."""
+    try:
+        req = urllib.request(link, headers=__hdr__)
+        u = urllib.request.urlopen(req)
+    except Exception, e:
+        raise Exception(' Download failed with the error:\n{}'.format(e))
+
+    with open(path, 'wb') as outf:
+        for l in u:
+            outf.write(l)
+    u.close()
+
+
+def download_cpython(link, path):
+    """Download a file from a link in C Python."""
+    __hdr__ = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 '
+               '(KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+               'Accept': 'text/html,application/xhtml+xml,'
+               'application/xml;q=0.9,*/*;q=0.8',
+               'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+               'Accept-Encoding': 'none',
+               'Accept-Language': 'en-US,en;q=0.8',
+               'Connection': 'keep-alive'}
+
+    if python_version == 'python2':
+        download_py2(link, path, __hdr__)
+    elif python_version == 'python3':
+        download_py3(link, path, __hdr__)
 
 
 def download_ironpython(link, path):
@@ -227,10 +256,10 @@ def download_file_by_name(url, target_folder, file_name, mkdir=False):
     file_path = os.path.join(target_folder, file_name)
 
     # download the file
-    if iron_python is True:
+    if python_version == 'ironpython':
         download_ironpython(url, file_path)
     else:
-        download_py2(url, file_path)
+        download_cpython(url, file_path)
 
 
 def download_file(url, file_path, mkdir=False):
