@@ -185,8 +185,7 @@ def download_py2(link, path, __hdr__):
 def download_py3(link, path, __hdr__):
     """Download a file from a link in Python 3."""
     try:
-        req = urllib.request(link, headers=__hdr__)
-        u = urllib.request.urlopen(req)
+        u = urllib.request.urlopen(link, headers=__hdr__)
     except Exception as e:
         raise Exception(' Download failed with the error:\n{}'.format(e))
 
