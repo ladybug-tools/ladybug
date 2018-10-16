@@ -173,7 +173,7 @@ def download_py2(link, path, __hdr__):
     try:
         req = urllib2.Request(link, headers=__hdr__)
         u = urllib2.urlopen(req)
-    except Exception, e:
+    except Exception as e:
         raise Exception(' Download failed with the error:\n{}'.format(e))
 
     with open(path, 'wb') as outf:
@@ -187,7 +187,7 @@ def download_py3(link, path, __hdr__):
     try:
         req = urllib.request(link, headers=__hdr__)
         u = urllib.request.urlopen(req)
-    except Exception, e:
+    except Exception as e:
         raise Exception(' Download failed with the error:\n{}'.format(e))
 
     with open(path, 'wb') as outf:
@@ -232,7 +232,7 @@ def download_ironpython(link, path):
     client = sys.WebClient()
     try:
         client.DownloadFile(link, path)
-    except Exception, e:
+    except Exception as e:
         raise Exception(' Download failed with the error:\n{}'.format(e))
 
 
