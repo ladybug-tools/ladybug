@@ -4,21 +4,14 @@ import shutil
 import zipfile
 import sys
 
-readmode = 'rb'
-writemode = 'wb'
-try:
-    import System.Net as sysnet
-    python_version = 'ironpython'
-except ImportError:
-    if (sys.version_info < (3, 0)):
-        import urllib2
-        python_version = 'python2'
-    else:
-        import urllib.request
-        python_version = 'python3'
-        # https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files
-        readmode = 'r'
-        writemode = 'w'
+if (sys.version_info < (3, 0)):
+    import urllib2
+    readmode = 'rb'
+    writemode = 'wb'
+else:
+    import urllib.request
+    readmode = 'r'
+    writemode = 'w'
 
 
 def preparedir(target_dir, remove_content=True):
@@ -203,8 +196,15 @@ def _download_py3(link, path, __hdr__):
     u.close()
 
 
-def _download_cpython(link, path):
-    """Download a file from a link in C Python."""
+def download_file_by_name(url, target_folder, file_name, mkdir=False):
+    """Download a file to a directory.
+
+    Args:
+        url: A string to a valid URL.
+        target_folder: Target folder for download (e.g. c:/ladybug)
+        file_name: File name (e.g. testPts.zip).
+        mkdir: Set to True to create the directory if doesn't exist (Default: False)
+    """
     # headers to "spoof" the download as coming from a browser (needed for E+ site)
     __hdr__ = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 '
                '(KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -215,42 +215,6 @@ def _download_cpython(link, path):
                'Accept-Language': 'en-US,en;q=0.8',
                'Connection': 'keep-alive'}
 
-    if python_version == 'python2':
-        _download_py2(link, path, __hdr__)
-    elif python_version == 'python3':
-        _download_py3(link, path, __hdr__)
-
-
-def _download_ironpython(link, path):
-    """Download a file from a link in IronPython."""
-    # set the security protocol to the most recent version
-    try:
-        # TLS 1.2 is needed to download over https
-        sysnet.ServicePointManager.SecurityProtocol = \
-            sysnet.SecurityProtocolType.Tls12
-    except AttributeError:
-        # TLS 1.2 is not provided by MacOS .NET
-        if link.lower().startswith('https'):
-            print ('This system lacks the necessary security'
-                   ' libraries to download over https.')
-
-    # attempt to download the file
-    client = sysnet.WebClient()
-    try:
-        client.DownloadFile(link, path)
-    except Exception as e:
-        raise Exception(' Download failed with the error:\n{}'.format(e))
-
-
-def download_file_by_name(url, target_folder, file_name, mkdir=False):
-    """Download a file to a directory.
-
-    Args:
-        url: A string to a valid URL.
-        target_folder: Target folder for download (e.g. c:/ladybug)
-        file_name: File name (e.g. testPts.zip).
-        mkdir: Set to True to create the directory if doesn't exist (Default: False)
-    """
     # create the target directory.
     if not os.path.isdir(target_folder):
         if mkdir:
@@ -261,11 +225,10 @@ def download_file_by_name(url, target_folder, file_name, mkdir=False):
                 raise ValueError("Failed to find %s." % target_folder)
     file_path = os.path.join(target_folder, file_name)
 
-    # download the file
-    if python_version == 'ironpython':
-        _download_ironpython(url, file_path)
+    if (sys.version_info < (3, 0)):
+        _download_py2(url, file_path, __hdr__)
     else:
-        _download_cpython(url, file_path)
+        _download_py3(url, file_path, __hdr__)
 
 
 def download_file(url, file_path, mkdir=False):

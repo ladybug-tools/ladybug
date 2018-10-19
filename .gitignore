@@ -1,5 +1,6 @@
 *.pyc
 test.py
+ladybug/dotnet.py
 ladybug/geometry.py
 ladybug/output.py
 ladybug/sunpathplus.py
