@@ -107,7 +107,7 @@ class DDY(object):
         """Save ddy object as a .ddy file.
 
         args:
-            file_path: A string representing the file to write the ddy file to.
+            file_path: A string representing the path to write the ddy file to.
         """
         # write all data into the file
         # write the file

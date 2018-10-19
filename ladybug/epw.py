@@ -5,19 +5,15 @@ from .datatype import DataPoint  # Temperature, RelativeHumidity, Radiation, Ill
 from .header import Header
 from .datacollection import DataCollection
 from .dt import DateTime
+from .futil import write_to_file
 
 import os
 import copy
 import sys
+readmode = 'rb'
 if (sys.version_info > (3, 0)):
-    # https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files
-    # python 3
-    readmode = 'r'
-    writemode = 'w'
     xrange = range
-else:
-    readmode = 'rb'
-    writemode = 'wb'
+    readmode = 'r'
 
 
 class EPW(object):
@@ -60,9 +56,15 @@ class EPW(object):
         sky_temperature
     """
 
-    def __init__(self, file_path=None):
+    def __init__(self, file_path):
         """Init class."""
-        self.file_path = file_path
+        self._file_path = os.path.normpath(file_path)
+        if not os.path.isfile(self._file_path):
+            raise ValueError(
+                'Cannot find an epw file at {}'.format(self._file_path))
+        if not file_path.lower().endswith('epw'):
+            raise TypeError(file_path + ' is not an .epw file.')
+
         self._is_data_loaded = False
         self._is_location_loaded = False
         self._data = []  # place holder for data as ladybug data collection
@@ -73,30 +75,6 @@ class EPW(object):
     def file_path(self):
         """Get path to epw file."""
         return self._file_path
-
-    @property
-    def folder(self):
-        """Get epw file folder."""
-        return self._folder
-
-    @property
-    def file_name(self):
-        """Get epw file name."""
-        return self._file_name
-
-    @file_path.setter
-    def file_path(self, epw_file_path):
-        """Get path to epw file."""
-        self._file_path = os.path.normpath(epw_file_path)
-
-        if not os.path.isfile(self._file_path):
-            raise ValueError(
-                'Cannot find an epw file at {}'.format(self._file_path))
-
-        if not epw_file_path.lower().endswith('epw'):
-            raise TypeError(epw_file_path + ' is not an .epw file.')
-
-        self._folder, self._file_name = os.path.split(self.file_path)
 
     @property
     def is_data_loaded(self):
@@ -129,7 +107,7 @@ class EPW(object):
         Hourly data will be saved in self.data and location data
         will be saved in self.location
         """
-        with open(self.file_path, readmode) as epwin:
+        with open(self._file_path, readmode) as epwin:
             line = epwin.readline()
 
             # import location data
@@ -241,57 +219,49 @@ class EPW(object):
 
         return self._data[field_number]
 
-    # TODO: Add utility library to check file path, filename, etc
-    def save(self, folder=None, file_name=None):
-        """Save epw object as an epw file."""
-        # check file_path
-        if not folder:
-            folder = self.folder
+    def save(self, file_path):
+        """Save epw object as an epw file.
 
-        if not file_name:
-            file_name = os.path.splitext(self.file_name)[0] + '_modified.epw'
-
-        full_path = os.path.join(folder, file_name)
-
+        args:
+            file_path: A string representing the path to write the epw file to.
+        """
         # load data if it's  not loaded
         if not self.is_data_loaded:
             self._import_data()
 
         # write the file
-        with open(full_path, writemode) as modEpwFile:
-            modEpwFile.writelines(self._header)
-            lines = []
-            try:
-                # move first item to end position for fields on the hour
-                for field in range(0, self._num_of_fields):
-                    middle_hour = EPWFields.field_by_number(field).middle_hour
-                    if middle_hour is False:
-                        first_hour = self._data[field].pop(0)
-                        self._data[field].append(first_hour)
+        lines = self._header
+        try:
+            # move first item to end position for fields on the hour
+            for field in range(0, self._num_of_fields):
+                middle_hour = EPWFields.field_by_number(field).middle_hour
+                if middle_hour is False:
+                    first_hour = self._data[field].pop(0)
+                    self._data[field].append(first_hour)
 
-                for hour in xrange(0, 8760):
-                    line = []
-                    for field in range(0, self._num_of_fields):
-                        line.append(str(self._data[field].data[hour].value))
-                    lines.append(",".join(line) + "\n")
-            except IndexError:
-                # cleaning up
-                modEpwFile.close()
-                length_error_msg = 'Data length is not 8760 hours and cannot be ' + \
-                    'saved as an EPW file.'
-                raise ValueError(length_error_msg)
-            else:
-                modEpwFile.writelines(lines)
-            finally:
-                del(lines)
-                # move last item to start position for fields on the hour
+            for hour in xrange(0, 8760):
+                line = []
                 for field in range(0, self._num_of_fields):
-                    middle_hour = EPWFields.field_by_number(field).middle_hour
-                    if middle_hour is False:
-                        last_hour = self._data[field].pop()
-                        self._data[field].insert(0, last_hour)
+                    line.append(str(self._data[field].data[hour].value))
+                lines.append(",".join(line) + "\n")
+        except IndexError:
+            # cleaning up
+            length_error_msg = 'Data length is not 8760 hours and cannot be ' + \
+                'saved as an EPW file.'
+            raise ValueError(length_error_msg)
+        else:
+            file_data = ''.join(lines)
+            write_to_file(file_path, file_data, True)
+        finally:
+            del(lines)
+            # move last item to start position for fields on the hour
+            for field in range(0, self._num_of_fields):
+                middle_hour = EPWFields.field_by_number(field).middle_hour
+                if middle_hour is False:
+                    last_hour = self._data[field].pop()
+                    self._data[field].insert(0, last_hour)
 
-        return full_path
+        return file_path
 
     def import_data_by_field(self, field_number):
         """Return annual values for any field_number in epw file.

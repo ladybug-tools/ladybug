@@ -47,9 +47,13 @@ class EPWTestCase(unittest.TestCase):
         assert epw.is_data_loaded is True
         assert len(dbt) == 8760
 
-    def test_epw_location(self):
-        """Test epw location."""
-        pass
+    def test_save_epw(self):
+        """Test save epw_rel."""
+        path = './tests/epw/tokyo.epw'
+
+        epw = EPW(path)
+        epw.save('./tests/epw/tokyo_modified.epw')
+        assert os.path.isfile('./tests/epw/tokyo_modified.epw')
 
 
 if __name__ == "__main__":

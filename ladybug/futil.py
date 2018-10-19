@@ -2,16 +2,23 @@
 import os
 import shutil
 import zipfile
+import sys
+
+readmode = 'rb'
+writemode = 'wb'
 try:
-    import System.Net as sys
+    import System.Net as sysnet
     python_version = 'ironpython'
 except ImportError:
-    try:
+    if (sys.version_info < (3, 0)):
         import urllib2
         python_version = 'python2'
-    except ImportError:
+    else:
         import urllib.request
         python_version = 'python3'
+        # https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files
+        readmode = 'r'
+        writemode = 'w'
 
 
 def preparedir(target_dir, remove_content=True):
@@ -85,7 +92,7 @@ def write_to_file_by_name(folder, fname, data, mkdir=False):
 
     file_path = os.path.join(folder, fname)
 
-    with open(file_path, "w") as outf:
+    with open(file_path, writemode) as outf:
         try:
             outf.write(str(data))
             return file_path
@@ -219,8 +226,8 @@ def _download_ironpython(link, path):
     # set the security protocol to the most recent version
     try:
         # TLS 1.2 is needed to download over https
-        sys.ServicePointManager.SecurityProtocol = \
-            sys.SecurityProtocolType.Tls12
+        sysnet.ServicePointManager.SecurityProtocol = \
+            sysnet.SecurityProtocolType.Tls12
     except AttributeError:
         # TLS 1.2 is not provided by MacOS .NET
         if link.lower().startswith('https'):
@@ -228,7 +235,7 @@ def _download_ironpython(link, path):
                    ' libraries to download over https.')
 
     # attempt to download the file
-    client = sys.WebClient()
+    client = sysnet.WebClient()
     try:
         client.DownloadFile(link, path)
     except Exception as e:
