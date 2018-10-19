@@ -224,8 +224,8 @@ def _download_ironpython(link, path):
     except AttributeError:
         # TLS 1.2 is not provided by MacOS .NET
         if link.lower().startswith('https'):
-            print 'This system lacks the necessary security'
-            ' libraries to download over https.'
+            print ('This system lacks the necessary security'
+                   ' libraries to download over https.')
 
     # attempt to download the file
     client = sys.WebClient()
