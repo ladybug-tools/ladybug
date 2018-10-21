@@ -360,14 +360,14 @@ class DataCollection(object):
         _minutes_step = int(60 / int(timestep / self.header.analysis_period.timestep))
         _data_length = len(self.data)
         # generate new data
-        _data = tuple(
+        _data = [
             self[d].__class__(_v, self[d].datetime.add_minute(step * _minutes_step))
             for d in xrange(_data_length)
             for _v, step in zip(self.xxrange(self[d],
                                              self[(d + 1) % _data_length],
                                              timestep),
                                 xrange(timestep))
-        )
+            ]
 
         # divide cumulative values by timestep
         if cumulative is True:
