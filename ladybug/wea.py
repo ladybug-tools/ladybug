@@ -446,7 +446,7 @@ class Wea(object):
     def direct_normal_radiation(self, data):
         assert isinstance(data, DataCollection), 'direct_normal_radiation data' \
             ' must be a data collection. Got {}'.format(type(data))
-        assert len(data) / self.timestep == self.day_count(self.is_leap_year), \
+        assert len(data) / self.timestep == self.hour_count(self.is_leap_year), \
             'direct_normal_radiation data must be annual.'
         self._direct_normal_radiation = data
 
@@ -459,7 +459,7 @@ class Wea(object):
     def diffuse_horizontal_radiation(self, data):
         assert isinstance(data, DataCollection), 'diffuse_horizontal_radiation data' \
             ' must be a data collection. Got {}'.format(type(data))
-        assert len(data) / self.timestep == self.day_count(self.is_leap_year), \
+        assert len(data) / self.timestep == self.hour_count(self.is_leap_year), \
             'diffuse_horizontal_radiation data must be annual.'
         self._diffuse_horizontal_radiation = data
 
