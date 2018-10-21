@@ -50,10 +50,20 @@ class EPWTestCase(unittest.TestCase):
     def test_save_epw(self):
         """Test save epw_rel."""
         path = './tests/epw/tokyo.epw'
-
         epw = EPW(path)
-        epw.save('./tests/epw/tokyo_modified.epw')
-        assert os.path.isfile('./tests/epw/tokyo_modified.epw')
+
+        modified_path = './tests/epw/tokyo_modified.epw'
+        epw.save(modified_path)
+        assert os.path.isfile(modified_path)
+
+    def test_save_wea(self):
+        """Test save wea_rel."""
+        path = './tests/epw/chicago.epw'
+        epw = EPW(path)
+
+        wea_path = './tests/wea/chicago_epw.wea'
+        epw.to_wea(wea_path)
+        assert os.path.isfile(wea_path)
 
 
 if __name__ == "__main__":

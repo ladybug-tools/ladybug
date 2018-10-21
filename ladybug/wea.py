@@ -10,6 +10,7 @@ from .datatype import DataPoint
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
+from .futil import write_to_file
 
 from .skymodel import ashrae_revised_clear_sky
 from .skymodel import ashrae_clear_sky
@@ -631,42 +632,47 @@ class Wea(object):
         WEA carries radiation values from epw and is what gendaymtx uses to
         generate the sky.
         """
+        if not file_path.lower().endswith('.wea'):
+            file_path += '.wea'
+
         # generate hoys in wea file based on timestep
         full_wea = False
         if not hoys:
             hoys = self.hoys
             full_wea = True
 
-        with open(file_path, "wb") as wea_file:
-            # write header
-            wea_file.write(self.header)
-            if full_wea:
-                # there is no input user for hoys, write it for all the hours
-                # write values
-                for dir_rad, dif_rad in zip(self.direct_normal_radiation,
-                                            self.diffuse_horizontal_radiation):
-                    dt = dir_rad.datetime
-                    line = "%d %d %.3f %d %d\n" \
-                        % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
-                    wea_file.write(line)
-            else:
-                # output wea based on user request
-                for hoy in hoys:
-                    try:
-                        dir_rad, dif_rad = self.get_radiation_values_for_hoy(hoy)
-                    except IndexError:
-                        print('Warn: Wea data for {} is not available!'.format(dt))
-                        continue
+        # write header
+        lines = [self.header]
+        if full_wea:
+            # there is no input user for hoys, write it for all the hours
+            # write values
+            for dir_rad, dif_rad in zip(self.direct_normal_radiation,
+                                        self.diffuse_horizontal_radiation):
+                dt = dir_rad.datetime
+                line = "%d %d %.3f %d %d\n" \
+                    % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
+                lines.append(line)
+        else:
+            # output wea based on user request
+            for hoy in hoys:
+                try:
+                    dir_rad, dif_rad = self.get_radiation_values_for_hoy(hoy)
+                except IndexError:
+                    print('Warn: Wea data for {} is not available!'.format(dt))
+                    continue
 
-                    dt = dir_rad.datetime
-                    line = "%d %d %.3f %d %d\n" \
-                        % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
+                dt = dir_rad.datetime
+                line = "%d %d %.3f %d %d\n" \
+                    % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
 
-                    wea_file.write(line)
+                lines.append(line)
+        file_data = ''.join(lines)
+        write_to_file(file_path, file_data, True)
 
         if write_hours:
-            with open(file_path[:-4] + '.hrs', 'wb') as outf:
-                outf.write(','.join(str(h) for h in hoys) + '\n')
+            hrs_file_path = file_path[:-4] + '.hrs'
+            hrs_data = ','.join(str(h) for h in hoys) + '\n'
+            write_to_file(hrs_file_path, hrs_data, True)
 
         return file_path
 

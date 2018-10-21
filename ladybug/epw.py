@@ -766,20 +766,21 @@ class EPW(object):
         if not file_path.lower().endswith('.wea'):
             file_path += '.wea'
 
-        with open(file_path, "wb") as weaFile:
-            # write header
-            weaFile.write(self._get_wea_header())
-            # write values
-            for hoy in hoys:
-                dir_rad = self.direct_normal_radiation[hoy]
-                dif_rad = self.diffuse_horizontal_radiation[hoy]
-                line = "%d %d %.3f %d %d\n" \
-                    % (dir_rad.datetime.month,
-                       dir_rad.datetime.day,
-                       dir_rad.datetime.hour + 0.5,
-                       dir_rad, dif_rad)
+        # write header
+        lines = [self._get_wea_header()]
+        # write values
+        for hoy in hoys:
+            dir_rad = self.direct_normal_radiation[hoy]
+            dif_rad = self.diffuse_horizontal_radiation[hoy]
+            line = "%d %d %.3f %d %d\n" \
+                % (dir_rad.datetime.month,
+                   dir_rad.datetime.day,
+                   dir_rad.datetime.hour + 0.5,
+                   dir_rad, dif_rad)
+            lines.append(line)
 
-                weaFile.write(line)
+        file_data = ''.join(lines)
+        write_to_file(file_path, file_data, True)
 
         return file_path
 
