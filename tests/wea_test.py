@@ -112,7 +112,7 @@ class WeaTestCase(unittest.TestCase):
         assert wea.to_json() == Wea.from_json(wea.to_json()).to_json()
 
     def test_import_epw(self):
-        """Test to compare import from stat with its json version."""
+        """Test to compare import from epw with its json version."""
         epw_path = './tests/epw/chicago.epw'
 
         wea_from_epw = Wea.from_epw_file(epw_path)
