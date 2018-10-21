@@ -17,10 +17,17 @@ from .skymodel import ashrae_clear_sky
 from .skymodel import zhang_huang_solar_model
 
 import math
+import os
+
 try:
     from itertools import izip as zip
+    readmode = 'rb'
+    writemode = 'wb'
 except ImportError:
     # python 3
+    xrange = range
+    readmode = 'r'
+    writemode = 'w'
     xrange = range
 
 
@@ -59,14 +66,29 @@ class Wea(object):
 
         This method converts input lists to DataCollection.
         """
+        err_message = 'For timestep %d, %d number of data for %s is expected. ' \
+            '%d is provided.'
+        if len(direct_normal_radiation) % cls.hour_count(is_leap_year) == 0:
+            # add extra information to err_message
+            err_message = err_message + ' Did you forget to set the timestep to %d?' \
+                % (len(direct_normal_radiation) / cls.hour_count(is_leap_year))
+
+        assert len(direct_normal_radiation) / timestep == cls.hour_count(is_leap_year), \
+            err_message % (timestep, timestep * cls.hour_count(is_leap_year),
+                           'direct normal radiation', len(direct_normal_radiation))
+
+        assert len(diffuse_horizontal_radiation) / timestep == \
+            cls.hour_count(is_leap_year), \
+            err_message % (timestep, timestep * cls.hour_count(is_leap_year),
+                           'diffuse_horizontal_radiation', len(direct_normal_radiation))
+
         dnr, dhr = cls._get_empty_data_collections(location, timestep, is_leap_year)
         dts = cls._get_datetimes(timestep, is_leap_year)
         for dir_norm, diff_horiz, dt in zip(direct_normal_radiation,
                                             diffuse_horizontal_radiation, dts):
             dnr.append(DataPoint(dir_norm, dt, 'SI', 'Direct Normal Radiation'))
             dhr.append(DataPoint(diff_horiz, dt, 'SI', 'Diffuse Horizontal Radiation'))
-        return cls(location, direct_normal_radiation, diffuse_horizontal_radiation,
-                   timestep, is_leap_year)
+        return cls(location, dnr, dhr, timestep, is_leap_year)
 
     @classmethod
     def from_json(cls, data):
@@ -101,6 +123,45 @@ class Wea(object):
 
         return cls(location, direct_normal_radiation,
                    diffuse_horizontal_radiation, timestep, is_leap_year)
+
+    # TOD(mostapha): If decided that this is a good idea, also parse datetime from wea
+    # file. It is currently auto-generated based on timestep to ensure it will be
+    # consistent with other studies.
+    @classmethod
+    def from_file(cls, weafile, timestep=1, is_leap_year=False):
+        """Create wea object from a wea file.
+
+        Args:
+            weafile:Full path to wea file.
+            timestep: An optional integer to set the number of time steps per hour.
+                Default is 1 for one value per hour. If the wea file has a time step
+                smaller than an hour adjust this input accordingly.
+        """
+        assert os.path.isfile(weafile), 'Failed to find {}'.format(weafile)
+        location = Location()
+        with open(weafile, readmode) as weaf:
+            first_line = weaf.readline()
+            assert first_line.startswith('place'), \
+                'Failed to find place in header. ' \
+                '{} is not a valid wea file.'.format(weafile)
+            location.city = ' '.join(first_line.split()[1:])
+            # parse header
+            location.latitude = float(weaf.readline().split()[-1])
+            location.longitude = -float(weaf.readline().split()[-1])
+            location.time_zone = -int(weaf.readline().split()[-1]) / 15
+            location.elevation = float(weaf.readline().split()[-1])
+            weaf.readline()  # pass line for weather data units
+
+            # parse radiation values
+            direct_normal_radiation = []
+            diffuse_horizontal_radiation = []
+            for line in weaf:
+                dirn, difh = [int(v) for v in line.split()[-2:]]
+                direct_normal_radiation.append(dirn)
+                diffuse_horizontal_radiation.append(difh)
+
+        return cls.from_values(location, direct_normal_radiation,
+                               diffuse_horizontal_radiation, timestep, is_leap_year)
 
     @classmethod
     def from_epw_file(cls, epwfile, timestep=1):
@@ -324,7 +385,7 @@ class Wea(object):
         assert len(cloud_cover) == len(relative_humidity) == \
             len(dry_bulb_temperature) == len(wind_speed), \
             'lengths of input climate data must match.'
-        assert len(cloud_cover) / timestep == cls.day_count(is_leap_year), \
+        assert len(cloud_cover) / timestep == cls.hour_count(is_leap_year), \
             'input climate data must be annual.'
         assert isinstance(timestep, int), 'timestep must be an' \
             ' integer. Got {}'.format(type(timestep))
@@ -452,8 +513,8 @@ class Wea(object):
         return self._is_leap_year
 
     @staticmethod
-    def day_count(is_leap_year):
-        """Number of days in this Wea file.
+    def hour_count(is_leap_year):
+        """Number of hours in this Wea file.
 
         Keep in mind that wea file is an annual file but this value will be different
         for a leap year
@@ -467,11 +528,11 @@ class Wea(object):
         This method should only be used for classmethods. For datetimes use datetiems or
         hoys methods.
         """
-        day_count = 8760 + 24 if is_leap_year else 8760
+        hour_count = 8760 + 24 if is_leap_year else 8760
         adjust_time = 30 if timestep == 1 else 0
         return tuple(
             DateTime.from_moy(60.0 * count / timestep + adjust_time, is_leap_year)
-            for count in xrange(day_count * timestep)
+            for count in xrange(hour_count * timestep)
         )
 
     @staticmethod
