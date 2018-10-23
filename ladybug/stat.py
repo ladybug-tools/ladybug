@@ -29,20 +29,27 @@ class STAT(object):
 
     def __init__(self, file_path):
         """Initalize the class."""
-        self.file_path = file_path
+        if not os.path.isfile(file_path):
+            raise ValueError(
+                'Cannot find an stat file at {}'.format(file_path))
+
+        if not file_path.lower().endswith('stat'):
+            raise TypeError('{} is not an .stat file.'.format(file_path))
+
+        self._file_path = os.path.normpath(file_path)
+        self._folder, self._file_name = os.path.split(self.file_path)
 
         # defaults empty state for certain parameters
         self._winter_des_day_dict = {}
         self._summer_des_day_dict = {}
         self._monthly_wind_dirs = []
-        self._monthly_found = False
 
         # import the data from the file
         self._import_data()
 
     @property
     def file_path(self):
-        """Get or set path to stat file."""
+        """Get the path to the stat file."""
         return self._file_path
 
     @property
@@ -54,19 +61,6 @@ class STAT(object):
     def file_name(self):
         """Get stat file name."""
         return self._file_name
-
-    @file_path.setter
-    def file_path(self, stat_file_path):
-        self._file_path = os.path.normpath(stat_file_path)
-
-        if not os.path.isfile(self._file_path):
-            raise ValueError(
-                'Cannot find an stat file at {}'.format(self._file_path))
-
-        if not stat_file_path.lower().endswith('stat'):
-            raise TypeError(stat_file_path + ' is not an .stat file.')
-
-        self._folder, self._file_name = os.path.split(self.file_path)
 
     def _import_data(self):
         """Import data from a stat file.
@@ -182,11 +176,6 @@ class STAT(object):
                 if dirs != []:
                     self._monthly_wind_dirs.append(dirs)
 
-            # check to see if all monthly data is there
-            if self._monthly_db_range_50 != [] and self._monthly_wb_range_50 != [] \
-                    and self._monthly_wind != [] and self._monthly_wind_dirs != [] \
-                    and self._stand_press_at_elev is not None:
-                        self._monthly_found = True
         finally:
             statwin.close()
 
@@ -239,6 +228,15 @@ class STAT(object):
                 return [str(i) for i in raw_txt]
         else:
             return []
+
+    @property
+    def monthly_found(self):
+        if self._monthly_db_range_50 != [] and self._monthly_wb_range_50 != [] \
+            and self._monthly_wind != [] and self._monthly_wind_dirs != [] \
+                and self._stand_press_at_elev is not None:
+                    return True
+        else:
+            return False
 
     @property
     def header(self):
@@ -411,7 +409,7 @@ class STAT(object):
     def monthly_cooling_design_days_050(self):
         """A list of 12 objects representing monthly 5.0% cooling design days.
         """
-        if self._monthly_found is False or self._monthly_db_50 == [] \
+        if self.monthly_found is False or self._monthly_db_50 == [] \
                 or self._monthly_wb_50 == []:
                     return []
         else:
@@ -431,7 +429,7 @@ class STAT(object):
     def monthly_cooling_design_days_100(self):
         """A list of 12 objects representing monthly 10.0% cooling design days.
         """
-        if self._monthly_found is False or self._monthly_db_100 == [] \
+        if self.monthly_found is False or self._monthly_db_100 == [] \
                 or self._monthly_wb_100 == []:
                     return []
         else:
@@ -451,7 +449,7 @@ class STAT(object):
     def monthly_cooling_design_days_020(self):
         """A list of 12 objects representing monthly 2.0% cooling design days.
         """
-        if self._monthly_found is False or self._monthly_db_20 == [] \
+        if self.monthly_found is False or self._monthly_db_20 == [] \
                 or self._monthly_wb_20 == []:
                     return []
         else:
@@ -471,7 +469,7 @@ class STAT(object):
     def monthly_cooling_design_days_004(self):
         """A list of 12 objects representing monthly 0.4% cooling design days.
         """
-        if self._monthly_found is False or self._monthly_db_04 == [] \
+        if self.monthly_found is False or self._monthly_db_04 == [] \
                 or self._monthly_wb_04 == []:
                     return []
         else:
