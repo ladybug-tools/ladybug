@@ -65,6 +65,18 @@ class EPWTestCase(unittest.TestCase):
         epw.to_wea(wea_path)
         assert os.path.isfile(wea_path)
 
+        # check the order of the data in the file
+        with open(wea_path) as wea_f:
+            lines = wea_f.readlines()
+            assert float(lines[6].split(' ')[-2]) == \
+                epw.direct_normal_radiation[0].value
+            assert float(lines[6].split(' ')[-1]) == \
+                epw.diffuse_horizontal_radiation[0].value
+            assert float(lines[17].split(' ')[-2]) == \
+                epw.direct_normal_radiation[11].value
+            assert float(lines[17].split(' ')[-1]) == \
+                epw.diffuse_horizontal_radiation[11].value
+
 
 if __name__ == "__main__":
     unittest.main()
