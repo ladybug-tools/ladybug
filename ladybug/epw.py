@@ -63,7 +63,7 @@ class EPW(object):
             raise ValueError(
                 'Cannot find an epw file at {}'.format(self._file_path))
         if not file_path.lower().endswith('epw'):
-            raise TypeError(file_path + ' is not an .epw file.')
+            raise TypeError('{} is not an .epw file.'.format(file_path))
 
         self._is_data_loaded = False
         self._is_location_loaded = False
