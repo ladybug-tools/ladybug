@@ -55,6 +55,8 @@ class EPWTestCase(unittest.TestCase):
         modified_path = './tests/epw/tokyo_modified.epw'
         epw.save(modified_path)
         assert os.path.isfile(modified_path)
+        assert os.stat(modified_path).st_size > 1
+        os.remove(modified_path)
 
     def test_save_wea(self):
         """Test save wea_rel."""
@@ -62,8 +64,10 @@ class EPWTestCase(unittest.TestCase):
         epw = EPW(path)
 
         wea_path = './tests/wea/chicago_epw.wea'
+
         epw.to_wea(wea_path)
         assert os.path.isfile(wea_path)
+        assert os.stat(wea_path).st_size > 1
 
         # check the order of the data in the file
         with open(wea_path) as wea_f:
@@ -76,6 +80,8 @@ class EPWTestCase(unittest.TestCase):
                 epw.direct_normal_radiation[11].value
             assert float(lines[17].split(' ')[-1]) == \
                 epw.diffuse_horizontal_radiation[11].value
+
+        os.remove(wea_path)
 
 
 if __name__ == "__main__":

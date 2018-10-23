@@ -24,6 +24,8 @@ class DataCollectionTestCase(unittest.TestCase):
         wf_name = os.path.join("./tests/zip", "AUS_NSW.Sydney.947670_IWEC.zip")
         futil.download_file(wf_url, wf_name)
         assert os.path.isfile(wf_name)
+        assert os.stat(wf_name).st_size == 239656
+        os.remove(wf_name)
 
     def test_unzip_file(self):
         """Test the unzip file capability"""
@@ -32,6 +34,7 @@ class DataCollectionTestCase(unittest.TestCase):
         futil.unzip_file(wf_path, folder)
         extracted_epw = os.path.join(folder, "AUS_NSW.Sydney.947670_IWEC.epw")
         assert os.path.isfile(extracted_epw)
+        assert os.stat(extracted_epw).st_size == 1565086
         futil.nukedir(folder)
 
     def test_copy_files_to_folder(self):
@@ -41,6 +44,7 @@ class DataCollectionTestCase(unittest.TestCase):
         futil.copy_files_to_folder([existing_file], target_dir)
         final_file = os.path.join(target_dir, "chicago.ddy")
         assert os.path.isfile(final_file)
+        assert os.stat(final_file).st_size == 29329
         os.remove(final_file)
 
 

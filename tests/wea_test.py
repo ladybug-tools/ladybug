@@ -142,10 +142,32 @@ class WeaTestCase(unittest.TestCase):
         wea_from_stat = Wea.from_stat_file(stat_path)
 
         wea_path = './tests/wea/chicago_stat.wea'
+        hrs_path = './tests/wea/chicago_stat.hrs'
         hoys = range(8760)
         wea_from_stat.write(wea_path, hoys, True)
 
         assert os.path.isfile(wea_path)
+        assert os.stat(wea_path).st_size > 1
+        assert os.path.isfile(hrs_path)
+        assert os.stat(hrs_path).st_size > 1
+
+        # check the order of the data in the file
+        with open(wea_path) as wea_f:
+            lines = wea_f.readlines()
+            assert float(lines[6].split(' ')[-2]) == \
+                pytest.approx(
+                    wea_from_stat.direct_normal_radiation[0].value, rel=1e-1)
+            assert int(lines[6].split(' ')[-1]) == \
+                wea_from_stat.diffuse_horizontal_radiation[0].value
+            assert float(lines[17].split(' ')[-2]) == \
+                pytest.approx(
+                    wea_from_stat.direct_normal_radiation[11].value, rel=1e-1)
+            assert float(lines[17].split(' ')[-1]) == \
+                pytest.approx(
+                    wea_from_stat.diffuse_horizontal_radiation[11].value, rel=1e-1)
+
+        os.remove(wea_path)
+        os.remove(hrs_path)
 
     def test_global_and_direct_horizontal(self):
         """Test the global horizontal radiation on method."""
