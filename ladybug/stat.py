@@ -138,23 +138,25 @@ class STAT(object):
             self._stand_press_at_elev = self._regex_check(
                 r"Elevation\s*[-]*\s*(\d*)Pa", self._header[5])
             self._ashrae_climate_zone = self._regex_check(
-                r'Climate type\s"(\S*)"\s\(A', self._body, False)
+                r'Climate type\s"(\S*)"\s\(A', self._body)
             self._koppen_climate_zone = self._regex_check(
-                r'Climate type\s"(\S*)"\s\(K', self._body, False)
+                r'Climate type\s"(\S*)"\s\(K', self._body)
 
             # pull out extreme and seasonal weeks.
             self._extreme_hot_week = self._regex_week_parse(
-                r"Extreme Hot Week Period selected:\s*(\S*)\s*(\S*):\s*(\S*)\s*(\S*),")
+                r"Extreme Hot Week Period selected:"
+                "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
             self._extreme_cold_week = self._regex_week_parse(
-                r"Extreme Cold Week Period selected:\s*(\S*)\s*(\S*):\s*(\S*)\s*(\S*),")
+                r"Extreme Cold Week Period selected:"
+                "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
             self._seasonal_weeks = self._regex_typical_week_parse()
 
             # pull out annual design days
-            winter_keys = self._regex_parse(r"Design Stat	Coldest(.*)", False)
+            winter_keys = self._regex_parse(r"Design Stat	Coldest(.*)")
             winter_vals = self._regex_parse(r"Heating(.*)")
             for key, val in zip(winter_keys, winter_vals):
                 self._winter_des_day_dict[key] = val
-            summer_keys = self._regex_parse(r"Design Stat	Hottest(.*)", False)
+            summer_keys = self._regex_parse(r"Design Stat	Hottest(.*)")
             summer_vals = self._regex_parse(r"Cooling(.*)")
             for key, val in zip(summer_keys, summer_vals):
                 self._summer_des_day_dict[key] = val
@@ -188,12 +190,12 @@ class STAT(object):
         finally:
             statwin.close()
 
-    def _regex_check(self, regex_str, search_space, numbr=True):
+    def _regex_check(self, regex_str, search_space):
         matches = re.compile(regex_str).findall(search_space)
         if len(matches) > 0:
-            if numbr is True:
+            try:
                 return float(matches[0])
-            else:
+            except ValueError:
                 return matches[0]
         else:
             return None
@@ -219,20 +221,21 @@ class STAT(object):
             return None
 
     def _regex_typical_week_parse(self):
-        typ_str = r"Typical Week Period selected:\s*(\S*)\s*(\S*):\s*(\S*)\s*(\S*),"
+        typ_str = r"Typical Week Period selected:" \
+            "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),"
         matches = re.compile(typ_str).findall(self._body)
         if len(matches) == 4:
             return [self._regex_week(match) for match in matches]
         else:
             return []
 
-    def _regex_parse(self, regex_str, numbr=True):
+    def _regex_parse(self, regex_str):
         matches = re.compile(regex_str).findall(self._body)
         if len(matches) > 0:
             raw_txt = matches[0].strip().split('\t')
-            if numbr is True:
-                return [float(i) if 'N' not in i else None for i in raw_txt]
-            else:
+            try:
+                return [float(i) if i != 'N' else None for i in raw_txt]
+            except ValueError:
                 return [str(i) for i in raw_txt]
         else:
             return []
