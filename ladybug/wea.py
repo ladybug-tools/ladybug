@@ -10,6 +10,7 @@ from .datatype import DataPoint
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
+from .futil import write_to_file
 
 from .skymodel import ashrae_revised_clear_sky
 from .skymodel import ashrae_clear_sky
@@ -180,12 +181,20 @@ class Wea(object):
         epw = EPW(epwfile)
         direct_normal = epw.direct_normal_radiation
         diffuse_horizontal = epw.diffuse_horizontal_radiation
-        if timestep is not 1:
+        if timestep != 1:
             print ("Note: timesteps greater than 1 on epw-generated Wea's \n" +
                    "are suitable for thermal models but are not recommended \n" +
                    "for daylight models.")
-            direct_normal = direct_normal.interpolate_data(timestep, True)
-            diffuse_horizontal = diffuse_horizontal.interpolate_data(timestep, True)
+            # interpolate the data
+            direct_norm_values = direct_normal.interpolate_data(timestep, True)
+            diffuse_horiz_values = diffuse_horizontal.interpolate_data(timestep, True)
+            # build empty dta collections
+            direct_normal, diffuse_horizontal = \
+                cls._get_empty_data_collections(epw.location, timestep, False)
+            # add correct values to the emply data collection
+            for e_beam, e_diff in zip(direct_norm_values, diffuse_horiz_values):
+                direct_normal.append(e_beam)
+                diffuse_horizontal.append(e_diff)
         else:
             # add half an hour to datetime to put sun in the middle of the hour
             for dnr in direct_normal:
@@ -435,10 +444,10 @@ class Wea(object):
 
     @direct_normal_radiation.setter
     def direct_normal_radiation(self, data):
+        assert isinstance(data, DataCollection), 'direct_normal_radiation data' \
+            ' must be a data collection. Got {}'.format(type(data))
         assert len(data) / self.timestep == self.hour_count(self.is_leap_year), \
             'direct_normal_radiation data must be annual.'
-        assert isinstance(data, DataCollection), \
-            'direct_normal_radiation data must be a data collection.'
         self._direct_normal_radiation = data
 
     @property
@@ -448,10 +457,10 @@ class Wea(object):
 
     @diffuse_horizontal_radiation.setter
     def diffuse_horizontal_radiation(self, data):
+        assert isinstance(data, DataCollection), 'diffuse_horizontal_radiation data' \
+            ' must be a data collection. Got {}'.format(type(data))
         assert len(data) / self.timestep == self.hour_count(self.is_leap_year), \
             'diffuse_horizontal_radiation data must be annual.'
-        assert isinstance(data, DataCollection), \
-            'diffuse_horizontal_radiation data must be a data collection.'
         self._diffuse_horizontal_radiation = data
 
     @property
@@ -684,42 +693,47 @@ class Wea(object):
         WEA carries radiation values from epw and is what gendaymtx uses to
         generate the sky.
         """
+        if not file_path.lower().endswith('.wea'):
+            file_path += '.wea'
+
         # generate hoys in wea file based on timestep
         full_wea = False
         if not hoys:
             hoys = self.hoys
             full_wea = True
 
-        with open(file_path, writemode) as wea_file:
-            # write header
-            wea_file.write(self.header)
-            if full_wea:
-                # there is no input user for hoys, write it for all the hours
-                # write values
-                for dir_rad, dif_rad in zip(self.direct_normal_radiation,
-                                            self.diffuse_horizontal_radiation):
-                    dt = dir_rad.datetime
-                    line = "%d %d %.3f %d %d\n" \
-                        % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
-                    wea_file.write(line)
-            else:
-                # output wea based on user request
-                for hoy in hoys:
-                    try:
-                        dir_rad, dif_rad = self.get_radiation_values_for_hoy(hoy)
-                    except IndexError:
-                        print('Warn: Wea data for {} is not available!'.format(dt))
-                        continue
+        # write header
+        lines = [self.header]
+        if full_wea:
+            # there is no input user for hoys, write it for all the hours
+            # write values
+            for dir_rad, dif_rad in zip(self.direct_normal_radiation,
+                                        self.diffuse_horizontal_radiation):
+                dt = dir_rad.datetime
+                line = "%d %d %.3f %d %d\n" \
+                    % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
+                lines.append(line)
+        else:
+            # output wea based on user request
+            for hoy in hoys:
+                try:
+                    dir_rad, dif_rad = self.get_radiation_values_for_hoy(hoy)
+                except IndexError:
+                    print('Warn: Wea data for {} is not available!'.format(dt))
+                    continue
 
-                    dt = dir_rad.datetime
-                    line = "%d %d %.3f %d %d\n" \
-                        % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
+                dt = dir_rad.datetime
+                line = "%d %d %.3f %d %d\n" \
+                    % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
 
-                    wea_file.write(line)
+                lines.append(line)
+        file_data = ''.join(lines)
+        write_to_file(file_path, file_data, True)
 
         if write_hours:
-            with open(file_path[:-4] + '.hrs', writemode) as outf:
-                outf.write(','.join(str(h) for h in hoys) + '\n')
+            hrs_file_path = file_path[:-4] + '.hrs'
+            hrs_data = ','.join(str(h) for h in hoys) + '\n'
+            write_to_file(hrs_file_path, hrs_data, True)
 
         return file_path
 

@@ -2,7 +2,7 @@
 
 import unittest
 import pytest
-
+import os
 from ladybug.wea import Wea
 from ladybug.location import Location
 
@@ -112,7 +112,7 @@ class WeaTestCase(unittest.TestCase):
         assert wea.to_json() == Wea.from_json(wea.to_json()).to_json()
 
     def test_import_epw(self):
-        """Test compare import from epw and stat."""
+        """Test to compare import from epw with its json version."""
         epw_path = './tests/epw/chicago.epw'
 
         wea_from_epw = Wea.from_epw_file(epw_path)
@@ -125,7 +125,7 @@ class WeaTestCase(unittest.TestCase):
             wea_from_epw.diffuse_horizontal_radiation.values
 
     def test_import_stat(self):
-        """Test compare import from epw and stat."""
+        """Test to compare import from stat with its json version."""
         stat_path = './tests/stat/chicago.stat'
         wea_from_stat = Wea.from_stat_file(stat_path)
 
@@ -135,6 +135,39 @@ class WeaTestCase(unittest.TestCase):
             wea_from_stat.direct_normal_radiation.values
         assert wea_from_json.diffuse_horizontal_radiation.values == \
             wea_from_stat.diffuse_horizontal_radiation.values
+
+    def test_write_wea(self):
+        """Test the write Wea file capability."""
+        stat_path = './tests/stat/chicago.stat'
+        wea_from_stat = Wea.from_stat_file(stat_path)
+
+        wea_path = './tests/wea/chicago_stat.wea'
+        hrs_path = './tests/wea/chicago_stat.hrs'
+        hoys = range(8760)
+        wea_from_stat.write(wea_path, hoys, True)
+
+        assert os.path.isfile(wea_path)
+        assert os.stat(wea_path).st_size > 1
+        assert os.path.isfile(hrs_path)
+        assert os.stat(hrs_path).st_size > 1
+
+        # check the order of the data in the file
+        with open(wea_path) as wea_f:
+            lines = wea_f.readlines()
+            assert float(lines[6].split(' ')[-2]) == \
+                pytest.approx(
+                    wea_from_stat.direct_normal_radiation[0].value, rel=1e-1)
+            assert int(lines[6].split(' ')[-1]) == \
+                wea_from_stat.diffuse_horizontal_radiation[0].value
+            assert float(lines[17].split(' ')[-2]) == \
+                pytest.approx(
+                    wea_from_stat.direct_normal_radiation[11].value, rel=1e-1)
+            assert float(lines[17].split(' ')[-1]) == \
+                pytest.approx(
+                    wea_from_stat.diffuse_horizontal_radiation[11].value, rel=1e-1)
+
+        os.remove(wea_path)
+        os.remove(hrs_path)
 
     def test_global_and_direct_horizontal(self):
         """Test the global horizontal radiation on method."""

@@ -395,14 +395,14 @@ class DataCollection(object):
         _minutes_step = int(60 / int(timestep / self.header.analysis_period.timestep))
         _data_length = len(self.data)
         # generate new data
-        _data = tuple(
+        _data = [
             self[d].__class__(_v, self[d].datetime.add_minute(step * _minutes_step))
             for d in xrange(_data_length)
             for _v, step in zip(self.xxrange(self[d],
                                              self[(d + 1) % _data_length],
                                              timestep),
                                 xrange(timestep))
-        )
+            ]
 
         # divide cumulative values by timestep
         if cumulative is True:
@@ -657,13 +657,20 @@ class DataCollection(object):
             'header': self.header.to_json() if self.header else {}
         }
 
+    def isDataCollection(self):
+        """Return True."""
+        return True
+
     def ToString(self):
         """Overwrite .NET ToString method."""
         return self.__repr__()
 
     def __repr__(self):
         """_data collection representation."""
-        if self.header and self.header.data_type:
-            return "{}: #{}".format(self.header.data_type, len(self._data))
+        if self.header and self.header.data_type and self.header.unit \
+                and self.header.analysis_period:
+                    return "{} ({}) DataCollection\n{}\n...{} values...".format(
+                        self.header.data_type, self.header.unit,
+                        self.header.analysis_period, len(self._data))
         else:
-            return "DataCollection: #{}".format(len(self._data))
+            return "DataCollection\n\n...{} values...".format(len(self._data))

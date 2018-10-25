@@ -107,7 +107,7 @@ class DDY(object):
         """Save ddy object as a .ddy file.
 
         args:
-            file_path: A string representing the file to write the ddy file to.
+            file_path: A string representing the path to write the ddy file to.
         """
         # write all data into the file
         # write the file
@@ -216,7 +216,10 @@ class DesignDay(object):
         """
         # format the object into a list of properties
         ep_string = ep_string.strip()
-        ep_lines = ep_string.split('\n')
+        if '\n' in ep_string:
+            ep_lines = ep_string.split('\n')
+        else:
+            ep_lines = ep_string.split('\r')
         lines = [l.split('!')[0].strip().replace(',', '') for l in ep_lines]
 
         # check to be sure that we have a valid ddy object
@@ -224,9 +227,9 @@ class DesignDay(object):
             "of lines of text [{}] does not correspond" \
             " to an EP Design Day [26 or 27]".format(
                 len(lines))
+        lines[-1] = lines[-1].split(';')[0]
 
         # extract primary properties
-        lines[-1] = lines[-1].split(';')[0]
         name = lines[1]
         day_type = lines[4]
 

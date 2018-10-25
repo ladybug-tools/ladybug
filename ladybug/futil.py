@@ -1,6 +1,18 @@
 """A collection of auxiliary funtions for working with files and directories."""
 import os
 import shutil
+import zipfile
+import sys
+
+if (sys.version_info < (3, 0)):
+    import urllib2
+    readmode = 'rb'
+    writemode = 'wb'
+else:
+    import urllib.request
+    readmode = 'r'
+    writemode = 'w'
+
 
 def preparedir(target_dir, remove_content=True):
     """Prepare a folder for analysis.
@@ -73,7 +85,7 @@ def write_to_file_by_name(folder, fname, data, mkdir=False):
 
     file_path = os.path.join(folder, fname)
 
-    with open(file_path, "w") as outf:
+    with open(file_path, writemode) as outf:
         try:
             outf.write(str(data))
             return file_path
@@ -154,3 +166,111 @@ def bat_to_sh(file_path):
     st = os.stat(sh_file)
     os.chmod(sh_file, st.st_mode | 0o111)
     return sh_file
+
+
+def _download_py2(link, path, __hdr__):
+    """Download a file from a link in Python 2."""
+    try:
+        req = urllib2.Request(link, headers=__hdr__)
+        u = urllib2.urlopen(req)
+    except Exception as e:
+        raise Exception(' Download failed with the error:\n{}'.format(e))
+
+    with open(path, 'wb') as outf:
+        for l in u:
+            outf.write(l)
+    u.close()
+
+
+def _download_py3(link, path, __hdr__):
+    """Download a file from a link in Python 3."""
+    try:
+        req = urllib.request.Request(link, headers=__hdr__)
+        u = urllib.request.urlopen(req)
+    except Exception as e:
+        raise Exception(' Download failed with the error:\n{}'.format(e))
+
+    with open(path, 'wb') as outf:
+        for l in u:
+            outf.write(l)
+    u.close()
+
+
+def download_file_by_name(url, target_folder, file_name, mkdir=False):
+    """Download a file to a directory.
+
+    Args:
+        url: A string to a valid URL.
+        target_folder: Target folder for download (e.g. c:/ladybug)
+        file_name: File name (e.g. testPts.zip).
+        mkdir: Set to True to create the directory if doesn't exist (Default: False)
+    """
+    # headers to "spoof" the download as coming from a browser (needed for E+ site)
+    __hdr__ = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 '
+               '(KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+               'Accept': 'text/html,application/xhtml+xml,'
+               'application/xml;q=0.9,*/*;q=0.8',
+               'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+               'Accept-Encoding': 'none',
+               'Accept-Language': 'en-US,en;q=0.8',
+               'Connection': 'keep-alive'}
+
+    # create the target directory.
+    if not os.path.isdir(target_folder):
+        if mkdir:
+            preparedir(target_folder)
+        else:
+            created = preparedir(target_folder, False)
+            if not created:
+                raise ValueError("Failed to find %s." % target_folder)
+    file_path = os.path.join(target_folder, file_name)
+
+    if (sys.version_info < (3, 0)):
+        _download_py2(url, file_path, __hdr__)
+    else:
+        _download_py3(url, file_path, __hdr__)
+
+
+def download_file(url, file_path, mkdir=False):
+    """Write a string of data to file.
+
+    Args:
+        url: A string to a valid URL.
+        file_path: Full path to intended download location (e.g. c:/ladybug/testPts.pts)
+        mkdir: Set to True to create the directory if doesn't exist (Default: False)
+    """
+    folder, fname = os.path.split(file_path)
+    return download_file_by_name(url, folder, fname, mkdir)
+
+
+def unzip_file(source_file, dest_dir=None, mkdir=False):
+    """Unzip a compressed file.
+
+    Args:
+        source_file: Full path to a valid compressed file (e.g. c:/ladybug/testPts.zip)
+        dest_dir: Target folder to extract to (e.g. c:/ladybug).
+            Default is set to the same directory as the source file.
+        mkdir: Set to True to create the directory if doesn't exist (Default: False)
+    """
+    # set default dest_dir and create it if need be.
+    if dest_dir is None:
+        dest_dir, fname = os.path.split(source_file)
+    elif not os.path.isdir(dest_dir):
+        if mkdir:
+            preparedir(dest_dir)
+        else:
+            created = preparedir(dest_dir, False)
+            if not created:
+                raise ValueError("Failed to find %s." % dest_dir)
+
+    # extract files to destination
+    with zipfile.ZipFile(source_file) as zf:
+        for member in zf.infolist():
+            words = member.filename.split('\\')
+            for word in words[:-1]:
+                drive, word = os.path.splitdrive(word)
+                head, word = os.path.split(word)
+                if word in (os.curdir, os.pardir, ''):
+                    continue
+                dest_dir = os.path.join(dest_dir, word)
+            zf.extract(member, dest_dir)
