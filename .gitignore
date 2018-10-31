@@ -10,3 +10,5 @@ ladybug/sunpathplus.py
 *.ipynb
 .tox
 *.egg-info
+build
+dist

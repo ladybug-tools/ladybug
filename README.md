@@ -18,6 +18,11 @@ For the legacy Ladybug Grasshopper plugin see [this repository](https://github.c
 
 ## [API Documentation](http://ladybug-tools.github.io/apidoc/ladybug)
 
+## Installation
+
+`pip install lbt-ladybug`
+
+
 ## Usage
 
 ```python
