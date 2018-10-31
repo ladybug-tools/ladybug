@@ -14,6 +14,6 @@ after_success:
   - coverage report
   - coveralls
   - git config --global user.name "ladybugbot"
-  - git config --global user.email "info@ladybug.tools"
+  - git config --global user.email "release@ladybug.tools"
   - pip install python-semantic-release
   - semantic-release version
