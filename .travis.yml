@@ -13,7 +13,7 @@ script:
 after_success:
   - coverage report
   - coveralls
-  - git config --global user.name "semantic-release (via TravisCI)"
-  - git config --global user.email "semantic-release@travis"
+  - git config --global user.name "ladybugbot"
+  - git config --global user.email "info@ladybug.tools"
   - pip install python-semantic-release
   - semantic-release version
