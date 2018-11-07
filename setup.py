@@ -29,7 +29,7 @@ setuptools.setup(
     url="https://github.com/ladybug-tools/ladybug",
     packages=setuptools.find_packages(),
     install_requires=[
-        'euclid3'
+        'euclid3==0.1'
     ],
     classifiers=[
         "Programming Language :: Python :: 2.7",
