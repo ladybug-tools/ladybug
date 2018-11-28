@@ -136,6 +136,8 @@ class Wea(object):
             timestep: An optional integer to set the number of time steps per hour.
                 Default is 1 for one value per hour. If the wea file has a time step
                 smaller than an hour adjust this input accordingly.
+            is_leap_year: A boolean to indicate if values are representing a leap year.
+                Default is False.
         """
         assert os.path.isfile(weafile), 'Failed to find {}'.format(weafile)
         location = Location()
@@ -186,15 +188,25 @@ class Wea(object):
                    "are suitable for thermal models but are not recommended \n" +
                    "for daylight models.")
             # interpolate the data
-            direct_norm_values = direct_normal.interpolate_data(timestep, True)
-            diffuse_horiz_values = diffuse_horizontal.interpolate_data(timestep, True)
+            direct_norm_values = direct_normal.interpolate_data(timestep)
+            diffuse_horiz_values = diffuse_horizontal.interpolate_data(timestep)
             # build empty dta collections
             direct_normal, diffuse_horizontal = \
                 cls._get_empty_data_collections(epw.location, timestep, False)
+            # create sunpath to check if the sun is up at a given timestep
+            sp = Sunpath.from_location(epw.location)
             # add correct values to the emply data collection
             for e_beam, e_diff in zip(direct_norm_values, diffuse_horiz_values):
-                direct_normal.append(e_beam)
-                diffuse_horizontal.append(e_diff)
+                # set radiation values to 0 when the sun is not up
+                sun = sp.calculate_sun_from_date_time(e_beam.datetime)
+                if sun.altitude > 0:
+                    direct_normal.append(e_beam)
+                    diffuse_horizontal.append(e_diff)
+                else:
+                    direct_normal.append(DataPoint(
+                        0, e_beam.datetime, 'SI', 'Direct Normal Radiation'))
+                    diffuse_horizontal.append(DataPoint(
+                        0, e_diff.datetime, 'SI', 'Diffuse Horizontal Radiation'))
         else:
             # add half an hour to datetime to put sun in the middle of the hour
             for dnr in direct_normal:
@@ -282,11 +294,9 @@ class Wea(object):
                 alt_list, monthly_tau_beam[i_mon], monthly_tau_diffuse[i_mon])
             for e_beam, e_diff in zip(dir_norm_rad, dif_horiz_rad):
                 direct_norm_rad.append(DataPoint(
-                    e_beam / timestep, dates[i_dt],
-                    'SI', 'Direct Normal Radiation'))
+                    e_beam, dates[i_dt], 'SI', 'Direct Normal Radiation'))
                 diffuse_horiz_rad.append(DataPoint(
-                    e_diff / timestep, dates[i_dt],
-                    'SI', 'Diffuse Horizontal Radiation'))
+                    e_diff, dates[i_dt], 'SI', 'Diffuse Horizontal Radiation'))
                 i_dt += 1
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
@@ -340,11 +350,9 @@ class Wea(object):
                 alt_list, i_mon + 1, sky_clearness)
             for e_beam, e_diff in zip(dir_norm_rad, dif_horiz_rad):
                 direct_norm_rad.append(DataPoint(
-                    e_beam / timestep, dates[i_dt],
-                    'SI', 'Direct Normal Radiation'))
+                    e_beam, dates[i_dt], 'SI', 'Direct Normal Radiation'))
                 diffuse_horiz_rad.append(DataPoint(
-                    e_diff / timestep, dates[i_dt],
-                    'SI', 'Diffuse Horizontal Radiation'))
+                    e_diff, dates[i_dt], 'SI', 'Diffuse Horizontal Radiation'))
                 i_dt += 1
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
@@ -471,7 +479,7 @@ class Wea(object):
         header_ghr = Header(location=self.location,
                             analysis_period=analysis_period,
                             data_type='Global Horizontal Radiation',
-                            unit='Wh/m2')
+                            unit='W/m2')
         global_horizontal_rad = DataCollection(header=header_ghr)
         is_leap_year = self.is_leap_year
         sp = Sunpath.from_location(self.location)
@@ -495,7 +503,7 @@ class Wea(object):
         header_dhr = Header(location=self.location,
                             analysis_period=analysis_period,
                             data_type='Direct Horizontal Radiation',
-                            unit='Wh/m2')
+                            unit='W/m2')
         direct_horizontal_rad = DataCollection(header=header_dhr)
         is_leap_year = self.is_leap_year
         sp = Sunpath.from_location(self.location)
@@ -545,12 +553,12 @@ class Wea(object):
         header_dnr = Header(location=location,
                             analysis_period=analysis_period,
                             data_type='Direct Normal Radiation',
-                            unit='Wh/m2')
+                            unit='W/m2')
         direct_norm_rad = DataCollection(header=header_dnr)
         header_dhr = Header(location=location,
                             analysis_period=analysis_period,
                             data_type='Diffuse Horizontal Radiation',
-                            unit='Wh/m2')
+                            unit='W/m2')
         diffuse_horiz_rad = DataCollection(header=header_dhr)
 
         return direct_norm_rad, diffuse_horiz_rad
