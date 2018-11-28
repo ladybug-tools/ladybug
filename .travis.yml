@@ -4,6 +4,9 @@ python:
   - "2.7"
   - "3.6"
 
+env:
+  - TRAVIS=true
+
 install:
  - pip install pytest pytest-cov euclid3 coveralls
 
@@ -13,3 +16,7 @@ script:
 after_success:
   - coverage report
   - coveralls
+  - git config --global user.name "ladybugbot"
+  - git config --global user.email "release@ladybug.tools"
+  - pip install python-semantic-release
+  - semantic-release publish
