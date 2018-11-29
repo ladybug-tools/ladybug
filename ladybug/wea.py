@@ -235,7 +235,7 @@ class Wea(object):
 
         # check to be sure the stat file does not have missing tau values
         def check_missing(opt_data, data_name):
-            if opt_data is []:
+            if opt_data == []:
                 raise ValueError('Stat file contains no optical data.')
             for i, x in enumerate(opt_data):
                 if x is None:
