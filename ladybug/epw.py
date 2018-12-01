@@ -734,7 +734,7 @@ class EPW(object):
 
         # calculate sy temperature for each hour
         sky_temp_data = []
-        for hor_ir in horiz_ir.values:
+        for hor_ir in horiz_ir.data:
             dat = hor_ir.datetime
             temp = ((float(hor_ir) / (5.6697 * (10**(-8))))**(0.25)) - 273.15
             sky_temp_data.append(DataPoint(temp, dat))
