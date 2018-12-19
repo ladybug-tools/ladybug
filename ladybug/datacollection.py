@@ -156,37 +156,37 @@ class DataCollection(object):
 
     def get_highest_values(self, count):
         """Find highest values in a list of DataPoints
-        
+
         Args:
             data: A list of DataPoint to be processed
             count: Number of highest values to account for
-            
+
         Return:
             highest_values: The n highest values in data list, ordered from
                 highest to lowest
-            highest_values_index: Indicies of the n highest values in data 
+            highest_values_index: Indicies of the n highest values in data
                 list, ordered from highest to lowest
         """
         data_points = self._data
-        
+
         values = [obj._value for obj in data_points]
-        
+
         lenght_values = len(values)
-        
+
         count = int(count)
-        
+
         assert count <= lenght_values, \
             'Count must be equal to or smaller than list of data lenght'
-            
+
         assert count > 0, \
             'Count must be higher than zero'
-        
-        highest_values = sorted(values, reverse = True)[0:count]
-        
-        highest_values_index = sorted(range(lenght_values), 
-                                      key = lambda k: values[k],
-                                      reverse = True)[0:count]
-        
+
+        highest_values = sorted(values, reverse=True)[0:count]
+
+        highest_values_index = sorted(range(lenght_values),
+                                      key=lambda k: values[k],
+                                      reverse=True)[0:count]
+
         return highest_values, highest_values_index
 
     @staticmethod
@@ -669,7 +669,7 @@ class DataCollection(object):
         """_data collection representation."""
         if self.header and self.header.data_type and self.header.unit \
                 and self.header.analysis_period:
-                    return "{} ({}) DataCollection\n{}\n...{} values...".format(
+                    return "{} ({})\n{}\n...{} values...".format(
                         self.header.data_type, self.header.unit,
                         self.header.analysis_period, len(self._data))
         else:

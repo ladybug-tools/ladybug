@@ -20,7 +20,7 @@ class Location(object):
     """
 
     __slots__ = ("city", "country", "_lat", "_lon", "_tz", "_elev",
-                 "station_id", "source")
+                 "station_id", "source", "building_id", "zone_id")
 
     def __init__(self, city=None, country=None, latitude=0, longitude=0,
                  time_zone=0, elevation=0, station_id=None, source=None,

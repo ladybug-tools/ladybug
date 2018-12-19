@@ -5,43 +5,46 @@ Header is useful for creating list of ladybug data.
 """
 from .location import Location
 from .analysisperiod import AnalysisPeriod
+from .datatypenew import DataTypes
+from .datatypenew import DataTypeBase
 
 
 class Header(object):
-    """data collection header.
+    """DataCollection header.
 
-    Header carries data for location, data type, unit and analysis period
+    Header carries meatdata for data type, unit, analysis period, and location
 
     Attributes:
-        location: location data as a ladybug Location or location string
-            (Default: None).
-        data_type: Type of data (e.g. Temperature) (Default: None).
+        data_type: A DataType object or text indicating the name of a DataType.
+            (e.g. Temperature) (Default: None).
         unit: data_type unit (Default: None).
         analysis_period: A Ladybug analysis period (Defualt: None)
-        middle_hour: A boolean to set whether the values are interpreted
-            as falling on the middle of the hour (True) or the start of
-            the hour (False). (Default: False)
+        location: Location data as a ladybug Location or location string
+            (Default: None).
     """
 
-    def __init__(self, location=None, data_type=None, unit=None,
-                 analysis_period=None, middle_hour=None):
+    __slots__ = ('data_type', 'unit', 'analysis_period', 'location')
+
+    def __init__(self, data_type, unit=None,
+                 analysis_period=None, location=None):
         """Initiate Ladybug header for lists.
 
         Args:
-            location: location data as a ladybug Location or location string
-                (Default: None).
-            data_type: Type of data (e.g. Temperature) (Default: None).
-            unit: data_type unit (Default: None).
+            data_type: A DataType object or text indicating the name of a DataType.
+                (e.g. Temperature) (Default: None).
+            unit: data_type unit (Default: None)
             analysis_period: A Ladybug analysis period (Defualt: None)
-            middle_hour: A boolean to set whether the values are interpreted
-                as falling on the middle of the hour (True) or the start of
-                the hour (False). (Default: False)
+            location: location data as a ladybug Location or location string
+                (Default: None)
         """
-        self.location = Location.from_location(location)
-        self.data_type = data_type if data_type else None
+        if hasattr(data_type, 'isDataType'):
+            data_type.is_unit_acceptable(unit)
+            self.data_type = data_type
+        else:
+            self.data_type = DataTypes.type_by_name_and_unit(data_type, unit)
         self.unit = unit if unit else None
         self.analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
-        self.middle_hour = middle_hour if middle_hour else False
+        self.location = Location.from_location(location)
 
     @classmethod
     def from_json(cls, data):
@@ -49,22 +52,22 @@ class Header(object):
 
         Args:
             data: {
-                "location": {}, // A Ladybug location
-                "data_type": string, //Type of data (e.g. Temperature) (Default: None).
+                "data_type": {}, //Type of data (e.g. Temperature)
                 "unit": string,
-                "analysis_period": {}, // A Ladybug AnalysisPeriod,
-                "middle_hour": {} // Whether values fall in the middle of the hour
+                "analysis_period": {} // A Ladybug AnalysisPeriod
+                "location": {}, // A Ladybug location
             }
         """
         # assign default values
-        keys = ('location', 'data_type', 'unit', 'analysis_period', 'middle_hour')
+        keys = ('data_type', 'unit', 'analysis_period', 'location')
         for key in keys:
             if key not in data:
                 data[key] = None
 
-        location = Location.from_json(data['location'])
+        data_type = DataTypeBase.from_json(data['data_type'])
         ap = AnalysisPeriod.from_json(data['analysis_period'])
-        return cls(location, data['data_type'], data['unit'], ap, data['middle_hour'])
+        location = Location.from_json(data['location'])
+        return cls(data_type, data['unit'], ap, location)
 
     @classmethod
     def from_header(cls, header):
@@ -72,7 +75,7 @@ class Header(object):
         if hasattr(header, 'isHeader'):
             return header
 
-        # "%s|%s(%s)|%s"
+        # "%s(%s)|%s|%s"
         try:
             _h = header.replace("|", "**").replace("(", "**").replace(")", "")
             return cls(*_h.split("**"))
@@ -87,17 +90,16 @@ class Header(object):
 
     def duplicate(self):
         """Duplicate header."""
-        return self.__class__(self.location, self.data_type, self.unit,
-                              self.analysis_period, self.middle_hour)
+        return self.__class__(self.data_type, self.unit, self.analysis_period,
+                              self.location)
 
     def to_tuple(self):
         """Return Ladybug header as a list."""
         return (
-            self.location,
             self.data_type,
             self.unit,
             self.analysis_period,
-            self.middle_hour
+            self.location
         )
 
     def __iter__(self):
@@ -106,11 +108,10 @@ class Header(object):
 
     def to_json(self):
         """Return a header as a dictionary."""
-        return {'location': self.location.to_json(),
-                'data_type': self.data_type,
+        return {'data_type': self.data_type.to_json(),
                 'unit': self.unit,
                 'analysis_period': self.analysis_period.to_json(),
-                'middle_hour': self.middle_hour}
+                'location': self.location.to_json()}
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -118,6 +119,6 @@ class Header(object):
 
     def __repr__(self):
         """Return Ladybug header as a string."""
-        return "%s|%s(%s)|%s|%s" % (
-            repr(self.location), self.data_type, self.unit,
-            self.analysis_period, self.middle_hour)
+        return "%s(%s)|%s|%s" % (
+            repr(self.data_type), self.unit,
+            self.analysis_period, repr(self.location))
