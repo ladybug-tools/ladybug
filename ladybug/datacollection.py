@@ -150,23 +150,41 @@ class DataCollection(object):
         """Duplicate current data list."""
         return DataCollection(self.data, self.header)
 
-    def to_unit(self, unit):
+    def convert_to_unit(self, unit):
         """Convert the DataCollection to the input unit"""
         self._data = self._header.data_type.to_unit(
-                self._data, unit, self._header.data_type.unit)
-        self._header.data_type.unit = unit
+                self._data, unit, self._header.unit)
+        self._header._unit = unit
 
-    def to_ip(self):
+    def convert_to_ip(self):
         """Convert the DataCollection to IP units"""
-        self._data, self._header.data_type.unit = \
+        self._data, self._header._unit = \
             self._header.data_type.to_ip(
-                self._data, self._header.data_type.unit)
+                self._data, self._header.unit)
+
+    def convert_to_si(self):
+        """Convert the DataCollection to SI units"""
+        self._data, self._header._unit = \
+            self._header.data_type.to_si(
+                self._data, self._header.unit)
+
+    def to_unit(self, unit):
+        """Return a DataCollection in the input units"""
+        new_data_c = self.duplicate()
+        new_data_c.convert_to_unit(unit)
+        return new_data_c
 
     def to_ip(self):
-        """Convert the DataCollection to SI units"""
-        self._data, self._header.data_type.unit = \
-            self._header.data_type.to_si(
-                self._data, self._header.data_type.unit)
+        """Return a DataCollection in IP units"""
+        new_data_c = self.duplicate()
+        new_data_c.convert_to_ip()
+        return new_data_c
+
+    def to_si(self):
+        """Return a DataCollection in SI units"""
+        new_data_c = self.duplicate()
+        new_data_c.convert_to_si()
+        return new_data_c
 
     @staticmethod
     def average(data):

@@ -1,4 +1,6 @@
 """Ladybug data types."""
+from ladybug.datatype import DataPoint
+
 import copy
 import math
 
@@ -191,7 +193,7 @@ class DataTypeBase(object):
     def _check_values(self, values):
         """Check to be sure values are numbers before doing numerical operations."""
         if len(values) > 0:
-            assert isinstance(values[0], (float, int)), \
+            assert isinstance(values[0], (float, int, DataPoint)), \
                 "values must be numbers to perform math operations. Got {}".format(
                     type(values[0]))
 
