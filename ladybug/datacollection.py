@@ -54,19 +54,19 @@ class DataCollection(object):
         return cls(input_data, Header.from_json(data['header']))
 
     @classmethod
-    def from_list(cls, lst, location=None, data_type=None, unit=None,
-                  analysis_period=None):
+    def from_list(cls, lst, data_type=None, unit=None,
+                  analysis_period=None, location=None):
         """Create a data collection from a list.
 
         lst items can be DataPoint or numerical values.
 
         Args:
             lst: A list of data.
-            location: location data as a ladybug Location or location string
-                (Default: unknown).
-            data_type: Type of data (e.g. Temperature) (Default: unknown).
+            data_type: Type of data (e.g. Temperature).
             unit: data_type unit (Default: unknown).
             analysis_period: A Ladybug analysis period (Defualt: None)
+            location: location data as a ladybug Location or location string
+                (Default: unknown).
         """
         header = Header(data_type=data_type, unit=unit,
                         analysis_period=analysis_period,
@@ -152,9 +152,21 @@ class DataCollection(object):
 
     def to_unit(self, unit):
         """Convert the DataCollection to the input unit"""
-        self._data, self._header.data_type.unit = \
-            self._header.data_type.to_unit(
+        self._data = self._header.data_type.to_unit(
                 self._data, unit, self._header.data_type.unit)
+        self._header.data_type.unit = unit
+
+    def to_ip(self):
+        """Convert the DataCollection to IP units"""
+        self._data, self._header.data_type.unit = \
+            self._header.data_type.to_ip(
+                self._data, self._header.data_type.unit)
+
+    def to_ip(self):
+        """Convert the DataCollection to SI units"""
+        self._data, self._header.data_type.unit = \
+            self._header.data_type.to_si(
+                self._data, self._header.data_type.unit)
 
     @staticmethod
     def average(data):

@@ -25,18 +25,19 @@ class Header(object):
 
     __slots__ = ('_data_type', '_unit', '_analysis_period', '_location')
 
-    def __init__(self, data_type, unit=None,
+    def __init__(self, data_type=None, unit=None,
                  analysis_period=None, location=None):
         """Initiate Ladybug header for lists.
 
         Args:
-            data_type: A DataType object or text indicating the name of a DataType.
-                (e.g. Temperature) (Default: None).
+            data_type: A DataType object or text indicating the name of the DataType.
+                (e.g. Temperature) (Default: 'Unknown Data').
             unit: data_type unit (Default: None)
             analysis_period: A Ladybug analysis period (Defualt: None)
             location: location data as a ladybug Location or location string
                 (Default: None)
         """
+        data_type = data_type or 'Unknown Data'
         self.set_data_type_and_unit(data_type, unit)
         self.analysis_period = analysis_period
         self.location = location
