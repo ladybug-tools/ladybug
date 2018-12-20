@@ -147,26 +147,31 @@ class DataCollection(object):
         return self._data
 
     def duplicate(self):
-        """Duplicate current data list."""
-        return DataCollection(self.data, self.header)
+        """Return a copy of the current data list."""
+        return DataCollection(self.data, self.header.duplicate())
 
     def convert_to_unit(self, unit):
         """Convert the DataCollection to the input unit"""
-        self._data = self._header.data_type.to_unit(
-                self._data, unit, self._header.unit)
+        self._data = [DataPoint(x, self._data[i].datetime) for i, x in enumerate(
+            self._header.data_type.to_unit(
+                self._data, unit, self._header.unit))]
         self._header._unit = unit
 
     def convert_to_ip(self):
         """Convert the DataCollection to IP units"""
-        self._data, self._header._unit = \
+        new_values, self._header._unit = \
             self._header.data_type.to_ip(
                 self._data, self._header.unit)
+        self._data = [DataPoint(
+            x, self._data[i].datetime) for i, x in enumerate(new_values)]
 
     def convert_to_si(self):
         """Convert the DataCollection to SI units"""
-        self._data, self._header._unit = \
+        new_values, self._header._unit = \
             self._header.data_type.to_si(
                 self._data, self._header.unit)
+        self._data = [DataPoint(
+            x, self._data[i].datetime) for i, x in enumerate(new_values)]
 
     def to_unit(self, unit):
         """Return a DataCollection in the input units"""

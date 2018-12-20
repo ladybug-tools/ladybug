@@ -1,8 +1,7 @@
 # coding=utf-8
-"""Ladybug Header.
+"""Ladybug Header"""
+from copy import deepcopy
 
-Header is useful for creating list of ladybug data.
-"""
 from .location import Location
 from .analysisperiod import AnalysisPeriod
 from .datatypenew import DataTypes
@@ -125,9 +124,10 @@ class Header(object):
         self._unit = unit if unit else None
 
     def duplicate(self):
-        """Duplicate header."""
-        return self.__class__(self.data_type, self.unit, self.analysis_period,
-                              self.location)
+        """Return a copy of the header."""
+        return self.__class__(deepcopy(self.data_type), self.unit,
+                              AnalysisPeriod.from_string(str(self.analysis_period)),
+                              deepcopy(self.location))
 
     def to_tuple(self):
         """Return Ladybug header as a list."""

@@ -1,8 +1,8 @@
 """Ladybug data types."""
 from ladybug.datatype import DataPoint
 
-import copy
 import math
+from copy import deepcopy
 
 PI = math.pi
 
@@ -200,16 +200,19 @@ class DataTypeBase(object):
     def _to_unit_base(self, base_unit, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         self._check_values(values)
+        namespace = {'self': self, 'values': values, 'new_values': []}
         if not from_unit == base_unit:
             self.is_unit_acceptable(from_unit, True)
-            statement = 'values = [self._{}_to_{}(val) for val in values]'.format(
+            statement = 'new_values = [self._{}_to_{}(val) for val in values]'.format(
                 self._clean(from_unit), self._clean(base_unit))
-            exec(statement)
+            exec(statement, namespace)
+            values = namespace['new_values']
         if not unit == base_unit:
             self.is_unit_acceptable(unit, True)
-            statement = 'values = [self._{}_to_{}(val) for val in values]'.format(
+            statement = 'new_values = [self._{}_to_{}(val) for val in values]'.format(
                 self._clean(base_unit), self._clean(unit))
-            exec(statement)
+            exec(statement, namespace)
+            values = namespace['new_values']
         return values
 
     def _clean(self, unit):
@@ -292,7 +295,7 @@ class Temperature(DataTypeBase):
 
     def to_si(self, values, from_unit='F'):
         """Return values in C given the input from_unit."""
-        return self.to_unit(values, 'F', from_unit), 'C'
+        return self.to_unit(values, 'C', from_unit), 'C'
 
     @property
     def isTemperature(self):
@@ -1187,55 +1190,55 @@ class DaysSinceLastSnowfall(DataTypeBase):
 
 class DataTypes(object):
     """Available data type classes organized by full name of the data type."""
-    TYPES = (
-        'Temperature',
-        'Percentage',
-        'Distance',
-        'Pressure',
-        'Energy',
-        'EnergyIntensity',
-        'Power',
-        'EnergyFlux',
-        'Illuminance',
-        'Luminance',
-        'Angle',
-        'Mass',
-        'Speed',
-        'VolumeFlowRate',
-        'DryBulbTemperature',
-        'DewPointTemperature',
-        'SkyTemperature',
-        'MeanRadiantTemperature',
-        'RelativeHumidity',
-        'TotalSkyCover',
-        'OpaqueSkyCover',
-        'AerosolOpticalDepth',
-        'Albedo',
-        'LiquidPrecipitationQuantity',
-        'AtmosphericStationPressure',
-        'Radiation',
-        'GlobalHorizontalRadiation',
-        'DirectNormalRadiation',
-        'DiffuseHorizontalRadiation',
-        'DirectHorizontalRadiation',
-        'HorizontalInfraredRadiationIntensity',
-        'ExtraterrestrialHorizontalRadiation',
-        'ExtraterrestrialDirectNormalRadiation',
-        'Irradiance',
-        'GlobalHorizontalIrradiance',
-        'DirectNormalIrradiance',
-        'DiffuseHorizontalIrradiance',
-        'DirectHorizontalIrradiance',
-        'ZenithLuminance',
-        'WindDirection',
-        'WindSpeed',
-        'Visibility',
-        'CeilingHeight',
-        'PrecipitableWater',
-        'SnowDepth',
-        'LiquidPrecipitationDepth',
-        'DaysSinceLastSnowfall'
-        )
+    TYPES = {
+        'Temperature': Temperature(),
+        'Percentage': Percentage(),
+        'Distance': Distance(),
+        'Pressure': Pressure(),
+        'Energy': Energy(),
+        'EnergyIntensity': EnergyIntensity(),
+        'Power': Power(),
+        'EnergyFlux': EnergyFlux(),
+        'Illuminance': Illuminance(),
+        'Luminance': Luminance(),
+        'Angle': Angle(),
+        'Mass': Mass(),
+        'Speed': Speed(),
+        'VolumeFlowRate': VolumeFlowRate(),
+        'DryBulbTemperature': DryBulbTemperature(),
+        'DewPointTemperature': DewPointTemperature(),
+        'SkyTemperature': SkyTemperature(),
+        'MeanRadiantTemperature': MeanRadiantTemperature(),
+        'RelativeHumidity': RelativeHumidity(),
+        'TotalSkyCover': TotalSkyCover(),
+        'OpaqueSkyCover': OpaqueSkyCover(),
+        'AerosolOpticalDepth': AerosolOpticalDepth(),
+        'Albedo': Albedo(),
+        'LiquidPrecipitationQuantity': LiquidPrecipitationQuantity(),
+        'AtmosphericStationPressure': AtmosphericStationPressure(),
+        'Radiation': Radiation(),
+        'GlobalHorizontalRadiation': GlobalHorizontalRadiation(),
+        'DirectNormalRadiation': DirectNormalRadiation(),
+        'DiffuseHorizontalRadiation': DiffuseHorizontalRadiation(),
+        'DirectHorizontalRadiation': DirectHorizontalRadiation(),
+        'HorizontalInfraredRadiationIntensity': HorizontalInfraredRadiationIntensity(),
+        'ExtraterrestrialHorizontalRadiation': ExtraterrestrialHorizontalRadiation(),
+        'ExtraterrestrialDirectNormalRadiation': ExtraterrestrialDirectNormalRadiation(),
+        'Irradiance': Irradiance(),
+        'GlobalHorizontalIrradiance': GlobalHorizontalIrradiance(),
+        'DirectNormalIrradiance': DirectNormalIrradiance(),
+        'DiffuseHorizontalIrradiance': DiffuseHorizontalIrradiance(),
+        'DirectHorizontalIrradiance': DirectHorizontalIrradiance(),
+        'ZenithLuminance': ZenithLuminance(),
+        'WindDirection': WindDirection(),
+        'WindSpeed': WindSpeed(),
+        'Visibility': Visibility(),
+        'CeilingHeight': CeilingHeight(),
+        'PrecipitableWater': PrecipitableWater(),
+        'SnowDepth': SnowDepth(),
+        'LiquidPrecipitationDepth': LiquidPrecipitationDepth(),
+        'DaysSinceLastSnowfall': DaysSinceLastSnowfall()
+        }
     BASETYPES = (
         Temperature(),
         Percentage(),
@@ -1271,15 +1274,12 @@ class DataTypes(object):
         assert isinstance(type_name, str), \
             'type_name must be a text string got {}'.format(type(type_name))
         data_types = cls.TYPES
-        formatted_name = type_name.title().replace(' ', '')
-        d_type = None
         if type_name in data_types:
-            statement = 'd_type = {}()'.format(type_name)
-            exec(statement)
-        elif formatted_name in data_types:
-            statement = 'd_type = {}()'.format(formatted_name)
-            exec(statement)
-        return d_type
+            return deepcopy(data_types[type_name])
+        elif type_name.title().replace(' ', '') in data_types:
+            return deepcopy(data_types[type_name.title().replace(' ', '')])
+        else:
+            return None
 
     @classmethod
     def type_by_unit(cls, unit_name):
@@ -1293,7 +1293,7 @@ class DataTypes(object):
         d_type = None
         for base_d_type in cls.BASETYPES:
             if unit_name in base_d_type.units:
-                d_type = copy.deepcopy(base_d_type)
+                d_type = deepcopy(base_d_type)
         return d_type
 
     @classmethod

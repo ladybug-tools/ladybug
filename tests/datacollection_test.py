@@ -7,6 +7,7 @@ from ladybug.dt import DateTime
 from ladybug.datacollection import DataCollection
 from ladybug.header import Header
 from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.datatypenew import Temperature
 
 
 class DataCollectionTestCase(unittest.TestCase):
@@ -44,6 +45,26 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == (dt1, dt2)
         assert dc1.data == [v1, v2]
         assert dc1.average_data() == average
+
+    def test_to_unit(self):
+        """Test the conversion of DataCollection units."""
+        # Setup Datetimes
+        vals = [20]
+        dc1 = DataCollection.from_list(vals, Temperature(), 'C')
+        dc2 = dc1.to_unit('K')
+        assert dc1.values[0] == 20
+        assert dc2.values[0] == 293.15
+
+    def test_to_ip_si(self):
+        """Test the conversion of DataCollection to IP and SI units."""
+        # Setup Datetimes
+        vals = [20]
+        dc1 = DataCollection.from_list(vals, Temperature(), 'C')
+        dc2 = dc1.to_ip()
+        dc3 = dc2.to_si()
+        assert dc1.values[0] == 20
+        assert dc2.values[0] == 68
+        assert dc3.values[0] == dc1.values[0]
 
     def test_interpolation(self):
         # To test an annual data collection, we will just use a range of values
