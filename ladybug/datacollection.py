@@ -150,6 +150,34 @@ class DataCollection(object):
         """Return a copy of the current data list."""
         return DataCollection(self.data, self.header.duplicate())
 
+    def is_in_range(self, lower=float('-inf'), upper=float('+inf'),
+                    raise_exception=False):
+        """Check if the values are in within lower and upper limits."""
+        for value in self.values:
+            if value < lower or value > upper:
+                if not raise_exception:
+                    return False
+                else:
+                    raise ValueError(
+                        'Values should be between {1} and {2}. Got {3}'.format(
+                            lower, upper, value
+                        )
+                    )
+        return True
+
+    def is_in_range_data_type(self, raise_exception=False):
+        """Check if the values are in permissable ranges for the data_type.
+
+        If this method returns False, the DataCollection's data is
+        physically or mathematically impossible for the data_type."""
+        return self._header.data_type.is_in_range(
+            self.values, self._header.unit, raise_exception)
+
+    def is_in_range_epw(self, raise_exception=False):
+        """Check if the values are in permissable ranges for an EPW file."""
+        return self._header.data_type.is_in_range_epw(
+            self.values, self._header.unit, raise_exception)
+
     def convert_to_unit(self, unit):
         """Convert the DataCollection to the input unit"""
         self._data = [DataPoint(x, self._data[i].datetime) for i, x in enumerate(

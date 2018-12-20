@@ -106,11 +106,10 @@ class DataTypeBase(object):
             'to_si is not implemented on %s' % self.__class__.__name__
         )
 
-    def is_missing(self, values):
-        """Check if a list of values contains missing data when in an EPW."""
-        for value in values:
-            if value == self.missing_epw:
-                return True
+    def is_missing(self, value):
+        """Check if a value contains missing data when in an EPW."""
+        if value == self.missing_epw:
+            return True
         return False
 
     def is_in_range(self, values, unit=None, raise_exception=False):
@@ -127,13 +126,15 @@ class DataTypeBase(object):
             minimum = self.min
             maximum = self.max
         else:
+            namespace = {'self': self, 'minimum': None, 'maximum': None}
             self.is_unit_acceptable(unit, True)
-            min_statement = "minimum = self.{}_to_{}(self.min)".format(
+            min_statement = "minimum = self._{}_to_{}(self.min)".format(
                 self._clean(self.units[0]), self._clean(unit))
-            max_statement = "maximum = self.{}_to_{}(self.max)".format(
+            max_statement = "maximum = self._{}_to_{}(self.max)".format(
                 self._clean(self.units[0]), self._clean(unit))
-            exec(min_statement)
-            exec(max_statement)
+            exec(min_statement, namespace)
+            exec(max_statement, namespace)
+            minimum, maximum = namespace['minimum'], namespace['maximum']
 
         for value in values:
             if value < minimum or value > maximum:
@@ -147,7 +148,7 @@ class DataTypeBase(object):
                     )
         return True
 
-    def is_in_epw_range(self, values, unit=None, raise_exception=False):
+    def is_in_range_epw(self, values, unit=None, raise_exception=False):
         """Check if a list of values is within acceptable ranges for an EPW file.
 
         Args:
@@ -161,13 +162,15 @@ class DataTypeBase(object):
             minimum = self.min_epw
             maximum = self.max_epw
         else:
+            namespace = {'self': self, 'minimum': None, 'maximum': None}
             self.is_unit_acceptable(unit, True)
-            min_statement = "minimum = self.{}_to_{}(self.min_epw)".format(
+            min_statement = "minimum = self._{}_to_{}(self.min_epw)".format(
                 self._clean(self.units[0]), self._clean(unit))
-            max_statement = "maximum = self.{}_to_{}(self.max_epw)".format(
+            max_statement = "maximum = self._{}_to_{}(self.max_epw)".format(
                 self._clean(self.units[0]), self._clean(unit))
-            exec(min_statement)
-            exec(max_statement)
+            exec(min_statement, namespace)
+            exec(max_statement, namespace)
+            minimum, maximum = namespace['minimum'], namespace['maximum']
 
         for value in values:
             if self.is_missing(value):
