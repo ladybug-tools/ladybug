@@ -68,7 +68,9 @@ class DataCollection(object):
             unit: data_type unit (Default: unknown).
             analysis_period: A Ladybug analysis period (Defualt: None)
         """
-        header = Header(location, data_type, unit, analysis_period)
+        header = Header(data_type=data_type, unit=unit,
+                        analysis_period=analysis_period,
+                        location=location)
         if analysis_period:
             return cls.from_data_and_datetimes(lst, analysis_period.datetimes, header)
         else:
@@ -147,6 +149,12 @@ class DataCollection(object):
     def duplicate(self):
         """Duplicate current data list."""
         return DataCollection(self.data, self.header)
+
+    def to_unit(self, unit):
+        """Convert the DataCollection to the input unit"""
+        self._data, self._header.data_type.unit = \
+            self._header.data_type.to_unit(
+                self._data, unit, self._header.data_type.unit)
 
     @staticmethod
     def average(data):

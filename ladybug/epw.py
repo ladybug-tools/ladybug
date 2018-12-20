@@ -729,8 +729,7 @@ class EPW(object):
         # create sky temperature data collection from horizontal infrared
         horiz_ir = self._get_data_by_field(12)
         sky_temp_header = copy.copy(horiz_ir.header)
-        sky_temp_header.data_type = 'Sky Temperature'
-        sky_temp_header.unit = 'C'
+        sky_temp_header.set_data_type_and_unit('Sky Temperature', 'C')
 
         # calculate sy temperature for each hour
         sky_temp_data = []

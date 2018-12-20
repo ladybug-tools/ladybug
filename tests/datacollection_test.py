@@ -49,7 +49,8 @@ class DataCollectionTestCase(unittest.TestCase):
         # To test an annual data collection, we will just use a range of values
         test_data = range(8760)
         ap = AnalysisPeriod()
-        test_header = Header('Test Type', None, None, ap)
+        test_header = Header(
+            data_type='Test Type', unit=None, analysis_period=ap, location=None)
         dc2 = DataCollection.from_data_and_analysis_period(test_data, ap, test_header)
 
         # check the interpolate data functions
