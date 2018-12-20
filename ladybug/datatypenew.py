@@ -36,9 +36,6 @@ class DataTypeBase(object):
             found in an EPW file. (Default: False).
     """
 
-    __slots__ = ('name', 'units', 'min', 'max', 'unit_descr', 'cumulative',
-                 'min_epw', 'max_epw', 'missing_epw', 'middle_hour_epw')
-
     name = 'Data Type Base'
     units = [None]
     min = float('-inf')
