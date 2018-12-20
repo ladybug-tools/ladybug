@@ -23,7 +23,7 @@ class Header(object):
             (Default: None).
     """
 
-    __slots__ = ('data_type', 'unit', 'analysis_period', 'location')
+    __slots__ = ('_data_type', '_unit', '_analysis_period', '_location')
 
     def __init__(self, data_type, unit=None,
                  analysis_period=None, location=None):
@@ -37,14 +37,9 @@ class Header(object):
             location: location data as a ladybug Location or location string
                 (Default: None)
         """
-        if hasattr(data_type, 'isDataType'):
-            data_type.is_unit_acceptable(unit)
-            self.data_type = data_type
-        else:
-            self.data_type = DataTypes.type_by_name_and_unit(data_type, unit)
-        self.unit = unit if unit else None
-        self.analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
-        self.location = Location.from_location(location)
+        self.set_data_type_and_unit(data_type, unit)
+        self.analysis_period = analysis_period
+        self.location = location
 
     @classmethod
     def from_json(cls, data):
@@ -84,9 +79,49 @@ class Header(object):
                 "Failed to create a Header from %s!\n%s" % (header, e))
 
     @property
+    def data_type(self):
+        """A DataType object."""
+        return self._data_type
+
+    @property
+    def unit(self):
+        """A text string representing an abbreviated unit."""
+        return self._unit
+
+    @property
+    def analysis_period(self):
+        """A AnalysisPeriod object."""
+        return self._analysis_period
+
+    @analysis_period.setter
+    def analysis_period(self, ap):
+        self._analysis_period = AnalysisPeriod.from_analysis_period(ap)
+
+    @property
+    def location(self):
+        """A Location object."""
+        return self._location
+
+    @location.setter
+    def location(self, loc):
+        self._location = Location.from_location(loc)
+
+    @property
     def isHeader(self):
         """Return True."""
         return True
+
+    def set_data_type_and_unit(self, data_type, unit):
+        """Set data_type and unit. This method should NOT be used for unit conversions.
+
+        For unit conversions, the to_unit() method should be used on the data collection.
+        """
+        if hasattr(data_type, 'isDataType'):
+            data_type.is_unit_acceptable(unit)
+            self._data_type = data_type
+        else:
+            self._data_type = DataTypes.type_by_name_and_unit(data_type, unit)
+        self._unit = unit if unit else None
 
     def duplicate(self):
         """Duplicate header."""

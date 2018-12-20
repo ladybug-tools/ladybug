@@ -589,7 +589,9 @@ class DesignDay(object):
     def _get_daily_data_collections(self, data_type, unit, data=None):
         """Return an empty data collection.
         """
-        data_header = Header(self._location, data_type, unit, self.analysis_period)
+        data_header = Header(data_type=data_type, unit=unit,
+                             analysis_period=self.analysis_period,
+                             location=self._location)
         return DataCollection(data=data, header=data_header)
 
     @property

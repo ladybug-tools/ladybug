@@ -1067,6 +1067,11 @@ class DiffuseHorizontalRadiation(Radiation):
     middle_hour_epw = True
 
 
+class DirectHorizontalRadiation(Radiation):
+    name = 'Direct Horizontal Radiation'
+    middle_hour_epw = True
+
+
 class HorizontalInfraredRadiationIntensity(Radiation):
     name = 'Horizontal Infrared Radiation Intensity'
 
@@ -1105,6 +1110,11 @@ class DirectNormalIrradiance(Irradiance):
 
 class DiffuseHorizontalIrradiance(Irradiance):
     name = 'Diffuse Horizontal Irradiance'
+    middle_hour_epw = True
+
+
+class DirectHorizontalIrradiance(Irradiance):
+    name = 'Direct Horizontal Irradiance'
     middle_hour_epw = True
 
 
@@ -1208,6 +1218,7 @@ class DataTypes(object):
         'GlobalHorizontalRadiation',
         'DirectNormalRadiation',
         'DiffuseHorizontalRadiation',
+        'DirectHorizontalRadiation',
         'HorizontalInfraredRadiationIntensity',
         'ExtraterrestrialHorizontalRadiation',
         'ExtraterrestrialDirectNormalRadiation',
@@ -1215,6 +1226,7 @@ class DataTypes(object):
         'GlobalHorizontalIrradiance',
         'DirectNormalIrradiance',
         'DiffuseHorizontalIrradiance',
+        'DirectHorizontalIrradiance',
         'ZenithLuminance',
         'WindDirection',
         'WindSpeed',

@@ -410,7 +410,7 @@ class DataCollection(object):
                 _data[i].value = d.value / timestep
 
         # shift data if half-hour interpolation has been selected.
-        if self.header.middle_hour is True:
+        if self.header.data_type.middle_hour_epw is True:
             shift_dist = int(timestep / 2)
             _data = _data[-shift_dist:] + _data[:-shift_dist]
             for i, d in enumerate(_data):
