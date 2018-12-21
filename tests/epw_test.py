@@ -31,6 +31,7 @@ class EPWTestCase(unittest.TestCase):
         # Check that calling location getter only retrieves location
         assert epw.is_data_loaded is False
         dbt = epw.dry_bulb_temperature
+        skyt = epw.sky_temperature  # test sky temperature calculation
         assert epw.is_data_loaded is True
         assert len(dbt) == 8760
 

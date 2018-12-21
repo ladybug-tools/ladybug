@@ -68,6 +68,13 @@ class WeaTestCase(unittest.TestCase):
         assert wea_from_stat.direct_normal_radiation[12].value == \
             pytest.approx(810.693919, rel=1e-3)
 
+    def test_from_stat_missing_optical(self):
+        """Test import from a stat file that is missing optical data"""
+        stat_path = './tests/stat/santamonica.stat'
+        with pytest.raises(ValueError,
+                           match='Stat file contains no optical data.'):
+            Wea.from_stat_file(stat_path)
+
     def test_from_clear_sky(self):
         """Test from original clear sky"""
         location = Location(
