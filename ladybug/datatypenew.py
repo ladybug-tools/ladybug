@@ -261,13 +261,13 @@ class GenericType(DataTypeBase):
         self.name = name
         self.units = [unit]
 
-    def to_ip(self, values):
+    def to_ip(self, values, from_unit):
         """Return values in IP."""
-        return values, self.units[0]
+        return values, from_unit
 
-    def to_si(self, values, from_unit='F'):
+    def to_si(self, values, from_unit):
         """Return values in SI."""
-        return values, self.units[0]
+        return values, from_unit
 
 
 class Temperature(DataTypeBase):
@@ -288,17 +288,20 @@ class Temperature(DataTypeBase):
     def _K_to_C(self, value):
         return value - 273.15
 
-    def to_unit(self, values, unit, from_unit='C'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('C', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='C'):
-        """Return values in F given the input from_unit."""
+    def to_ip(self, values, from_unit):
+        """Return values in IP given the input from_unit."""
         return self.to_unit(values, 'F', from_unit), 'F'
 
-    def to_si(self, values, from_unit='F'):
-        """Return values in C given the input from_unit."""
-        return self.to_unit(values, 'C', from_unit), 'C'
+    def to_si(self, values, from_unit):
+        """Return values in SI given the input from_unit."""
+        if from_unit == 'C' or from_unit == 'K':
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'C', from_unit), 'C'
 
     @property
     def isTemperature(self):
@@ -329,17 +332,17 @@ class Percentage(DataTypeBase):
     def _thousandths_to_pct(self, value):
         return value / 10
 
-    def to_unit(self, values, unit, from_unit='%'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('%', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='%'):
+    def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        return self.to_unit(values, '%', from_unit), '%'
+        return values, from_unit
 
-    def to_si(self, values, from_unit='%'):
+    def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        return self.to_unit(values, '%', from_unit), '%'
+        return values, from_unit
 
     @property
     def isPercentage(self):
@@ -389,24 +392,30 @@ class Distance(DataTypeBase):
     def _cm_to_m(self, value):
         return value / 100
 
-    def to_unit(self, values, unit, from_unit='m'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('m', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='m'):
+    def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        if from_unit == 'mm' or from_unit == 'in':
+        ip_units = ['ft', 'in', 'mi']
+        if from_unit in ip_units:
+            return values, from_unit
+        elif from_unit == 'mm':
             return self.to_unit(values, 'in', from_unit), 'in'
-        elif from_unit == 'km' or from_unit == 'mi':
+        elif from_unit == 'km':
             return self.to_unit(values, 'mi', from_unit), 'mi'
         else:
             return self.to_unit(values, 'ft', from_unit), 'ft'
 
-    def to_si(self, values, from_unit='ft'):
+    def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        if from_unit == 'in' or from_unit == 'mm':
+        si_units = ['m', 'mm', 'km', 'cm']
+        if from_unit in si_units:
+            return values, from_unit
+        elif from_unit == 'in':
             return self.to_unit(values, 'mm', from_unit), 'mm'
-        elif from_unit == 'mi' or from_unit == 'km':
+        elif from_unit == 'mi':
             return self.to_unit(values, 'km', from_unit), 'km'
         else:
             return self.to_unit(values, 'm', from_unit), 'm'
@@ -458,17 +467,25 @@ class Pressure(DataTypeBase):
     def _inH2O_to_Pa(self, value):
         return value / 0.00401865
 
-    def to_unit(self, values, unit, from_unit='Pa'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('Pa', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='Pa'):
-        """Return values in inHg given the input from_unit."""
-        return self.to_unit(values, 'inHg', from_unit), 'inHg'
+    def to_ip(self, values, from_unit):
+        """Return values in IP given the input from_unit."""
+        ip_units = ['inHg', 'psi', 'inH2O']
+        if from_unit in ip_units:
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'inHg', from_unit), 'inHg'
 
-    def to_si(self, values, from_unit='inHg'):
-        """Return values in Pa given the input from_unit."""
-        return self.to_unit(values, 'Pa', from_unit), 'Pa'
+    def to_si(self, values, from_unit):
+        """Return values in SI given the input from_unit."""
+        si_units = ['Pa', 'bar']
+        if from_unit in si_units:
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'Pa', from_unit), 'Pa'
 
     @property
     def isPressure(self):
@@ -479,7 +496,7 @@ class Pressure(DataTypeBase):
 class Energy(DataTypeBase):
     """Energy"""
     name = 'Energy'
-    units = ['kWh', 'kBtu', 'Wh', 'Btu', 'MMBtu', 'J', 'kJ', 'GJ',
+    units = ['kWh', 'kBtu', 'Wh', 'Btu', 'MMBtu', 'J', 'kJ', 'MJ', 'GJ',
              'therm', 'cal', 'kcal']
     cumulative = True
 
@@ -501,8 +518,11 @@ class Energy(DataTypeBase):
     def _kWh_to_kJ(self, value):
         return value * 3600
 
-    def _kWh_to_GJ(self, value):
+    def _kWh_to_MJ(self, value):
         return value * 3.6
+
+    def _kWh_to_GJ(self, value):
+        return value * 0.0036
 
     def _kWh_to_therm(self, value):
         return value * 0.0341214
@@ -531,8 +551,11 @@ class Energy(DataTypeBase):
     def _kJ_to_kWh(self, value):
         return value / 3600
 
-    def _GJ_to_kWh(self, value):
+    def _MJ_to_kWh(self, value):
         return value / 3.6
+
+    def _GJ_to_kWh(self, value):
+        return value / 0.0036
 
     def _therm_to_kWh(self, value):
         return value / 0.0341214
@@ -543,20 +566,26 @@ class Energy(DataTypeBase):
     def _kcal_to_kWh(self, value):
         return value / 860.421
 
-    def to_unit(self, values, unit, from_unit='kWh'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('kWh', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='kWh'):
+    def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        if from_unit == 'Wh' or from_unit == 'Btu':
+        ip_units = ['kBtu', 'Btu', 'MMBtu', 'therm']
+        if from_unit in ip_units:
+            return values, from_unit
+        elif from_unit == 'Wh':
             return self.to_unit(values, 'Btu', from_unit), 'Btu'
         else:
             return self.to_unit(values, 'kBtu', from_unit), 'kBtu'
 
-    def to_si(self, values, from_unit='kBtu'):
+    def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        if from_unit == 'Btu' or from_unit == 'Wh':
+        si_units = ['kWh', 'Wh', 'J', 'kJ', 'MJ', 'GJ']
+        if from_unit in si_units:
+            return values, from_unit
+        elif from_unit == 'Btu':
             return self.to_unit(values, 'Wh', from_unit), 'Wh'
         else:
             return self.to_unit(values, 'kWh', from_unit), 'kWh'
@@ -591,20 +620,26 @@ class EnergyIntensity(DataTypeBase):
     def _Btu_ft2_to_kWh_m2(self, value):
         return value / 316.998
 
-    def to_unit(self, values, unit, from_unit='kWh/m2'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('kWh/m2', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='kWh/m2'):
+    def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        if from_unit == 'Wh/m2' or from_unit == 'Btu/ft2':
+        ip_units = ['kBtu/ft2', 'Btu/ft2']
+        if from_unit in ip_units:
+            return values, from_unit
+        elif from_unit == 'Wh/m2':
             return self.to_unit(values, 'Btu/ft2', from_unit), 'Btu/ft2'
         else:
             return self.to_unit(values, 'kBtu/ft2', from_unit), 'kBtu/ft2'
 
-    def to_si(self, values, from_unit='kBtu/ft2'):
+    def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        if from_unit == 'Btu/ft2' or from_unit == 'Wh/m2':
+        si_units = ['kWh/m2', 'Wh/m2']
+        if from_unit in si_units:
+            return values, from_unit
+        elif from_unit == 'Btu/ft2':
             return self.to_unit(values, 'Wh/m2', from_unit), 'Wh/m2'
         else:
             return self.to_unit(values, 'kWh/m2', from_unit), 'kWh/m2'
@@ -650,20 +685,26 @@ class Power(DataTypeBase):
     def _hp_to_W(self, value):
         return value * 745.7
 
-    def to_unit(self, values, unit, from_unit='W'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('W', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='W'):
+    def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        if from_unit == 'kW' or from_unit == 'kBtu/h':
+        ip_units = ['Btu/h', 'kBtu/h', 'TR', 'hp']
+        if from_unit in ip_units:
+            return values, from_unit
+        elif from_unit == 'kW':
             return self.to_unit(values, 'kBtu/h', from_unit), 'kBtu/h'
         else:
             return self.to_unit(values, 'Btu/h', from_unit), 'Btu/h'
 
-    def to_si(self, values, from_unit='Btu/h'):
+    def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        if from_unit == 'kBtu/h' or from_unit == 'kW':
+        si_units = ['kW', 'W']
+        if from_unit in si_units:
+            return values, from_unit
+        elif from_unit == 'kBtu/h':
             return self.to_unit(values, 'kW', from_unit), 'kW'
         else:
             return self.to_unit(values, 'W', from_unit), 'W'
@@ -703,20 +744,26 @@ class EnergyFlux(DataTypeBase):
     def _W_ft2_to_W_m2(self, value):
         return value * 10.7639
 
-    def to_unit(self, values, unit, from_unit='W/m2'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('W/m2', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='W/m2'):
+    def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        if from_unit == 'kW/m2' or from_unit == 'kBtu/h-ft2':
+        ip_units = ['Btu/h-ft2', 'kBtu/h-ft2']
+        if from_unit in ip_units:
+            return values, from_unit
+        elif from_unit == 'kW/m2':
             return self.to_unit(values, 'kBtu/h-ft2', from_unit), 'kBtu/h-ft2'
         else:
             return self.to_unit(values, 'Btu/h-ft2', from_unit), 'Btu/h-ft2'
 
-    def to_si(self, values, from_unit='Btu/h-ft2'):
+    def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        if from_unit == 'kBtu/h-ft2' or from_unit == 'kW/m2':
+        si_units = ['W/m2', 'kW/m2']
+        if from_unit in si_units:
+            return values, from_unit
+        elif from_unit == 'kBtu/h-ft2':
             return self.to_unit(values, 'kW/m2', from_unit), 'kW/m2'
         else:
             return self.to_unit(values, 'W/m2', from_unit), 'W/m2'
@@ -741,15 +788,15 @@ class Illuminance(DataTypeBase):
     def _fc_to_lux(self, value):
         return value * 10.7639
 
-    def to_unit(self, values, unit, from_unit='lux'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('lux', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='lux'):
+    def to_ip(self, values, from_unit):
         """Return values in fc given the input from_unit."""
         return self.to_unit(values, 'fc', from_unit), 'fc'
 
-    def to_si(self, values, from_unit='fc'):
+    def to_si(self, values, from_unit):
         """Return values in lux given the input from_unit."""
         return self.to_unit(values, 'lux', from_unit), 'lux'
 
@@ -773,15 +820,15 @@ class Luminance(DataTypeBase):
     def _cd_ft2_to_cd_m2(self, value):
         return value * 10.7639
 
-    def to_unit(self, values, unit, from_unit='cd/m2'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('cd/m2', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='cd/m2'):
+    def to_ip(self, values, from_unit):
         """Return values in cd/ft2 given the input from_unit."""
         return self.to_unit(values, 'cd/ft2', from_unit), 'cd/ft2'
 
-    def to_si(self, values, from_unit='cd/ft2'):
+    def to_si(self, values, from_unit):
         """Return values in cd/m2 given the input from_unit."""
         return self.to_unit(values, 'cd/m2', from_unit), 'cd/m2'
 
@@ -802,15 +849,15 @@ class Angle(DataTypeBase):
     def _radians_to_degrees(self, value):
         return (value / PI) * 180
 
-    def to_unit(self, values, unit, from_unit='degrees'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('degrees', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='degrees'):
+    def to_ip(self, values, from_unit):
         """Return values in IP."""
         return values, from_unit
 
-    def to_si(self, values, from_unit='degrees'):
+    def to_si(self, values, from_unit):
         """Return values in SI."""
         return values, from_unit
 
@@ -823,7 +870,7 @@ class Angle(DataTypeBase):
 class Mass(DataTypeBase):
     """Mass"""
     name = 'Mass'
-    units = ['kg', 'lb', 'g', 'tonne']
+    units = ['kg', 'lb', 'g', 'tonne', 'ton']
     min = 0
 
     def _kg_to_lb(self, value):
@@ -835,6 +882,9 @@ class Mass(DataTypeBase):
     def _kg_to_tonne(self, value):
         return value / 1000
 
+    def _kg_to_ton(self, value):
+        return value / 907.185
+
     def _lb_to_kg(self, value):
         return value / 2.20462
 
@@ -844,17 +894,32 @@ class Mass(DataTypeBase):
     def _tonne_to_kg(self, value):
         return value * 1000
 
-    def to_unit(self, values, unit, from_unit='kg'):
+    def _ton_to_kg(self, value):
+        return value * 907.185
+
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('kg', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='kg'):
-        """Return values in lb given the input from_unit."""
-        return self.to_unit(values, 'lb', from_unit), 'lb'
+    def to_ip(self, values, from_unit):
+        """Return values in IP given the input from_unit."""
+        ip_units = ['lb', 'ton']
+        if from_unit in ip_units:
+            return values, from_unit
+        elif from_unit == 'tonne':
+            return self.to_unit(values, 'ton', from_unit), 'ton'
+        else:
+            return self.to_unit(values, 'lb', from_unit), 'lb'
 
-    def to_si(self, values, from_unit='lb'):
-        """Return values in kg given the input from_unit."""
-        return self.to_unit(values, 'kg', from_unit), 'kg'
+    def to_si(self, values, from_unit):
+        """Return values in SI given the input from_unit."""
+        si_units = ['kg', 'g', 'tonne']
+        if from_unit in si_units:
+            return values, from_unit
+        elif from_unit == 'ton':
+            return self.to_unit(values, 'tonne', from_unit), 'tonne'
+        else:
+            return self.to_unit(values, 'kg', from_unit), 'kg'
 
     @property
     def isMass(self):
@@ -892,17 +957,25 @@ class Speed(DataTypeBase):
     def _ft_s_to_m_s(self, value):
         return value / 3.28084
 
-    def to_unit(self, values, unit, from_unit='m/s'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('m/s', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='m/s'):
-        """Return values in mph given the input from_unit."""
-        return self.to_unit(values, 'mph', from_unit), 'mph'
+    def to_ip(self, values, from_unit):
+        """Return values in IP units given the input from_unit."""
+        ip_units = ['mph', 'ft/s']
+        if from_unit in ip_units:
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'mph', from_unit), 'mph'
 
-    def to_si(self, values, from_unit='mph'):
-        """Return values in m/s given the input from_unit."""
-        return self.to_unit(values, 'm/s', from_unit), 'm/s'
+    def to_si(self, values, from_unit):
+        """Return values in SI units given the input from_unit."""
+        si_units = ['m/s', 'km/h']
+        if from_unit in si_units:
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'm/s', from_unit), 'm/s'
 
     @property
     def isSpeed(self):
@@ -940,17 +1013,29 @@ class VolumeFlowRate(DataTypeBase):
     def _gpm_to_m3_s(self, value):
         return value / 15850.3231
 
-    def to_unit(self, values, unit, from_unit='m3/s'):
+    def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('m3/s', values, unit, from_unit)
 
-    def to_ip(self, values, from_unit='m3/s'):
-        """Return values in mph given the input from_unit."""
-        return self.to_unit(values, 'ft3/s', from_unit), 'ft3/s'
+    def to_ip(self, values, from_unit):
+        """Return values in IP units given the input from_unit."""
+        ip_units = ['ft3/s', 'cfm', 'gpm']
+        if from_unit in ip_units:
+            return values, from_unit
+        elif from_unit == 'L/s':
+            return self.to_unit(values, 'cfm', from_unit), 'cfm'
+        else:
+            return self.to_unit(values, 'ft3/s', from_unit), 'ft3/s'
 
-    def to_si(self, values, from_unit='ft3/s'):
-        """Return values in m/s given the input from_unit."""
-        return self.to_unit(values, 'm3/s', from_unit), 'm3/s'
+    def to_si(self, values, from_unit):
+        """Return values in SI units given the input from_unit."""
+        si_units = ['m3/s', 'L/s']
+        if from_unit in si_units:
+            return values, from_unit
+        elif from_unit == 'cfm':
+            return self.to_unit(values, 'L/s', from_unit), 'L/s'
+        else:
+            return self.to_unit(values, 'm3/s', from_unit), 'm3/s'
 
     @property
     def isFlowRate(self):
