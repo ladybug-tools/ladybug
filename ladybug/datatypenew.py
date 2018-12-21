@@ -294,7 +294,10 @@ class Temperature(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        return self.to_unit(values, 'F', from_unit), 'F'
+        if from_unit == 'F':
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'F', from_unit), 'F'
 
     def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
@@ -794,11 +797,17 @@ class Illuminance(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in fc given the input from_unit."""
-        return self.to_unit(values, 'fc', from_unit), 'fc'
+        if from_unit == 'fc':
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'fc', from_unit), 'fc'
 
     def to_si(self, values, from_unit):
         """Return values in lux given the input from_unit."""
-        return self.to_unit(values, 'lux', from_unit), 'lux'
+        if from_unit == 'lux':
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'lux', from_unit), 'lux'
 
     @property
     def isIlluminance(self):
@@ -826,11 +835,17 @@ class Luminance(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in cd/ft2 given the input from_unit."""
-        return self.to_unit(values, 'cd/ft2', from_unit), 'cd/ft2'
+        if from_unit == 'cd/ft2':
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'cd/ft2', from_unit), 'cd/ft2'
 
     def to_si(self, values, from_unit):
         """Return values in cd/m2 given the input from_unit."""
-        return self.to_unit(values, 'cd/m2', from_unit), 'cd/m2'
+        if from_unit == 'cd/m2':
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'cd/m2', from_unit), 'cd/m2'
 
     @property
     def isLuminance(self):
