@@ -1,3 +1,5 @@
+# coding=utf-8
+from __future__ import division
 """Ladybug data collection."""
 from .header import Header
 from .datatype import DataPoint

@@ -1,3 +1,6 @@
+# coding=utf-8
+from __future__ import division
+
 from .location import Location
 from .futil import write_to_file
 from .dt import DateTime

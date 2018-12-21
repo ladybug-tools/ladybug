@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import division
 """Useful functions for list operations."""
 import collections
 

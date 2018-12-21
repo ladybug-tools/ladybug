@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import division
+
 import math
 from collections import namedtuple
 from .location import Location

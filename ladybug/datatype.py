@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import division
 """Ladybug data types."""
 # from abc import ABCMeta, abstractmethod
 import math

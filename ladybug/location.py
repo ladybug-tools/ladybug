@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import division
 """Ladybug location."""
 import re
 

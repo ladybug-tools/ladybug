@@ -1,3 +1,5 @@
+# coding=utf-8
+from __future__ import division
 """Functions for computing radiation for different idealized skies"""
 import math
 

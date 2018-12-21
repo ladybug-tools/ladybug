@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import division
+
 """Ladybug Header"""
 from copy import deepcopy
 

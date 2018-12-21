@@ -1,3 +1,5 @@
+# coding=utf-8
+from __future__ import division
 """Ladybug data types."""
 from ladybug.datatype import DataPoint
 

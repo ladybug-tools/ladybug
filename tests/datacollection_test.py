@@ -58,7 +58,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.values[0] == 20
         assert dc3.values[0] == 293.15
         assert dc2.values[0] == 20
-        assert dc4.values[0] == 266.15
+        assert dc4.values[0] == pytest.approx(266.483, rel=1e-1)
 
     def test_to_ip_si(self):
         """Test the conversion of DataCollection to IP and SI units."""

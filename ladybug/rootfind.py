@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import division
 """
 A list of useful functions for rapid guess-and-test (or root-finding) situations.
 Using these functions will typically be much faster than a custom-built guess-and-check

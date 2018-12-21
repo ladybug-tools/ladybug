@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import division
 """Wea weather file."""
 from .epw import EPW
 from .stat import STAT

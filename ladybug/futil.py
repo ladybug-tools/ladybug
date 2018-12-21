@@ -1,3 +1,6 @@
+# coding=utf-8
+from __future__ import division
+
 """A collection of auxiliary funtions for working with files and directories."""
 import os
 import shutil
