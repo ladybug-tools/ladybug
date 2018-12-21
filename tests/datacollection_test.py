@@ -52,9 +52,13 @@ class DataCollectionTestCase(unittest.TestCase):
         # Setup Datetimes
         vals = [20]
         dc1 = DataCollection.from_list(vals, Temperature(), 'C')
-        dc2 = dc1.to_unit('K')
+        dc2 = DataCollection.from_list(vals, Temperature(), 'F')
+        dc3 = dc1.to_unit('K')
+        dc4 = dc2.to_unit('K')
         assert dc1.values[0] == 20
-        assert dc2.values[0] == 293.15
+        assert dc3.values[0] == 293.15
+        assert dc2.values[0] == 20
+        assert dc4.values[0] == 266.15
 
     def test_to_ip_si(self):
         """Test the conversion of DataCollection to IP and SI units."""

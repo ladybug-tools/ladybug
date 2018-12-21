@@ -203,19 +203,19 @@ class DataTypeBase(object):
     def _to_unit_base(self, base_unit, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         self._check_values(values)
-        namespace = {'self': self, 'values': values, 'new_values': []}
+        namespace = {'self': self, 'values': values}
         if not from_unit == base_unit:
             self.is_unit_acceptable(from_unit, True)
-            statement = 'new_values = [self._{}_to_{}(val) for val in values]'.format(
+            statement = 'values = [self._{}_to_{}(val) for val in values]'.format(
                 self._clean(from_unit), self._clean(base_unit))
             exec(statement, namespace)
-            values = namespace['new_values']
+            values = namespace['values']
         if not unit == base_unit:
             self.is_unit_acceptable(unit, True)
-            statement = 'new_values = [self._{}_to_{}(val) for val in values]'.format(
+            statement = 'values = [self._{}_to_{}(val) for val in values]'.format(
                 self._clean(base_unit), self._clean(unit))
             exec(statement, namespace)
-            values = namespace['new_values']
+            values = namespace['values']
         return values
 
     def _clean(self, unit):
