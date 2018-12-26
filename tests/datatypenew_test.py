@@ -3,6 +3,9 @@ from __future__ import division
 
 import unittest
 import pytest
+import math
+PI = math.pi
+
 from ladybug.datatypenew import DataTypes
 from ladybug.datatypenew import DataTypeBase
 
@@ -303,6 +306,114 @@ class DataTypesTestCase(unittest.TestCase):
         assert energyf_type.to_unit([1], 'W/m2', 'kBtu/h-ft2')[0] == pytest.approx(3154.59075, rel=1e-1)
         assert energyf_type.to_unit([1], 'W/m2', 'W/ft2')[0] == pytest.approx(10.7639, rel=1e-1)
         assert energyf_type.to_unit([1], 'W/m2', 'met')[0] == pytest.approx(58.2, rel=1e-1)
+
+    def test_illuminance(self):
+        """Test Illuminance type."""
+        ill_type = DataTypes.type_by_name('Illuminance')
+        for unit in ill_type.units:
+            assert ill_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = ill_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = ill_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in ill_type.units:
+                assert len(ill_type.to_unit([1], other_unit, unit)) == 1
+        assert ill_type.to_unit([1], 'fc', 'lux')[0] == pytest.approx(1 / 10.7639, rel=1e-3)
+        assert ill_type.to_unit([1], 'lux', 'fc')[0] == pytest.approx(10.7639, rel=1e-1)
+
+    def test_luminance(self):
+        """Test luminance type."""
+        lum_type = DataTypes.type_by_name('Luminance')
+        for unit in lum_type.units:
+            assert lum_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = lum_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = lum_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in lum_type.units:
+                assert len(lum_type.to_unit([1], other_unit, unit)) == 1
+        assert lum_type.to_unit([1], 'cd/ft2', 'cd/m2')[0] == pytest.approx(1 / 10.7639, rel=1e-3)
+        assert lum_type.to_unit([1], 'cd/m2', 'cd/ft2')[0] == pytest.approx(10.7639, rel=1e-1)
+
+    def test_angle(self):
+        """Test angle type."""
+        lum_type = DataTypes.type_by_name('Angle')
+        for unit in lum_type.units:
+            assert lum_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = lum_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = lum_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in lum_type.units:
+                assert len(lum_type.to_unit([1], other_unit, unit)) == 1
+        assert lum_type.to_unit([1], 'radians', 'degrees')[0] == pytest.approx(PI / 180, rel=1e-3)
+        assert lum_type.to_unit([1], 'degrees', 'radians')[0] == pytest.approx((1 / PI) * 180, rel=1e-1)
+
+    def test_mass(self):
+        """Test Mass type."""
+        mass_type = DataTypes.type_by_name('Mass')
+        for unit in mass_type.units:
+            assert mass_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = mass_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = mass_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in mass_type.units:
+                assert len(mass_type.to_unit([1], other_unit, unit)) == 1
+        assert mass_type.to_unit([1], 'lb', 'kg')[0] == pytest.approx(2.20462, rel=1e-3)
+        assert mass_type.to_unit([1], 'g', 'kg')[0] == 1000
+        assert mass_type.to_unit([1], 'tonne', 'kg')[0] == 0.001
+        assert mass_type.to_unit([1], 'ton', 'kg')[0] == pytest.approx(1 / 907.185, rel=1e-5)
+        assert mass_type.to_unit([1], 'oz', 'kg')[0] == pytest.approx(35.274, rel=1e-1)
+        assert mass_type.to_unit([1], 'kg', 'lb')[0] == pytest.approx(1 / 2.20462, rel=1e-3)
+        assert mass_type.to_unit([1], 'kg', 'g')[0] == 0.001
+        assert mass_type.to_unit([1], 'kg', 'tonne')[0] == 1000
+        assert mass_type.to_unit([1], 'kg', 'ton')[0] == pytest.approx(907.185, rel=1e-1)
+        assert mass_type.to_unit([1], 'kg', 'oz')[0] == pytest.approx(1 / 35.274, rel=1e-3)
+
+    def test_speed(self):
+        """Test Speed type."""
+        speed_type = DataTypes.type_by_name('Speed')
+        for unit in speed_type.units:
+            assert speed_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = speed_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = speed_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in speed_type.units:
+                assert len(speed_type.to_unit([1], other_unit, unit)) == 1
+        assert speed_type.to_unit([1], 'mph', 'm/s')[0] == pytest.approx(2.23694, rel=1e-3)
+        assert speed_type.to_unit([1], 'km/h', 'm/s')[0] == 3.6
+        assert speed_type.to_unit([1], 'knot', 'm/s')[0] == pytest.approx(1.94384, rel=1e-3)
+        assert speed_type.to_unit([1], 'ft/s', 'm/s')[0] == pytest.approx(3.28084, rel=1e-3)
+        assert speed_type.to_unit([1], 'm/s', 'mph')[0] == pytest.approx(1 / 2.23694, rel=1e-3)
+        assert speed_type.to_unit([1], 'm/s', 'km/h')[0] == 1 / 3.6
+        assert speed_type.to_unit([1], 'm/s', 'knot')[0] == pytest.approx(1 / 1.94384, rel=1e-3)
+        assert speed_type.to_unit([1], 'm/s', 'ft/s')[0] == pytest.approx(1 / 3.28084, rel=1e-3)
+
+    def test_volume_flow_rate(self):
+        """Test VolumeFlowRate type."""
+        vfr_type = DataTypes.type_by_name('VolumeFlowRate')
+        for unit in vfr_type.units:
+            assert vfr_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = vfr_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = vfr_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in vfr_type.units:
+                assert len(vfr_type.to_unit([1], other_unit, unit)) == 1
+        assert vfr_type.to_unit([1], 'ft3/s', 'm3/s')[0] == pytest.approx(35.3147, rel=1e-3)
+        assert vfr_type.to_unit([1], 'L/s', 'm3/s')[0] == 1000
+        assert vfr_type.to_unit([1], 'cfm', 'm3/s')[0] == pytest.approx(2118.88, rel=1e-1)
+        assert vfr_type.to_unit([1], 'gpm', 'm3/s')[0] == pytest.approx(15850.3231, rel=1e-3)
+        assert vfr_type.to_unit([1], 'mL/s', 'm3/s')[0] == 1000000
+        assert vfr_type.to_unit([1], 'fl oz/s', 'm3/s')[0] == pytest.approx(33814, rel=1e-3)
+        assert vfr_type.to_unit([1], 'm3/s', 'ft3/s')[0] == pytest.approx(1 / 35.3147, rel=1e-4)
+        assert vfr_type.to_unit([1], 'm3/s', 'L/s')[0] == 0.001
+        assert vfr_type.to_unit([1], 'm3/s', 'cfm')[0] == pytest.approx(1 / 2118.88, rel=1e-7)
+        assert vfr_type.to_unit([1], 'm3/s', 'gpm')[0] == pytest.approx(1 / 15850.3231, rel=1e-8)
+        assert vfr_type.to_unit([1], 'm3/s', 'mL/s')[0] == 0.000001
+        assert vfr_type.to_unit([1], 'm3/s', 'fl oz/s')[0] == pytest.approx(1 / 33814, rel=1e-7)
 
 
 if __name__ == "__main__":
