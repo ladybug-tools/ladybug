@@ -6,6 +6,7 @@ import pytest
 from ladybug.datatypenew import DataTypes
 from ladybug.datatypenew import DataTypeBase
 
+
 class DataTypesTestCase(unittest.TestCase):
     """Test for (ladybug/datatype.py)"""
 
@@ -153,6 +154,36 @@ class DataTypesTestCase(unittest.TestCase):
         assert area_type.to_unit([1], 'm2', 'ha')[0] == 10000
         assert area_type.to_unit([1], 'm2', 'acre')[0] == pytest.approx(4046.86, rel=1e-1)
 
+    def test_volume(self):
+        """Test Volume type."""
+        vol_type = DataTypes.type_by_name('Volume')
+        for unit in vol_type.units:
+            assert vol_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = vol_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = vol_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in vol_type.units:
+                assert len(vol_type.to_unit([1], other_unit, unit)) == 1
+        assert vol_type.to_unit([1], 'ft3', 'm3')[0] == pytest.approx(35.3147, rel=1e-2)
+        assert vol_type.to_unit([1], 'mm3', 'm3')[0] == 1e+9
+        assert vol_type.to_unit([1], 'in3', 'm3')[0] == pytest.approx(61023.7, rel=1e-1)
+        assert vol_type.to_unit([1], 'km3', 'm3')[0] == 0.000000001
+        assert vol_type.to_unit([1], 'mi3', 'm3')[0] == pytest.approx(1 / 4.168e+9, rel=1e-8)
+        assert vol_type.to_unit([1], 'L', 'm3')[0] == 1000
+        assert vol_type.to_unit([1], 'mL', 'm3')[0] == 1000000
+        assert vol_type.to_unit([1], 'gal', 'm3')[0] == pytest.approx(264.172, rel=1e-1)
+        assert vol_type.to_unit([1], 'fl oz', 'm3')[0] == pytest.approx(33814, rel=1e-1)
+        assert vol_type.to_unit([1], 'm3', 'ft3')[0] == pytest.approx(1 / 35.3147, rel=1e-3)
+        assert vol_type.to_unit([1], 'm3', 'mm3')[0] == 0.000000001
+        assert vol_type.to_unit([1], 'm3', 'in3')[0] == pytest.approx(1 / 61023.7, rel=1e-5)
+        assert vol_type.to_unit([1], 'm3', 'km3')[0] == 1e+9
+        assert vol_type.to_unit([1], 'm3', 'mi3')[0] == pytest.approx(4.168e+9, rel=1e-1)
+        assert vol_type.to_unit([1], 'm3', 'L')[0] == 0.001
+        assert vol_type.to_unit([1], 'm3', 'mL')[0] == 0.000001
+        assert vol_type.to_unit([1], 'm3', 'gal')[0] == pytest.approx(1 / 264.172, rel=1e-4)
+        assert vol_type.to_unit([1], 'm3', 'fl oz')[0] == pytest.approx(1 / 33814, rel=1e-5)
+
     def test_pressure(self):
         """Test Pressure type."""
         press_type = DataTypes.type_by_name('Pressure')
@@ -176,6 +207,102 @@ class DataTypesTestCase(unittest.TestCase):
         assert press_type.to_unit([1], 'Pa', 'Torr')[0] == pytest.approx(1 / 0.00750062, rel=1e-1)
         assert press_type.to_unit([1], 'Pa', 'psi')[0] == pytest.approx(1 / 0.000145038, rel=1e-1)
         assert press_type.to_unit([1], 'Pa', 'inH2O')[0] == pytest.approx(1 / 0.00401865, rel=1e-1)
+
+    def test_energy(self):
+        """Test Energy type."""
+        energy_type = DataTypes.type_by_name('Energy')
+        for unit in energy_type.units:
+            assert energy_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = energy_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = energy_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in energy_type.units:
+                assert len(energy_type.to_unit([1], other_unit, unit)) == 1
+        assert energy_type.to_unit([1], 'kBtu', 'kWh')[0] == pytest.approx(3.41214, rel=1e-2)
+        assert energy_type.to_unit([1], 'Wh', 'kWh')[0] == 1000
+        assert energy_type.to_unit([1], 'Btu', 'kWh')[0] == pytest.approx(3412.14, rel=1e-1)
+        assert energy_type.to_unit([1], 'MMBtu', 'kWh')[0] == pytest.approx(0.00341214, rel=1e-5)
+        assert energy_type.to_unit([1], 'J', 'kWh')[0] == 3600000
+        assert energy_type.to_unit([1], 'kJ', 'kWh')[0] == 3600
+        assert energy_type.to_unit([1], 'MJ', 'kWh')[0] == 3.6
+        assert energy_type.to_unit([1], 'GJ', 'kWh')[0] == 0.0036
+        assert energy_type.to_unit([1], 'therm', 'kWh')[0] == pytest.approx(0.0341214, rel=1e-5)
+        assert energy_type.to_unit([1], 'cal', 'kWh')[0] == pytest.approx(860421, rel=1e-1)
+        assert energy_type.to_unit([1], 'kcal', 'kWh')[0] == pytest.approx(860.421, rel=1e-2)
+        assert energy_type.to_unit([1], 'kWh', 'kBtu')[0] == pytest.approx(1 / 3.41214, rel=1e-2)
+        assert energy_type.to_unit([1], 'kWh', 'Wh')[0] == 0.001
+        assert energy_type.to_unit([1], 'kWh', 'Btu')[0] == pytest.approx(1 / 3412.14, rel=1e-5)
+        assert energy_type.to_unit([1], 'kWh', 'MMBtu')[0] == pytest.approx(1 / 0.00341214, rel=1e-1)
+        assert energy_type.to_unit([1], 'kWh', 'J')[0] == 1 / 3600000
+        assert energy_type.to_unit([1], 'kWh', 'kJ')[0] == 1 / 3600
+        assert energy_type.to_unit([1], 'kWh', 'MJ')[0] == 1 / 3.6
+        assert energy_type.to_unit([1], 'kWh', 'GJ')[0] == 1 / 0.0036
+        assert energy_type.to_unit([1], 'kWh', 'therm')[0] == pytest.approx(1 / 0.0341214, rel=1e-1)
+        assert energy_type.to_unit([1], 'kWh', 'cal')[0] == pytest.approx(1 / 860421, rel=1e-7)
+        assert energy_type.to_unit([1], 'kWh', 'kcal')[0] == pytest.approx(1 / 860.421, rel=1e-4)
+
+    def test_energy_intensity(self):
+        """Test Energy type."""
+        energyi_type = DataTypes.type_by_name('EnergyIntensity')
+        for unit in energyi_type.units:
+            assert energyi_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = energyi_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = energyi_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in energyi_type.units:
+                assert len(energyi_type.to_unit([1], other_unit, unit)) == 1
+        assert energyi_type.to_unit([1], 'kBtu/ft2', 'kWh/m2')[0] == pytest.approx(0.316998, rel=1e-3)
+        assert energyi_type.to_unit([1], 'Wh/m2', 'kWh/m2')[0] == 1000
+        assert energyi_type.to_unit([1], 'Btu/ft2', 'kWh/m2')[0] == pytest.approx(316.998, rel=1e-1)
+        assert energyi_type.to_unit([1], 'kWh/m2', 'kBtu/ft2')[0] == pytest.approx(1 / 0.316998, rel=1e-2)
+        assert energyi_type.to_unit([1], 'kWh/m2', 'Wh/m2')[0] == 0.001
+        assert energyi_type.to_unit([1], 'kWh/m2', 'Btu/ft2')[0] == pytest.approx(1 / 316.998, rel=1e-5)
+
+    def test_power(self):
+        """Test Power type."""
+        power_type = DataTypes.type_by_name('Power')
+        for unit in power_type.units:
+            assert power_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = power_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = power_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in power_type.units:
+                assert len(power_type.to_unit([1], other_unit, unit)) == 1
+        assert power_type.to_unit([1], 'Btu/h', 'W')[0] == pytest.approx(3.41214, rel=1e-3)
+        assert power_type.to_unit([1], 'kW', 'W')[0] == 0.001
+        assert power_type.to_unit([1], 'kBtu/h', 'W')[0] == pytest.approx(0.00341214, rel=1e-5)
+        assert power_type.to_unit([1], 'TR', 'W')[0] == pytest.approx(1 / 3516.85, rel=1e-5)
+        assert power_type.to_unit([1], 'hp', 'W')[0] == pytest.approx(1 / 745.7, rel=1e-5)
+        assert power_type.to_unit([1], 'W', 'Btu/h')[0] == pytest.approx(1 / 3.41214, rel=1e-2)
+        assert power_type.to_unit([1], 'W', 'kW')[0] == 1000
+        assert power_type.to_unit([1], 'W', 'kBtu/h')[0] == pytest.approx(1 / 0.00341214, rel=1e-1)
+        assert power_type.to_unit([1], 'W', 'TR')[0] == pytest.approx(3516.85, rel=1e-1)
+        assert power_type.to_unit([1], 'W', 'hp')[0] == pytest.approx(745.7, rel=1e-1)
+
+    def test_energy_flux(self):
+        """Test Energy Flux type."""
+        energyf_type = DataTypes.type_by_name('EnergyFlux')
+        for unit in energyf_type.units:
+            assert energyf_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = energyf_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = energyf_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in energyf_type.units:
+                assert len(energyf_type.to_unit([1], other_unit, unit)) == 1
+        assert energyf_type.to_unit([1], 'Btu/h-ft2', 'W/m2')[0] == pytest.approx(1 / 3.15459075, rel=1e-2)
+        assert energyf_type.to_unit([1], 'kW/m2', 'W/m2')[0] == 0.001
+        assert energyf_type.to_unit([1], 'kBtu/h-ft2', 'W/m2')[0] == pytest.approx(1 / 3154.59075, rel=1e-5)
+        assert energyf_type.to_unit([1], 'W/ft2', 'W/m2')[0] == pytest.approx(1 / 10.7639, rel=1e-4)
+        assert energyf_type.to_unit([1], 'met', 'W/m2')[0] == pytest.approx(1 / 58.2, rel=1e-4)
+        assert energyf_type.to_unit([1], 'W/m2', 'Btu/h-ft2')[0] == pytest.approx(3.15459075, rel=1e-2)
+        assert energyf_type.to_unit([1], 'W/m2', 'kW/m2')[0] == 1000
+        assert energyf_type.to_unit([1], 'W/m2', 'kBtu/h-ft2')[0] == pytest.approx(3154.59075, rel=1e-1)
+        assert energyf_type.to_unit([1], 'W/m2', 'W/ft2')[0] == pytest.approx(10.7639, rel=1e-1)
+        assert energyf_type.to_unit([1], 'W/m2', 'met')[0] == pytest.approx(58.2, rel=1e-1)
 
 
 if __name__ == "__main__":

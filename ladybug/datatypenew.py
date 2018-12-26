@@ -23,6 +23,10 @@ class DataTypeBase(object):
             or mathematically impossible. (Default: -inf)
         max: Upper limit for the data type, values above which should be physically
             or mathematically impossible. (Default: +inf)
+        abbreviation: An optional abbreviation for the data type as text.
+            (eg. 'UTCI' for Universal Thermal Climate Index).
+            This can also be a letter that represents the type in a formula.
+            (eg. 'A' for Area; 'P' for Pressure)
         unit_descr: An optional description of the units if numerical values
             of these units relate to specific categories.
             (eg. -1 = Cold, 0 = Neutral, +1 = Hot) (eg. 0 = False, 1 = True)
@@ -45,6 +49,7 @@ class DataTypeBase(object):
     min = float('-inf')
     max = float('+inf')
 
+    abbreviation = ''
     unit_descr = ''
     cumulative = False
 
@@ -243,10 +248,7 @@ class DataTypeBase(object):
 
 
 """ ************ FUNDAMENTAL DATA TYPES ************ """
-# TODO: Add data types for Area, Volume, MassFlowRate
-# TODO: Add data types for Conductivity, ThermalResistance, UValue, RValue(with clo)
-# TODO: Add data types for PMV, MetabolicRate, ThermalCondition, Comfort
-# TODO: Add PPD to hinherit from Percentage, SET and UTCI to inherit from Temperature
+# TODO: Add data types for Conductivity, Resistance
 
 
 class Unitless(DataTypeBase):
@@ -254,6 +256,7 @@ class Unitless(DataTypeBase):
     def __init__(self, name):
         """Init Generic Type."""
         self.name = name
+        self.abbreviation = name
 
 
 class GenericType(DataTypeBase):
@@ -262,6 +265,7 @@ class GenericType(DataTypeBase):
         """Init Generic Type."""
         self.name = name
         self.units = [unit]
+        self.abbreviation = name
 
     def to_ip(self, values, from_unit):
         """Return values in IP."""
@@ -277,6 +281,7 @@ class Temperature(DataTypeBase):
     name = 'Temperature'
     units = ['C', 'F', 'K']
     min = -273.15
+    abbreviation = 'T'
 
     def _C_to_F(self, value):
         return value * 9 / 5 + 32
@@ -318,6 +323,7 @@ class Percentage(DataTypeBase):
     """Percentage"""
     name = 'Percentage'
     units = ['%', 'fraction', 'tenths', 'thousandths']
+    abbreviation = 'Pct'
 
     def _pct_to_fraction(self, value):
         return value / 100
@@ -360,6 +366,7 @@ class Distance(DataTypeBase):
     name = 'Distance'
     units = ['m', 'ft', 'mm', 'in', 'km', 'mi', 'cm']
     min = 0
+    abbreviation = 'D'
 
     def _m_to_ft(self, value):
         return value * 3.28084
@@ -436,6 +443,7 @@ class Area(DataTypeBase):
     name = 'Area'
     units = ['m2', 'ft2', 'mm2', 'in2', 'km2', 'mi2', 'cm2', 'ha', 'acre']
     min = 0
+    abbreviation = 'A'
 
     def _m2_to_ft2(self, value):
         return value * 10.7639
@@ -523,10 +531,110 @@ class Area(DataTypeBase):
         return True
 
 
+class Volume(DataTypeBase):
+    """Volume"""
+    name = 'Volume'
+    units = ['m3', 'ft3', 'mm3', 'in3', 'km3', 'mi3', 'L', 'mL', 'gal', 'fl oz']
+    min = 0
+    abbreviation = 'V'
+
+    def _m3_to_ft3(self, value):
+        return value * 35.3147
+
+    def _m3_to_mm3(self, value):
+        return value * 1e+9
+
+    def _m3_to_in3(self, value):
+        return value * 61023.7
+
+    def _m3_to_km3(self, value):
+        return value / 1e+9
+
+    def _m3_to_mi3(self, value):
+        return value / 4.168e+9
+
+    def _m3_to_L(self, value):
+        return value * 1000
+
+    def _m3_to_mL(self, value):
+        return value * 1000000
+
+    def _m3_to_gal(self, value):
+        return value * 264.172
+
+    def _m3_to_floz(self, value):
+        return value * 33814
+
+    def _ft3_to_m3(self, value):
+        return value / 35.3147
+
+    def _mm3_to_m3(self, value):
+        return value / 1e+9
+
+    def _in3_to_m3(self, value):
+        return value / 61023.7
+
+    def _km3_to_m3(self, value):
+        return value * 1e+9
+
+    def _mi3_to_m3(self, value):
+        return value * 4.168e+9
+
+    def _L_to_m3(self, value):
+        return value / 1000
+
+    def _mL_to_m3(self, value):
+        return value / 1000000
+
+    def _gal_to_m3(self, value):
+        return value / 264.172
+
+    def _floz_to_m3(self, value):
+        return value / 33814
+
+    def to_unit(self, values, unit, from_unit):
+        """Return values in a given unit given the input from_unit."""
+        return self._to_unit_base('m3', values, unit, from_unit)
+
+    def to_ip(self, values, from_unit):
+        """Return values in IP given the input from_unit."""
+        ip_units = ['ft3', 'in3', 'mi3', 'gal', 'fl oz']
+        if from_unit in ip_units:
+            return values, from_unit
+        elif from_unit == 'mL' or from_unit == 'mm3':
+            return self.to_unit(values, 'fl oz', from_unit), 'fl oz'
+        elif from_unit == 'km3':
+            return self.to_unit(values, 'mi3', from_unit), 'mi3'
+        elif from_unit == 'L':
+            return self.to_unit(values, 'gal', from_unit), 'gal'
+        else:
+            return self.to_unit(values, 'ft3', from_unit), 'ft3'
+
+    def to_si(self, values, from_unit):
+        """Return values in SI given the input from_unit."""
+        si_units = ['m3', 'mm3', 'km3', 'L', 'mL']
+        if from_unit in si_units:
+            return values, from_unit
+        elif from_unit == 'in3' or from_unit == 'fl oz':
+            return self.to_unit(values, 'mL', from_unit), 'mL'
+        elif from_unit == 'mi3':
+            return self.to_unit(values, 'km3', from_unit), 'km3'
+        elif from_unit == 'gal':
+            return self.to_unit(values, 'L', from_unit), 'L'
+        else:
+            return self.to_unit(values, 'm3', from_unit), 'm3'
+
+    @property
+    def isVolume(self):
+        """Return True."""
+        return True
+
+
 class Pressure(DataTypeBase):
     """Pressure"""
     name = 'Pressure'
     units = ['Pa', 'inHg', 'atm', 'bar', 'Torr', 'psi', 'inH2O']
+    abbreviation = 'P'
 
     def _Pa_to_inHg(self, value):
         return value * 0.0002953
@@ -596,6 +704,7 @@ class Energy(DataTypeBase):
     units = ['kWh', 'kBtu', 'Wh', 'Btu', 'MMBtu', 'J', 'kJ', 'MJ', 'GJ',
              'therm', 'cal', 'kcal']
     cumulative = True
+    abbreviation = 'E'
 
     def _kWh_to_kBtu(self, value):
         return value * 3.41214
@@ -698,6 +807,7 @@ class EnergyIntensity(DataTypeBase):
     name = 'Energy Intensity'
     units = ['kWh/m2', 'kBtu/ft2', 'Wh/m2', 'Btu/ft2']
     cumulative = True
+    abbreviation = 'EUI'
 
     def _kWh_m2_to_kBtu_ft2(self, value):
         return value * 0.316998
@@ -751,6 +861,7 @@ class Power(DataTypeBase):
     """Power"""
     name = 'Power'
     units = ['W', 'Btu/h', 'kW', 'kBtu/h', 'TR', 'hp']
+    abbreviation = 'Q'
 
     def _W_to_Btu_h(self, value):
         return value * 3.41214
@@ -815,7 +926,8 @@ class Power(DataTypeBase):
 class EnergyFlux(DataTypeBase):
     """Energy Flux"""
     name = 'Energy Flux'
-    units = ['W/m2', 'Btu/h-ft2', 'kW/m2', 'kBtu/h-ft2', 'W/ft2']
+    units = ['W/m2', 'Btu/h-ft2', 'kW/m2', 'kBtu/h-ft2', 'W/ft2', 'met']
+    abbreviation = 'J'
 
     def _W_m2_to_Btu_hft2(self, value):
         return value / 3.15459075
@@ -829,6 +941,9 @@ class EnergyFlux(DataTypeBase):
     def _W_m2_to_W_ft2(self, value):
         return value / 10.7639
 
+    def _W_m2_to_met(self, value):
+        return value / 58.2
+
     def _Btu_hft2_to_W_m2(self, value):
         return value * 3.15459075
 
@@ -841,6 +956,9 @@ class EnergyFlux(DataTypeBase):
     def _W_ft2_to_W_m2(self, value):
         return value * 10.7639
 
+    def _met_to_W_m2(self, value):
+        return value * 58.2
+
     def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('W/m2', values, unit, from_unit)
@@ -848,7 +966,7 @@ class EnergyFlux(DataTypeBase):
     def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
         ip_units = ['Btu/h-ft2', 'kBtu/h-ft2']
-        if from_unit in ip_units:
+        if from_unit in ip_units or from_unit == 'met':
             return values, from_unit
         elif from_unit == 'kW/m2':
             return self.to_unit(values, 'kBtu/h-ft2', from_unit), 'kBtu/h-ft2'
@@ -858,7 +976,7 @@ class EnergyFlux(DataTypeBase):
     def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
         si_units = ['W/m2', 'kW/m2']
-        if from_unit in si_units:
+        if from_unit in si_units or from_unit == 'met':
             return values, from_unit
         elif from_unit == 'kBtu/h-ft2':
             return self.to_unit(values, 'kW/m2', from_unit), 'kW/m2'
@@ -876,6 +994,7 @@ class Illuminance(DataTypeBase):
     name = 'Illuminance'
     units = ['lux', 'fc']
     min = 0
+    abbreviation = 'Ev'
     min_epw = 0
     missing_epw = 999999  # note will be missing if >= 999900
 
@@ -914,6 +1033,7 @@ class Luminance(DataTypeBase):
     name = 'Luminance'
     units = ['cd/m2', 'cd/ft2']
     min = 0
+    abbreviation = 'Lv'
     min_epw = 0
     missing_epw = 9999  # note will be missing if >= 999900
 
@@ -951,6 +1071,7 @@ class Angle(DataTypeBase):
     """Angle"""
     name = 'Angle'
     units = ['degrees', 'radians']
+    abbreviation = 'theta'
 
     def _degrees_to_radians(self, value):
         return (value * PI) / 180
@@ -979,8 +1100,9 @@ class Angle(DataTypeBase):
 class Mass(DataTypeBase):
     """Mass"""
     name = 'Mass'
-    units = ['kg', 'lb', 'g', 'tonne', 'ton']
+    units = ['kg', 'lb', 'g', 'tonne', 'ton', 'oz']
     min = 0
+    abbreviation = 'm'
 
     def _kg_to_lb(self, value):
         return value * 2.20462
@@ -994,6 +1116,9 @@ class Mass(DataTypeBase):
     def _kg_to_ton(self, value):
         return value / 907.185
 
+    def _kg_to_oz(self, value):
+        return value * 35.274
+
     def _lb_to_kg(self, value):
         return value / 2.20462
 
@@ -1005,6 +1130,9 @@ class Mass(DataTypeBase):
 
     def _ton_to_kg(self, value):
         return value * 907.185
+
+    def _oz_to_kg(self, value):
+        return value / 35.274
 
     def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
@@ -1041,6 +1169,7 @@ class Speed(DataTypeBase):
     name = 'Speed'
     units = ['m/s', 'mph', 'km/h', 'knot', 'ft/s']
     min = 0
+    abbreviation = 'v'
 
     def _m_s_to_mph(self, value):
         return value * 2.23694
@@ -1095,8 +1224,9 @@ class Speed(DataTypeBase):
 class VolumeFlowRate(DataTypeBase):
     """Volume Flow Rate"""
     name = 'Volume Flow Rate'
-    units = ['m3/s', 'ft3/s', 'L/s', 'cfm', 'gpm']
+    units = ['m3/s', 'ft3/s', 'L/s', 'cfm', 'gpm', 'mL/s', 'fl oz/s']
     min = 0
+    abbreviation = 'dV/dt'
 
     def _m3_s_to_ft3_s(self, value):
         return value * 35.3147
@@ -1110,6 +1240,12 @@ class VolumeFlowRate(DataTypeBase):
     def _m3_s_to_gpm(self, value):
         return value * 15850.3231
 
+    def _m3_s_to_mL_s(self, value):
+        return value * 1000000
+
+    def _m3_s_to_floz_s(self, value):
+        return value * 33814
+
     def _ft3_s_to_m3_s(self, value):
         return value / 35.3147
 
@@ -1122,27 +1258,37 @@ class VolumeFlowRate(DataTypeBase):
     def _gpm_to_m3_s(self, value):
         return value / 15850.3231
 
+    def _mL_s_to_m3_s(self, value):
+        return value / 1000000
+
+    def _floz_s_to_m3_s(self, value):
+        return value / 33814
+
     def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
         return self._to_unit_base('m3/s', values, unit, from_unit)
 
     def to_ip(self, values, from_unit):
         """Return values in IP units given the input from_unit."""
-        ip_units = ['ft3/s', 'cfm', 'gpm']
+        ip_units = ['ft3/s', 'cfm', 'gpm', 'fl oz/s']
         if from_unit in ip_units:
             return values, from_unit
         elif from_unit == 'L/s':
             return self.to_unit(values, 'cfm', from_unit), 'cfm'
+        elif from_unit == 'mL/s':
+            return self.to_unit(values, 'fl oz/s', from_unit), 'fl oz/s'
         else:
             return self.to_unit(values, 'ft3/s', from_unit), 'ft3/s'
 
     def to_si(self, values, from_unit):
         """Return values in SI units given the input from_unit."""
-        si_units = ['m3/s', 'L/s']
+        si_units = ['m3/s', 'L/s', 'mL/s']
         if from_unit in si_units:
             return values, from_unit
         elif from_unit == 'cfm':
             return self.to_unit(values, 'L/s', from_unit), 'L/s'
+        elif from_unit == 'fl oz/s':
+            return self.to_unit(values, 'mL/s', from_unit), 'mL/s'
         else:
             return self.to_unit(values, 'm3/s', from_unit), 'm3/s'
 
@@ -1152,11 +1298,180 @@ class VolumeFlowRate(DataTypeBase):
         return True
 
 
+class MassFlowRate(DataTypeBase):
+    """Mass"""
+    name = 'Mass Flow Rate'
+    units = ['kg/s', 'lb/s', 'g/s', 'oz/s']
+    min = 0
+    abbreviation = 'dm/dt'
+
+    def _kg_s_to_lb_s(self, value):
+        return value * 2.2046
+
+    def _kg_s_to_g_s(self, value):
+        return value * 1000
+
+    def _kg_s_to_oz_s(self, value):
+        return value * 35.274
+
+    def _lb_s_to_kg_s(self, value):
+        return value / 2.20462
+
+    def _g_s_to_kg_s(self, value):
+        return value / 1000
+
+    def _oz_s_to_kg_s(self, value):
+        return value / 35.274
+
+    def to_unit(self, values, unit, from_unit):
+        """Return values in a given unit given the input from_unit."""
+        return self._to_unit_base('kg/s', values, unit, from_unit)
+
+    def to_ip(self, values, from_unit):
+        """Return values in IP given the input from_unit."""
+        ip_units = ['lb/s', 'oz/s']
+        if from_unit in ip_units:
+            return values, from_unit
+        elif from_unit == 'g/s':
+            return self.to_unit(values, 'oz/s', from_unit), 'oz/s'
+        else:
+            return self.to_unit(values, 'lb/s', from_unit), 'lb/s'
+
+    def to_si(self, values, from_unit):
+        """Return values in SI given the input from_unit."""
+        si_units = ['kg/s', 'g/s']
+        if from_unit in si_units:
+            return values, from_unit
+        elif from_unit == 'oz/s':
+            return self.to_unit(values, 'g/s', from_unit), 'g/s'
+        else:
+            return self.to_unit(values, 'kg/s', from_unit), 'kg/s'
+
+    @property
+    def isMassFlowRate(self):
+        """Return True."""
+        return True
+
+
+class UValue(DataTypeBase):
+    """U Value"""
+    name = 'U Value'
+    units = ['W/m2-K', 'Btu/h-ft2-F']
+    min = 0
+    abbreviation = 'Uval'
+
+    def _W_m2K_to_Btu_hft2F(self, value):
+        return value / 5.678263337
+
+    def _Btu_hft2F_to_W_m2K(self, value):
+        return value * 5.678263337
+
+    def to_unit(self, values, unit, from_unit):
+        """Return values in a given unit given the input from_unit."""
+        return self._to_unit_base('W/m2-K', values, unit, from_unit)
+
+    def to_ip(self, values, from_unit):
+        """Return values in IP given the input from_unit."""
+        if from_unit == 'Btu/h-ft2-F':
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'Btu/h-ft2-F', from_unit), 'Btu/h-ft2-F'
+
+    def to_si(self, values, from_unit):
+        """Return values in SI given the input from_unit."""
+        if from_unit == 'W/m2-K':
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'W/m2-K', from_unit), 'W/m2-K'
+
+    @property
+    def isUValue(self):
+        """Return True."""
+        return True
+
+
+class RValue(DataTypeBase):
+    """R Value"""
+    name = 'R Value'
+    units = ['m2-K/W', 'h-ft2-F/Btu', 'clo']
+    min = 0
+    abbreviation = 'Rval'
+
+    def _m2K_W_to_hft2F_Btu(self, value):
+        return value * 5.678263337
+
+    def _m2K_W_to_clo(self, value):
+        return value / 0.155
+
+    def _hft2F_Btu_to_m2K_W(self, value):
+        return value / 5.678263337
+
+    def _clo_to_m2K_W(self, value):
+        return value / 0.155
+
+    def to_unit(self, values, unit, from_unit):
+        """Return values in a given unit given the input from_unit."""
+        return self._to_unit_base('m2-K/W', values, unit, from_unit)
+
+    def to_ip(self, values, from_unit):
+        """Return values in IP given the input from_unit."""
+        ip_units = ['h-ft2-F/Btu', 'clo']
+        if from_unit in ip_units:
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'h-ft2-F/Btu', from_unit), 'h-ft2-F/Btu'
+
+    def to_si(self, values, from_unit):
+        """Return values in SI given the input from_unit."""
+        si_units = ['m2-K/W', 'clo']
+        if from_unit in si_units:
+            return values, from_unit
+        else:
+            return self.to_unit(values, 'm2-K/W', from_unit), 'm2-K/W'
+
+    @property
+    def isRValue(self):
+        """Return True."""
+        return True
+
+
+class ThermalCondition(DataTypeBase):
+    """Thermal Condition"""
+    name = 'Thermal Condition'
+    units = ['condition', 'PMV']
+    abbreviation = 'Tcond'
+    unit_descr = '-1 = Cold, 0 = Neutral, +1 = Hot'
+
+    def _condition_to_PMV(self, value):
+        return value
+
+    def _PMV_to_condition(self, value):
+        return value
+
+    def to_unit(self, values, unit, from_unit):
+        """Return values in a given unit given the input from_unit."""
+        return self._to_unit_base('condition', values, unit, from_unit)
+
+    def to_ip(self, values, from_unit):
+        """Return values in IP given the input from_unit."""
+        return values, from_unit
+
+    def to_si(self, values, from_unit):
+        """Return values in SI given the input from_unit."""
+        return values, from_unit
+
+    @property
+    def isThermalCondition(self):
+        """Return True."""
+        return True
+
+
 """ ************ DERIVATIVE DATA TYPES ************ """
 
 
 class DryBulbTemperature(Temperature):
     name = 'Dry Bulb Temperature'
+    abbreviation = 'DBT'
     min_epw = -70
     max_epw = 70
     missing_epw = 99.9
@@ -1164,6 +1479,7 @@ class DryBulbTemperature(Temperature):
 
 class DewPointTemperature(Temperature):
     name = 'Dew Point Temperature'
+    abbreviation = 'DPT'
     min_epw = -70
     max_epw = 70
     missing_epw = 99.9
@@ -1171,15 +1487,76 @@ class DewPointTemperature(Temperature):
 
 class SkyTemperature(Temperature):
     name = 'Sky Temperature'
+    abbreviation = 'Tsky'
+
+
+class AirTemperature(Temperature):
+    name = 'Air Temperature'
+    abbreviation = 'Tair'
+
+
+class RadiantTemperature(Temperature):
+    name = 'Radiant Temperature'
+    abbreviation = 'Trad'
+
+
+class OperativeTemperature(Temperature):
+    name = 'Operative Temperature'
+    abbreviation = 'To'
 
 
 class MeanRadiantTemperature(Temperature):
     name = 'Mean Radiant Temperature'
+    abbreviation = 'MRT'
+
+
+class StandardEffectiveTemperature(Temperature):
+    name = 'Standard Effective Temperature'
+    abbreviation = 'SET'
+
+
+class UniversalThermalClimateIndex(Temperature):
+    name = 'Universal Thermal Climate Index'
+    abbreviation = 'UTCI'
+
+
+class PredictedMeanVote(ThermalCondition):
+    name = 'Predicted Mean Vote'
+    abbreviation = 'PMV'
+    unit_descr = '-3 = Cold, -2 = Cool, -1 = Slightly Cool, \n' \
+        '0 = Neutral, \n' \
+        '+1 = Slightly Warm, +2 = Warm, +3 = Hot'
+
+
+class UTCICondition(ThermalCondition):
+    name = 'UTCI Condition'
+    abbreviation = 'UTCIcond'
+    unit_descr = '-4 = Extreme Cold, -3 = Very Strong Cold, '\
+        '-2 = Strong Cold, -1 = Moderate Cold, \n' \
+        '0 = No Thermal Stress, \n' \
+        '+1 = Moderate Heat, +2 = Strong Heat, '\
+        '+3 = Very Strong Heat, +4 = Extreme Heat'
+
+
+class PercentagePeopleDissatisfied(Percentage):
+    name = 'Percentage People Dissatisfied'
+    min = 0
+    max = 100
+    abbreviation = 'PPD'
+
+
+class ThermalComfort(Percentage):
+    name = 'Thermal Comfort'
+    min = 0
+    max = 100
+    abbreviation = 'TC'
+    unit_descr = '1 = comfortable, 0 = uncomfortable'
 
 
 class RelativeHumidity(Percentage):
     name = 'Relative Humidity'
     min = 0
+    abbreviation = 'RH'
     min_epw = 0
     max_epw = 110
     missing_epw = 999
@@ -1190,6 +1567,7 @@ class TotalSkyCover(Percentage):
     name = 'Total Sky Cover'
     min = 0
     max = 100
+    abbreviation = 'SC'
     min_epw = 0
     max_epw = 100
     missing_epw = 99
@@ -1200,6 +1578,7 @@ class OpaqueSkyCover(Percentage):
     name = 'Opaque Sky Cover'
     min = 0
     max = 100
+    abbreviation = 'CC'
     min_epw = 0
     max_epw = 100
     missing_epw = 99
@@ -1209,6 +1588,7 @@ class AerosolOpticalDepth(Percentage):
     name = 'Aerosol Optical Depth'
     min = 0
     max = 100
+    abbreviation = 'AOD'
     min_epw = 0
     max_epw = 100
     missing_epw = 0.999
@@ -1218,6 +1598,7 @@ class Albedo(Percentage):
     name = 'Albedo'
     min = 0
     max = 100
+    abbreviation = 'a'
     min_epw = 0
     max_epw = 100
     missing_epw = 0.999
@@ -1226,6 +1607,7 @@ class Albedo(Percentage):
 class LiquidPrecipitationQuantity(Percentage):
     name = 'LiquidPrecipitationQuantity'
     min = 0
+    abbreviation = 'LPQ'
     min_epw = 0
     max_epw = 100
     missing_epw = 99
@@ -1234,6 +1616,7 @@ class LiquidPrecipitationQuantity(Percentage):
 class AtmosphericStationPressure(Pressure):
     name = 'Atmospheric Station Pressure'
     min = 0
+    abbreviation = 'AP'
     min_epw = 31000
     max_epw = 120000
     missing_epw = 999999
@@ -1242,6 +1625,7 @@ class AtmosphericStationPressure(Pressure):
 class Radiation(EnergyIntensity):
     name = 'Radiation'
     min = 0
+    abbreviation = 'Esolar'
     min_epw = 0
     missing_epw = 9999
 
@@ -1253,41 +1637,49 @@ class Radiation(EnergyIntensity):
 
 class GlobalHorizontalRadiation(Radiation):
     name = 'Global Horizontal Radiation'
+    abbreviation = 'GHR'
     middle_hour_epw = True
 
 
 class DirectNormalRadiation(Radiation):
     name = 'Direct Normal Radiation'
+    abbreviation = 'DNR'
     middle_hour_epw = True
 
 
 class DiffuseHorizontalRadiation(Radiation):
     name = 'Diffuse Horizontal Radiation'
+    abbreviation = 'DHR'
     middle_hour_epw = True
 
 
 class DirectHorizontalRadiation(Radiation):
     name = 'Direct Horizontal Radiation'
+    abbreviation = 'DR'
     middle_hour_epw = True
 
 
 class HorizontalInfraredRadiationIntensity(Radiation):
     name = 'Horizontal Infrared Radiation Intensity'
+    abbreviation = 'HIR'
 
 
 class ExtraterrestrialHorizontalRadiation(Radiation):
     name = 'Extraterrestrial Horizontal Radiation'
+    abbreviation = 'HRex'
     middle_hour_epw = True
 
 
 class ExtraterrestrialDirectNormalRadiation(Radiation):
     name = 'Extraterrestrial Direct Normal Radiation'
+    abbreviation = 'DNRex'
     middle_hour_epw = True
 
 
 class Irradiance(EnergyFlux):
     name = 'Irradiance'
     min = 0
+    abbreviation = 'Qsolar'
     min_epw = 0
     missing_epw = 9999
 
@@ -1299,50 +1691,60 @@ class Irradiance(EnergyFlux):
 
 class GlobalHorizontalIrradiance(Irradiance):
     name = 'Global Horizontal Irradiance'
+    abbreviation = 'GHIr'
     middle_hour_epw = True
 
 
 class DirectNormalIrradiance(Irradiance):
     name = 'Direct Normal Irradiance'
+    abbreviation = 'DNIr'
     middle_hour_epw = True
 
 
 class DiffuseHorizontalIrradiance(Irradiance):
     name = 'Diffuse Horizontal Irradiance'
+    abbreviation = 'DHIr'
     middle_hour_epw = True
 
 
 class DirectHorizontalIrradiance(Irradiance):
     name = 'Direct Horizontal Irradiance'
+    abbreviation = 'DHIr'
     middle_hour_epw = True
 
 
-class HorizontalInfraredRadiationIrradiance(Irradiance):
+class HorizontalInfraredIrradiance(Irradiance):
     name = 'Horizontal Infrared Irradiance'
+    abbreviation = 'HIIr'
 
 
 class GlobalHorizontalIlluminance(Illuminance):
     name = 'Global Horizontal Illuminance'
+    abbreviation = 'GHI'
     middle_hour_epw = True
 
 
 class DirectNormalIlluminance(Illuminance):
     name = 'Direct Normal Illuminance'
+    abbreviation = 'DNI'
     middle_hour_epw = True
 
 
 class DiffuseHorizontalIlluminance(Illuminance):
     name = 'Diffuse Horizontal Illuminance'
+    abbreviation = 'DHI'
     middle_hour_epw = True
 
 
 class ZenithLuminance(Luminance):
     name = 'Zenith Luminance'
+    abbreviation = 'ZL'
     middle_hour_epw = True
 
 
 class WindDirection(Angle):
     name = 'Wind Direction'
+    abbreviation = 'WD'
     min_epw = 0
     max_epw = 360
     missing_epw = 999
@@ -1350,39 +1752,63 @@ class WindDirection(Angle):
 
 class WindSpeed(Speed):
     name = 'Wind Speed'
+    abbreviation = 'WS'
     min_epw = 0
     max_epw = 40
     missing_epw = 999
 
 
+class AirSpeed(Speed):
+    name = 'Air Speed'
+    abbreviation = 'vair'
+
+
 class Visibility(Distance):
     name = 'Visibility'
+    abbreviation = 'Vis'
     missing_epw = 9999
 
 
 class CeilingHeight(Distance):
     name = 'Ceiling Height'
+    abbreviation = 'Hciel'
     missing_epw = 99999
 
 
 class PrecipitableWater(Distance):
     name = 'Precipitable Water'
+    abbreviation = 'PW'
     missing_epw = 999
 
 
 class SnowDepth(Distance):
     name = 'Snow Depth'
+    abbreviation = 'Dsnow'
     missing_epw = 999
 
 
 class LiquidPrecipitationDepth(Distance):
     name = 'Liquid Precipitation Depth'
+    abbreviation = 'LPD'
     missing_epw = 999
 
 
 class DaysSinceLastSnowfall(DataTypeBase):
     name = 'Days Since Last Snowfall'
+    abbreviation = 'DSLS'
     missing_epw = 99
+
+
+class ClothingInsulation(RValue):
+    name = 'Clothing Insulation'
+    abbreviation = 'Rclo'
+    unit_descr = '0 = No Clothing, \n0.5 = T-shirt + Shorts, \n1 = 3-piece Suit'
+
+
+class MetabolicRate(EnergyFlux):
+    name = 'Metabolic Rate'
+    abbreviation = 'MetR'
+    unit_descr = '1 = Seated, \n1.2 = Standing, \n2 = Walking'
 
 
 class DataTypes(object):
@@ -1392,6 +1818,7 @@ class DataTypes(object):
         'Percentage': Percentage(),
         'Distance': Distance(),
         'Area': Area(),
+        'Volume': Volume(),
         'Pressure': Pressure(),
         'Energy': Energy(),
         'EnergyIntensity': EnergyIntensity(),
@@ -1403,10 +1830,23 @@ class DataTypes(object):
         'Mass': Mass(),
         'Speed': Speed(),
         'VolumeFlowRate': VolumeFlowRate(),
+        'MassFlowRate': MassFlowRate(),
+        'UValue': UValue(),
+        'RValue': RValue(),
+        'ThermalCondition': ThermalCondition(),
         'DryBulbTemperature': DryBulbTemperature(),
         'DewPointTemperature': DewPointTemperature(),
         'SkyTemperature': SkyTemperature(),
+        'AirTemperature': AirTemperature(),
+        'RadiantTemperature': RadiantTemperature(),
+        'OperativeTemperature': OperativeTemperature(),
         'MeanRadiantTemperature': MeanRadiantTemperature(),
+        'StandardEffectiveTemperature': StandardEffectiveTemperature(),
+        'UniversalThermalClimateIndex': UniversalThermalClimateIndex(),
+        'PredictedMeanVote': PredictedMeanVote(),
+        'UTCICondition': UTCICondition(),
+        'ThermalComfort': ThermalComfort(),
+        'PercentagePeopleDissatisfied': PercentagePeopleDissatisfied(),
         'RelativeHumidity': RelativeHumidity(),
         'TotalSkyCover': TotalSkyCover(),
         'OpaqueSkyCover': OpaqueSkyCover(),
@@ -1427,21 +1867,26 @@ class DataTypes(object):
         'DirectNormalIrradiance': DirectNormalIrradiance(),
         'DiffuseHorizontalIrradiance': DiffuseHorizontalIrradiance(),
         'DirectHorizontalIrradiance': DirectHorizontalIrradiance(),
+        'HorizontalInfraredIrradiance': HorizontalInfraredIrradiance(),
         'ZenithLuminance': ZenithLuminance(),
         'WindDirection': WindDirection(),
         'WindSpeed': WindSpeed(),
+        'AirSpeed': AirSpeed(),
         'Visibility': Visibility(),
         'CeilingHeight': CeilingHeight(),
         'PrecipitableWater': PrecipitableWater(),
         'SnowDepth': SnowDepth(),
         'LiquidPrecipitationDepth': LiquidPrecipitationDepth(),
-        'DaysSinceLastSnowfall': DaysSinceLastSnowfall()
+        'DaysSinceLastSnowfall': DaysSinceLastSnowfall(),
+        'ClothingInsulation': ClothingInsulation(),
+        'MetabolicRate': MetabolicRate()
         }
     BASETYPES = (
         Temperature(),
         Percentage(),
         Distance(),
         Area(),
+        Volume(),
         Pressure(),
         Energy(),
         EnergyIntensity(),
@@ -1452,7 +1897,11 @@ class DataTypes(object):
         Angle(),
         Mass(),
         Speed(),
-        VolumeFlowRate()
+        VolumeFlowRate(),
+        MassFlowRate(),
+        UValue(),
+        RValue(),
+        ThermalCondition()
     )
 
     @classmethod
