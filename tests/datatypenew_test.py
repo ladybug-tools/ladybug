@@ -286,7 +286,7 @@ class DataTypesTestCase(unittest.TestCase):
         assert power_type.to_unit([1], 'W', 'hp')[0] == pytest.approx(745.7, rel=1e-1)
 
     def test_energy_flux(self):
-        """Test Energy Flux type."""
+        """Test EnergyFlux type."""
         energyf_type = DataTypes.type_by_name('EnergyFlux')
         for unit in energyf_type.units:
             assert energyf_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
@@ -322,7 +322,7 @@ class DataTypesTestCase(unittest.TestCase):
         assert ill_type.to_unit([1], 'lux', 'fc')[0] == pytest.approx(10.7639, rel=1e-1)
 
     def test_luminance(self):
-        """Test luminance type."""
+        """Test Luminance type."""
         lum_type = DataTypes.type_by_name('Luminance')
         for unit in lum_type.units:
             assert lum_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
@@ -336,18 +336,18 @@ class DataTypesTestCase(unittest.TestCase):
         assert lum_type.to_unit([1], 'cd/m2', 'cd/ft2')[0] == pytest.approx(10.7639, rel=1e-1)
 
     def test_angle(self):
-        """Test angle type."""
-        lum_type = DataTypes.type_by_name('Angle')
-        for unit in lum_type.units:
-            assert lum_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
-            ip_vals, ip_u = lum_type.to_ip([1], unit)
+        """Test Angle type."""
+        ang_type = DataTypes.type_by_name('Angle')
+        for unit in ang_type.units:
+            assert ang_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = ang_type.to_ip([1], unit)
             assert len(ip_vals) == 1
-            si_vals, si_u = lum_type.to_si([1], unit)
+            si_vals, si_u = ang_type.to_si([1], unit)
             assert len(si_vals) == 1
-            for other_unit in lum_type.units:
-                assert len(lum_type.to_unit([1], other_unit, unit)) == 1
-        assert lum_type.to_unit([1], 'radians', 'degrees')[0] == pytest.approx(PI / 180, rel=1e-3)
-        assert lum_type.to_unit([1], 'degrees', 'radians')[0] == pytest.approx((1 / PI) * 180, rel=1e-1)
+            for other_unit in ang_type.units:
+                assert len(ang_type.to_unit([1], other_unit, unit)) == 1
+        assert ang_type.to_unit([1], 'radians', 'degrees')[0] == pytest.approx(PI / 180, rel=1e-3)
+        assert ang_type.to_unit([1], 'degrees', 'radians')[0] == pytest.approx((1 / PI) * 180, rel=1e-1)
 
     def test_mass(self):
         """Test Mass type."""
@@ -414,6 +414,68 @@ class DataTypesTestCase(unittest.TestCase):
         assert vfr_type.to_unit([1], 'm3/s', 'gpm')[0] == pytest.approx(1 / 15850.3231, rel=1e-8)
         assert vfr_type.to_unit([1], 'm3/s', 'mL/s')[0] == 0.000001
         assert vfr_type.to_unit([1], 'm3/s', 'fl oz/s')[0] == pytest.approx(1 / 33814, rel=1e-7)
+
+    def test_mass_flow_rate(self):
+        """Test MassFlowRate type."""
+        mfr_type = DataTypes.type_by_name('MassFlowRate')
+        for unit in mfr_type.units:
+            assert mfr_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = mfr_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = mfr_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in mfr_type.units:
+                assert len(mfr_type.to_unit([1], other_unit, unit)) == 1
+        assert mfr_type.to_unit([1], 'lb/s', 'kg/s')[0] == pytest.approx(2.2046, rel=1e-2)
+        assert mfr_type.to_unit([1], 'g/s', 'kg/s')[0] == 1000
+        assert mfr_type.to_unit([1], 'oz/s', 'kg/s')[0] == pytest.approx(35.274, rel=1e-2)
+        assert mfr_type.to_unit([1], 'kg/s', 'lb/s')[0] == pytest.approx(1 / 2.2046, rel=1e-4)
+        assert mfr_type.to_unit([1], 'kg/s', 'g/s')[0] == 0.001
+        assert mfr_type.to_unit([1], 'kg/s', 'oz/s')[0] == pytest.approx(1 / 35.274, rel=1e-5)
+
+    def test_u_value(self):
+        """Test UValue type."""
+        uval_type = DataTypes.type_by_name('UValue')
+        for unit in uval_type.units:
+            assert uval_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = uval_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = uval_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in uval_type.units:
+                assert len(uval_type.to_unit([1], other_unit, unit)) == 1
+        assert uval_type.to_unit([1], 'Btu/h-ft2-F', 'W/m2-K')[0] == pytest.approx(1 / 5.678263337, rel=1e-5)
+        assert uval_type.to_unit([1], 'W/m2-K', 'Btu/h-ft2-F')[0] == pytest.approx(5.678263337, rel=1e-4)
+
+    def test_r_value(self):
+        """Test RValue type."""
+        rval_type = DataTypes.type_by_name('RValue')
+        for unit in rval_type.units:
+            assert rval_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = rval_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = rval_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in rval_type.units:
+                assert len(rval_type.to_unit([1], other_unit, unit)) == 1
+        assert rval_type.to_unit([1], 'h-ft2-F/Btu', 'm2-K/W')[0] == pytest.approx(5.678263337, rel=1e-4)
+        assert rval_type.to_unit([1], 'clo', 'm2-K/W')[0] == pytest.approx(1 / 0.155, rel=1e-2)
+        assert rval_type.to_unit([1], 'm2-K/W', 'h-ft2-F/Btu')[0] == pytest.approx(1 / 5.678263337, rel=1e-5)
+        assert rval_type.to_unit([1], 'm2-K/W', 'clo')[0] == pytest.approx(0.155, rel=1e-3)
+
+    def test_thermal_condition(self):
+        """Test ThermalCondition type."""
+        tc_type = DataTypes.type_by_name('ThermalCondition')
+        for unit in tc_type.units:
+            assert tc_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = tc_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = tc_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in tc_type.units:
+                assert len(tc_type.to_unit([1], other_unit, unit)) == 1
+        assert tc_type.to_unit([1], 'PMV', 'condition')[0] == 1
+        assert tc_type.to_unit([1], 'condition', 'PMV')[0] == 1
 
 
 if __name__ == "__main__":

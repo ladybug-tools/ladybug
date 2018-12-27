@@ -1407,7 +1407,7 @@ class RValue(DataTypeBase):
         return value / 5.678263337
 
     def _clo_to_m2K_W(self, value):
-        return value / 0.155
+        return value * 0.155
 
     def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
