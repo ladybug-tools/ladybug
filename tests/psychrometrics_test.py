@@ -26,7 +26,7 @@ class PsychometricsTestCase(unittest.TestCase):
     def test_humid_ratio_from_db_rh(self):
         """Test humid_ratio_from_db_rh"""
         assert psy.humid_ratio_from_db_rh(17, 50) == approx(0.00600645, rel=1e-5)
-        assert psy.humid_ratio_from_db_rh(30, 100) == approx(0.02696, rel=1e-3)
+        assert psy.humid_ratio_from_db_rh(30, 100) == approx(0.0272105, rel=1e-5)
 
     def test_enthalpy_from_db_hr(self):
         """Test enthalpy_from_db_hr"""
