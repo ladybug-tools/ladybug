@@ -7,7 +7,7 @@ import math
 def saturated_vapor_pressure_torr(db_temp):
     """Saturated Vapor Pressure (Torr) at temperature (C)
 
-    Used frequently throughtout the pmv comfort functions.
+    Used frequently throughtout PMV comfort functions.
     """
     return math.exp(18.6686 - 4030.183 / (db_temp + 235.0))
 
@@ -17,6 +17,16 @@ def saturated_vapor_pressure(t_kelvin):
 
     This function accounts for the different behaviour above vs. below
     the freezing point of water.
+
+    References
+    ----------
+    [1] Vaisala. (2013) Humidity Conversion Formulas: Calculation Formulas for Humidity.
+    www.vaisala.com/Vaisala%20Documents/Application%20notes/Humidity_Conversion_Formulas_B210973EN-F.pdf
+
+    [2] W. Wagner and A. Pru:" The IAPWS Formulation 1995 for the Thermodynamic
+    Properties of Ordinary Water Substance for General and Scientific Use ",
+    Journal of Physical and Chemical Reference Data,
+    June 2002 ,Volume 31, Issue 2, pp. 387535
     """
 
     if t_kelvin >= 273.15:
@@ -43,6 +53,11 @@ def saturated_vapor_pressure(t_kelvin):
 def humid_ratio_from_db_rh(db_temp, rel_humid, b_press=101325):
     """Humidity Ratio (kg water/kg air) at a db_temp (C),
     rel_humid (%) and Pressure b_press (Pa).
+
+    References
+    ----------
+    [1] Vaisala. (2013) Humidity Conversion Formulas: Calculation Formulas for Humidity.
+    www.vaisala.com/Vaisala%20Documents/Application%20notes/Humidity_Conversion_Formulas_B210973EN-F.pdf
     """
     # Find saturation pressure
     p_ws = saturated_vapor_pressure(db_temp + 273.15)
@@ -58,6 +73,11 @@ def humid_ratio_from_db_rh(db_temp, rel_humid, b_press=101325):
 
 def enthalpy_from_db_hr(db_temp, humid_ratio):
     """Enthalpy (kJ/kg) at humid_ratio (kg water/kg air) and at db_temp (C).
+
+    References
+    ----------
+    [1] Vaisala. (2013) Humidity Conversion Formulas: Calculation Formulas for Humidity.
+    www.vaisala.com/Vaisala%20Documents/Application%20notes/Humidity_Conversion_Formulas_B210973EN-F.pdf
     """
     enthalpy = ((1.01 + (1.89 * humid_ratio)) * db_temp) + (2500 * humid_ratio)
     return enthalpy if enthalpy >= 0 else 0
@@ -66,6 +86,13 @@ def enthalpy_from_db_hr(db_temp, humid_ratio):
 def wet_bulb_from_db_rh(db_temp, rh, b_press=101325):
     """Wet Bulb Temperature (C) at db_temp (C),
     Relative Humidity rh (%), and Pressure b_press (Pa).
+
+    References
+    ----------
+    [1] J. Sullivan and L. D. Sanders. "Method for obtaining wet-bulb temperatures by
+    modifying the psychrometric formula." Center for Experiment Design and Data Analysis.
+    NOAA - National Oceanic and Atmospheric Administration.
+    http://www.srh.noaa.gov/epz/?n=wxcalc_rh
     """
     es = 6.112 * math.e**((17.67 * db_temp) / (db_temp + 243.5))
     e = (es * rh) / 100
@@ -101,6 +128,13 @@ def wet_bulb_from_db_rh(db_temp, rh, b_press=101325):
 def dew_point_from_db_rh(db_temp, rh):
     """Dew Point Temperature (C) at Dry Bulb Temperature db_temp (C) and
     Relative Humidity rh (%).
+
+    References
+    ----------
+    [1] J. Sullivan and L. D. Sanders. "Method for obtaining wet-bulb temperatures by
+    modifying the psychrometric formula." Center for Experiment Design and Data Analysis.
+    NOAA - National Oceanic and Atmospheric Administration.
+    http://www.srh.noaa.gov/epz/?n=wxcalc_rh
     """
     es = 6.112 * math.e**((17.67 * db_temp) / (db_temp + 243.5))
     e = (es * rh) / 100
