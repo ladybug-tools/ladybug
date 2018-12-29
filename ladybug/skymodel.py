@@ -3,7 +3,7 @@ from __future__ import division
 """Functions for computing radiation for different idealized skies"""
 import math
 
-from psychrometrics import dew_point_from_db_rh
+from .psychrometrics import dew_point_from_db_rh
 
 """ORIGINAL AHSRAE CLEAR SKY SOLAR MODEL"""
 
