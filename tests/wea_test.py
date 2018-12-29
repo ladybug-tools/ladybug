@@ -5,6 +5,7 @@ import pytest
 import os
 from ladybug.wea import Wea
 from ladybug.location import Location
+from ladybug.epw import EPW
 
 
 class WeaTestCase(unittest.TestCase):
@@ -94,22 +95,26 @@ class WeaTestCase(unittest.TestCase):
 
     def test_from_zhang_huang(self):
         """Test from zhang huang solar model"""
-        location = Location(
-            'Chicago Ohare Intl Ap', 'USA', 41.98, -87.92, -6.0, 201.0)
+        path = './tests/epw/chicago.epw'
+        epw = EPW(path)
 
-        cc = [0.5] * 8760
-        rh = [50] * 8760
-        dbt = [20] * 8760
-        ws = [2] * 8760
-        wea_from_zh = Wea.from_zhang_huang_solar_model(location, cc, rh, dbt, ws)
+        wea_from_zh = Wea.from_zhang_huang_solar(epw.location,
+                                                 epw.total_sky_cover.values,
+                                                 epw.relative_humidity.values,
+                                                 epw.dry_bulb_temperature.values,
+                                                 epw.wind_speed.values,
+                                                 epw.atmospheric_station_pressure.values)
 
         assert wea_from_zh.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_zh.timestep == 1
-        assert wea_from_zh.global_horizontal_irradiance[0].value == \
-            pytest.approx(0, rel=1e-3)
-        assert wea_from_zh.global_horizontal_irradiance[12].value == \
-            pytest.approx(281.97887, rel=1e-3)
-        # TODO: Add checks for direct normal and diffuse once perez split is finished
+        assert wea_from_zh.global_horizontal_irradiance.values[0] == \
+            pytest.approx(0, rel=1e-1)
+        assert wea_from_zh.global_horizontal_irradiance.values[12] == \
+            pytest.approx(417.312, rel=1e-1)
+        assert wea_from_zh.direct_normal_irradiance.values[12] == \
+            pytest.approx(654.52, rel=1e-1)
+        assert wea_from_zh.diffuse_horizontal_irradiance[12].value == \
+            pytest.approx(144.51, rel=1e-1)
 
     def test_json_methods(self):
         """Test JSON serialization methods"""

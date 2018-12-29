@@ -19,7 +19,7 @@ def saturated_vapor_pressure(t_kelvin):
     the freezing point of water.
     """
 
-    if t_kelvin >= 273:
+    if t_kelvin >= 273.15:
         # Calculate saturation vapor pressure above freezing
         sigma = 1 - (t_kelvin / 647.096)
         express_result = (sigma * (-7.85951783)) + ((sigma**1.5) * 1.84408259) + \
@@ -32,7 +32,7 @@ def saturated_vapor_pressure(t_kelvin):
         p_ws = power * 22064000
     else:
         # Calculate saturation vapor pressure below freezing
-        theta = t_kelvin / 273.16
+        theta = t_kelvin / 273.15
         exponent2 = ((1 - (theta**(-1.5))) * (-13.928169)) + \
             ((1 - (theta**(-1.25))) * 34.707823)
         power = math.exp(exponent2)
@@ -45,7 +45,7 @@ def humid_ratio_from_db_rh(db_temp, rel_humid, b_press=101325):
     rel_humid (%) and Pressure b_press (Pa).
     """
     # Find saturation pressure
-    p_ws = saturated_vapor_pressure(db_temp + 273)
+    p_ws = saturated_vapor_pressure(db_temp + 273.15)
     # Calculate partial pressure
     decrh = rel_humid * 0.01
     p_w = decrh * p_ws
@@ -113,7 +113,7 @@ def rel_humid_from_db_hr(db_temp, humid_ratio, b_press=101325):
     and Pressure b_press (Pa).
     """
     pw = (humid_ratio * 1000 * b_press) / (621.9907 + (humid_ratio * 1000))
-    pws = saturated_vapor_pressure(db_temp + 273)
+    pws = saturated_vapor_pressure(db_temp + 273.15)
     rel_humid = (pw / pws) * 100
     return rel_humid
 
@@ -132,8 +132,8 @@ def rel_humid_from_db_enth(db_temp, enthalpy, b_press=101325):
 def rel_humid_from_db_dpt(db_temp, dew_pt):
     """Relative Humidity (%) at db_temp (C), and dew_pt (C).
     """
-    pws_ta = saturated_vapor_pressure(db_temp + 273)
-    pws_td = saturated_vapor_pressure(dew_pt + 273)
+    pws_ta = saturated_vapor_pressure(db_temp + 273.15)
+    pws_td = saturated_vapor_pressure(dew_pt + 273.15)
     rh = 100 * (pws_td / pws_ta)
     return rh
 
@@ -142,8 +142,8 @@ def rel_humid_from_db_wb(db_temp, wet_bulb, b_press=101325):
     """Relative Humidity (%) at db_temp(C), wet_bulb (C), and Pressure b_press (Pa).
     """
     # Calculate saturation pressure.
-    p_ws = saturated_vapor_pressure(db_temp + 273)
-    p_ws_wb = saturated_vapor_pressure(wet_bulb + 273)
+    p_ws = saturated_vapor_pressure(db_temp + 273.15)
+    p_ws_wb = saturated_vapor_pressure(wet_bulb + 273.15)
     # calculate partial vapor pressure
     p_w = p_ws_wb - (b_press * 0.000662 * (db_temp - wet_bulb))
     # Calculate the relative humidity.

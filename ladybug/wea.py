@@ -368,7 +368,7 @@ class Wea(object):
     def from_zhang_huang_solar(cls, location, cloud_cover,
                                relative_humidity, dry_bulb_temperature,
                                wind_speed, atmospheric_pressure=None,
-                               timestep=1, is_leap_year=False):
+                               timestep=1, is_leap_year=False, use_disc=False):
         """Create a wea object from climate data using the Zhang-Huang model.
 
         The Zhang-Huang solar model was developed to estimate solar
@@ -399,6 +399,8 @@ class Wea(object):
                 hour. Default is 1 for one value per hour.
             is_leap_year: A boolean to indicate if values are representing a leap year.
                 Default is False.
+            use_disc: Set to True to use the original DISC model as opposed to the
+                newer and more accurate DIRINT model. Default is False.
         """
         # check input data
         assert len(cloud_cover) == len(relative_humidity) == \
@@ -435,7 +437,7 @@ class Wea(object):
                                                   relative_humidity,
                                                   dry_bulb_temperature,
                                                   dry_bulb_t3_hrs, wind_speed,
-                                                  atmospheric_pressure)
+                                                  atmospheric_pressure, use_disc)
 
         # assemble the results into DataCollections
         direct_norm_rad, diffuse_horiz_rad = \
