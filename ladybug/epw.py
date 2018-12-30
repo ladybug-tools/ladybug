@@ -3,8 +3,8 @@ from __future__ import division
 
 from .location import Location
 from .analysisperiod import AnalysisPeriod
-from .datatype import DataPoint
-from .datatypenew import DataTypes
+from .datatype import DataTypes
+from .datapoint import DataPoint
 from .header import Header
 from .datacollection import DataCollection
 from .dt import DateTime
@@ -183,8 +183,8 @@ class EPW(object):
 
             # move last item to start position for fields on the hour
             for field_number in xrange(self._num_of_fields):
-                middle_hour = self._data[field_number].header.data_type.middle_hour_epw
-                if middle_hour is False:
+                point_in_time = self._data[field_number].header.data_type.point_in_time
+                if point_in_time is True:
                     # shift datetimes for an hour
                     for data in self._data[field_number]:
                         try:
@@ -236,8 +236,8 @@ class EPW(object):
         try:
             # move first item to end position for fields on the hour
             for field in range(0, self._num_of_fields):
-                middle_hour = self._data[field].header.data_type.middle_hour_epw
-                if middle_hour is False:
+                point_in_time = self._data[field].header.data_type.point_in_time
+                if point_in_time is True:
                     first_hour = self._data[field].pop(0)
                     self._data[field].append(first_hour)
 
@@ -258,8 +258,8 @@ class EPW(object):
             del(lines)
             # move last item to start position for fields on the hour
             for field in range(0, self._num_of_fields):
-                middle_hour = self._data[field].header.data_type.middle_hour_epw
-                if middle_hour is False:
+                point_in_time = self._data[field].header.data_type.point_in_time
+                if point_in_time is True:
                     last_hour = self._data[field].pop()
                     self._data[field].insert(0, last_hour)
 
@@ -398,7 +398,7 @@ class EPW(object):
     def horizontal_infrared_radiation_intensity(self):
         """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data List.
 
-        This is the Horizontal Infrared Radiation Intensity in Wh/m2. If it is missing,
+        This is the Horizontal Infrared Radiation Intensity in W/m2. If it is missing,
         it is calculated from the Opaque Sky Cover field as shown in the following
         explanation. It should have a minimum value of 0; missing value for this field
         is 9999.
@@ -860,7 +860,7 @@ class EPWFields(object):
 
         12: {'name': 'Horizontal Infrared Radiation Intensity',
              'type': int,
-             'unit': 'Wh/m2'
+             'unit': 'W/m2'
              },
 
         13: {'name': 'Global Horizontal Radiation',

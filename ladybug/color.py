@@ -1,6 +1,6 @@
 # coding=utf-8
-from __future__ import division
 """Ladybug color, colorsets and colorrange."""
+from __future__ import division
 
 
 class Color(object):

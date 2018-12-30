@@ -1,21 +1,13 @@
 # coding=utf-8
+"""Utilities for finding roots of continuous functions."""
 from __future__ import division
-"""
-A list of useful functions for rapid guess-and-test (or root-finding) situations.
-Using these functions will typically be much faster than a custom-built guess-and-check
-with a while() loop.
-
-
-For more information on these functions, see the wikidepia page on root finding:
-https://en.wikipedia.org/wiki/Root-finding_algorithm
-"""
 
 
 def secant(a, b, fn, epsilon):
     """
      One of the fasest root-finding algorithms.
      The method calculates the slope of the function fn and this enables it to converge
-     to a solution very fast. However, if started too far away from a root, the method
+     to a solution quickly. However, if started too far away from a root, the method
      may not converge (returning a 'NaN'). For this reason, it is recommended that this
      function be used first in any guess-and-check workflow and, if it fails to find a
      root, the bisect() method should be used.
@@ -33,6 +25,11 @@ def secant(a, b, fn, epsilon):
     Returns:
         root: The value that gives the targetDesiredFromfunctWResult.
 
+    References
+    ----------
+    [1] Wikipedia contributors. (2018, December 29). Root-finding algorithm.
+    In Wikipedia, The Free Encyclopedia. Retrieved 18:16, December 30, 2018,
+    from https://en.wikipedia.org/wiki/Root-finding_algorithm#Secant_method
     """
     f1 = fn(a)
     if abs(f1) <= epsilon:
@@ -56,7 +53,7 @@ def secant(a, b, fn, epsilon):
 
 def bisect(a, b, fn, epsilon, target):
     """
-    The simplest root-finding algorithm.
+    One of the simplest root-finding algorithms.
     It is extremely reliable and is gauranteed to converge to a solution as long as a
     solution exists. However, it converges slowly and, for this reason, it is recommended
     that this only be used after the secant() method has returned a 'NaN'.
@@ -74,6 +71,11 @@ def bisect(a, b, fn, epsilon, target):
    Returns:
        root: The value that gives the targetDesiredFromfunctWResult.
 
+    References
+    ----------
+    [1] Wikipedia contributors. (2018, December 29). Root-finding algorithm.
+    In Wikipedia, The Free Encyclopedia. Retrieved 18:16, December 30, 2018,
+    from https://en.wikipedia.org/wiki/Root-finding_algorithm#Bisection_method
     """
     while (abs(b - a) > 2 * epsilon):
         midpoint = (b + a) / 2

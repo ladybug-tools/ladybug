@@ -1,13 +1,12 @@
 # coding=utf-8
+"""Ladybug Header"""
 from __future__ import division
 
-"""Ladybug Header"""
 from copy import deepcopy
 
 from .location import Location
 from .analysisperiod import AnalysisPeriod
-from .datatypenew import DataTypes
-from .datatypenew import DataTypeBase
+from .datatype import DataTypes, DataTypeBase
 
 
 class Header(object):

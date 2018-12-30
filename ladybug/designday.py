@@ -4,10 +4,10 @@ from __future__ import division
 from .location import Location
 from .futil import write_to_file
 from .dt import DateTime
+from .datapoint import DataPoint
 from .header import Header
-from .datacollection import DataCollection
-from .datatype import DataPoint
 from .analysisperiod import AnalysisPeriod
+from .datacollection import DataCollection
 from .sunpath import Sunpath
 
 from .skymodel import ashrae_revised_clear_sky

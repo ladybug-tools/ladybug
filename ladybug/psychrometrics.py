@@ -1,6 +1,7 @@
 # coding=utf-8
+"""Utility functions for converting between humidity metrics."""
 from __future__ import division
-"""Functions for converting between various humidity metrics"""
+
 import math
 
 

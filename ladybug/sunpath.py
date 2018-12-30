@@ -1,10 +1,11 @@
 # coding=utf-8
 from __future__ import division
 
-import math
-from collections import namedtuple
 from .location import Location
 from .dt import DateTime
+
+import math
+from collections import namedtuple
 
 import sys
 if (sys.version_info > (3, 0)):
