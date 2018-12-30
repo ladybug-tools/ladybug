@@ -446,7 +446,7 @@ class DataCollection(object):
         """
         return self.update_data_for_hours_of_year(values, analysis_period.hoys)
 
-    def interpolate_data(self, timestep, cumulative=False):
+    def interpolate_data(self, timestep, cumulative=None):
         """Interpolate data for a finer timestep using a linear interpolation.
 
         Args:
@@ -455,8 +455,9 @@ class DataCollection(object):
             cumulative: A boolean that sets whether the interpolation
                 should treat the data colection values as cumulative, in
                 which case the value at each timestep is the value over
-                that timestep (instead of over the hour). The default is set to
-                False to yeild average values in between each of the hours.
+                that timestep (instead of over the hour). The default will
+                check the DataType to see if this type of data is typically
+                cumulative over time.
         """
         assert self.header is not None, 'Header cannot be None for interpolation.'
         assert timestep % self.header.analysis_period.timestep == 0, \
@@ -477,13 +478,14 @@ class DataCollection(object):
                                 xrange(timestep))
             ]
 
-        # divide cumulative values by timestep
-        if cumulative is True:
-            for i, d in enumerate(_data):
-                _data[i].value = d.value / timestep
+        # divide cumulative values by the timestep
+        native_cumulative = self.header.data_type.cumulative
+        if cumulative is True or (cumulative is None and native_cumulative):
+                for i, d in enumerate(_data):
+                    _data[i].value = d.value / timestep
 
-        # shift data if half-hour interpolation has been selected.
-        if self.header.data_type.middle_hour_epw is True:
+        # shift data by a half-hour if data is averaged or cumulative over an hour
+        if self.header.data_type.point_in_time is False:
             shift_dist = int(timestep / 2)
             _data = _data[-shift_dist:] + _data[:-shift_dist]
             for i, d in enumerate(_data):
