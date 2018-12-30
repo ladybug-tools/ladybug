@@ -2,13 +2,13 @@
 
 import unittest
 import pytest
-from ladybug.datatype import DryBulbTemperature
+from ladybug.datapoint import DataPoint
 from ladybug.dt import DateTime
 from ladybug.datacollection import DataCollection
 from ladybug.header import Header
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.datatypenew import Temperature
-from ladybug.datatypenew import RelativeHumidity
+from ladybug.datatype import Temperature
+from ladybug.datatype import RelativeHumidity
 
 
 class DataCollectionTestCase(unittest.TestCase):
@@ -32,8 +32,8 @@ class DataCollectionTestCase(unittest.TestCase):
         v2 = 30
         average = (v1 + v2) / 2
         # Setup temperature datatypes
-        t1 = DryBulbTemperature(v1, dt1)
-        t2 = DryBulbTemperature(v2, dt2)
+        t1 = DataPoint(v1, dt1)
+        t2 = DataPoint(v2, dt2)
 
         with pytest.raises(Exception):
             DataCollection(3)

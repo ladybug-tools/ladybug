@@ -1,11 +1,11 @@
 # coding=utf-8
-from __future__ import division
 """Ladybug data collection."""
+from __future__ import division
+
 from .header import Header
-from .datatype import DataPoint
+from .datapoint import DataPoint
 
 from collections import OrderedDict
-
 try:
     from itertools import izip as zip
 except ImportError:

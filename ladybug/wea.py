@@ -1,13 +1,13 @@
 # coding=utf-8
 from __future__ import division
-"""Wea weather file."""
+
 from .epw import EPW
 from .stat import STAT
 from .location import Location
 from .dt import DateTime
 from .header import Header
 from .datacollection import DataCollection
-from .datatype import DataPoint
+from .datapoint import DataPoint
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
