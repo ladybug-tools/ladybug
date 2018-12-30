@@ -463,8 +463,9 @@ class DataCollection(object):
         assert timestep % self.header.analysis_period.timestep == 0, \
             'Target timestep({}) must be divisable by current timestep({})' \
             .format(timestep, self.header.analysis_period.timestep)
-        assert isinstance(cumulative, bool), \
-            'Expected Boolean got {}'.format(type(cumulative))
+        if cumulative is not None:
+            assert isinstance(cumulative, bool), \
+                'Expected Boolean got {}'.format(type(cumulative))
 
         _minutes_step = int(60 / int(timestep / self.header.analysis_period.timestep))
         _data_length = len(self.data)
