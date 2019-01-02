@@ -615,10 +615,18 @@ class Wea(object):
             azimuth: A number between 0 and 360 that represents the
                 azimuth at wich irradiance is being evaluated in degrees.
             ground_reflectance: A number between 0 and 1 that represents the
-                reflectance of the ground. Default is set to 0.2.
-                Altermatively, this can be one of the following text inputs:
-                urban, grass, fresh grass, soil, sand, snow, fresh snow,
-                asphalt, concrete, sea
+                reflectance of the ground. Default is set to 0.2. Some
+                common ground reflectances are:
+                    urban: 0.18
+                    grass: 0.20
+                    fresh grass: 0.26
+                    soil: 0.17
+                    sand: 0.40
+                    snow: 0.65
+                    fresh_snow: 0.75
+                    asphalt: 0.12
+                    concrete: 0.30
+                    sea: 0.06
             isotrophic: A boolean value that sets whether an istotrophic sky is
                 used (as opposed to an anisotrophic sky). An isotrophic sky
                 assummes an even distribution of diffuse irradiance across the
@@ -633,22 +641,6 @@ class Wea(object):
             reflected_irradiance: A list of ground reflected solar irradiance
                 at each timestep.
         """
-        # Acceptable text inputs for ground_reflectance
-        albedos = {'urban': 0.18,
-                   'grass': 0.20,
-                   'fresh grass': 0.26,
-                   'soil': 0.17,
-                   'sand': 0.40,
-                   'snow': 0.65,
-                   'fresh snow': 0.75,
-                   'asphalt': 0.12,
-                   'concrete': 0.30,
-                   'sea': 0.06}
-        if isinstance(ground_reflectance, str) and ground_reflectance in albedos.keys():
-            ground_reflectance = albedos[ground_reflectance]
-        else:
-            ground_reflectance = float(ground_reflectance)
-
         # function to convert polar coordinates to xyz.
         def pol2cart(phi, theta):
             mult = math.cos(theta)

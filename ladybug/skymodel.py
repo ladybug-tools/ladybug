@@ -66,7 +66,7 @@ def ashrae_revised_clear_sky(altitudes, tb, td, use_2017_model=False):
     By default, this function returns clear sky values following the
     methods originally published in the ASHRAE 2009 HOF.
     Args:
-        altitudes = A list of solar altitudes in degrees.
+        altitudes: A list of solar altitudes in degrees.
         tb: A value indicating the beam optical depth of the sky.
         td: A value indicating the diffuse optical depth of the sky.
         use_2017_model: Set to True to use coefficients associated with
@@ -115,7 +115,7 @@ def zhang_huang_solar(alt, cloud_cover, relative_humidity,
     """Calculate global horizontal solar irradiance using the Zhang-Huang model.
 
     Args:
-        alt = A solar altitude in degrees.
+        alt: A solar altitude in degrees.
         cloud_cover: A float value between 0 and 10 that represents the sky cloud cover
             in tenths (0 = clear; 10 = completely overcast)
         relative_humidity: A float value between 0 and 100 that represents
