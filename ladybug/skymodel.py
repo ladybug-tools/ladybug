@@ -131,10 +131,9 @@ def zhang_huang_solar(alt, cloud_cover, relative_humidity,
     Returns:
         glob_ir: A global horizontall radiation value in W/m2.
 
-    References
-    ----------
-    [1] Zhang, Q.Y. and Huang, Y.J. 2002. "Development of typical year weather files
-    for Chinese locations", LBNL-51436, ASHRAE Transactions, Vol. 108, Part 2.
+    Note:
+        [1] Zhang, Q.Y. and Huang, Y.J. 2002. "Development of typical year weather files
+        for Chinese locations", LBNL-51436, ASHRAE Transactions, Vol. 108, Part 2.
     """
     # zhang-huang solar model regression constants
     C0, C1, C2, C3, C4, C5, D_COEFF, K_COEFF = 0.5598, 0.4982, \
@@ -243,14 +242,13 @@ def horizontal_infrared(sky_cover, dry_bulb, dew_point):
     Returns:
         horiz_ir: A horizontal infrared radiation intensity value in W/m2.
 
-    References
-    ----------
-    [1] Walton, G. N. 1983. Thermal Analysis Research Program Reference Manual.
-    NBSSIR 83-2655. National Bureau of Standards, p. 21.
+    Note:
+        [1] Walton, G. N. 1983. Thermal Analysis Research Program Reference Manual.
+        NBSSIR 83-2655. National Bureau of Standards, p. 21.
 
-    [2] Clark, G. and C. Allen, “The Estimation of Atmospheric Radiation for
-    Clear and Cloudy Skies,” Proceedings 2nd National Passive Solar Conference
-    (AS/ISES), 1978, pp. 675-678.
+        [2] Clark, G. and C. Allen, “The Estimation of Atmospheric Radiation for
+        Clear and Cloudy Skies,” Proceedings 2nd National Passive Solar Conference
+        (AS/ISES), 1978, pp. 675-678.
     """
     # stefan-boltzmann constant
     SIGMA = 5.6697e-8
@@ -322,6 +320,8 @@ def dirint(ghi, altitudes, doys, pressures, use_delta_kt_prime=True,
 
     The pvlib implementation limits the clearness index to 1.
 
+    Note the DIRINT model requires time series data.
+
     Args:
         ghi : array-like
             Global horizontal irradiance in W/m^2.
@@ -356,19 +356,14 @@ def dirint(ghi, altitudes, doys, pressures, use_delta_kt_prime=True,
             The modeled direct normal irradiance in W/m^2 provided by the
             DIRINT model.
 
-    Notes
-    -----
-    DIRINT model requires time series data
+    Note:
+        [1] Perez, R., P. Ineichen, E. Maxwell, R. Seals and A. Zelenka,
+        (1992). "Dynamic Global-to-Direct Irradiance Conversion Models".
+        ASHRAE Transactions-Research Series, pp. 354-369
 
-    References
-    ----------
-    [1] Perez, R., P. Ineichen, E. Maxwell, R. Seals and A. Zelenka,
-    (1992). "Dynamic Global-to-Direct Irradiance Conversion Models".
-    ASHRAE Transactions-Research Series, pp. 354-369
-
-    [2] Maxwell, E. L., "A Quasi-Physical Model for Converting Hourly
-    Global Horizontal to Direct Normal Insolation", Technical Report No.
-    SERI/TR-215-3087, Golden, CO: Solar Energy Research Institute, 1987.
+        [2] Maxwell, E. L., "A Quasi-Physical Model for Converting Hourly
+        Global Horizontal to Direct Normal Insolation", Technical Report No.
+        SERI/TR-215-3087, Golden, CO: Solar Energy Research Institute, 1987.
     """
     # calculate kt_prime values
     kt_primes = []
@@ -519,15 +514,14 @@ def disc(ghi, altitude, doy, pressure=101325,
             irradiance on a horizontal plane.
         am: Airmass
 
-    References
-    ----------
-    .. [1] Maxwell, E. L., "A Quasi-Physical Model for Converting Hourly
-       Global Horizontal to Direct Normal Insolation", Technical
-       Report No. SERI/TR-215-3087, Golden, CO: Solar Energy Research
-       Institute, 1987.
+    Note:
+        [1] Maxwell, E. L., "A Quasi-Physical Model for Converting Hourly
+        Global Horizontal to Direct Normal Insolation", Technical
+        Report No. SERI/TR-215-3087, Golden, CO: Solar Energy Research
+        Institute, 1987.
 
-    .. [2] Maxwell, E. "DISC Model", Excel Worksheet.
-       https://www.nrel.gov/grid/solar-resource/disc.html
+        [2] Maxwell, E. "DISC Model", Excel Worksheet.
+        https://www.nrel.gov/grid/solar-resource/disc.html
     """
     if altitude > min_altitude and ghi > 0:
         # this is the I0 calculation from the reference
@@ -608,14 +602,13 @@ def get_extra_radiation(doy, solar_constant=1366.1):
             DatetimeIndex inputs will yield a Pandas TimeSeries. All other
             inputs will yield a float or an array of floats.
 
-    References
-    ----------
-    [1] M. Reno, C. Hansen, and J. Stein, "Global Horizontal Irradiance
-    Clear Sky Models: Implementation and Analysis", Sandia National
-    Laboratories, SAND2012-2389, 2012.
+    Note:
+        [1] M. Reno, C. Hansen, and J. Stein, "Global Horizontal Irradiance
+        Clear Sky Models: Implementation and Analysis", Sandia National
+        Laboratories, SAND2012-2389, 2012.
 
-    [2] <http://solardat.uoregon.edu/SolarRadiationBasics.html>, Eqs.
-    SR1 and SR2
+        [2] <http://solardat.uoregon.edu/SolarRadiationBasics.html>, Eqs.
+        SR1 and SR2
     """
     # Calculates the day angle for the Earth's orbit around the Sun.
     B = (2. * math.pi / 365.) * (doy - 1)
@@ -656,12 +649,11 @@ def clearness_index(ghi, altitude, extra_radiation, min_sin_altitude=0.065,
         kt : numeric
             Clearness index
 
-    References
-    ----------
-    .. [1] Maxwell, E. L., "A Quasi-Physical Model for Converting Hourly
-           Global Horizontal to Direct Normal Insolation", Technical
-           Report No. SERI/TR-215-3087, Golden, CO: Solar Energy Research
-           Institute, 1987.
+    Note:
+        [1] Maxwell, E. L., "A Quasi-Physical Model for Converting Hourly
+        Global Horizontal to Direct Normal Insolation", Technical
+        Report No. SERI/TR-215-3087, Golden, CO: Solar Energy Research
+        Institute, 1987.
     """
     sin_altitude = math.sin(math.radians(altitude))
     I0h = extra_radiation * max(sin_altitude, min_sin_altitude)
@@ -691,11 +683,10 @@ def clearness_index_zenith_independent(clearness_index, airmass,
         kt_prime : numeric
             Zenith independent clearness index
 
-    References
-    ----------
-    .. [1] Perez, R., P. Ineichen, E. Maxwell, R. Seals and A. Zelenka,
-           (1992). "Dynamic Global-to-Direct Irradiance Conversion Models".
-           ASHRAE Transactions-Research Series, pp. 354-369
+    Note:
+        [1] Perez, R., P. Ineichen, E. Maxwell, R. Seals and A. Zelenka,
+        (1992). "Dynamic Global-to-Direct Irradiance Conversion Models".
+        ASHRAE Transactions-Research Series, pp. 354-369
     """
     if airmass is not None:
         # Perez eqn 1
@@ -730,11 +721,10 @@ def get_absolute_airmass(airmass_relative, pressure=101325.):
         airmass_absolute : numeric
             Absolute (pressure corrected) airmass
 
-    References
-    ----------
-    [1] C. Gueymard, "Critical analysis and performance assessment of
-    clear sky solar irradiance models using theoretical and measured
-    data," Solar Energy, vol. 51, pp. 121-138, 1993.
+    Note:
+        [1] C. Gueymard, "Critical analysis and performance assessment of
+        clear sky solar irradiance models using theoretical and measured
+        data," Solar Energy, vol. 51, pp. 121-138, 1993.
     '''
     if airmass_relative is not None:
         return airmass_relative * pressure / 101325.
@@ -779,25 +769,24 @@ def get_relative_airmass(altitude, model='kastenyoung1989'):
             Relative airmass at sea level. Will return None for any
             altitude angle smaller than 0 degrees.
 
-    References
-    ----------
-    [1] Fritz Kasten. "A New Table and Approximation Formula for the
-    Relative Optical Air Mass". Technical Report 136, Hanover, N.H.:
-    U.S. Army Material Command, CRREL.
-    [2] A. T. Young and W. M. Irvine, "Multicolor Photoelectric
-    Photometry of the Brighter Planets," The Astronomical Journal, vol.
-    72, pp. 945-950, 1967.
-    [3] Fritz Kasten and Andrew Young. "Revised optical air mass tables
-    and approximation formula". Applied Optics 28:4735-4738
-    [4] C. Gueymard, "Critical analysis and performance assessment of
-    clear sky solar irradiance models using theoretical and measured
-    data," Solar Energy, vol. 51, pp. 121-138, 1993.
-    [5] A. T. Young, "AIR-MASS AND REFRACTION," Applied Optics, vol. 33,
-    pp. 1108-1110, Feb 1994.
-    [6] Keith A. Pickering. "The Ancient Star Catalog". DIO 12:1, 20,
-    [7] Matthew J. Reno, Clifford W. Hansen and Joshua S. Stein, "Global
-    Horizontal Irradiance Clear Sky Models: Implementation and Analysis"
-    Sandia Report, (2012).
+    Note:
+        [1] Fritz Kasten. "A New Table and Approximation Formula for the
+        Relative Optical Air Mass". Technical Report 136, Hanover, N.H.:
+        U.S. Army Material Command, CRREL.
+        [2] A. T. Young and W. M. Irvine, "Multicolor Photoelectric
+        Photometry of the Brighter Planets," The Astronomical Journal, vol.
+        72, pp. 945-950, 1967.
+        [3] Fritz Kasten and Andrew Young. "Revised optical air mass tables
+        and approximation formula". Applied Optics 28:4735-4738
+        [4] C. Gueymard, "Critical analysis and performance assessment of
+        clear sky solar irradiance models using theoretical and measured
+        data," Solar Energy, vol. 51, pp. 121-138, 1993.
+        [5] A. T. Young, "AIR-MASS AND REFRACTION," Applied Optics, vol. 33,
+        pp. 1108-1110, Feb 1994.
+        [6] Keith A. Pickering. "The Ancient Star Catalog". DIO 12:1, 20,
+        [7] Matthew J. Reno, Clifford W. Hansen and Joshua S. Stein, "Global
+        Horizontal Irradiance Clear Sky Models: Implementation and Analysis"
+        Sandia Report, (2012).
     '''
     if altitude < 0:
         return None
