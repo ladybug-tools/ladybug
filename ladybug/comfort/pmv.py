@@ -1,3 +1,4 @@
+# coding=utf-8
 """Utility functions for calculating PMV comfort."""
 from __future__ import division
 

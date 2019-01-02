@@ -1,3 +1,4 @@
+# coding=utf-8
 """Object for calculating PMV comfort from DataCollections."""
 from __future__ import division
 
