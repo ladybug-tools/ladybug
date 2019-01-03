@@ -12,7 +12,7 @@ def ashrae_clear_sky(altitudes, month, sky_clearness=1):
     """Calculate solar flux for an original ASHRAE Clear Sky
 
     Args:
-        altitudes = A list of solar altitudes in degrees
+        altitudes: A list of solar altitudes in degrees
         month: An integer (1-12) indicating the month the altitudes belong to
         sky_clearness: A factor that will be multiplied by the output of
             the model. This is to help account for locations where clear,
@@ -170,8 +170,8 @@ def zhang_huang_solar_split(altitudes, doys, cloud_cover, relative_humidity,
     irradiance into direct and diffuse.  This is the same method used by EnergyPlus.
 
     Args:
-        altitudes = A list of solar altitudes in degrees.
-        doys = A list of days of the year that correspond to the altitudes.
+        altitudes: A list of solar altitudes in degrees.
+        doys: A list of days of the year that correspond to the altitudes.
         cloud_cover: A list of float values between 0 and 10 that represents cloud cover
             in tenths (0 = clear; 10 = completely overcast)
         relative_humidity: A list of float values between 0 and 100 that represents
@@ -333,36 +333,36 @@ def dirint(ghi, altitudes, doys, pressures, use_delta_kt_prime=True,
         SERI/TR-215-3087, Golden, CO: Solar Energy Research Institute, 1987.
 
     Args:
-        ghi : array-like
+        ghi: array-like
             Global horizontal irradiance in W/m^2.
-        altitudes : array-like
+        altitudes: array-like
             True (not refraction-corrected) solar altitude angles in decimal
             degrees.
-        doys : array-like
+        doys: array-like
             Integers representing the day of the year.
-        pressures : array-like
+        pressures: array-like
             The site pressure in Pascal. Pressure may be measured or an
             average pressure may be calculated from site altitude.
-        use_delta_kt_prime : bool, default True
+        use_delta_kt_prime: bool, default True
             If True, indicates that the stability index delta_kt_prime is
             included in the model. The stability index adjusts the estimated
             DNI in response to dynamics in the time series of GHI. It is
             recommended that delta_kt_prime is not used if the time between
             GHI points is 1.5 hours or greater. If use_delta_kt_prime=True,
             input data must be Series.
-        temp_dew : None or array-like, default None
+        temp_dew: None or array-like, default None
             Surface dew point temperatures, in degrees C. Values of temp_dew
             must be numeric. If temp_dew is not provided, then dew point
             improvements are not applied.
-        min_sin_altitude : numeric, default 0.065
+        min_sin_altitude: numeric, default 0.065
             Minimum value of sin(altitude) to allow when calculating global
             clearness index `kt`. Equivalent to altitude = 3.727 degrees.
-        min_altitude : numeric, default 87
+        min_altitude: numeric, default 87
             Minimum value of altitude to allow in DNI calculation. DNI will be
             set to 0 for times with altitude values smaller than `min_altitude`.
 
     Returns:
-        dni : array-like
+        dni: array-like
             The modeled direct normal irradiance in W/m^2 provided by the
             DIRINT model.
     """
@@ -637,17 +637,17 @@ def clearness_index(ghi, altitude, extra_radiation, min_sin_altitude=0.065,
         Institute, 1987.
 
     Args:
-        ghi : numeric
+        ghi: numeric
             Global horizontal irradiance in W/m^2.
-        altitude : numeric
+        altitude: numeric
             True (not refraction-corrected) solar altitude angle in decimal
             degrees.
-        extra_radiation : numeric
+        extra_radiation: numeric
             Irradiance incident at the top of the atmosphere
-        min_sin_altitude : numeric, default 0.065
+        min_sin_altitude: numeric, default 0.065
             Minimum value of sin(altitude) to allow when calculating global
             clearness index `kt`. Equivalent to altitude = 3.727 degrees.
-        max_clearness_index : numeric, default 2.0
+        max_clearness_index: numeric, default 2.0
             Maximum value of the clearness index. The default, 2.0, allows
             for over-irradiance events typically seen in sub-hourly data.
             NREL's SRRL Fortran code used 0.82 for hourly data.
@@ -675,12 +675,12 @@ def clearness_index_zenith_independent(clearness_index, airmass,
         ASHRAE Transactions-Research Series, pp. 354-369
 
     Args:
-        clearness_index : numeric
+        clearness_index: numeric
             Ratio of global to extraterrestrial irradiance on a horizontal
             plane
-        airmass : numeric
+        airmass: numeric
             Airmass
-        max_clearness_index : numeric, default 2.0
+        max_clearness_index: numeric, default 2.0
             Maximum value of the clearness index. The default, 2.0, allows
             for over-irradiance events typically seen in sub-hourly data.
             NREL's SRRL Fortran code used 0.82 for hourly data.
@@ -719,13 +719,13 @@ def get_absolute_airmass(airmass_relative, pressure=101325.):
         data," Solar Energy, vol. 51, pp. 121-138, 1993.
 
     Args:
-        airmass_relative : numeric
+        airmass_relative: numeric
             The airmass at sea-level.
-        pressure : numeric, default 101325
+        pressure: numeric, default 101325
             The site pressure in Pascal.
 
     Returns:
-        airmass_absolute : numeric
+        airmass_absolute: numeric
             Absolute (pressure corrected) airmass
     """
     if airmass_relative is not None:
@@ -763,13 +763,13 @@ def get_relative_airmass(altitude, model='kastenyoung1989'):
         Sandia Report, (2012).
 
     Args:
-        altitude : numeric
+        altitude: numeric
             Altitude angle of the sun in degrees. Note that some models use
             the apparent (refraction corrected) altitude angle, and some
             models use the true (not refraction-corrected) altitude angle. See
             model descriptions to determine which type of altitude angle is
             required. Apparent altitude angles must be calculated at sea level.
-        model : string, default 'kastenyoung1989'
+        model: string, default 'kastenyoung1989'
             Available models include the following:
             * 'simple' - secant(apparent altitude angle) -
               Note that this gives -inf at altitude=0
@@ -787,7 +787,7 @@ def get_relative_airmass(altitude, model='kastenyoung1989'):
               requires apparent sun altitude
 
     Returns:
-        airmass_relative : numeric
+        airmass_relative: numeric
             Relative airmass at sea level. Will return None for any
             altitude angle smaller than 0 degrees.
     """
