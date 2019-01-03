@@ -15,7 +15,7 @@ from .futil import write_to_file
 
 from .skymodel import ashrae_revised_clear_sky
 from .skymodel import ashrae_clear_sky
-from .skymodel import zhang_huang_solar_model
+from .skymodel import zhang_huang_solar_split
 
 import math
 import os
@@ -365,9 +365,10 @@ class Wea(object):
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
 
     @classmethod
-    def from_zhang_huang_solar_model(cls, location, cloud_cover,
-                                     relative_humidity, dry_bulb_temperature,
-                                     wind_speed, timestep=1, is_leap_year=False):
+    def from_zhang_huang_solar(cls, location, cloud_cover,
+                               relative_humidity, dry_bulb_temperature,
+                               wind_speed, atmospheric_pressure=None,
+                               timestep=1, is_leap_year=False, use_disc=False):
         """Create a wea object from climate data using the Zhang-Huang model.
 
         The Zhang-Huang solar model was developed to estimate solar
@@ -391,10 +392,15 @@ class Wea(object):
                 represent the dry bulb temperature in degrees Celcius.
             wind_speed: A list of annual float values that
                 represent the wind speed in meters per second.
+            atmospheric_pressure: An optional list of float values that
+                represent the atmospheric pressure in Pa.  If None or
+                left blank, pressure at sea level will be used (101325 Pa).
             timestep: An optional integer to set the number of time steps per
                 hour. Default is 1 for one value per hour.
             is_leap_year: A boolean to indicate if values are representing a leap year.
                 Default is False.
+            use_disc: Set to True to use the original DISC model as opposed to the
+                newer and more accurate DIRINT model. Default is False.
         """
         # check input data
         assert len(cloud_cover) == len(relative_humidity) == \
@@ -404,31 +410,43 @@ class Wea(object):
             'input climate data must be annual.'
         assert isinstance(timestep, int), 'timestep must be an' \
             ' integer. Got {}'.format(type(timestep))
+        if atmospheric_pressure is not None:
+            assert len(atmospheric_pressure) == len(cloud_cover), \
+                'length pf atmospheric_pressure must match the other input lists.'
+        else:
+            atmospheric_pressure = [101325] * cls.hr_count(is_leap_year) * timestep
 
         # initiate sunpath based on location
         sp = Sunpath.from_location(location)
         sp.is_leap_year = is_leap_year
 
+        # calculate parameters needed for zhang-huang irradiance
+        date_times = []
+        altitudes = []
+        doys = []
+        dry_bulb_t3_hrs = []
+        for count, t_date in enumerate(cls._get_datetimes(timestep, is_leap_year)):
+            date_times.append(t_date)
+            sun = sp.calculate_sun_from_date_time(t_date)
+            altitudes.append(sun.altitude)
+            doys.append(sun.datetime.doy)
+            dry_bulb_t3_hrs.append(dry_bulb_temperature[count - (3 * timestep)])
+
         # calculate zhang-huang irradiance
+        dir_ir, diff_ir = zhang_huang_solar_split(altitudes, doys, cloud_cover,
+                                                  relative_humidity,
+                                                  dry_bulb_temperature,
+                                                  dry_bulb_t3_hrs, wind_speed,
+                                                  atmospheric_pressure, use_disc)
+
+        # assemble the results into DataCollections
         direct_norm_rad, diffuse_horiz_rad = \
             cls._get_empty_data_collections(location, timestep, is_leap_year)
-
-        for count, t_date in enumerate(cls._get_datetimes(timestep, is_leap_year)):
-            # calculate sun altitude
-            sun = sp.calculate_sun_from_date_time(t_date)
-            alt = sun.altitude
-
-            dir_ir, diff_ir = zhang_huang_solar_model(
-                alt, cloud_cover[count],
-                relative_humidity[count],
-                dry_bulb_temperature[count],
-                dry_bulb_temperature[count - (3 * timestep)],
-                wind_speed[count])
-
+        for dni, dhi, t_date in zip(dir_ir, diff_ir, date_times):
             direct_norm_rad.append(DataPoint(
-                dir_ir, t_date, 'SI', 'Direct Normal Irradiance'))
+                dni, t_date, 'SI', 'Direct Normal Irradiance'))
             diffuse_horiz_rad.append(DataPoint(
-                diff_ir, t_date, 'SI', 'Diffuse Horizontal Irradiance'))
+                dhi, t_date, 'SI', 'Diffuse Horizontal Irradiance'))
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
 
@@ -597,7 +615,18 @@ class Wea(object):
             azimuth: A number between 0 and 360 that represents the
                 azimuth at wich irradiance is being evaluated in degrees.
             ground_reflectance: A number between 0 and 1 that represents the
-                reflectance of the ground. Default is set to 0.2.
+                reflectance of the ground. Default is set to 0.2. Some
+                common ground reflectances are:
+                    urban: 0.18
+                    grass: 0.20
+                    fresh grass: 0.26
+                    soil: 0.17
+                    sand: 0.40
+                    snow: 0.65
+                    fresh_snow: 0.75
+                    asphalt: 0.12
+                    concrete: 0.30
+                    sea: 0.06
             isotrophic: A boolean value that sets whether an istotrophic sky is
                 used (as opposed to an anisotrophic sky). An isotrophic sky
                 assummes an even distribution of diffuse irradiance across the

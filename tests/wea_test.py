@@ -5,6 +5,7 @@ import pytest
 import os
 from ladybug.wea import Wea
 from ladybug.location import Location
+from ladybug.epw import EPW
 
 
 class WeaTestCase(unittest.TestCase):
@@ -94,22 +95,64 @@ class WeaTestCase(unittest.TestCase):
 
     def test_from_zhang_huang(self):
         """Test from zhang huang solar model"""
-        location = Location(
-            'Chicago Ohare Intl Ap', 'USA', 41.98, -87.92, -6.0, 201.0)
+        path = './tests/epw/chicago.epw'
+        epw = EPW(path)
 
-        cc = [0.5] * 8760
-        rh = [50] * 8760
-        dbt = [20] * 8760
-        ws = [2] * 8760
-        wea_from_zh = Wea.from_zhang_huang_solar_model(location, cc, rh, dbt, ws)
+        wea_from_zh = Wea.from_zhang_huang_solar(epw.location,
+                                                 epw.total_sky_cover.values,
+                                                 epw.relative_humidity.values,
+                                                 epw.dry_bulb_temperature.values,
+                                                 epw.wind_speed.values,
+                                                 epw.atmospheric_station_pressure.values)
 
         assert wea_from_zh.location.city == 'Chicago Ohare Intl Ap'
         assert wea_from_zh.timestep == 1
-        assert wea_from_zh.global_horizontal_irradiance[0].value == \
-            pytest.approx(0, rel=1e-3)
-        assert wea_from_zh.global_horizontal_irradiance[12].value == \
-            pytest.approx(281.97887, rel=1e-3)
-        # TODO: Add checks for direct normal and diffuse once perez split is finished
+        assert wea_from_zh.global_horizontal_irradiance.values[0] == \
+            pytest.approx(0, rel=1e-1)
+        assert wea_from_zh.global_horizontal_irradiance.values[12] == \
+            pytest.approx(417.312, rel=1e-1)
+        assert wea_from_zh.direct_normal_irradiance.values[12] == \
+            pytest.approx(654.52, rel=1e-1)
+        assert wea_from_zh.diffuse_horizontal_irradiance[12].value == \
+            pytest.approx(144.51, rel=1e-1)
+
+    def test_zhang_huang_accuracy(self):
+        """Test zhang huang solar model to ensure that average error is within
+        25% of actual solar."""
+        path = './tests/epw/chicago.epw'
+        epw = EPW(path)
+
+        wea = Wea.from_zhang_huang_solar(epw.location,
+                                         epw.total_sky_cover.values,
+                                         epw.relative_humidity.values,
+                                         epw.dry_bulb_temperature.values,
+                                         epw.wind_speed.values,
+                                         epw.atmospheric_station_pressure.values)
+        # test global horizontal radiation
+        glob_horiz_error = [abs(i - j) for i, j in zip(
+            epw.global_horizontal_radiation.values,
+            wea.global_horizontal_irradiance.values)]
+        avg_glob_horiz_error = sum(glob_horiz_error) / sum(
+            epw.global_horizontal_radiation.values)
+        assert (sum(glob_horiz_error) / 8760) < 50
+        assert avg_glob_horiz_error < 0.25
+
+        # test direct normal radiation
+        dir_normal_error = [abs(i - j) for i, j in zip(
+            epw.direct_normal_radiation.values, wea.direct_normal_irradiance.values)]
+        avg_dir_normal_error = sum(dir_normal_error) / sum(
+            epw.direct_normal_radiation.values)
+        assert sum(dir_normal_error) / 8760 < 100
+        assert avg_dir_normal_error < 0.5
+
+        # test diffuse horizontal radiation
+        dif_horiz_error = [abs(i - j) for i, j in zip(
+            epw.diffuse_horizontal_radiation.values,
+            wea.diffuse_horizontal_irradiance.values)]
+        avg_dif_horiz_error = sum(dif_horiz_error) / sum(
+            epw.diffuse_horizontal_radiation.values)
+        assert sum(dif_horiz_error) / 8760 < 50
+        assert avg_dif_horiz_error < 0.5
 
     def test_json_methods(self):
         """Test JSON serialization methods"""
