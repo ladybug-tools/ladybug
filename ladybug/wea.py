@@ -69,19 +69,20 @@ class Wea(object):
         """
         err_message = 'For timestep %d, %d number of data for %s is expected. ' \
             '%d is provided.'
-        if len(direct_normal_irradiance) % cls.hr_count(is_leap_year) == 0:
+        if len(direct_normal_irradiance) % cls.hour_count(is_leap_year) == 0:
             # add extra information to err_message
             err_message = err_message + ' Did you forget to set the timestep to %d?' \
-                % (len(direct_normal_irradiance) / cls.hr_count(is_leap_year))
+                % (len(direct_normal_irradiance) / cls.hour_count(is_leap_year))
 
-        assert len(direct_normal_irradiance) / timestep == cls.hr_count(is_leap_year), \
-            err_message % (timestep, timestep * cls.hr_count(is_leap_year),
+        assert len(direct_normal_irradiance) / \
+            timestep == cls.hour_count(is_leap_year), \
+            err_message % (timestep, timestep * cls.hour_count(is_leap_year),
                            'direct normal irradiance', len(
                                direct_normal_irradiance))
 
         assert len(diffuse_horizontal_irradiance) / timestep == \
-            cls.hr_count(is_leap_year), \
-            err_message % (timestep, timestep * cls.hr_count(is_leap_year),
+            cls.hour_count(is_leap_year), \
+            err_message % (timestep, timestep * cls.hour_count(is_leap_year),
                            'diffuse_horizontal_irradiance', len(
                                direct_normal_irradiance))
 
@@ -406,7 +407,7 @@ class Wea(object):
         assert len(cloud_cover) == len(relative_humidity) == \
             len(dry_bulb_temperature) == len(wind_speed), \
             'lengths of input climate data must match.'
-        assert len(cloud_cover) / timestep == cls.hr_count(is_leap_year), \
+        assert len(cloud_cover) / timestep == cls.hour_count(is_leap_year), \
             'input climate data must be annual.'
         assert isinstance(timestep, int), 'timestep must be an' \
             ' integer. Got {}'.format(type(timestep))
@@ -414,7 +415,7 @@ class Wea(object):
             assert len(atmospheric_pressure) == len(cloud_cover), \
                 'length pf atmospheric_pressure must match the other input lists.'
         else:
-            atmospheric_pressure = [101325] * cls.hr_count(is_leap_year) * timestep
+            atmospheric_pressure = [101325] * cls.hour_count(is_leap_year) * timestep
 
         # initiate sunpath based on location
         sp = Sunpath.from_location(location)
@@ -479,7 +480,7 @@ class Wea(object):
     def direct_normal_irradiance(self, data):
         assert isinstance(data, DataCollection), 'direct_normal_irradiance data' \
             ' must be a data collection. Got {}'.format(type(data))
-        assert len(data) / self.timestep == self.hr_count(self.is_leap_year), \
+        assert len(data) / self.timestep == self.hour_count(self.is_leap_year), \
             'direct_normal_irradiance data must be annual.'
         self._direct_normal_irradiance = data
 
@@ -492,7 +493,7 @@ class Wea(object):
     def diffuse_horizontal_irradiance(self, data):
         assert isinstance(data, DataCollection), 'diffuse_horizontal_irradiance data' \
             ' must be a data collection. Got {}'.format(type(data))
-        assert len(data) / self.timestep == self.hr_count(self.is_leap_year), \
+        assert len(data) / self.timestep == self.hour_count(self.is_leap_year), \
             'diffuse_horizontal_irradiance data must be annual.'
         self._diffuse_horizontal_irradiance = data
 
@@ -546,7 +547,7 @@ class Wea(object):
         return self._is_leap_year
 
     @staticmethod
-    def hr_count(is_leap_year):
+    def hour_count(is_leap_year):
         """Number of hours in this Wea file.
 
         Keep in mind that wea file is an annual file but this value will be different
@@ -561,11 +562,11 @@ class Wea(object):
         This method should only be used for classmethods. For datetimes use datetiems or
         hoys methods.
         """
-        hr_count = 8760 + 24 if is_leap_year else 8760
+        hour_count = 8760 + 24 if is_leap_year else 8760
         adjust_time = 30 if timestep == 1 else 0
         return tuple(
             DateTime.from_moy(60.0 * count / timestep + adjust_time, is_leap_year)
-            for count in xrange(hr_count * timestep)
+            for count in xrange(hour_count * timestep)
         )
 
     @staticmethod
