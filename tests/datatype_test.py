@@ -1,7 +1,7 @@
 # coding=utf-8
 from __future__ import division
 
-from ladybug.datatype import DataTypes, DataTypeBase
+from ladybug.datatype import DataTypes
 
 import unittest
 import pytest
@@ -24,12 +24,6 @@ class DataTypesTestCase(unittest.TestCase):
         """Check to be sure that we can get all currently supported units."""
         all_types = DataTypes.all_possible_units()
         assert len(all_types.split('\n')) == len(DataTypes().BASETYPES)
-
-    def test_type_by_name(self):
-        """Check the type_by_name methods."""
-        all_types = DataTypes().TYPES
-        for typ in all_types.keys():
-            assert hasattr(DataTypes.type_by_name(typ), 'isDataType')
 
     def test_type_by_unit(self):
         """Check the type_by_unit method."""
@@ -59,16 +53,6 @@ class DataTypesTestCase(unittest.TestCase):
         test_type = DataTypes.type_by_name_and_unit('Test Type', 'widgets')
         assert hasattr(test_type, 'isDataType')
         assert test_type.is_unit_acceptable('widgets')
-
-    def test_json_methods(self):
-        """Test to_json and from_json methods."""
-        test_type = DataTypes.type_by_name_and_unit('Test Type', 'widgets')
-        test_json = test_type.to_json()
-        assert test_json == DataTypeBase.from_json(test_json).to_json()
-
-        temp_type = DataTypes.type_by_name('Temperature')
-        temp_json = temp_type.to_json()
-        assert temp_json == DataTypeBase.from_json(temp_json).to_json()
 
     def test_temperature(self):
         """Test Temperature type."""

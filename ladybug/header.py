@@ -6,7 +6,7 @@ from copy import deepcopy
 
 from .location import Location
 from .analysisperiod import AnalysisPeriod
-from .datatype import DataTypes, DataTypeBase
+from .datatype import DataTypes
 
 
 class Header(object):
@@ -60,7 +60,7 @@ class Header(object):
             if key not in data:
                 data[key] = None
 
-        data_type = DataTypeBase.from_json(data['data_type'])
+        data_type = DataTypes.type_by_name_and_unit(data['data_type'], data['unit'])
         ap = AnalysisPeriod.from_json(data['analysis_period'])
         location = Location.from_json(data['location'])
         return cls(data_type, data['unit'], ap, location)
@@ -163,7 +163,7 @@ class Header(object):
 
     def to_json(self):
         """Return a header as a dictionary."""
-        return {'data_type': self.data_type.to_json(),
+        return {'data_type': self.data_type.name,
                 'unit': self.unit,
                 'analysis_period': self.analysis_period.to_json(),
                 'location': self.location.to_json()}
