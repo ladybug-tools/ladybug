@@ -28,9 +28,3 @@ class GenericType(DataTypeBase):
     def to_si(self, values, from_unit):
         """Return values in SI."""
         return values, from_unit
-
-
-class DaysSinceLastSnowfall(DataTypeBase):
-    name = 'Days Since Last Snowfall'
-    abbreviation = 'DSLS'
-    missing_epw = 99

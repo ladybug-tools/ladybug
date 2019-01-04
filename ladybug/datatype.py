@@ -2,165 +2,45 @@
 """Ladybug data types."""
 from __future__ import division
 
-from .types.generic import Unitless, GenericType, DaysSinceLastSnowfall
+from os.path import dirname, basename, isfile, join
+from os import listdir
 
-from .types.percentage import Percentage, PercentagePeopleDissatisfied, \
-    ThermalComfort, RelativeHumidity, TotalSkyCover, OpaqueSkyCover, \
-    AerosolOpticalDepth, Albedo, LiquidPrecipitationQuantity
+# import all sub-modules from types
+root_dir = join(dirname(__file__), 'types')
+modules = listdir(root_dir)
+modules = [join(root_dir, mod) for mod in modules]
+importable = [basename(f)[:-3] for f in modules
+              if isfile(f) and f.endswith('.py') and not f.endswith('__init__.py')]
+for module in importable:
+    statement = 'from .types.{} import *'.format(module)
+    exec(statement)
 
-from .types.angle import Angle, WindDirection
 
-from .types.distance import Distance, Visibility, CeilingHeight, \
-    PrecipitableWater, SnowDepth, LiquidPrecipitationDepth
-
-from .types.area import Area
-
-from .types.volume import Volume
-
-from .types.energy import Energy
-
-from .types.energyintensity import EnergyIntensity, Radiation, \
-    GlobalHorizontalRadiation, DirectNormalRadiation, DiffuseHorizontalRadiation, \
-    DirectHorizontalRadiation, ExtraterrestrialHorizontalRadiation, \
-    ExtraterrestrialDirectNormalRadiation
-
-from .types.energyflux import EnergyFlux, MetabolicRate, Irradiance, \
-    GlobalHorizontalIrradiance, DirectNormalIrradiance, DiffuseHorizontalIrradiance, \
-    DirectHorizontalIrradiance, HorizontalInfraredRadiationIntensity
-
-from .types.power import Power
-
-from .types.illuminance import Illuminance, GlobalHorizontalIlluminance, \
-    DirectNormalIlluminance, DiffuseHorizontalIlluminance
-
-from .types.luminance import Luminance, ZenithLuminance
-
-from .types.temperature import Temperature, DryBulbTemperature, DewPointTemperature, \
-    SkyTemperature, AirTemperature, RadiantTemperature, OperativeTemperature, \
-    MeanRadiantTemperature, StandardEffectiveTemperature, \
-    UniversalThermalClimateIndex
-
-from .types.thermalcondition import ThermalCondition, PredictedMeanVote, UTCICondition
-
-from .types.pressure import Pressure, AtmosphericStationPressure
-
-from .types.mass import Mass
-
-from .types.speed import Speed, WindSpeed, AirSpeed
-
-from .types.massflowrate import MassFlowRate
-
-from .types.volumeflowrate import VolumeFlowRate
-
-from .types.rvalue import RValue, ClothingInsulation
-
-from .types.uvalue import UValue
-
-from copy import deepcopy
+def _all_subclasses(clss):
+    return set(clss.__subclasses__()).union(
+        [s for c in clss.__subclasses__() for s in _all_subclasses(c)])
 
 
 class DataTypes(object):
-    """Available data type classes organized by full name of the data type."""
-    TYPES = {
-        'Percentage': Percentage,
-        'Temperature': Temperature,
-        'Distance': Distance,
-        'Area': Area,
-        'Volume': Volume,
-        'Pressure': Pressure,
-        'Energy': Energy,
-        'EnergyIntensity': EnergyIntensity,
-        'Power': Power,
-        'EnergyFlux': EnergyFlux,
-        'Illuminance': Illuminance,
-        'Luminance': Luminance,
-        'Angle': Angle,
-        'Mass': Mass,
-        'Speed': Speed,
-        'VolumeFlowRate': VolumeFlowRate,
-        'MassFlowRate': MassFlowRate,
-        'UValue': UValue,
-        'RValue': RValue,
-        'ThermalCondition': ThermalCondition,
-        'DryBulbTemperature': DryBulbTemperature,
-        'DewPointTemperature': DewPointTemperature,
-        'SkyTemperature': SkyTemperature,
-        'AirTemperature': AirTemperature,
-        'RadiantTemperature': RadiantTemperature,
-        'OperativeTemperature': OperativeTemperature,
-        'MeanRadiantTemperature': MeanRadiantTemperature,
-        'StandardEffectiveTemperature': StandardEffectiveTemperature,
-        'UniversalThermalClimateIndex': UniversalThermalClimateIndex,
-        'PredictedMeanVote': PredictedMeanVote,
-        'UTCICondition': UTCICondition,
-        'ThermalComfort': ThermalComfort,
-        'PercentagePeopleDissatisfied': PercentagePeopleDissatisfied,
-        'RelativeHumidity': RelativeHumidity,
-        'TotalSkyCover': TotalSkyCover,
-        'OpaqueSkyCover': OpaqueSkyCover,
-        'AerosolOpticalDepth': AerosolOpticalDepth,
-        'Albedo': Albedo,
-        'LiquidPrecipitationQuantity': LiquidPrecipitationQuantity,
-        'AtmosphericStationPressure': AtmosphericStationPressure,
-        'Radiation': Radiation,
-        'GlobalHorizontalRadiation': GlobalHorizontalRadiation,
-        'DirectNormalRadiation': DirectNormalRadiation,
-        'DiffuseHorizontalRadiation': DiffuseHorizontalRadiation,
-        'DirectHorizontalRadiation': DirectHorizontalRadiation,
-        'ExtraterrestrialHorizontalRadiation': ExtraterrestrialHorizontalRadiation,
-        'ExtraterrestrialDirectNormalRadiation': ExtraterrestrialDirectNormalRadiation,
-        'Irradiance': Irradiance,
-        'GlobalHorizontalIrradiance': GlobalHorizontalIrradiance,
-        'DirectNormalIrradiance': DirectNormalIrradiance,
-        'DiffuseHorizontalIrradiance': DiffuseHorizontalIrradiance,
-        'DirectHorizontalIrradiance': DirectHorizontalIrradiance,
-        'HorizontalInfraredRadiationIntensity': HorizontalInfraredRadiationIntensity,
-        'GlobalHorizontalIlluminance': GlobalHorizontalIlluminance,
-        'DirectNormalIlluminance': DirectNormalIlluminance,
-        'DiffuseHorizontalIlluminance': DiffuseHorizontalIlluminance,
-        'ZenithLuminance': ZenithLuminance,
-        'WindDirection': WindDirection,
-        'WindSpeed': WindSpeed,
-        'AirSpeed': AirSpeed,
-        'Visibility': Visibility,
-        'CeilingHeight': CeilingHeight,
-        'PrecipitableWater': PrecipitableWater,
-        'SnowDepth': SnowDepth,
-        'LiquidPrecipitationDepth': LiquidPrecipitationDepth,
-        'DaysSinceLastSnowfall': DaysSinceLastSnowfall,
-        'ClothingInsulation': ClothingInsulation,
-        'MetabolicRate': MetabolicRate
-        }
-    BASETYPES = (
-        Temperature(),
-        Percentage(),
-        Distance(),
-        Area(),
-        Volume(),
-        Pressure(),
-        Energy(),
-        EnergyIntensity(),
-        Power(),
-        EnergyFlux(),
-        Illuminance(),
-        Luminance(),
-        Angle(),
-        Mass(),
-        Speed(),
-        VolumeFlowRate(),
-        MassFlowRate(),
-        UValue(),
-        RValue(),
-        ThermalCondition()
-    )
+    """Handles lookup of all data types by name and unit."""
+    BASETYPES = {}
+    TYPES = {}
+    for clss in DataTypeBase.__subclasses__():
+        if clss.units != [None]:
+            BASETYPES[clss.__name__] = clss
+            TYPES[clss.__name__] = clss
+            all_subclss = _all_subclasses(clss)
+            for subclss in all_subclss:
+                TYPES[subclss.__name__] = subclss
 
     @classmethod
     def all_possible_units(cls):
         """Return a text string indicating all possible units."""
         unit_txt = []
-        for base_d_type in cls.BASETYPES:
+        for base_d_type_name in cls.BASETYPES:
+            base_d_type = cls.BASETYPES[base_d_type_name]
             unit_list = ', '.join(base_d_type.units)
-            unit_txt.append('{}: {}'.format(base_d_type.name, unit_list))
+            unit_txt.append('{}: {}'.format(base_d_type_name, unit_list))
         return '\n'.join(unit_txt)
 
     @classmethod
@@ -179,10 +59,12 @@ class DataTypes(object):
             statement = 'd_type = {}()'.format(type_name)
             exec(statement, data_types)
             d_type = data_types['d_type']
+            del data_types['d_type']
         elif formatted_name in data_types:
             statement = 'd_type = {}()'.format(formatted_name)
             exec(statement, data_types)
             d_type = data_types['d_type']
+            del data_types['d_type']
         return d_type
 
     @classmethod
@@ -195,9 +77,16 @@ class DataTypes(object):
         assert isinstance(unit_name, str), \
             'unit_name must be a text string got {}'.format(type(unit_name))
         d_type = None
-        for base_d_type in cls.BASETYPES:
-            if unit_name in base_d_type.units:
-                d_type = deepcopy(base_d_type)
+        data_types = cls.BASETYPES
+        for base_d_type_name in data_types:
+            base_d_type = data_types[base_d_type_name]
+            if hasattr(base_d_type, 'units') and unit_name in base_d_type.units:
+                d_type = base_d_type_name
+        if d_type is not None:
+            statement = 'd_type = {}()'.format(d_type)
+            exec(statement, cls.TYPES)
+            d_type = cls.TYPES['d_type']
+            del cls.TYPES['d_type']
         return d_type
 
     @classmethod

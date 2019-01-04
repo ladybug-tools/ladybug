@@ -28,7 +28,7 @@ class DataTypesTestCase(unittest.TestCase):
     def test_type_by_unit(self):
         """Check the type_by_unit method."""
         all_types = DataTypes().BASETYPES
-        for typ in range(len(all_types)):
+        for typ in all_types:
             typ_units = all_types[typ].units
             for u in typ_units:
                 assert hasattr(DataTypes.type_by_unit(u), 'isDataType')
@@ -36,9 +36,10 @@ class DataTypesTestCase(unittest.TestCase):
     def test_type_by_name_and_unit(self):
         """Check the type_by_unit method."""
         all_types = DataTypes().BASETYPES
-        for typ in range(len(all_types)):
-            typ_name = all_types[typ].name
-            typ_units = all_types[typ].units
+        for typ_n in all_types:
+            typ = all_types[typ_n]
+            typ_name = typ.name
+            typ_units = typ.units
             for u in typ_units:
                 assert hasattr(DataTypes.type_by_name_and_unit(
                     typ_name, u), 'isDataType')
