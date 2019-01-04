@@ -84,10 +84,28 @@ class Header(object):
         """A DataType object."""
         return self._data_type
 
+    @data_type.setter
+    def data_type(self, d_typ):
+        if hasattr(d_typ, 'isDataType'):
+            d_typ.is_unit_acceptable(self._unit, raise_exception=True)
+            self._data_type = d_typ
+        else:
+            d_typ_check = DataTypes.type_by_name(d_typ)
+            if d_typ_check is not None:
+                d_typ_check.is_unit_acceptable(self._unit, raise_exception=True)
+                self._data_type = d_typ_check
+            else:
+                self._data_type.name = d_typ
+
     @property
     def unit(self):
         """A text string representing an abbreviated unit."""
         return self._unit
+
+    @unit.setter
+    def unit(self, u):
+        assert self._data_type.is_unit_acceptable(u, raise_exception=True)
+        self._unit = u
 
     @property
     def analysis_period(self):
