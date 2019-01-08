@@ -7,16 +7,17 @@ from ._base import DataTypeBase
 
 class VolumeFlowRate(DataTypeBase):
     """Volume Flow Rate"""
-    name = 'Volume Flow Rate'
-    units = ['m3/s', 'ft3/s', 'L/s', 'cfm', 'gpm', 'mL/s', 'fl oz/s']
-    min = 0
-    abbreviation = 'dV/dt'
+    _units = ('m3/s', 'ft3/s', 'L/s', 'cfm', 'gpm', 'mL/s', 'fl oz/s')
+    _si_units = ('m3/s', 'L/s', 'mL/s')
+    _ip_units = ('ft3/s', 'cfm', 'gpm', 'fl oz/s')
+    _min = 0
+    _abbreviation = 'dV/dt'
 
     def _m3_s_to_ft3_s(self, value):
         return value * 35.3147
 
     def _m3_s_to_L_s(self, value):
-        return value * 1000
+        return value * 1000.
 
     def _m3_s_to_cfm(self, value):
         return value * 2118.88
@@ -25,16 +26,16 @@ class VolumeFlowRate(DataTypeBase):
         return value * 15850.3231
 
     def _m3_s_to_mL_s(self, value):
-        return value * 1000000
+        return value * 1000000.
 
     def _m3_s_to_floz_s(self, value):
-        return value * 33814
+        return value * 33814.
 
     def _ft3_s_to_m3_s(self, value):
         return value / 35.3147
 
     def _L_s_to_m3_s(self, value):
-        return value / 1000
+        return value / 1000.
 
     def _cfm_to_m3_s(self, value):
         return value / 2118.88
@@ -43,10 +44,10 @@ class VolumeFlowRate(DataTypeBase):
         return value / 15850.3231
 
     def _mL_s_to_m3_s(self, value):
-        return value / 1000000
+        return value / 1000000.
 
     def _floz_s_to_m3_s(self, value):
-        return value / 33814
+        return value / 33814.
 
     def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
@@ -54,8 +55,7 @@ class VolumeFlowRate(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in IP units given the input from_unit."""
-        ip_units = ['ft3/s', 'cfm', 'gpm', 'fl oz/s']
-        if from_unit in ip_units:
+        if from_unit in self.ip_units:
             return values, from_unit
         elif from_unit == 'L/s':
             return self.to_unit(values, 'cfm', from_unit), 'cfm'
@@ -66,8 +66,7 @@ class VolumeFlowRate(DataTypeBase):
 
     def to_si(self, values, from_unit):
         """Return values in SI units given the input from_unit."""
-        si_units = ['m3/s', 'L/s', 'mL/s']
-        if from_unit in si_units:
+        if from_unit in self.si_units:
             return values, from_unit
         elif from_unit == 'cfm':
             return self.to_unit(values, 'L/s', from_unit), 'L/s'

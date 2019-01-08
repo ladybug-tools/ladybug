@@ -7,10 +7,11 @@ from ._base import DataTypeBase
 
 class Volume(DataTypeBase):
     """Volume"""
-    name = 'Volume'
-    units = ['m3', 'ft3', 'mm3', 'in3', 'km3', 'mi3', 'L', 'mL', 'gal', 'fl oz']
-    min = 0
-    abbreviation = 'V'
+    _units = ('m3', 'ft3', 'mm3', 'in3', 'km3', 'mi3', 'L', 'mL', 'gal', 'fl oz')
+    _si_units = ('m3', 'mm3', 'km3', 'L', 'mL')
+    _ip_units = ('ft3', 'in3', 'mi3', 'gal', 'fl oz')
+    _min = 0
+    _abbreviation = 'V'
 
     def _m3_to_ft3(self, value):
         return value * 35.3147
@@ -28,16 +29,16 @@ class Volume(DataTypeBase):
         return value / 4.168e+9
 
     def _m3_to_L(self, value):
-        return value * 1000
+        return value * 1000.
 
     def _m3_to_mL(self, value):
-        return value * 1000000
+        return value * 1000000.
 
     def _m3_to_gal(self, value):
         return value * 264.172
 
     def _m3_to_floz(self, value):
-        return value * 33814
+        return value * 33814.
 
     def _ft3_to_m3(self, value):
         return value / 35.3147
@@ -55,16 +56,16 @@ class Volume(DataTypeBase):
         return value * 4.168e+9
 
     def _L_to_m3(self, value):
-        return value / 1000
+        return value / 1000.
 
     def _mL_to_m3(self, value):
-        return value / 1000000
+        return value / 1000000.
 
     def _gal_to_m3(self, value):
         return value / 264.172
 
     def _floz_to_m3(self, value):
-        return value / 33814
+        return value / 33814.
 
     def to_unit(self, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
@@ -72,8 +73,7 @@ class Volume(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        ip_units = ['ft3', 'in3', 'mi3', 'gal', 'fl oz']
-        if from_unit in ip_units:
+        if from_unit in self.ip_units:
             return values, from_unit
         elif from_unit == 'mL' or from_unit == 'mm3':
             return self.to_unit(values, 'fl oz', from_unit), 'fl oz'
@@ -86,8 +86,7 @@ class Volume(DataTypeBase):
 
     def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        si_units = ['m3', 'mm3', 'km3', 'L', 'mL']
-        if from_unit in si_units:
+        if from_unit in self.si_units:
             return values, from_unit
         elif from_unit == 'in3' or from_unit == 'fl oz':
             return self.to_unit(values, 'mL', from_unit), 'mL'

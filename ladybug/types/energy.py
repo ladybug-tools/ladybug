@@ -7,18 +7,19 @@ from ._base import DataTypeBase
 
 class Energy(DataTypeBase):
     """Energy"""
-    name = 'Energy'
-    units = ['kWh', 'kBtu', 'Wh', 'Btu', 'MMBtu', 'J', 'kJ', 'MJ', 'GJ',
-             'therm', 'cal', 'kcal']
-    abbreviation = 'E'
-    point_in_time = False
-    cumulative = True
+    _units = ['kWh', 'kBtu', 'Wh', 'Btu', 'MMBtu', 'J', 'kJ', 'MJ', 'GJ',
+              'therm', 'cal', 'kcal']
+    _si_units = ('kWh', 'Wh', 'J', 'kJ', 'MJ', 'GJ')
+    _ip_units = ('kBtu', 'Btu', 'MMBtu', 'therm')
+    _abbreviation = 'E'
+    _point_in_time = False
+    _cumulative = True
 
     def _kWh_to_kBtu(self, value):
         return value * 3.41214
 
     def _kWh_to_Wh(self, value):
-        return value * 1000
+        return value * 1000.
 
     def _kWh_to_Btu(self, value):
         return value * 3412.14
@@ -27,10 +28,10 @@ class Energy(DataTypeBase):
         return value * 0.00341214
 
     def _kWh_to_J(self, value):
-        return value * 3600000
+        return value * 3600000.
 
     def _kWh_to_kJ(self, value):
-        return value * 3600
+        return value * 3600.
 
     def _kWh_to_MJ(self, value):
         return value * 3.6
@@ -42,7 +43,7 @@ class Energy(DataTypeBase):
         return value * 0.0341214
 
     def _kWh_to_cal(self, value):
-        return value * 860421
+        return value * 860421.
 
     def _kWh_to_kcal(self, value):
         return value * 860.421
@@ -51,7 +52,7 @@ class Energy(DataTypeBase):
         return value / 3.41214
 
     def _Wh_to_kWh(self, value):
-        return value / 1000
+        return value / 1000.
 
     def _Btu_to_kWh(self, value):
         return value / 3412.14
@@ -60,10 +61,10 @@ class Energy(DataTypeBase):
         return value / 0.00341214
 
     def _J_to_kWh(self, value):
-        return value / 3600000
+        return value / 3600000.
 
     def _kJ_to_kWh(self, value):
-        return value / 3600
+        return value / 3600.
 
     def _MJ_to_kWh(self, value):
         return value / 3.6
@@ -75,7 +76,7 @@ class Energy(DataTypeBase):
         return value / 0.0341214
 
     def _cal_to_kWh(self, value):
-        return value / 860421
+        return value / 860421.
 
     def _kcal_to_kWh(self, value):
         return value / 860.421
@@ -86,8 +87,7 @@ class Energy(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        ip_units = ['kBtu', 'Btu', 'MMBtu', 'therm']
-        if from_unit in ip_units:
+        if from_unit in self.ip_units:
             return values, from_unit
         elif from_unit == 'Wh':
             return self.to_unit(values, 'Btu', from_unit), 'Btu'
@@ -96,8 +96,7 @@ class Energy(DataTypeBase):
 
     def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        si_units = ['kWh', 'Wh', 'J', 'kJ', 'MJ', 'GJ']
-        if from_unit in si_units:
+        if from_unit in self.si_units:
             return values, from_unit
         elif from_unit == 'Btu':
             return self.to_unit(values, 'Wh', from_unit), 'Wh'

@@ -4,7 +4,6 @@ from __future__ import division
 
 from copy import deepcopy
 
-from .location import Location
 from .analysisperiod import AnalysisPeriod
 from .datatype import DataTypes
 
@@ -12,35 +11,37 @@ from .datatype import DataTypes
 class Header(object):
     """DataCollection header.
 
-    Header carries meatdata for data type, unit, analysis period, and location
+    Header carries meatdata for DataCollections including data type, unit
+    and analysis period.
 
     Attributes:
-        data_type: A DataType object or text indicating the name of a DataType.
-            (e.g. Temperature) (Default: None).
+        data_type: A DataType object. (e.g. Temperature)
         unit: data_type unit (Default: None).
         analysis_period: A Ladybug analysis period (Defualt: None)
-        location: Location data as a ladybug Location or location string
-            (Default: None).
+        metadata: Optional dictionary of additional metadata,
+            containing information such as 'city', 'building' or 'zone'.
     """
 
-    __slots__ = ('_data_type', '_unit', '_analysis_period', '_location')
+    __slots__ = ('_data_type', '_unit', '_analysis_period', '_metadata')
 
-    def __init__(self, data_type=None, unit=None,
-                 analysis_period=None, location=None):
+    def __init__(self, data_type, unit=None,
+                 analysis_period=None, metadata=None):
         """Initiate Ladybug header for lists.
 
         Args:
-            data_type: A DataType object or text indicating the name of the DataType.
-                (e.g. Temperature) (Default: 'Unknown Data').
+            data_type: A DataType object. (e.g. Temperature)
             unit: data_type unit (Default: None)
             analysis_period: A Ladybug analysis period (Defualt: None)
-            location: location data as a ladybug Location or location string
-                (Default: None)
+            metadata: Optional dictionary of additional metadata,
+                containing information such as 'city', 'building' or 'zone'.
         """
-        data_type = data_type or 'Unknown Data'
+        assert hasattr(data_type, 'isDataType'), \
+            'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
+
+        data_type = data_type
         self.set_data_type_and_unit(data_type, unit)
-        self.analysis_period = analysis_period
-        self.location = location
+        self._analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
+        self._metadata = metadata or {}
 
     @classmethod
     def from_json(cls, data):
@@ -51,19 +52,19 @@ class Header(object):
                 "data_type": {}, //Type of data (e.g. Temperature)
                 "unit": string,
                 "analysis_period": {} // A Ladybug AnalysisPeriod
-                "location": {}, // A Ladybug location
+                "metadata": {}, // A dictionary of metadata
             }
         """
         # assign default values
-        keys = ('data_type', 'unit', 'analysis_period', 'location')
+        keys = ('data_type', 'unit', 'analysis_period', 'metadata')
         for key in keys:
             if key not in data:
                 data[key] = None
 
         data_type = DataTypes.type_by_name_and_unit(data['data_type'], data['unit'])
         ap = AnalysisPeriod.from_json(data['analysis_period'])
-        location = Location.from_json(data['location'])
-        return cls(data_type, data['unit'], ap, location)
+        metadata = data['metadata']
+        return cls(data_type, data['unit'], ap, metadata)
 
     @classmethod
     def from_header(cls, header):
@@ -117,13 +118,9 @@ class Header(object):
         self._analysis_period = AnalysisPeriod.from_analysis_period(ap)
 
     @property
-    def location(self):
-        """A Location object."""
-        return self._location
-
-    @location.setter
-    def location(self, loc):
-        self._location = Location.from_location(loc)
+    def metadata(self):
+        """Metadata associated with the Header."""
+        return self._metadata
 
     @property
     def isHeader(self):
@@ -146,7 +143,7 @@ class Header(object):
         """Return a copy of the header."""
         return self.__class__(deepcopy(self.data_type), self.unit,
                               AnalysisPeriod.from_string(str(self.analysis_period)),
-                              deepcopy(self.location))
+                              deepcopy(self.metadata))
 
     def to_tuple(self):
         """Return Ladybug header as a list."""
@@ -154,7 +151,7 @@ class Header(object):
             self.data_type,
             self.unit,
             self.analysis_period,
-            self.location
+            self.metadata
         )
 
     def __iter__(self):
@@ -163,10 +160,10 @@ class Header(object):
 
     def to_json(self):
         """Return a header as a dictionary."""
-        return {'data_type': self.data_type.name,
+        return {'data_type': self.data_type.to_json(),
                 'unit': self.unit,
                 'analysis_period': self.analysis_period.to_json(),
-                'location': self.location.to_json()}
+                'metadata': self.metadata}
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -176,4 +173,4 @@ class Header(object):
         """Return Ladybug header as a string."""
         return "%s(%s)|%s|%s" % (
             repr(self.data_type), self.unit,
-            self.analysis_period, repr(self.location))
+            self.analysis_period, repr(self.metadata))

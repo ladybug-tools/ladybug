@@ -7,19 +7,20 @@ from ._base import DataTypeBase
 
 class Pressure(DataTypeBase):
     """Pressure"""
-    name = 'Pressure'
-    units = ['Pa', 'inHg', 'atm', 'bar', 'Torr', 'psi', 'inH2O']
-    abbreviation = 'P'
-    point_in_time = False
+    _units = ('Pa', 'inHg', 'atm', 'bar', 'Torr', 'psi', 'inH2O')
+    _si_units = ('Pa', 'bar')
+    _ip_units = ('inHg', 'psi', 'inH2O')
+    _abbreviation = 'P'
+    _point_in_time = False
 
     def _Pa_to_inHg(self, value):
         return value * 0.0002953
 
     def _Pa_to_atm(self, value):
-        return value / 101325
+        return value / 101325.
 
     def _Pa_to_bar(self, value):
-        return value / 100000
+        return value / 100000.
 
     def _Pa_to_Torr(self, value):
         return value * 0.00750062
@@ -34,10 +35,10 @@ class Pressure(DataTypeBase):
         return value / 0.0002953
 
     def _atm_to_Pa(self, value):
-        return value * 101325
+        return value * 101325.
 
     def _bar_to_Pa(self, value):
-        return value * 100000
+        return value * 100000.
 
     def _Torr_to_Pa(self, value):
         return value / 0.00750062
@@ -54,16 +55,14 @@ class Pressure(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        ip_units = ['inHg', 'psi', 'inH2O']
-        if from_unit in ip_units:
+        if from_unit in self.ip_units:
             return values, from_unit
         else:
             return self.to_unit(values, 'inHg', from_unit), 'inHg'
 
     def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        si_units = ['Pa', 'bar']
-        if from_unit in si_units:
+        if from_unit in self.si_units:
             return values, from_unit
         else:
             return self.to_unit(values, 'Pa', from_unit), 'Pa'
@@ -75,9 +74,8 @@ class Pressure(DataTypeBase):
 
 
 class AtmosphericStationPressure(Pressure):
-    name = 'Atmospheric Station Pressure'
-    min = 0
-    abbreviation = 'Patm'
-    min_epw = 31000
-    max_epw = 120000
-    missing_epw = 999999
+    _min = 0
+    _abbreviation = 'Patm'
+    _min_epw = 31000
+    _max_epw = 120000
+    _missing_epw = 999999

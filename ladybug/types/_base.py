@@ -2,19 +2,22 @@
 """Base data type."""
 from __future__ import division
 
+import re
 from ..datapoint import DataPoint
 
 
 class DataTypeBase(object):
     """Base class for data types.
 
-    Attributes:
+    Properties:
         name: The full name of the data type as a string.
         units: A list of all accetpable units of the data type as abbreviated text.
             The first item of the list should be the standard SI unit.
             The second item of the list should be the stadard IP unit (if it exists).
             The rest of the list can be any other acceptable units.
             (eg. [C, F, K])
+        si_units: A list of acceptable SI units.
+        ip_units: A list of acceptable IP units.
         min: Lower limit for the data type, values below which should be physically
             or mathematically impossible. (Default: -inf)
         max: Upper limit for the data type, values above which should be physically
@@ -45,24 +48,26 @@ class DataTypeBase(object):
             (Default: None)
     """
 
-    name = 'Data Type Base'
-    units = [None]
-    min = float('-inf')
-    max = float('+inf')
+    _units = [None]
+    _si_units = [None]
+    _ip_units = [None]
+    _min = float('-inf')
+    _max = float('+inf')
 
-    abbreviation = ''
-    unit_descr = ''
-    point_in_time = True
-    cumulative = False
+    _abbreviation = ''
+    _unit_descr = ''
+    _point_in_time = True
+    _cumulative = False
 
-    min_epw = float('-inf')
-    max_epw = float('+inf')
-    missing_epw = None
+    _min_epw = float('-inf')
+    _max_epw = float('+inf')
+    _missing_epw = None
 
     def __init__(self):
         """Init DataType."""
+        pass
 
-    def is_unit_acceptable(self, unit, raise_exception=False):
+    def is_unit_acceptable(self, unit, raise_exception=True):
         """Check if a certain unit is acceptable for the data type.
 
         Args:
@@ -105,7 +110,7 @@ class DataTypeBase(object):
             return True
         return False
 
-    def is_in_range(self, values, unit=None, raise_exception=False):
+    def is_in_range(self, values, unit=None, raise_exception=True):
         """Check if a list of values is within acceptable ranges.
 
         Args:
@@ -114,7 +119,7 @@ class DataTypeBase(object):
                 unit will be assumed.
             raise_exception: Set to True to raise an exception if not in range.
         """
-        self._check_values(values)
+        assert self._is_numeric(values)
         if unit is None or unit == self.units[0]:
             minimum = self.min
             maximum = self.max
@@ -141,7 +146,7 @@ class DataTypeBase(object):
                     )
         return True
 
-    def is_in_range_epw(self, values, unit=None, raise_exception=False):
+    def is_in_range_epw(self, values, unit=None, raise_exception=True):
         """Check if a list of values is within acceptable ranges for an EPW file.
 
         Args:
@@ -150,7 +155,7 @@ class DataTypeBase(object):
                 unit will be assumed.
             raise_exception: Set to True to raise an exception if not in range.
         """
-        self._check_values(values)
+        assert self._is_numeric(values)
         if unit is None or unit == self.units[0]:
             minimum = self.min_epw
             maximum = self.max_epw
@@ -179,16 +184,17 @@ class DataTypeBase(object):
                     )
         return True
 
-    def _check_values(self, values):
+    def _is_numeric(self, values):
         """Check to be sure values are numbers before doing numerical operations."""
         if len(values) > 0:
             assert isinstance(values[0], (float, int, DataPoint)), \
                 "values must be numbers to perform math operations. Got {}".format(
                     type(values[0]))
+        return True
 
     def _to_unit_base(self, base_unit, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
-        self._check_values(values)
+        assert self._is_numeric(values)
         namespace = {'self': self, 'values': values}
         if not from_unit == base_unit:
             self.is_unit_acceptable(from_unit, True)
@@ -211,6 +217,71 @@ class DataTypeBase(object):
                 '-', '').replace(
                     ' ', '').replace(
                         '%', 'pct')
+
+    @property
+    def name(self):
+        """The data type name."""
+        return re.sub(r"(?<=\w)([A-Z])", r" \1", self.__name__)
+
+    @property
+    def units(self):
+        """A list of all acceptabledata type units."""
+        return self._units
+
+    @property
+    def si_units(self):
+        """A list of acceptable si_units."""
+        return self._si_units
+
+    @property
+    def ip_units(self):
+        """A list of acceptable ip_units."""
+        return self._ip_units
+
+    @property
+    def min(self):
+        """The minimum value of the data type."""
+        return self._min
+
+    @property
+    def max(self):
+        """The maximum possible value of the data type."""
+        return self._max
+
+    @property
+    def abbreviation(self):
+        """The abbreviation of the data type."""
+        return self._abbreviation
+
+    @property
+    def unit_descr(self):
+        """A description of the data type."""
+        return self._unit_descr
+
+    @property
+    def point_in_time(self):
+        """Whether the data type is point_in_time."""
+        return self._point_in_time
+
+    @property
+    def cumulative(self):
+        """Whether the data type is cumulative."""
+        return self._cumulative
+
+    @property
+    def min_epw(self):
+        """Minimum acceptable value for an EPW."""
+        return self._min_epw
+
+    @property
+    def max_epw(self):
+        """Maxmimum acceptable value for an EPW."""
+        return self._max_epw
+
+    @property
+    def missing_epw(self):
+        """Missing value for an EPW."""
+        return self._missing_epw
 
     @property
     def isDataType(self):

@@ -7,16 +7,17 @@ from ._base import DataTypeBase
 
 class EnergyFlux(DataTypeBase):
     """Energy Flux"""
-    name = 'Energy Flux'
-    units = ['W/m2', 'Btu/h-ft2', 'kW/m2', 'kBtu/h-ft2', 'W/ft2', 'met']
-    abbreviation = 'J'
-    point_in_time = False
+    _units = ('W/m2', 'Btu/h-ft2', 'kW/m2', 'kBtu/h-ft2', 'W/ft2', 'met')
+    _si_units = ('W/m2', 'kW/m2')
+    _ip_units = ('Btu/h-ft2', 'kBtu/h-ft2')
+    _abbreviation = 'J'
+    _point_in_time = False
 
     def _W_m2_to_Btu_hft2(self, value):
         return value / 3.15459075
 
     def _W_m2_to_kW_m2(self, value):
-        return value / 1000
+        return value / 1000.
 
     def _W_m2_to_kBtu_hft2(self, value):
         return value / 3154.59075
@@ -31,7 +32,7 @@ class EnergyFlux(DataTypeBase):
         return value * 3.15459075
 
     def _kW_m2_to_W_m2(self, value):
-        return value * 1000
+        return value * 1000.
 
     def _kBtu_hft2_to_W_m2(self, value):
         return value * 3154.59075
@@ -48,8 +49,7 @@ class EnergyFlux(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        ip_units = ['Btu/h-ft2', 'kBtu/h-ft2']
-        if from_unit in ip_units or from_unit == 'met':
+        if from_unit in self.ip_units or from_unit == 'met':
             return values, from_unit
         elif from_unit == 'kW/m2':
             return self.to_unit(values, 'kBtu/h-ft2', from_unit), 'kBtu/h-ft2'
@@ -58,8 +58,7 @@ class EnergyFlux(DataTypeBase):
 
     def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        si_units = ['W/m2', 'kW/m2']
-        if from_unit in si_units or from_unit == 'met':
+        if from_unit in self.si_units or from_unit == 'met':
             return values, from_unit
         elif from_unit == 'kBtu/h-ft2':
             return self.to_unit(values, 'kW/m2', from_unit), 'kW/m2'
@@ -73,17 +72,15 @@ class EnergyFlux(DataTypeBase):
 
 
 class MetabolicRate(EnergyFlux):
-    name = 'Metabolic Rate'
-    abbreviation = 'MetR'
-    unit_descr = '1 = Seated, \n1.2 = Standing, \n2 = Walking'
+    _abbreviation = 'MetR'
+    _unit_descr = '1 = Seated, \n1.2 = Standing, \n2 = Walking'
 
 
 class Irradiance(EnergyFlux):
-    name = 'Irradiance'
-    min = 0
-    abbreviation = 'Qsolar'
-    min_epw = 0
-    missing_epw = 9999
+    _min = 0
+    _abbreviation = 'Qsolar'
+    _min_epw = 0
+    _missing_epw = 9999
 
     @property
     def isIrradiance(self):
@@ -92,26 +89,21 @@ class Irradiance(EnergyFlux):
 
 
 class GlobalHorizontalIrradiance(Irradiance):
-    name = 'Global Horizontal Irradiance'
-    abbreviation = 'GHIr'
+    _abbreviation = 'GHIr'
 
 
 class DirectNormalIrradiance(Irradiance):
-    name = 'Direct Normal Irradiance'
-    abbreviation = 'DNIr'
+    _abbreviation = 'DNIr'
 
 
 class DiffuseHorizontalIrradiance(Irradiance):
-    name = 'Diffuse Horizontal Irradiance'
-    abbreviation = 'DHIr'
+    _abbreviation = 'DHIr'
 
 
 class DirectHorizontalIrradiance(Irradiance):
-    name = 'Direct Horizontal Irradiance'
-    abbreviation = 'DHIr'
+    _abbreviation = 'DHIr'
 
 
 class HorizontalInfraredRadiationIntensity(Irradiance):
-    name = 'Horizontal Infrared Radiation Intensity'
-    abbreviation = 'HIr'
-    point_in_time = True
+    _abbreviation = 'HIr'
+    _point_in_time = True

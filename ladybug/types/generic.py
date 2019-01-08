@@ -9,17 +9,17 @@ class Unitless(DataTypeBase):
     """Type for any data without a recognizable name and no units."""
     def __init__(self, name):
         """Init Generic Type."""
-        self.name = name
-        self.abbreviation = name
+        self._name = name
+        self._abbreviation = name
 
 
 class GenericType(DataTypeBase):
     """Type for any data without a recognizable name."""
     def __init__(self, name, unit):
         """Init Generic Type."""
-        self.name = name
-        self.units = [unit]
-        self.abbreviation = name
+        self._name = name
+        self._units = [unit]
+        self._abbreviation = name
 
     def to_ip(self, values, from_unit):
         """Return values in IP."""

@@ -7,13 +7,14 @@ from ._base import DataTypeBase
 
 class Luminance(DataTypeBase):
     """Luminance"""
-    name = 'Luminance'
-    units = ['cd/m2', 'cd/ft2']
-    min = 0
-    abbreviation = 'Lv'
-    point_in_time = False
-    min_epw = 0
-    missing_epw = 9999  # note will be missing if >= 999900
+    _units = ('cd/m2', 'cd/ft2')
+    _si_units = ('cd/m2')
+    _ip_units = ('cd/ft2')
+    _min = 0
+    _abbreviation = 'Lv'
+    _point_in_time = False
+    _min_epw = 0
+    _missing_epw = 9999  # note will be missing if >= 999900
 
     def _cd_m2_to_cd_ft2(self, value):
         return value / 10.7639
@@ -46,5 +47,4 @@ class Luminance(DataTypeBase):
 
 
 class ZenithLuminance(Luminance):
-    name = 'Zenith Luminance'
-    abbreviation = 'ZL'
+    _abbreviation = 'ZL'

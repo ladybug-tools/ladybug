@@ -7,10 +7,11 @@ from ._base import DataTypeBase
 
 class Speed(DataTypeBase):
     """Speed"""
-    name = 'Speed'
-    units = ['m/s', 'mph', 'km/h', 'knot', 'ft/s']
-    min = 0
-    abbreviation = 'v'
+    _units = ('m/s', 'mph', 'km/h', 'knot', 'ft/s')
+    _si_units = ('m/s', 'km/h')
+    _ip_units = ('mph', 'ft/s')
+    _min = 0
+    _abbreviation = 'v'
 
     def _m_s_to_mph(self, value):
         return value * 2.23694
@@ -42,16 +43,14 @@ class Speed(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in IP units given the input from_unit."""
-        ip_units = ['mph', 'ft/s']
-        if from_unit in ip_units:
+        if from_unit in self.ip_units:
             return values, from_unit
         else:
             return self.to_unit(values, 'mph', from_unit), 'mph'
 
     def to_si(self, values, from_unit):
         """Return values in SI units given the input from_unit."""
-        si_units = ['m/s', 'km/h']
-        if from_unit in si_units:
+        if from_unit in self.si_units:
             return values, from_unit
         else:
             return self.to_unit(values, 'm/s', from_unit), 'm/s'
@@ -63,13 +62,11 @@ class Speed(DataTypeBase):
 
 
 class WindSpeed(Speed):
-    name = 'Wind Speed'
-    abbreviation = 'WS'
-    min_epw = 0
-    max_epw = 40
-    missing_epw = 999
+    _abbreviation = 'WS'
+    _min_epw = 0
+    _max_epw = 40
+    _missing_epw = 999
 
 
 class AirSpeed(Speed):
-    name = 'Air Speed'
-    abbreviation = 'vair'
+    _abbreviation = 'vair'

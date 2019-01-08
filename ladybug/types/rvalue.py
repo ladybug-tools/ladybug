@@ -7,10 +7,11 @@ from ._base import DataTypeBase
 
 class RValue(DataTypeBase):
     """R Value"""
-    name = 'R Value'
-    units = ['m2-K/W', 'h-ft2-F/Btu', 'clo']
-    min = 0
-    abbreviation = 'Rval'
+    _units = ('m2-K/W', 'h-ft2-F/Btu', 'clo')
+    _si_units = ('m2-K/W', 'clo')
+    _ip_units = ('h-ft2-F/Btu', 'clo')
+    _min = 0
+    _abbreviation = 'Rval'
 
     def _m2K_W_to_hft2F_Btu(self, value):
         return value * 5.678263337
@@ -30,16 +31,14 @@ class RValue(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        ip_units = ['h-ft2-F/Btu', 'clo']
-        if from_unit in ip_units:
+        if from_unit in self.ip_units:
             return values, from_unit
         else:
             return self.to_unit(values, 'h-ft2-F/Btu', from_unit), 'h-ft2-F/Btu'
 
     def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        si_units = ['m2-K/W', 'clo']
-        if from_unit in si_units:
+        if from_unit in self.si_units:
             return values, from_unit
         else:
             return self.to_unit(values, 'm2-K/W', from_unit), 'm2-K/W'
@@ -51,6 +50,5 @@ class RValue(DataTypeBase):
 
 
 class ClothingInsulation(RValue):
-    name = 'Clothing Insulation'
-    abbreviation = 'Rclo'
-    unit_descr = '0 = No Clothing, \n0.5 = T-shirt + Shorts, \n1 = 3-piece Suit'
+    _abbreviation = 'Rclo'
+    _unit_descr = '0 = No Clothing, \n0.5 = T-shirt + Shorts, \n1 = 3-piece Suit'

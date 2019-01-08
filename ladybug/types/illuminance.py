@@ -7,13 +7,14 @@ from ._base import DataTypeBase
 
 class Illuminance(DataTypeBase):
     """Illuminance"""
-    name = 'Illuminance'
-    units = ['lux', 'fc']
-    min = 0
-    abbreviation = 'Ev'
-    point_in_time = False
-    min_epw = 0
-    missing_epw = 999999  # note will be missing if >= 999900
+    _units = ('lux', 'fc')
+    _si_units = ('lux')
+    _ip_units = ('fc')
+    _min = 0
+    _abbreviation = 'Ev'
+    _point_in_time = False
+    _min_epw = 0
+    _missing_epw = 999999  # note will be missing if >= 999900
 
     def _lux_to_fc(self, value):
         return value / 10.7639
@@ -46,15 +47,12 @@ class Illuminance(DataTypeBase):
 
 
 class GlobalHorizontalIlluminance(Illuminance):
-    name = 'Global Horizontal Illuminance'
-    abbreviation = 'GHI'
+    _abbreviation = 'GHI'
 
 
 class DirectNormalIlluminance(Illuminance):
-    name = 'Direct Normal Illuminance'
-    abbreviation = 'DNI'
+    _abbreviation = 'DNI'
 
 
 class DiffuseHorizontalIlluminance(Illuminance):
-    name = 'Diffuse Horizontal Illuminance'
-    abbreviation = 'DHI'
+    _abbreviation = 'DHI'

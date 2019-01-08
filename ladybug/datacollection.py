@@ -148,28 +148,25 @@ class DataCollection(object):
         """Return the list of data points."""
         return self._data
 
+    def bounds(self):
+        """Return a tuple as (min, max)."""
+        return (min(self.values), max(self.values))
+
+    def min(self):
+        """Return the min of the Datacollection values."""
+        return min(self.values)
+
+    def max(self):
+        """Return the max of the Datacollection values."""
+        return max(self.values)
+
+    def average(self):
+        """Return the average of the Datacollection values."""
+        return sum(self.values) / len(self.values)
+
     def duplicate(self):
         """Return a copy of the current data list."""
         return DataCollection(self.data, self.header.duplicate())
-
-    def bounds(self, lower=float('-inf'), upper=float('+inf'),
-               raise_exception=False):
-        """Check if DataCollection values are within certain lower and upper bounds."""
-        for value in self.values:
-            if value < lower or value > upper:
-                if not raise_exception:
-                    return False
-                else:
-                    raise ValueError(
-                        'Values should be between {1} and {2}. Got {3}'.format(
-                            lower, upper, value)
-                    )
-        return True
-
-    def bounds_epw(self, raise_exception=False):
-        """Check if DataCollection values are in permissable ranges for EPW files."""
-        return self._header.data_type.is_in_range_epw(
-            self.values, self._header.unit, raise_exception)
 
     def convert_to_unit(self, unit):
         """Convert the DataCollection to the input unit"""
@@ -213,7 +210,7 @@ class DataCollection(object):
         return new_data_c
 
     @staticmethod
-    def average(data):
+    def average_data(data):
         """Return average value for a list of ladybug data."""
         values = (value.value for value in data)
         return sum(values) / len(data)
@@ -656,13 +653,9 @@ class DataCollection(object):
 
         # average values for each month
         for month, values in monthly_values.items():
-            average_values[month] = self.average(values)
+            average_values[month] = self.average_data(values)
 
         return average_values
-
-    def average_data(self):
-        """Return average value for data collection."""
-        return self.average(self.data)
 
     def average_monthly(self):
         """Return a dictionary of values for average values for available months."""
@@ -685,7 +678,7 @@ class DataCollection(object):
             # group data for each hour
             grouped_hourly_data = self.group_data_by_hour(monthly_values)
             for hour, data in grouped_hourly_data.items():
-                averaged_monthly_values_per_hour[month][hour] = self.average(data)
+                averaged_monthly_values_per_hour[month][hour] = self.average_data(data)
 
         return averaged_monthly_values_per_hour
 
@@ -696,12 +689,17 @@ class DataCollection(object):
         """
         return self.average_data_monthly_for_each_hour(self.data)
 
-    def _bounds_data_type(self, raise_exception=False):
+    def _is_in_data_type_range(self, raise_exception=True):
         """Check if the DataCollection values are in permissable ranges for the data_type.
 
         If this method returns False, the DataCollection's data is
         physically or mathematically impossible for the data_type."""
         return self._header.data_type.is_in_range(
+            self.values, self._header.unit, raise_exception)
+
+    def _is_in_epw_range(self, raise_exception=True):
+        """Check if DataCollection values are in permissable ranges for EPW files."""
+        return self._header.data_type.is_in_range_epw(
             self.values, self._header.unit, raise_exception)
 
     def __len__(self):

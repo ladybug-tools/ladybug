@@ -7,10 +7,11 @@ from ._base import DataTypeBase
 
 class UValue(DataTypeBase):
     """U Value"""
-    name = 'U Value'
-    units = ['W/m2-K', 'Btu/h-ft2-F']
-    min = 0
-    abbreviation = 'Uval'
+    _units = ('W/m2-K', 'Btu/h-ft2-F')
+    _si_units = ('W/m2-K')
+    _ip_units = ('Btu/h-ft2-F')
+    _min = 0
+    _abbreviation = 'Uval'
 
     def _W_m2K_to_Btu_hft2F(self, value):
         return value / 5.678263337

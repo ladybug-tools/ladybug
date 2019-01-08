@@ -159,7 +159,7 @@ class DataPointBase(object):
 
         return _isMissed
 
-    def is_in_range(self, value, raise_exception=False):
+    def is_in_range(self, value, raise_exception=True):
         """check if the value is in range."""
         if not self.standard:
             return True

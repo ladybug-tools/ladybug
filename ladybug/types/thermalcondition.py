@@ -7,10 +7,11 @@ from ._base import DataTypeBase
 
 class ThermalCondition(DataTypeBase):
     """Thermal Condition"""
-    name = 'Thermal Condition'
-    units = ['condition', 'PMV']
-    abbreviation = 'Tcond'
-    unit_descr = '-1 = Cold, 0 = Neutral, +1 = Hot'
+    _units = ('condition', 'PMV')
+    _si_units = ('condition', 'PMV')
+    _ip_units = ('condition', 'PMV')
+    _abbreviation = 'Tcond'
+    _unit_descr = '-1 = Cold, 0 = Neutral, +1 = Hot'
 
     def _condition_to_PMV(self, value):
         return value
@@ -37,17 +38,15 @@ class ThermalCondition(DataTypeBase):
 
 
 class PredictedMeanVote(ThermalCondition):
-    name = 'Predicted Mean Vote'
-    abbreviation = 'PMV'
-    unit_descr = '-3 = Cold, -2 = Cool, -1 = Slightly Cool, \n' \
+    _abbreviation = 'PMV'
+    _unit_descr = '-3 = Cold, -2 = Cool, -1 = Slightly Cool, \n' \
         '0 = Neutral, \n' \
         '+1 = Slightly Warm, +2 = Warm, +3 = Hot'
 
 
 class UTCICondition(ThermalCondition):
-    name = 'UTCI Condition'
-    abbreviation = 'UTCIcond'
-    unit_descr = '-4 = Extreme Cold, -3 = Very Strong Cold, '\
+    _abbreviation = 'UTCIcond'
+    _unit_descr = '-4 = Extreme Cold, -3 = Very Strong Cold, '\
         '-2 = Strong Cold, -1 = Moderate Cold, \n' \
         '0 = No Thermal Stress, \n' \
         '+1 = Moderate Heat, +2 = Strong Heat, '\

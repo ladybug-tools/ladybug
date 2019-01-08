@@ -7,16 +7,17 @@ from ._base import DataTypeBase
 
 class MassFlowRate(DataTypeBase):
     """Mass"""
-    name = 'Mass Flow Rate'
-    units = ['kg/s', 'lb/s', 'g/s', 'oz/s']
-    min = 0
-    abbreviation = 'dm/dt'
+    _units = ('kg/s', 'lb/s', 'g/s', 'oz/s')
+    _si_units = ('kg/s', 'g/s')
+    _ip_units = ('lb/s', 'oz/s')
+    _min = 0
+    _abbreviation = 'dm/dt'
 
     def _kg_s_to_lb_s(self, value):
         return value * 2.2046
 
     def _kg_s_to_g_s(self, value):
-        return value * 1000
+        return value * 1000.
 
     def _kg_s_to_oz_s(self, value):
         return value * 35.274
@@ -25,7 +26,7 @@ class MassFlowRate(DataTypeBase):
         return value / 2.20462
 
     def _g_s_to_kg_s(self, value):
-        return value / 1000
+        return value / 1000.
 
     def _oz_s_to_kg_s(self, value):
         return value / 35.274
@@ -36,8 +37,7 @@ class MassFlowRate(DataTypeBase):
 
     def to_ip(self, values, from_unit):
         """Return values in IP given the input from_unit."""
-        ip_units = ['lb/s', 'oz/s']
-        if from_unit in ip_units:
+        if from_unit in self.ip_units:
             return values, from_unit
         elif from_unit == 'g/s':
             return self.to_unit(values, 'oz/s', from_unit), 'oz/s'
@@ -46,8 +46,7 @@ class MassFlowRate(DataTypeBase):
 
     def to_si(self, values, from_unit):
         """Return values in SI given the input from_unit."""
-        si_units = ['kg/s', 'g/s']
-        if from_unit in si_units:
+        if from_unit in self.si_units:
             return values, from_unit
         elif from_unit == 'oz/s':
             return self.to_unit(values, 'g/s', from_unit), 'g/s'
