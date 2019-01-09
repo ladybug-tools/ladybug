@@ -1,7 +1,7 @@
 Site:Location,
   Chicago Ohare Intl Ap,
-  41.9666666667,      !Latitude
-  -87.9166666667,     !Longitude
+  41.96666666666667,      !Latitude
+  -87.91666666666667,     !Longitude
   -6.0,     !Time Zone
   201.0;       !Elevation
 
