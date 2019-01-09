@@ -12,3 +12,4 @@ ladybug/sunpathplus.py
 *.egg-info
 build
 dist
+venv
