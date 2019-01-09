@@ -1,7 +1,7 @@
 from ._enumeration import DataTypeEnumeration
 
-data_types = DataTypeEnumeration()
-TYPES = data_types.types
-BASETYPES = data_types.base_types
-UNITS = data_types.units
-BASEUNITS = data_types.base_units
+_data_types = DataTypeEnumeration()
+TYPES = _data_types.types
+BASETYPES = _data_types.base_types
+UNITS = _data_types.units
+BASEUNITS = _data_types.base_units

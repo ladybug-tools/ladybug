@@ -31,12 +31,12 @@ class DataTypeEnumeration(object):
     @property
     def types(self):
         """A text string indicating all cuurently supported types"""
-        return '\n'.join(self._TYPES.keys())
+        return '\n'.join(sorted(self._TYPES.keys()))
 
     @property
     def base_types(self):
         """A text string indicating all base types"""
-        return '\n'.join(self._BASETYPES.keys())
+        return '\n'.join(sorted(self._BASETYPES.keys()))
 
     @property
     def units(self):

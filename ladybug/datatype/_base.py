@@ -82,17 +82,17 @@ class DataTypeBase(object):
         assert 'base_unit' in data, 'Required keyword "base_unit" is missing!'
         assert 'is_generic' in data, 'Required keyword "is_generic" is missing!'
 
-        from ..datatype import data_types
+        from ..datatype import _data_types
         from .generic import GenericType
 
         formatted_name = data['name'].title().replace(' ', '')
         if data['is_generic'] is True:
             return GenericType(data['name'], data['base_unit'])
-        elif formatted_name in data_types._TYPES:
-            clss = data_types._TYPES[formatted_name]
+        elif formatted_name in _data_types._TYPES:
+            clss = _data_types._TYPES[formatted_name]
             return clss()
-        elif data['base_unit'] in data_types._BASEUNITS:
-            clss = data_types._TYPES[data_types._BASEUNITS[data['base_unit']]]
+        elif data['base_unit'] in _data_types._BASEUNITS:
+            clss = _data_types._TYPES[_data_types._BASEUNITS[data['base_unit']]]
             instance = clss()
             instance._name = data['name']
             return instance
