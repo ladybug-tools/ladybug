@@ -3,7 +3,6 @@
 from __future__ import division
 
 import re
-from ..datapoint import DataPoint
 
 
 class DataTypeBase(object):
@@ -47,7 +46,7 @@ class DataTypeBase(object):
         missing_epw: Missing value for the data type when it occurs in EPW files.
             (Default: None)
     """
-
+    _name = None
     _units = [None]
     _si_units = [None]
     _ip_units = [None]
@@ -66,6 +65,40 @@ class DataTypeBase(object):
     def __init__(self):
         """Init DataType."""
         pass
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a data type from a dictionary.
+
+        Args:
+            data: Data as a dictionary.
+                {
+                    "name": data type name as a string
+                    "base_unit": the base unit of the data type
+                    "is_generic": boolean to indicate whether the data type is generic
+                }
+        """
+        assert 'name' in data, 'Required keyword "name" is missing!'
+        assert 'base_unit' in data, 'Required keyword "base_unit" is missing!'
+        assert 'is_generic' in data, 'Required keyword "is_generic" is missing!'
+
+        from ..datatype import data_types
+        from .generic import GenericType
+
+        formatted_name = data['name'].title().replace(' ', '')
+        if data['is_generic'] is True:
+            return GenericType(data['name'], data['base_unit'])
+        elif formatted_name in data_types._TYPES:
+            clss = data_types._TYPES[formatted_name]
+            return clss()
+        elif data['base_unit'] in data_types._BASEUNITS:
+            clss = data_types._TYPES[data_types._BASEUNITS[data['base_unit']]]
+            instance = clss()
+            instance._name = data['name']
+            return instance
+        else:
+            raise ValueError(
+                'Data Type {} could not be recognized'.format(data['name']))
 
     def is_unit_acceptable(self, unit, raise_exception=True):
         """Check if a certain unit is acceptable for the data type.
@@ -124,15 +157,14 @@ class DataTypeBase(object):
             minimum = self.min
             maximum = self.max
         else:
-            namespace = {'self': self, 'minimum': None, 'maximum': None}
+            namespace = {'self': self}
             self.is_unit_acceptable(unit, True)
-            min_statement = "minimum = self._{}_to_{}(self.min)".format(
+            min_statement = "self._{}_to_{}(self.min)".format(
                 self._clean(self.units[0]), self._clean(unit))
-            max_statement = "maximum = self._{}_to_{}(self.max)".format(
+            max_statement = "self._{}_to_{}(self.max)".format(
                 self._clean(self.units[0]), self._clean(unit))
-            exec(min_statement, namespace)
-            exec(max_statement, namespace)
-            minimum, maximum = namespace['minimum'], namespace['maximum']
+            minimum = eval(min_statement, namespace)
+            maximum = eval(max_statement, namespace)
 
         for value in values:
             if value < minimum or value > maximum:
@@ -160,15 +192,14 @@ class DataTypeBase(object):
             minimum = self.min_epw
             maximum = self.max_epw
         else:
-            namespace = {'self': self, 'minimum': None, 'maximum': None}
+            namespace = {'self': self}
             self.is_unit_acceptable(unit, True)
-            min_statement = "minimum = self._{}_to_{}(self.min_epw)".format(
+            min_statement = "self._{}_to_{}(self.min_epw)".format(
                 self._clean(self.units[0]), self._clean(unit))
-            max_statement = "maximum = self._{}_to_{}(self.max_epw)".format(
+            max_statement = "self._{}_to_{}(self.max_epw)".format(
                 self._clean(self.units[0]), self._clean(unit))
-            exec(min_statement, namespace)
-            exec(max_statement, namespace)
-            minimum, maximum = namespace['minimum'], namespace['maximum']
+            minimum = eval(min_statement, namespace)
+            maximum = eval(max_statement, namespace)
 
         for value in values:
             if self.is_missing(value):
@@ -184,12 +215,25 @@ class DataTypeBase(object):
                     )
         return True
 
+    def to_json(self):
+        """Get data type as a json object"""
+        return {
+            'name': self.name,
+            'base_unit': self.units[0],
+            'is_generic': hasattr(self, 'isGeneric')
+        }
+
+    # TODO: Un-comment the numeric check once we have gotten rid of the DataPoint class
+    # Presently, I can't add a check for DataPoint type because it's outside the module
     def _is_numeric(self, values):
         """Check to be sure values are numbers before doing numerical operations."""
         if len(values) > 0:
-            assert isinstance(values[0], (float, int, DataPoint)), \
+            pass
+            """
+            assert isinstance(values[0], (float, int)), \
                 "values must be numbers to perform math operations. Got {}".format(
                     type(values[0]))
+            """
         return True
 
     def _to_unit_base(self, base_unit, values, unit, from_unit):
@@ -198,16 +242,15 @@ class DataTypeBase(object):
         namespace = {'self': self, 'values': values}
         if not from_unit == base_unit:
             self.is_unit_acceptable(from_unit, True)
-            statement = 'values = [self._{}_to_{}(val) for val in values]'.format(
+            statement = '[self._{}_to_{}(val) for val in values]'.format(
                 self._clean(from_unit), self._clean(base_unit))
-            exec(statement, namespace)
-            values = namespace['values']
+            values = eval(statement, namespace)
+            namespace['values'] = values
         if not unit == base_unit:
             self.is_unit_acceptable(unit, True)
-            statement = 'values = [self._{}_to_{}(val) for val in values]'.format(
+            statement = '[self._{}_to_{}(val) for val in values]'.format(
                 self._clean(base_unit), self._clean(unit))
-            exec(statement, namespace)
-            values = namespace['values']
+            values = eval(statement, namespace)
         return values
 
     def _clean(self, unit):
@@ -221,7 +264,10 @@ class DataTypeBase(object):
     @property
     def name(self):
         """The data type name."""
-        return re.sub(r"(?<=\w)([A-Z])", r" \1", self.__name__)
+        if self._name is None:
+            return re.sub(r"(?<=\w)([A-Z])", r" \1", self.__class__.__name__)
+        else:
+            return self._name
 
     @property
     def units(self):

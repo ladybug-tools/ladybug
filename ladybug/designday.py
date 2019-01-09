@@ -10,14 +10,13 @@ from .analysisperiod import AnalysisPeriod
 from .datacollection import DataCollection
 from .sunpath import Sunpath
 
-from .skymodel import ashrae_revised_clear_sky
-from .skymodel import ashrae_clear_sky
-from .skymodel import horizontal_infrared
+from .datatype import angle, distance, energyflux, energyintensity, generic, \
+    illuminance, luminance, percentage, pressure, speed, temperature
 
-from .psychrometrics import rel_humid_from_db_dpt
-from .psychrometrics import dew_point_from_db_hr
-from .psychrometrics import dew_point_from_db_enth
-from .psychrometrics import dew_point_from_db_wb
+from .skymodel import ashrae_revised_clear_sky, ashrae_clear_sky, horizontal_infrared
+
+from .psychrometrics import rel_humid_from_db_dpt, dew_point_from_db_hr, \
+    dew_point_from_db_enth, dew_point_from_db_wb
 
 import math
 import os
@@ -472,7 +471,7 @@ class DesignDay(object):
                        for i, x in enumerate(
                            self._dry_bulb_condition.hourly_values)]
         return self._get_daily_data_collections(
-            'Dry Bulb Temperature', 'C', hourly_data)
+            temperature.DryBulbTemperature(), 'C', hourly_data)
 
     @property
     def hourly_dew_point(self):
@@ -484,7 +483,7 @@ class DesignDay(object):
                            self._humidity_condition.hourly_dew_point_values(
                                self._dry_bulb_condition))]
         return self._get_daily_data_collections(
-            'Dew Point Temperature', 'C', hourly_data)
+            temperature.DewPointTemperature(), 'C', hourly_data)
 
     @property
     def hourly_relative_humidity(self):
@@ -498,7 +497,7 @@ class DesignDay(object):
             x, date_times[i], 'SI', 'Relative Humidity')
                        for i, x in enumerate(rh_data)]
         return self._get_daily_data_collections(
-            'Relative Humidity', '%', hourly_data)
+            percentage.RelativeHumidity(), '%', hourly_data)
 
     @property
     def hourly_barometric_pressure(self):
@@ -509,7 +508,7 @@ class DesignDay(object):
                        for i, x in enumerate(
                            self._humidity_condition.hourly_pressure)]
         return self._get_daily_data_collections(
-            'Atmospheric Station Pressure', 'Pa', hourly_data)
+            pressure.AtmosphericStationPressure(), 'Pa', hourly_data)
 
     @property
     def hourly_wind_speed(self):
@@ -520,7 +519,7 @@ class DesignDay(object):
                        for i, x in enumerate(
                            self._wind_condition.hourly_values)]
         return self._get_daily_data_collections(
-            'Wind Speed', 'm/s', hourly_data)
+            speed.WindSpeed(), 'm/s', hourly_data)
 
     @property
     def hourly_wind_direction(self):
@@ -531,7 +530,7 @@ class DesignDay(object):
                        for i, x in enumerate(
                            self._wind_condition.hourly_wind_dirs)]
         return self._get_daily_data_collections(
-            'Wind Direction', 'degrees', hourly_data)
+            angle.WindDirection(), 'degrees', hourly_data)
 
     @property
     def hourly_solar_radiation(self):
@@ -545,17 +544,17 @@ class DesignDay(object):
             x, date_times[i], 'SI', 'Direct Normal Radiation')
                          for i, x in enumerate(dir_norm)]
         dir_norm_collect = self._get_daily_data_collections(
-            'Direct Normal Radiation', 'Wh/m2', dir_norm_data)
+            energyintensity.DirectNormalRadiation(), 'Wh/m2', dir_norm_data)
         diff_horiz_data = [DataPoint(
             x, date_times[i], 'SI', 'Diffuse Horizontal Radiation')
                            for i, x in enumerate(diff_horiz)]
         diff_horiz_collect = self._get_daily_data_collections(
-            'Diffuse Horizontal Radiation', 'Wh/m2', diff_horiz_data)
+            energyintensity.DiffuseHorizontalRadiation(), 'Wh/m2', diff_horiz_data)
         glob_horiz_data = [DataPoint(
             x, date_times[i], 'SI', 'Global Horizontal Radiation')
                            for i, x in enumerate(glob_horiz)]
         glob_horiz_collect = self._get_daily_data_collections(
-            'Global Horizontal Radiation', 'Wh/m2', glob_horiz_data)
+            energyintensity.GlobalHorizontalRadiation(), 'Wh/m2', glob_horiz_data)
 
         return dir_norm_collect, diff_horiz_collect, glob_horiz_collect
 
@@ -568,7 +567,7 @@ class DesignDay(object):
                        for i, x in enumerate(
                            self._sky_condition.hourly_sky_cover)]
         return self._get_daily_data_collections(
-            'Total Sky Cover', '', hourly_data)
+            percentage.TotalSkyCover(), '', hourly_data)
 
     @property
     def hourly_horizontal_infrared(self):
@@ -587,14 +586,16 @@ class DesignDay(object):
             x, date_times[i], 'SI', 'Horizontal Infrared Radiation Intensity')
                        for i, x in enumerate(horiz_ir)]
         return self._get_daily_data_collections(
-            'Horizontal Infrared Radiation Intensity', 'Wh/m2', hourly_data)
+            energyflux.HorizontalInfraredRadiationIntensity(), 'W/m2', hourly_data)
 
     def _get_daily_data_collections(self, data_type, unit, data=None):
         """Return an empty data collection.
         """
         data_header = Header(data_type=data_type, unit=unit,
                              analysis_period=self.analysis_period,
-                             location=self._location)
+                             metadata={'source': self._location.source,
+                                       'country': self._location.country,
+                                       'city': self._location.city})
         return DataCollection(data=data, header=data_header)
 
     @property

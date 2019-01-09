@@ -1,7 +1,10 @@
 # coding=utf-8
 from __future__ import division
 
-from ladybug.datatype import DataTypes
+from ladybug.datatype import angle, area, distance, energy, energyflux, \
+    energyintensity, generic, illuminance, luminance, mass, massflowrate, \
+    percentage, power, pressure, rvalue, speed, temperature, thermalcondition, \
+    uvalue, volume, volumeflowrate
 
 import unittest
 import pytest
@@ -20,44 +23,15 @@ class DataTypesTestCase(unittest.TestCase):
         """Nothing to tear down as nothing gets written to file."""
         pass
 
-    def test_all_possible_units(self):
-        """Check to be sure that we can get all currently supported units."""
-        all_types = DataTypes.all_possible_units()
-        assert len(all_types.split('\n')) == len(DataTypes().BASETYPES)
-
-    def test_type_by_unit(self):
-        """Check the type_by_unit method."""
-        all_types = DataTypes().BASETYPES
-        for typ in all_types:
-            typ_units = all_types[typ].units
-            for u in typ_units:
-                assert hasattr(DataTypes.type_by_unit(u), 'isDataType')
-
-    def test_type_by_name_and_unit(self):
-        """Check the type_by_unit method."""
-        all_types = DataTypes().BASETYPES
-        for typ_n in all_types:
-            typ = all_types[typ_n]
-            typ_name = typ.name
-            typ_units = typ.units
-            for u in typ_units:
-                assert hasattr(DataTypes.type_by_name_and_unit(
-                    typ_name, u), 'isDataType')
-
-    def test_unitless_type(self):
-        """Test the creation of generic types."""
-        test_type = DataTypes.type_by_name_and_unit('Test Type', None)
-        assert hasattr(test_type, 'isDataType')
-
     def test_generic_type(self):
         """Test the creation of generic types."""
-        test_type = DataTypes.type_by_name_and_unit('Test Type', 'widgets')
+        test_type = generic.GenericType('Test Type', 'widgets')
         assert hasattr(test_type, 'isDataType')
         assert test_type.is_unit_acceptable('widgets')
 
     def test_temperature(self):
         """Test Temperature type."""
-        temp_type = DataTypes.type_by_name('Temperature')
+        temp_type = temperature.Temperature()
         for unit in temp_type.units:
             assert temp_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = temp_type.to_ip([1], unit)
@@ -73,7 +47,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_percentage(self):
         """Test Percentage type."""
-        pct_type = DataTypes.type_by_name('Percentage')
+        pct_type = percentage.Percentage()
         for unit in pct_type.units:
             assert pct_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = pct_type.to_ip([1], unit)
@@ -91,7 +65,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_distance(self):
         """Test Distance type."""
-        dist_type = DataTypes.type_by_name('Distance')
+        dist_type = distance.Distance()
         for unit in dist_type.units:
             assert dist_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = dist_type.to_ip([1], unit)
@@ -115,7 +89,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_area(self):
         """Test Area type."""
-        area_type = DataTypes.type_by_name('Area')
+        area_type = area.Area()
         for unit in area_type.units:
             assert area_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = area_type.to_ip([1], unit)
@@ -143,7 +117,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_volume(self):
         """Test Volume type."""
-        vol_type = DataTypes.type_by_name('Volume')
+        vol_type = volume.Volume()
         for unit in vol_type.units:
             assert vol_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = vol_type.to_ip([1], unit)
@@ -173,7 +147,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_pressure(self):
         """Test Pressure type."""
-        press_type = DataTypes.type_by_name('Pressure')
+        press_type = pressure.Pressure()
         for unit in press_type.units:
             assert press_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = press_type.to_ip([1], unit)
@@ -197,7 +171,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_energy(self):
         """Test Energy type."""
-        energy_type = DataTypes.type_by_name('Energy')
+        energy_type = energy.Energy()
         for unit in energy_type.units:
             assert energy_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = energy_type.to_ip([1], unit)
@@ -231,7 +205,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_energy_intensity(self):
         """Test Energy type."""
-        energyi_type = DataTypes.type_by_name('EnergyIntensity')
+        energyi_type = energyintensity.EnergyIntensity()
         for unit in energyi_type.units:
             assert energyi_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = energyi_type.to_ip([1], unit)
@@ -249,7 +223,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_power(self):
         """Test Power type."""
-        power_type = DataTypes.type_by_name('Power')
+        power_type = power.Power()
         for unit in power_type.units:
             assert power_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = power_type.to_ip([1], unit)
@@ -271,7 +245,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_energy_flux(self):
         """Test EnergyFlux type."""
-        energyf_type = DataTypes.type_by_name('EnergyFlux')
+        energyf_type = energyflux.EnergyFlux()
         for unit in energyf_type.units:
             assert energyf_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = energyf_type.to_ip([1], unit)
@@ -293,7 +267,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_illuminance(self):
         """Test Illuminance type."""
-        ill_type = DataTypes.type_by_name('Illuminance')
+        ill_type = illuminance.Illuminance()
         for unit in ill_type.units:
             assert ill_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = ill_type.to_ip([1], unit)
@@ -307,7 +281,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_luminance(self):
         """Test Luminance type."""
-        lum_type = DataTypes.type_by_name('Luminance')
+        lum_type = luminance.Luminance()
         for unit in lum_type.units:
             assert lum_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = lum_type.to_ip([1], unit)
@@ -321,7 +295,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_angle(self):
         """Test Angle type."""
-        ang_type = DataTypes.type_by_name('Angle')
+        ang_type = angle.Angle()
         for unit in ang_type.units:
             assert ang_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = ang_type.to_ip([1], unit)
@@ -335,7 +309,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_mass(self):
         """Test Mass type."""
-        mass_type = DataTypes.type_by_name('Mass')
+        mass_type = mass.Mass()
         for unit in mass_type.units:
             assert mass_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = mass_type.to_ip([1], unit)
@@ -357,7 +331,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_speed(self):
         """Test Speed type."""
-        speed_type = DataTypes.type_by_name('Speed')
+        speed_type = speed.Speed()
         for unit in speed_type.units:
             assert speed_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = speed_type.to_ip([1], unit)
@@ -377,7 +351,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_volume_flow_rate(self):
         """Test VolumeFlowRate type."""
-        vfr_type = DataTypes.type_by_name('VolumeFlowRate')
+        vfr_type = volumeflowrate.VolumeFlowRate()
         for unit in vfr_type.units:
             assert vfr_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = vfr_type.to_ip([1], unit)
@@ -401,7 +375,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_mass_flow_rate(self):
         """Test MassFlowRate type."""
-        mfr_type = DataTypes.type_by_name('MassFlowRate')
+        mfr_type = massflowrate.MassFlowRate()
         for unit in mfr_type.units:
             assert mfr_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = mfr_type.to_ip([1], unit)
@@ -419,7 +393,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_u_value(self):
         """Test UValue type."""
-        uval_type = DataTypes.type_by_name('UValue')
+        uval_type = uvalue.UValue()
         for unit in uval_type.units:
             assert uval_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = uval_type.to_ip([1], unit)
@@ -433,7 +407,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_r_value(self):
         """Test RValue type."""
-        rval_type = DataTypes.type_by_name('RValue')
+        rval_type = rvalue.RValue()
         for unit in rval_type.units:
             assert rval_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = rval_type.to_ip([1], unit)
@@ -449,7 +423,7 @@ class DataTypesTestCase(unittest.TestCase):
 
     def test_thermal_condition(self):
         """Test ThermalCondition type."""
-        tc_type = DataTypes.type_by_name('ThermalCondition')
+        tc_type = thermalcondition.ThermalCondition()
         for unit in tc_type.units:
             assert tc_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = tc_type.to_ip([1], unit)

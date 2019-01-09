@@ -5,16 +5,8 @@ from __future__ import division
 from ._base import DataTypeBase
 
 
-class Unitless(DataTypeBase):
-    """Type for any data without a recognizable name and no units."""
-    def __init__(self, name):
-        """Init Generic Type."""
-        self._name = name
-        self._abbreviation = name
-
-
 class GenericType(DataTypeBase):
-    """Type for any data without a recognizable name."""
+    """Type for any data type that is not currently implemented."""
     def __init__(self, name, unit):
         """Init Generic Type."""
         self._name = name
@@ -28,3 +20,8 @@ class GenericType(DataTypeBase):
     def to_si(self, values, from_unit):
         """Return values in SI."""
         return values, from_unit
+
+    @property
+    def isGeneric(self):
+        """Return True."""
+        return True

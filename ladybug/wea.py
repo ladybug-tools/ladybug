@@ -13,6 +13,9 @@ from .sunpath import Sunpath
 from .euclid import Vector3
 from .futil import write_to_file
 
+from .datatype.energyflux import Irradiance, GlobalHorizontalIrradiance, \
+    DirectNormalIrradiance, DiffuseHorizontalIrradiance, DirectHorizontalIrradiance
+
 from .skymodel import ashrae_revised_clear_sky
 from .skymodel import ashrae_clear_sky
 from .skymodel import zhang_huang_solar_split
@@ -59,6 +62,8 @@ class Wea(object):
         self.location = location
         self.direct_normal_irradiance = direct_normal_irradiance
         self.diffuse_horizontal_irradiance = diffuse_horizontal_irradiance
+        self.metadata = {'source': location.source, 'country': location.country,
+                         'city': location.city}
 
     @classmethod
     def from_values(cls, location, direct_normal_irradiance,
@@ -86,7 +91,9 @@ class Wea(object):
                            'diffuse_horizontal_irradiance', len(
                                direct_normal_irradiance))
 
-        dnr, dhr = cls._get_empty_data_collections(location, timestep, is_leap_year)
+        metadata = {'source': location.source, 'country': location.country,
+                    'city': location.city}
+        dnr, dhr = cls._get_empty_data_collections(metadata, timestep, is_leap_year)
         dts = cls._get_datetimes(timestep, is_leap_year)
         for dir_norm, diff_horiz, dt in zip(direct_normal_irradiance,
                                             diffuse_horizontal_irradiance, dts):
@@ -186,11 +193,13 @@ class Wea(object):
         """
         epw = EPW(epwfile)
         direct_normal = epw.direct_normal_radiation
-        diffuse_horizontal = epw.diffuse_horizontal_radiation
-        direct_normal.header.set_data_type_and_unit(
-            'Direct Normal Irradiance', 'W/m2')
-        diffuse_horizontal.header.set_data_type_and_unit(
-            'Diffuse Horizontal Irradiance', 'W/m2')
+        diffuse_horiz = epw.diffuse_horizontal_radiation
+        direct_normal_header = Header(
+            DirectNormalIrradiance(), 'W/m2', AnalysisPeriod(), epw.metadata)
+        diffuse_horiz_header = Header(
+            DiffuseHorizontalIrradiance(), 'W/m2', AnalysisPeriod(), epw.metadata)
+        direct_normal = DataCollection(direct_normal.data, direct_normal_header)
+        diffuse_horizontal = DataCollection(diffuse_horiz.data, diffuse_horiz_header)
         if timestep != 1:
             print ("Note: timesteps greater than 1 on epw-generated Wea's \n" +
                    "are suitable for thermal models but are not recommended \n" +
@@ -200,7 +209,7 @@ class Wea(object):
             diffuse_horiz_values = diffuse_horizontal.interpolate_data(timestep)
             # build empty dta collections
             direct_normal, diffuse_horizontal = \
-                cls._get_empty_data_collections(epw.location, timestep, False)
+                cls._get_empty_data_collections(epw.metadata, timestep, False)
             # create sunpath to check if the sun is up at a given timestep
             sp = Sunpath.from_location(epw.location)
             # add correct values to the emply data collection
@@ -283,8 +292,10 @@ class Wea(object):
                 Default is False.
         """
         # build empty dta collections
+        metadata = {'source': location.source, 'country': location.country,
+                    'city': location.city}
         direct_norm_rad, diffuse_horiz_rad = \
-            cls._get_empty_data_collections(location, timestep, is_leap_year)
+            cls._get_empty_data_collections(metadata, timestep, is_leap_year)
 
         # create sunpath and get altitude at every timestep of the year
         sp = Sunpath.from_location(location)
@@ -339,8 +350,10 @@ class Wea(object):
                 Default is False.
         """
         # build empty dta collections
+        metadata = {'source': location.source, 'country': location.country,
+                    'city': location.city}
         direct_norm_rad, diffuse_horiz_rad = \
-            cls._get_empty_data_collections(location, timestep, is_leap_year)
+            cls._get_empty_data_collections(metadata, timestep, is_leap_year)
 
         # create sunpath and get altitude at every timestep of the year
         sp = Sunpath.from_location(location)
@@ -441,8 +454,10 @@ class Wea(object):
                                                   atmospheric_pressure, use_disc)
 
         # assemble the results into DataCollections
+        metadata = {'source': location.source, 'country': location.country,
+                    'city': location.city}
         direct_norm_rad, diffuse_horiz_rad = \
-            cls._get_empty_data_collections(location, timestep, is_leap_year)
+            cls._get_empty_data_collections(metadata, timestep, is_leap_year)
         for dni, dhi, t_date in zip(dir_ir, diff_ir, date_times):
             direct_norm_rad.append(DataPoint(
                 dni, t_date, 'SI', 'Direct Normal Irradiance'))
@@ -503,9 +518,9 @@ class Wea(object):
         analysis_period = AnalysisPeriod(timestep=self.timestep,
                                          is_leap_year=self.is_leap_year)
         header_ghr = Header(analysis_period=analysis_period,
-                            data_type='Global Horizontal Irradiance',
+                            data_type=GlobalHorizontalIrradiance(),
                             unit='W/m2',
-                            location=self.location)
+                            metadata=self.metadata)
         global_horizontal_rad = DataCollection(header=header_ghr)
         is_leap_year = self.is_leap_year
         sp = Sunpath.from_location(self.location)
@@ -527,9 +542,9 @@ class Wea(object):
         analysis_period = AnalysisPeriod(timestep=self.timestep,
                                          is_leap_year=self.is_leap_year)
         header_dhr = Header(analysis_period=analysis_period,
-                            data_type='Direct Horizontal Irradiance',
+                            data_type=DirectHorizontalIrradiance(),
                             unit='W/m2',
-                            location=self.location)
+                            metadata=self.metadata)
         direct_horizontal_rad = DataCollection(header=header_dhr)
         is_leap_year = self.is_leap_year
         sp = Sunpath.from_location(self.location)
@@ -570,21 +585,21 @@ class Wea(object):
         )
 
     @staticmethod
-    def _get_empty_data_collections(location, timestep, is_leap_year):
+    def _get_empty_data_collections(metadata, timestep, is_leap_year):
         """Return two empty data collection.
 
         Direct Normal Irradiance, Diffuse Horizontal Irradiance
         """
         analysis_period = AnalysisPeriod(timestep=timestep, is_leap_year=is_leap_year)
         header_dnr = Header(analysis_period=analysis_period,
-                            data_type='Direct Normal Irradiance',
+                            data_type=DirectNormalIrradiance(),
                             unit='W/m2',
-                            location=location)
+                            metadata=metadata)
         direct_norm_rad = DataCollection(header=header_dnr)
         header_dhr = Header(analysis_period=analysis_period,
-                            data_type='Diffuse Horizontal Irradiance',
+                            data_type=DiffuseHorizontalIrradiance(),
                             unit='W/m2',
-                            location=location)
+                            metadata=metadata)
         diffuse_horiz_rad = DataCollection(header=header_dhr)
 
         return direct_norm_rad, diffuse_horiz_rad
@@ -654,10 +669,18 @@ class Wea(object):
         normal = pol2cart(math.radians(azimuth), math.radians(altitude))
 
         # create sunpath and get altitude at every timestep of the year
-        direct_irradiance = []
-        diffuse_irradiance = []
-        reflected_irradiance = []
-        total_irradiance = []
+        direct_irradiance = DataCollection(header=Header(
+            Irradiance(), 'W/m2',
+            AnalysisPeriod(timestep=self._timestep), self.metadata))
+        diffuse_irradiance = DataCollection(header=Header(
+            Irradiance(), 'W/m2',
+            AnalysisPeriod(timestep=self._timestep), self.metadata))
+        reflected_irradiance = DataCollection(header=Header(
+            Irradiance(), 'W/m2',
+            AnalysisPeriod(timestep=self._timestep), self.metadata))
+        total_irradiance = DataCollection(header=Header(
+            Irradiance(), 'W/m2',
+            AnalysisPeriod(timestep=self._timestep), self.metadata))
         sp = Sunpath.from_location(self.location)
         sp.is_leap_year = self.is_leap_year
         for dnr, dhr in zip(self.direct_normal_irradiance,

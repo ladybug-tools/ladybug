@@ -7,8 +7,9 @@ from ladybug.dt import DateTime
 from ladybug.datacollection import DataCollection
 from ladybug.header import Header
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.types.temperature import Temperature
-from ladybug.types.percentage import RelativeHumidity
+from ladybug.datatype.generic import GenericType
+from ladybug.datatype.temperature import Temperature
+from ladybug.datatype.percentage import RelativeHumidity
 
 
 class DataCollectionTestCase(unittest.TestCase):
@@ -45,7 +46,7 @@ class DataCollectionTestCase(unittest.TestCase):
         # DataCollection.from_data_and_datetimes([v1, v2], [dt1, dt2])
         assert dc1.datetimes == (dt1, dt2)
         assert dc1.data == [v1, v2]
-        assert dc1.average_data() == average
+        assert dc1.average == average
 
     def test_to_unit(self):
         """Test the conversion of DataCollection units."""
@@ -75,8 +76,9 @@ class DataCollectionTestCase(unittest.TestCase):
         """Test the function to check whether values are in a specific range."""
         val1 = [50]
         dc1 = DataCollection.from_list(val1, Temperature(), 'C')
-        assert dc1.bounds(0, 100) is True
-        assert dc1.bounds(0, 30) is False
+        min, max = dc1.bounds
+        assert min > 0
+        assert max < 100
 
     def test_is_in_range_data_type(self):
         """Test the function to check whether values are in range for the data_type."""
@@ -88,10 +90,10 @@ class DataCollectionTestCase(unittest.TestCase):
         dc2 = DataCollection.from_list(val2, Temperature(), 'C')
         dc3 = DataCollection.from_list(val3, Temperature(), 'K')
         dc4 = DataCollection.from_list(val4, Temperature(), 'K')
-        assert dc1._bounds_data_type() is True
-        assert dc2._bounds_data_type() is False
-        assert dc3._bounds_data_type() is True
-        assert dc4._bounds_data_type() is False
+        assert dc1._is_in_data_type_range(raise_exception=False) is True
+        assert dc2._is_in_data_type_range(raise_exception=False) is False
+        assert dc3._is_in_data_type_range(raise_exception=False) is True
+        assert dc4._is_in_data_type_range(raise_exception=False) is False
 
     def test_bounds_epw(self):
         """Test the function to check whether values are in range for an EPW."""
@@ -103,17 +105,18 @@ class DataCollectionTestCase(unittest.TestCase):
         dc2 = DataCollection.from_list(val2, RelativeHumidity(), '%')
         dc3 = DataCollection.from_list(val3, RelativeHumidity(), 'fraction')
         dc4 = DataCollection.from_list(val4, RelativeHumidity(), 'fraction')
-        assert dc1.bounds_epw() is True
-        assert dc2.bounds_epw() is False
-        assert dc3.bounds_epw() is True
-        assert dc4.bounds_epw() is False
+        assert dc1._is_in_epw_range(raise_exception=False) is True
+        assert dc2._is_in_epw_range(raise_exception=False) is False
+        assert dc3._is_in_epw_range(raise_exception=False) is True
+        assert dc4._is_in_epw_range(raise_exception=False) is False
 
     def test_interpolation(self):
         # To test an annual data collection, we will just use a range of values
         test_data = range(8760)
         ap = AnalysisPeriod()
         test_header = Header(
-            data_type='Test Type', unit=None, analysis_period=ap, location=None)
+            data_type=GenericType('Test Type', 'test'),
+            unit=None, analysis_period=ap, metadata=None)
         dc2 = DataCollection.from_data_and_analysis_period(test_data, ap, test_header)
 
         # check the interpolate data functions
@@ -131,7 +134,7 @@ class DataCollectionTestCase(unittest.TestCase):
         test_data = [i * 5 for i in test_data]
         test_count = len(test_data)/2
 
-        dc3 = DataCollection.from_list(lst=test_data)
+        dc3 = DataCollection.from_list(lst=test_data, data_type=Temperature())
 
         test_highest_values, test_highest_values_index = \
             dc3.get_highest_values(test_count)

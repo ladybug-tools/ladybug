@@ -3,15 +3,15 @@ from __future__ import division
 
 from .location import Location
 from .analysisperiod import AnalysisPeriod
-from .datatype import DataTypes
 from .datapoint import DataPoint
 from .header import Header
 from .datacollection import DataCollection
 from .dt import DateTime
 from .futil import write_to_file
+from .datatype import angle, distance, energyflux, energyintensity, generic, \
+    illuminance, luminance, percentage, pressure, speed, temperature
 
 import os
-import copy
 import sys
 readmode = 'rb'
 if (sys.version_info > (3, 0)):
@@ -103,6 +103,13 @@ class EPW(object):
             self._import_data(import_location_only=True)
         return self._location
 
+    @property
+    def metadata(self):
+        """Dictionary of metadata about source, country, and city."""
+        if not self.is_location_loaded:
+            self._import_data(import_location_only=True)
+        return self._metadata
+
     # TODO: import EPW header. Currently I just ignore header data
     def _import_data(self, import_location_only=False):
         """Import data from an epw file.
@@ -135,6 +142,13 @@ class EPW(object):
             # TODO: add parsing for header
             self._header = [line] + [epwin.readline() for i in xrange(7)]
 
+            # asemble a dictionary of metadata
+            self._metadata = {
+                'source': self._location.source,
+                'country': self._location.country,
+                'city': self._location.city
+            }
+
             if import_location_only:
                 return
 
@@ -148,10 +162,9 @@ class EPW(object):
             # create an empty collection for each field in epw file
             for field_number in range(self._num_of_fields):
                 field = EPWFields.field_by_number(field_number)
-                data_type = DataTypes.type_by_name_and_unit(field.name, field.unit)
-                header = Header(data_type, unit=field.unit,
+                header = Header(data_type=field.name, unit=field.unit,
                                 analysis_period=analysis_period,
-                                location=self.location)
+                                metadata=self._metadata)
 
                 # create an empty data list with the header
                 self._data.append(DataCollection(header=header))
@@ -730,8 +743,9 @@ class EPW(object):
         """
         # create sky temperature data collection from horizontal infrared
         horiz_ir = self._get_data_by_field(12)
-        sky_temp_header = copy.copy(horiz_ir.header)
-        sky_temp_header.set_data_type_and_unit('Sky Temperature', 'C')
+        sky_temp_header = Header(data_type=temperature.SkyTemperature(), unit='C',
+                                 analysis_period=AnalysisPeriod(),
+                                 metadata=self._metadata)
 
         # calculate sy temperature for each hour
         sky_temp_data = []
@@ -804,168 +818,177 @@ class EPWFields(object):
     """
 
     FIELDS = {
-        0: {'name': 'Year',
-            'type': int
+        0: {'name': generic.GenericType('Year', 'yr'),
+            'type': int,
+            'unit': 'yr'
             },
 
-        1: {'name': 'Month',
-            'type': int
+        1: {'name': generic.GenericType('Month', 'mon'),
+            'type': int,
+            'unit': 'mon'
             },
 
-        2: {'name': 'Day',
-            'type': int
+        2: {'name': generic.GenericType('Day', 'day'),
+            'type': int,
+            'unit': 'day'
             },
 
-        3: {'name': 'Hour',
-            'type': int
+        3: {'name': generic.GenericType('Hour', 'hr'),
+            'type': int,
+            'unit': 'hr'
             },
 
-        4: {'name': 'Minute',
-            'type': int
+        4: {'name': generic.GenericType('Minute', 'min'),
+            'type': int,
+            'unit': 'min'
             },
 
-        5: {'name': 'Uncertainty Flags',
-            'type': str
+        5: {'name': generic.GenericType('Uncertainty Flags', 'flag'),
+            'type': str,
+            'unit': 'flag'
             },
 
-        6: {'name': 'Dry Bulb Temperature',
+        6: {'name': temperature.DryBulbTemperature(),
             'type': float,
             'unit': 'C'
             },
 
-        7: {'name': 'Dew Point Temperature',
+        7: {'name': temperature.DewPointTemperature(),
             'type': float,
             'unit': 'C'
             },
 
-        8: {'name': 'Relative Humidity',
+        8: {'name': percentage.RelativeHumidity(),
             'type': int,
             'unit': '%'
             },
 
-        9: {'name': 'Atmospheric Station Pressure',
+        9: {'name': pressure.AtmosphericStationPressure(),
             'type': int,
             'unit': 'Pa'
             },
 
-        10: {'name': 'Extraterrestrial Horizontal Radiation',
+        10: {'name': energyintensity.ExtraterrestrialHorizontalRadiation(),
              'type': int,
              'unit': 'Wh/m2'
              },
 
-        11: {'name': 'Extraterrestrial Direct Normal Radiation',
+        11: {'name': energyintensity.ExtraterrestrialDirectNormalRadiation(),
              'type': int,
              'unit': 'Wh/m2'
              },
 
-        12: {'name': 'Horizontal Infrared Radiation Intensity',
+        12: {'name': energyflux.HorizontalInfraredRadiationIntensity(),
              'type': int,
              'unit': 'W/m2'
              },
 
-        13: {'name': 'Global Horizontal Radiation',
+        13: {'name': energyintensity.GlobalHorizontalRadiation(),
              'type': int,
              'unit': 'Wh/m2'
              },
 
-        14: {'name': 'Direct Normal Radiation',
+        14: {'name': energyintensity.DirectNormalRadiation(),
              'type': int,
              'unit': 'Wh/m2'
              },
 
-        15: {'name': 'Diffuse Horizontal Radiation',
+        15: {'name': energyintensity.DiffuseHorizontalRadiation(),
              'type': int,
              'unit': 'Wh/m2'
              },
 
-        16: {'name': 'Global Horizontal Illuminance',
+        16: {'name': illuminance.GlobalHorizontalIlluminance(),
              'type': int,
              'unit': 'lux'
              },
 
-        17: {'name': 'Direct Normal Illuminance',
+        17: {'name': illuminance.DirectNormalIlluminance(),
              'type': int,
              'unit': 'lux'
              },
 
-        18: {'name': 'Diffuse Horizontal Illuminance',
+        18: {'name': illuminance.DiffuseHorizontalIlluminance(),
              'type': int,
              'unit': 'lux'
              },
 
-        19: {'name': 'Zenith Luminance',
+        19: {'name': luminance.ZenithLuminance(),
              'type': int,
              'unit': 'cd/m2'
              },
 
-        20: {'name': 'Wind Direction',
+        20: {'name': angle.WindDirection(),
              'type': int,
              'unit': 'degrees'
              },
 
-        21: {'name': 'Wind Speed',
+        21: {'name': speed.WindSpeed(),
              'type': float,
              'unit': 'm/s'
              },
 
-        22: {'name': 'Total Sky Cover',  # (used if Horizontal IR Intensity missing)
+        22: {'name': percentage.TotalSkyCover(),  # used if Horizontal IR is missing
              'type': int,
              'unit': 'tenths'
              },
 
-        23: {'name': 'Opaque Sky Cover',  # (used if Horizontal IR Intensity missing)
+        23: {'name': percentage.OpaqueSkyCover(),  # used if Horizontal IR is missing
              'type': int,
              'unit': 'tenths'
              },
 
-        24: {'name': 'Visibility',
+        24: {'name': distance.Visibility(),
              'type': float,
              'unit': 'km'
              },
 
-        25: {'name': 'Ceiling Height',
+        25: {'name': distance.CeilingHeight(),
              'type': int,
              'unit': 'm'
              },
 
-        26: {'name': 'Present Weather Observation',
-             'type': int
+        26: {'name': generic.GenericType('Present Weather Observation', 'observation'),
+             'type': int,
+             'unit': 'observation'
              },
 
-        27: {'name': 'Present Weather Codes',
-             'type': int
+        27: {'name': generic.GenericType('Present Weather Codes', 'codes'),
+             'type': int,
+             'unit': 'codes'
              },
 
-        28: {'name': 'Precipitable Water',
+        28: {'name': distance.PrecipitableWater(),
              'type': int,
              'unit': 'mm'
              },
 
-        29: {'name': 'Aerosol Optical Depth',
+        29: {'name': percentage.AerosolOpticalDepth(),
              'type': float,
              'unit': 'fraction'
              },
 
-        30: {'name': 'Snow Depth',
+        30: {'name': distance.SnowDepth(),
              'type': int,
              'unit': 'cm'
              },
 
-        31: {'name': 'Days Since Last Snowfall',
-             'type': int
+        31: {'name': generic.GenericType('Days Since Last Snowfall', 'day'),
+             'type': int,
+             'unit': 'day'
              },
 
-        32: {'name': 'Albedo',
+        32: {'name': percentage.Albedo(),
              'type': float,
              'unit': 'fraction'
              },
 
-        33: {'name': 'Liquid Precipitation Depth',
+        33: {'name': distance.LiquidPrecipitationDepth(),
              'type': float,
              'unit': 'mm'
              },
 
-        34: {'name': 'Liquid Precipitation Quantity',
+        34: {'name': percentage.LiquidPrecipitationQuantity(),
              'type': float,
              'unit': 'fraction'
              }

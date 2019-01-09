@@ -4,6 +4,7 @@ from __future__ import division
 
 from .header import Header
 from .datapoint import DataPoint
+from .datatype.generic import GenericType
 
 from collections import OrderedDict
 try:
@@ -18,9 +19,12 @@ class DataCollection(object):
 
     __slots__ = ('_header', '_data')
 
-    def __init__(self, data=None, header=None):
+    def __init__(self, data=[], header=None):
         """Init class."""
-        self.header = header
+        if header is None:
+            self.header = Header(data_type=GenericType('Unknown Data', 'unknown'))
+        else:
+            self.header = header
 
         if not data:
             data = []
@@ -56,8 +60,8 @@ class DataCollection(object):
         return cls(input_data, Header.from_json(data['header']))
 
     @classmethod
-    def from_list(cls, lst, data_type=None, unit=None,
-                  analysis_period=None, location=None):
+    def from_list(cls, lst, data_type, unit=None,
+                  analysis_period=None, metadata=None):
         """Create a data collection from a list.
 
         lst items can be DataPoint or numerical values.
@@ -67,12 +71,12 @@ class DataCollection(object):
             data_type: Type of data (e.g. Temperature).
             unit: data_type unit (Default: unknown).
             analysis_period: A Ladybug analysis period (Defualt: None)
-            location: location data as a ladybug Location or location string
-                (Default: unknown).
+            metadata: Optional dictionary of additional metadata,
+                containing information such as 'source', 'city', or 'zone'.
         """
         header = Header(data_type=data_type, unit=unit,
                         analysis_period=analysis_period,
-                        location=location)
+                        metadata=metadata)
         if analysis_period:
             return cls.from_data_and_datetimes(lst, analysis_period.datetimes, header)
         else:
@@ -97,7 +101,8 @@ class DataCollection(object):
 
     @header.setter
     def header(self, h):
-        self._header = None if not h else Header.from_header(h)
+        assert hasattr(h, 'isHeader'), 'Expected Header type. Got {}.'.format(type(h))
+        self._header = h
 
     def append(self, d):
         """Append a single item to the list."""
@@ -148,18 +153,22 @@ class DataCollection(object):
         """Return the list of data points."""
         return self._data
 
+    @property
     def bounds(self):
         """Return a tuple as (min, max)."""
         return (min(self.values), max(self.values))
 
+    @property
     def min(self):
         """Return the min of the Datacollection values."""
         return min(self.values)
 
+    @property
     def max(self):
         """Return the max of the Datacollection values."""
         return max(self.values)
 
+    @property
     def average(self):
         """Return the average of the Datacollection values."""
         return sum(self.values) / len(self.values)

@@ -17,12 +17,10 @@ class Location(object):
         elevation: A number for elevation of the location.
         station_id: ID of the location if the location is represnting a weather station.
         source: Source of data (e.g. TMY, TMY3).
-        building_id: ID of the building if the data comes from a simulation.
-        zone_id: ID of the zone if the data comes from a simulation.
     """
 
     __slots__ = ("city", "country", "_lat", "_lon", "_tz", "_elev",
-                 "station_id", "source", "building_id", "zone_id")
+                 "station_id", "source")
 
     def __init__(self, city=None, country=None, latitude=0, longitude=0,
                  time_zone=0, elevation=0, station_id=None, source=None,
@@ -36,8 +34,6 @@ class Location(object):
         self.elevation = elevation or 0
         self.station_id = None if not station_id else str(station_id)
         self.source = source
-        self.building_id = building_id
-        self.zone_id = zone_id
 
     @classmethod
     def from_json(cls, loc_json):

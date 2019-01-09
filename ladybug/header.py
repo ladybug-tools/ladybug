@@ -5,7 +5,7 @@ from __future__ import division
 from copy import deepcopy
 
 from .analysisperiod import AnalysisPeriod
-from .datatype import DataTypes
+from .datatype._base import DataTypeBase
 
 
 class Header(object):
@@ -19,7 +19,7 @@ class Header(object):
         unit: data_type unit (Default: None).
         analysis_period: A Ladybug analysis period (Defualt: None)
         metadata: Optional dictionary of additional metadata,
-            containing information such as 'city', 'building' or 'zone'.
+            containing information such as 'source', 'city', or 'zone'.
     """
 
     __slots__ = ('_data_type', '_unit', '_analysis_period', '_metadata')
@@ -33,13 +33,17 @@ class Header(object):
             unit: data_type unit (Default: None)
             analysis_period: A Ladybug analysis period (Defualt: None)
             metadata: Optional dictionary of additional metadata,
-                containing information such as 'city', 'building' or 'zone'.
+                containing information such as 'source', 'city', or 'zone'.
         """
         assert hasattr(data_type, 'isDataType'), \
             'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
+        if unit is None:
+            unit = data_type.units[0]
+        else:
+            assert data_type.is_unit_acceptable(unit)
 
-        data_type = data_type
-        self.set_data_type_and_unit(data_type, unit)
+        self._data_type = data_type
+        self._unit = unit
         self._analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
         self._metadata = metadata or {}
 
@@ -56,66 +60,30 @@ class Header(object):
             }
         """
         # assign default values
+        assert 'data_type' in data, 'Required keyword "data_type" is missing!'
         keys = ('data_type', 'unit', 'analysis_period', 'metadata')
         for key in keys:
             if key not in data:
                 data[key] = None
 
-        data_type = DataTypes.type_by_name_and_unit(data['data_type'], data['unit'])
+        data_type = DataTypeBase.from_json(data['data_type'])
         ap = AnalysisPeriod.from_json(data['analysis_period'])
-        metadata = data['metadata']
-        return cls(data_type, data['unit'], ap, metadata)
-
-    @classmethod
-    def from_header(cls, header):
-        """Try to generate a header from a header or a header string."""
-        if hasattr(header, 'isHeader'):
-            return header
-
-        # "%s(%s)|%s|%s"
-        try:
-            _h = header.replace("|", "**").replace("(", "**").replace(")", "")
-            return cls(*_h.split("**"))
-        except Exception as e:
-            raise ValueError(
-                "Failed to create a Header from %s!\n%s" % (header, e))
+        return cls(data_type, data['unit'], ap, data['metadata'])
 
     @property
     def data_type(self):
         """A DataType object."""
         return self._data_type
 
-    @data_type.setter
-    def data_type(self, d_typ):
-        if hasattr(d_typ, 'isDataType'):
-            d_typ.is_unit_acceptable(self._unit, raise_exception=True)
-            self._data_type = d_typ
-        else:
-            d_typ_check = DataTypes.type_by_name(d_typ)
-            if d_typ_check is not None:
-                d_typ_check.is_unit_acceptable(self._unit, raise_exception=True)
-                self._data_type = d_typ_check
-            else:
-                self._data_type.name = d_typ
-
     @property
     def unit(self):
         """A text string representing an abbreviated unit."""
         return self._unit
 
-    @unit.setter
-    def unit(self, u):
-        assert self._data_type.is_unit_acceptable(u, raise_exception=True)
-        self._unit = u
-
     @property
     def analysis_period(self):
         """A AnalysisPeriod object."""
         return self._analysis_period
-
-    @analysis_period.setter
-    def analysis_period(self, ap):
-        self._analysis_period = AnalysisPeriod.from_analysis_period(ap)
 
     @property
     def metadata(self):
@@ -126,18 +94,6 @@ class Header(object):
     def isHeader(self):
         """Return True."""
         return True
-
-    def set_data_type_and_unit(self, data_type, unit):
-        """Set data_type and unit. This method should NOT be used for unit conversions.
-
-        For unit conversions, the to_unit() method should be used on the data collection.
-        """
-        if hasattr(data_type, 'isDataType'):
-            data_type.is_unit_acceptable(unit)
-            self._data_type = data_type
-        else:
-            self._data_type = DataTypes.type_by_name_and_unit(data_type, unit)
-        self._unit = unit if unit else None
 
     def duplicate(self):
         """Return a copy of the header."""
@@ -171,6 +127,6 @@ class Header(object):
 
     def __repr__(self):
         """Return Ladybug header as a string."""
-        return "%s(%s)|%s|%s" % (
+        return "{}({})\n{}\n{}".format(
             repr(self.data_type), self.unit,
             self.analysis_period, repr(self.metadata))
