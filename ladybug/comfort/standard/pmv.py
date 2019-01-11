@@ -109,9 +109,9 @@ class PMV(ComfortModel):
     def met_rate(self):
         """DataCollection of metabolic rate in met.
 
-        1 met = metabolic rate of a resting seated person
-        1.2 met = metabolic rate of a standing person
-        2 met = metabolic rate of a wlaking person
+        1 met = Metabolic rate of a resting seated person
+        1.2 met = Metabolic rate of a standing person
+        2 met = Metabolic rate of a wlaking person
         If left blank, default is set to 1.1 met (for seated, typing).
         """
         return self._met_rate
@@ -120,9 +120,9 @@ class PMV(ComfortModel):
     def clo_value(self):
         """DataCollection of clothing level of the human subject in clo.
 
-        1 clo = three-piece suit
-        0.5 clo = shorts + T-shirt
-        0 clo = no clothing
+        1 clo = Three-piece suit
+        0.5 clo = Shorts + T-shirt
+        0 clo = No clothing
         If left blank, default is set to 0.85 clo.
         """
         return self._clo_value
@@ -305,24 +305,34 @@ class PMV(ComfortModel):
         return "PMV Comfort Model: {} values".format(self._calc_length)
 
 
-class PMVComfortParameters(ComfortParameter):
-    """Parameters of PMV comfort."""
+class PMVParameters(ComfortParameter):
+    """Parameters of PMV comfort.
+
+    Properties:
+        ppd_comfort_thresh
+        humid_ratio_upper
+        humid_ratio_low
+        still_air_threshold
+    """
 
     def __init__(self, ppd_comfort_thresh=None, humid_ratio_upper=None,
                  humid_ratio_lower=None, still_air_threshold=None):
-        """Initalize PMVComfortParameters
+        """Initalize PMVComfortParameters.
 
-        Properties:
-            ppd_comfort_thresh
-            humid_ratio_upper
-            humid_ratio_low
-            still_air_threshold
+        Args:
+            ppd_comfort_thresh:  Upper threshold of PPD that is considered acceptable
+            humid_ratio_upper:  Upper limit of humidity ratio considered acceptable.
+            humid_ratio_low: Lower limit of humidity ratioc onsidered acceptable.
+            still_air_threshold: The threshold at which the standard effective
+                temperature (SET) model will be used to correct for the
+                cooling effect of elevated air speeds.
         """
 
-        self._ppd_thresh = ppd_comfort_thresh or 10
-        self._hr_upper = humid_ratio_upper or 1
-        self._hr_lower = humid_ratio_lower or 0
-        self._still_thresh = still_air_threshold or 0.1
+        self._ppd_thresh = ppd_comfort_thresh if ppd_comfort_thresh is not None else 10
+        self._hr_upper = humid_ratio_upper if humid_ratio_upper is not None else 1
+        self._hr_lower = humid_ratio_lower if humid_ratio_lower is not None else 0
+        self._still_thresh = \
+            still_air_threshold if still_air_threshold is not None else 0.1
 
         assert 5 <= self._ppd_thresh <= 100, \
             'ppd_comfort_thresh must be between 5 and 100. Got {}'.format(

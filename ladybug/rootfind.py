@@ -15,7 +15,7 @@ def secant(a, b, fn, epsilon):
      One of the fasest root-finding algorithms.
      The method calculates the slope of the function fn and this enables it to converge
      to a solution very fast. However, if started too far away from a root, the method
-     may not converge (returning a 'NaN'). For this reason, it is recommended that this
+     may not converge (returning a None). For this reason, it is recommended that this
      function be used first in any guess-and-check workflow and, if it fails to find a
      root, the bisect() method should be used.
 
@@ -50,7 +50,7 @@ def secant(a, b, fn, epsilon):
         f1 = f2
         f2 = f3
 
-    return 'NaN'
+    return None
 
 
 def bisect(a, b, fn, epsilon, target):
@@ -58,7 +58,7 @@ def bisect(a, b, fn, epsilon, target):
     The simplest root-finding algorithm.
     It is extremely reliable and is gauranteed to converge to a solution as long as a
     solution exists. However, it converges slowly and, for this reason, it is recommended
-    that this only be used after the secant() method has returned a 'NaN'.
+    that this only be used after the secant() method has returned a None.
 
     Args:
        a: A lower guess of the value you are tying to find.

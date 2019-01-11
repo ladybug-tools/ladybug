@@ -13,18 +13,31 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
     """Calculate PMV using Fanger's original equation and Pierce SET model when necessary.
 
     This method is the officially corrent way to calculate PMV comfort according to.
-    the 2015 ASHRAE-55 Thermal Comfort Standard.  This function will still return
+    the 2015 ASHRAE-55 Thermal Comfort Standard.  This function will return
     accurate values even if the air speed is above the sill air threshold of
-    Fanger's original equation (0.1 m/s).
+    Fanger's original equation (> 0.1 m/s).
+
+    Note:
+        [1] ASHRAE Standard 55 (2010). "Thermal Environmental Conditions
+        for Human Occupancy".
+
+        [2] Hoyt Tyler, Schiavon Stefano, Piccioli Alberto, Cheung Toby, Moon Dustin,
+        and Steinfeld Kyle, 2017, CBE Thermal Comfort Tool. Center for the Built
+        Environment, University of California Berkeley,
+        http://comfort.cbe.berkeley.edu/
+
+        [3] Doherty, T.J., and E.A. Arens.  (1988).  Evaluation of the physiological
+        bases of thermal comfort models. ASHRAE Transactions, Vol. 94, Part 1, 15 pp.
+        https://escholarship.org/uc/item/6pq3r5pr
 
     Args:
-        ta: air temperature [C]
-        tr: mean radiant temperature [C]
-        vel: relative air velocity [m/s]
-        rh: relative humidity [%]
-        met: metabolic rate [met]
-        clo: clothing [clo]
-        wme: external work [met], normally around 0 when seated
+        ta: Air temperature [C]
+        tr: Mean radiant temperature [C]
+        vel: Relative air velocity [m/s]
+        rh: Relative humidity [%]
+        met: Metabolic rate [met]
+        clo: Clothing [clo]
+        wme: External work [met], normally around 0 when seated
         still_air_threshold: The air velocity in m/s at which the Pierce
             Standard Effective Temperature (SET) model will be used
             to correct values in the original Fanger PMV model.
@@ -34,7 +47,7 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
         result: A dictionary containing results of the PMV model with the following keys:
             pmv : Predicted mean vote (PMV)
             ppd : Percent predicted dissatisfied (PPD) [%]
-            set: The Standard effective temperature (SET) [C]
+            se_temp: Standard effective temperature (SET) [C]
             ta_adj: Air temperature adjusted for air speed [C]
             ce : Cooling effect. The difference between the air temperature
                 and the adjusted air temperature [C]
@@ -46,50 +59,35 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
                     * heat loss by dry respiration
                     * heat loss by radiation
                     * heat loss by convection
-
-    References
-    ----------
-    [1] ASHRAE Standard 55 (2010). "Thermal Environmental Conditions
-    for Human Occupancy".
-
-    [2] Hoyt Tyler, Schiavon Stefano, Piccioli Alberto, Cheung Toby, Moon Dustin,
-    and Steinfeld Kyle, 2017, CBE Thermal Comfort Tool. Center for the Built
-    Environment, University of California Berkeley,
-    http://comfort.cbe.berkeley.edu/
-
-    [3] Doherty, T.J., and E.A. Arens.  (1988).  Evaluation of the physiological
-    bases of thermal comfort models. ASHRAE Transactions, Vol. 94, Part 1, 15 pp.
-    https://escholarship.org/uc/item/6pq3r5pr
     """
 
     result = {}
-    set = pierce_set(ta, tr, vel, rh, met, clo, wme)
+    se_temp = pierce_set(ta, tr, vel, rh, met, clo, wme)
 
     if vel <= still_air_threshold:
-        pmv, ppd, heat_loss = pmv_fanger(ta, tr, vel, rh, met, clo, wme)
+        pmv, ppd, heat_loss = fanger_pmv(ta, tr, vel, rh, met, clo, wme)
         ta_adj = ta
-        ce = 0
+        ce = 0.
     else:
-        ce_l = 0
-        ce_r = 40
+        ce_l = 0.
+        ce_r = 40.
         eps = 0.001  # precision of ce
 
         def fn(ce):
-            return (set - pierce_set(
-                ta - ce, tr - ce,
-                still_air_threshold, rh, met, clo, wme))
+            return se_temp - pierce_set(ta - ce, tr - ce, still_air_threshold,
+                                        rh, met, clo, wme)
 
         ce = secant(ce_l, ce_r, fn, eps)
         if ce == 'NaN':
-            ce = bisect(ce_l, ce_r, fn, eps, 0)
+            ce = bisect(ce_l, ce_r, fn, eps, 0.)
 
-        pmv, ppd, heat_loss = pmv_fanger(
+        pmv, ppd, heat_loss = fanger_pmv(
             ta - ce, tr - ce, still_air_threshold, rh, met, clo, wme)
         ta_adj = ta - ce
 
     result['pmv'] = pmv
     result['ppd'] = ppd
-    result['set'] = set
+    result['set'] = se_temp
     result['ta_adj'] = ta_adj
     result['ce'] = ce
     result['heat_loss'] = heat_loss
@@ -97,25 +95,32 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
     return result
 
 
-def pmv_fanger(ta, tr, vel, rh, met, clo, wme=0):
+def fanger_pmv(ta, tr, vel, rh, met, clo, wme=0):
     """Calculate PMV using only Fanger's original equation.
 
-    Note that Fanger's original expereiments were only conducted at
-    low air speeds (<0.1 m/s) and the pmv() function above should be
-    utilized in the case that air speeds may be higher than 0.1 m/s.
+    Note that Fanger's original experiments were conducted at
+    low air speeds (<0.1 m/s) and the 2015 ASHRAE-55 thermal comfort
+    standard states that one should use standard effective temperature
+    (SET) to correct for the cooling effect of air speed in cases
+    where such speeds exceed 0.1 m/s.  The pmv() function in this module
+    will apply this SET correction in cases where it is appropriate.
+
+    Note:
+        [1] Fanger, P.O. (1970). Thermal Comfort: Analysis and applications
+        in environmental engineering. Copenhagen: Danish Technical Press.
 
     Args:
-        ta: air temperature [C]
-        tr: mean radiant temperature [C]
-        vel: relative air velocity [m/s]
-        rh: relative humidity [%]
-        met: metabolic rate [met]
-        clo: clothing [clo]
-        wme: external work [met], normally around 0 when seated
+        ta: Air temperature [C]
+        tr: Mean radiant temperature [C]
+        vel: Relative air velocity [m/s]
+        rh: Relative humidity [%]
+        met: Metabolic rate [met]
+        clo: Clothing [clo]
+        wme: External work [met], normally around 0 when seated
 
     Returns:
-        pmv: predicted mean vote (PMV)
-        ppd: percentage of people dissatisfied (PPD) [%]
+        pmv: Predicted mean vote (PMV)
+        ppd: Percentage of people dissatisfied (PPD) [%]
         heat_loss: A list with the 6 heat loss terms of the PMV model [W].
             The terms are ordered as follows:
                 * heat loss by conduction
@@ -124,68 +129,63 @@ def pmv_fanger(ta, tr, vel, rh, met, clo, wme=0):
                 * heat loss by dry respiration
                 * heat loss by radiation
                 * heat loss by convection
-
-    References
-    ----------
-    [1] Fanger, P.O. (1970). Thermal Comfort: Analysis and applications in environmental
-    engineering. Copenhagen: Danish Technical Press.
     """
 
-    pa = rh * 10 * math.exp(16.6536 - 4030.183 / (ta + 235))
+    pa = rh * 10. * math.exp(16.6536 - 4030.183 / (ta + 235.))
 
     icl = 0.155 * clo  # thermal insulation of the clothing in M2K/W
     m = met * 58.15  # metabolic rate in W/M2
     w = wme * 58.15  # external work in W/M2
     mw = m - w  # internal heat production in the human body
-    if (icl <= 0.078):
+    if icl <= 0.078:
         fcl = 1 + (1.29 * icl)
     else:
         fcl = 1.05 + (0.645 * icl)
 
     # heat transf. coeff. by forced convection
     hcf = 12.1 * math.sqrt(vel)
-    taa = ta + 273
-    tra = tr + 273
+    taa = ta + 273.
+    tra = tr + 273.
     tcla = taa + (35.5 - ta) / (3.5 * icl + 0.1)
 
     p1 = icl * fcl
     p2 = p1 * 3.96
-    p3 = p1 * 100
+    p3 = p1 * 100.
     p4 = p1 * taa
-    p5 = (308.7 - 0.028 * mw) + (p2 * math.pow(tra / 100, 4))
-    xn = tcla / 100
-    xf = tcla / 50
+    p5 = (308.7 - 0.028 * mw) + (p2 * math.pow(tra / 100., 4))
+    xn = tcla / 100.
+    xf = tcla / 50.
     eps = 0.00015
 
     n = 0
     while abs(xn - xf) > eps:
-        xf = (xf + xn) / 2
+        xf = (xf + xn) / 2.
         hcn = 2.38 * math.pow(abs(100.0 * xf - taa), 0.25)
-        if (hcf > hcn):
+        if hcf > hcn:
             hc = hcf
         else:
             hc = hcn
-        xn = (p5 + p4 * hc - p2 * math.pow(xf, 4)) / (100 + p3 * hc)
+        xn = (p5 + p4 * hc - p2 * math.pow(xf, 4)) / (100. + p3 * hc)
         n += 1
-        if (n > 150):
+        if n > 150:
             print('Max iterations exceeded')
             return 1
 
-    tcl = 100 * xn - 273
+    tcl = 100. * xn - 273.
 
     # heat loss conduction through skin
-    hl1 = 3.05 * 0.001 * (5733 - (6.99 * mw) - pa)
+    hl1 = 3.05 * 0.001 * (5733. - (6.99 * mw) - pa)
     # heat loss by sweating
     if mw > 58.15:
         hl2 = 0.42 * (mw - 58.15)
     else:
         hl2 = 0
     # latent respiration heat loss
-    hl3 = 1.7 * 0.00001 * m * (5867 - pa)
+    hl3 = 1.7 * 0.00001 * m * (5867. - pa)
     # dry respiration heat loss
-    hl4 = 0.0014 * m * (34 - ta)
+    hl4 = 0.0014 * m * (34. - ta)
     # heat loss by radiation
-    hl5 = 3.96 * fcl * (math.pow(xn, 4) - math.pow(tra / 100, 4))
+    hl5 = 3.96 * fcl * (math.pow(xn, 4) - math.pow(tra / 100., 4))
     # heat loss by convection
     hl6 = fcl * hc * (tcl - ta)
 
@@ -194,44 +194,44 @@ def pmv_fanger(ta, tr, vel, rh, met, clo, wme=0):
     ppd = ppd_from_pmv(pmv)
 
     # collect heat loss terms.
-    heat_loss = [hl1, hl2, hl3, hl4, hl5, hl6]
+    heat_loss = (hl1, hl2, hl3, hl4, hl5, hl6)
 
     return pmv, ppd, heat_loss
 
 
-def pierce_set(ta, tr, vel, rh, met, clo, wme=0):
-    """Calculate Standard Effective Temperature (SET) using the J.B. Pierce
-    two-node model of human thermoregulation.
+def pierce_set(ta, tr, vel, rh, met, clo, wme=0.):
+    """Calculate Standard Effective Temperature (SET).
+
+    This function uses the J.B. Pierce two-node model of human thermoregulation.
+
+    Note:
+        [1] Nishi, Y; Gagge, A.P. (1977). "Effective temperature scale useful for
+        hypo-and hyperbaric environments". Aviation, Space, and Environmental Medicine.
+        48 (2): 97–107.
 
     Args:
-        ta: air temperature [C]
-        tr: mean radiant temperature [C]
-        vel: relative air velocity [m/s]
-        rh: relative humidity [%]
-        met: metabolic rate [met]
-        clo: clothing [clo]
-        wme: external work [met], normally around 0 when seated
+        ta: Air temperature [C]
+        tr: Mean radiant temperature [C]
+        vel: Relative air velocity [m/s]
+        rh: Relative humidity [%]
+        met: Metabolic rate [met]
+        clo: Clothing [clo]
+        wme: External work [met], normally around 0 when seated
 
     Returns:
-        set: standard effective temperature [C]
-
-    References
-    ----------
-    [1] Nishi, Y; Gagge, A.P. (1977). "Effective temperature scale useful for
-    hypo-and hyperbaric environments". Aviation, Space, and Environmental Medicine.
-    48 (2): 97–107.
+        se_temp: Standard effective temperature [C]
     """
 
     # Key initial variables.
-    vapor_pressure = (rh * saturated_vapor_pressure_torr(ta)) / 100
+    vapor_pressure = (rh * saturated_vapor_pressure_torr(ta)) / 100.
     air_velocity = max(vel, 0.1)
     kclo = 0.25
     bodyweight = 69.9
     bodysurfacearea = 1.8258
     metfactor = 58.2
     sbc = 0.000000056697  # Stefan-Boltzmann constant (W/m2K4)
-    csw = 170
-    cdil = 120
+    csw = 170.
+    cdil = 120.
     cstr = 0.5
 
     temp_skin_neutral = 33.7  # setpoint (neutral) value for Tsk
@@ -253,7 +253,7 @@ def pierce_set(ta, tr, vel, rh, met, clo, wme=0):
 
     # This variable is the pressure of the atmosphere in kPa and was taken
     # from the psychrometrics.js file of the CBE comfort tool.
-    p = 101325.0 / 1000
+    p = 101325.0 / 1000.
 
     pressure_in_atmospheres = p * 0.009869
     ltime = 60
@@ -279,30 +279,27 @@ def pierce_set(ta, tr, vel, rh, met, clo, wme=0):
     # initial estimate of Tcl
     chr = 4.7
     ctc = chr + chc
-    RA = 1.0 / (facl * ctc)  # resistance of air layer to dry heat transfer
+    ra = 1.0 / (facl * ctc)  # resistance of air layer to dry heat transfer
     top = (chr * tr + chc * ta) / ctc
-    tcl = top + (temp_skin - top) / (ctc * (RA + rcl))
+    tcl = top + (temp_skin - top) / (ctc * (ra + rcl))
 
     # ========================  BEGIN ITERATION
     #
     # Tcl and chr are solved iteratively using: H(Tsk - To) = ctc(Tcl - To),
-    # where H = 1/(Ra + Rcl) and Ra = 1/Facl*ctc
+    # where H = 1/(ra + Rcl) and ra = 1/Facl*ctc
 
     tcl_old = tcl
-    time = range(ltime)
-    flag = True
-    for TIM in time:
-        if flag is True:
-            while abs(tcl - tcl_old) > 0.01:
-                tcl_old = tcl
-                chr = 4.0 * sbc * pow(((tcl + tr) / 2.0 + 273.15), 3.0) * 0.72
-                ctc = chr + chc
-                # resistance of air layer to dry heat transfer
-                RA = 1.0 / (facl * ctc)
-                top = (chr * tr + chc * ta) / ctc
-                tcl = (RA * temp_skin + rcl * top) / (RA + rcl)
-        flag = False
-        dry = (temp_skin - top) / (RA + rcl)
+    while abs(tcl - tcl_old) > 0.01:
+        tcl_old = tcl
+        chr = 4.0 * sbc * pow(((tcl + tr) / 2.0 + 273.15), 3.0) * 0.72
+        ctc = chr + chc
+        # resistance of air layer to dry heat transfer
+        ra = 1.0 / (facl * ctc)
+        top = (chr * tr + chc * ta) / ctc
+        tcl = (ra * temp_skin + rcl * top) / (ra + rcl)
+
+    for i in range(ltime - 1):
+        dry = (temp_skin - top) / (ra + rcl)
         hfcs = (temp_core - temp_skin) * (5.28 + 1.163 * skin_blood_flow)
         eres = 0.0023 * M * (44.0 - vapor_pressure)
         cres = 0.0014 * M * (34.0 - ta)
@@ -404,8 +401,9 @@ def pierce_set(ta, tr, vel, rh, met, clo, wme=0):
         x = x_old - delta * err1 / (err2 - err1)
         dx = x - x_old
         x_old = x
+    se_temp = x
 
-    return x
+    return se_temp
 
 
 def saturated_vapor_pressure_torr(db_temp):
@@ -429,46 +427,44 @@ def ppd_from_pmv(pmv):
     return 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
 
 
-def pmv_from_ppd(ppd, ppd_error=0.001):
+def pmv_from_ppd(ppd, ppd_tolerance=0.001):
     """Calculate the two possible Predicted Mean Vote (PMV) values for a PPD value.
 
     Args:
         ppd: The percentage of people dissatisfied (PPD) for which you want to know
             the possible PMV.
-        ppd_error: The acceptable error in meeting the target PPD.  Default = 0.001.
+        ppd_tolerance: The acceptable error in meeting the target PPD.  Default = 0.001.
 
     Returns:
         pmv_lower: The lower (cold) PMV value that will produce the input ppd.
         pmv_upper: The upper (hot) PMV value that will produce the input ppd.
     """
-    if ppd > 5 and ppd < 100:
-        pmv_low = -3
-        pmv_mid = 0
-        pmv_hi = 3
+    assert ppd > 5 and ppd < 100, \
+        'PPD value {}% is outside acceptable limits of the PMV model.'.format(ppd)
 
-        def fn(pmv):
-            return (
-                (100.0 - 95.0 *
-                 math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))) - ppd)
+    pmv_low = -3
+    pmv_mid = 0
+    pmv_hi = 3
 
-        # Solve for the missing lower PMV value.
-        pmv_lower = secant(pmv_low, pmv_mid, fn, ppd_error)
-        if pmv_lower == 'NaN':
-            pmv_lower = bisect(pmv_low, pmv_mid, fn, ppd_error)
-        # Solve for the missing higher PMV value.
-        pmv_upper = secant(pmv_mid, pmv_hi, fn, ppd_error)
-        if pmv_upper == 'NaN':
-            pmv_upper = bisect(pmv_mid, pmv_hi, fn, ppd_error)
+    def fn(pmv):
+        return (100.0 - 95.0 * math.exp(
+            -0.03353 * pow(pmv, 4.) - 0.2179 * pow(pmv, 2.0))) - ppd
 
-        return pmv_lower, pmv_upper
-    else:
-        raise ValueError(
-            'PPD value {}% is outside acceptable limits of the PMV model.'.format(ppd))
+    # Solve for the missing lower PMV value.
+    pmv_lower = secant(pmv_low, pmv_mid, fn, ppd_tolerance)
+    if pmv_lower == 'NaN':
+        pmv_lower = bisect(pmv_low, pmv_mid, fn, ppd_tolerance)
+    # Solve for the missing higher PMV value.
+    pmv_upper = secant(pmv_mid, pmv_hi, fn, ppd_tolerance)
+    if pmv_upper == 'NaN':
+        pmv_upper = bisect(pmv_mid, pmv_hi, fn, ppd_tolerance)
+
+    return pmv_lower, pmv_upper
 
 
 def calc_missing_pmv_input(target_pmv, other_inputs,
                            missing_pmv_input='air temperature',
-                           low_bound=0, up_bound=100, error=0.001):
+                           low_bound=0., up_bound=100., tolerance=0.001):
     """Return the value of a missing_pmv_input given a target_pmv and the 6 other inputs.
 
     This is particularly useful when trying to draw comfort polygons on charts
@@ -502,7 +498,7 @@ def calc_missing_pmv_input(target_pmv, other_inputs,
         up_bound: The highest possible value of the missing_input you are tying to
             find. Putting in a good value here will help the model converge to a
             solution faster.
-        error: The acceptable error in the target_pmv. The default is set to 0.001
+        tolerance: The acceptable error in the target_pmv. The default is set to 0.001
 
     Returns:
         missing_val: The value of the missing_input that will produce the target_pmv.
@@ -513,43 +509,43 @@ def calc_missing_pmv_input(target_pmv, other_inputs,
     # Determine the function that should be used given the missing_pmv_input.
     if missing_pmv_input == 'air temperature':
         def fn(x):
-            return (pmv(x, other_inputs[0], other_inputs[1],
-                        other_inputs[2], other_inputs[3], other_inputs[4],
-                        other_inputs[5])['pmv'] - target_pmv)
+            return pmv(x, other_inputs[0], other_inputs[1],
+                       other_inputs[2], other_inputs[3], other_inputs[4],
+                       other_inputs[5])['pmv'] - target_pmv
     elif missing_pmv_input == 'rad temperature':
         def fn(x):
-            return (pmv(other_inputs[0], x, other_inputs[1],
-                        other_inputs[2], other_inputs[3], other_inputs[4],
-                        other_inputs[5])['pmv'] - target_pmv)
+            return pmv(other_inputs[0], x, other_inputs[1],
+                       other_inputs[2], other_inputs[3], other_inputs[4],
+                       other_inputs[5])['pmv'] - target_pmv
     elif missing_pmv_input == 'air speed':
         def fn(x):
-            return (pmv(other_inputs[0], other_inputs[1], x,
-                        other_inputs[2], other_inputs[3], other_inputs[4],
-                        other_inputs[5])['pmv'] - target_pmv)
+            return pmv(other_inputs[0], other_inputs[1], x,
+                       other_inputs[2], other_inputs[3], other_inputs[4],
+                       other_inputs[5])['pmv'] - target_pmv
     elif missing_pmv_input == 'rel humidity':
         def fn(x):
-            return (pmv(other_inputs[0], other_inputs[1], other_inputs[2],
-                        x, other_inputs[3], other_inputs[4],
-                        other_inputs[5])['pmv'] - target_pmv)
+            return pmv(other_inputs[0], other_inputs[1], other_inputs[2],
+                       x, other_inputs[3], other_inputs[4],
+                       other_inputs[5])['pmv'] - target_pmv
     elif missing_pmv_input == 'met rate':
         def fn(x):
-            return (pmv(other_inputs[0], other_inputs[1], other_inputs[2],
-                        other_inputs[3], x, other_inputs[4],
-                        other_inputs[5])['pmv'] - target_pmv)
+            return pmv(other_inputs[0], other_inputs[1], other_inputs[2],
+                       other_inputs[3], x, other_inputs[4],
+                       other_inputs[5])['pmv'] - target_pmv
     elif missing_pmv_input == 'clo value':
         def fn(x):
-            return (pmv(other_inputs[0], other_inputs[1], other_inputs[2],
-                        other_inputs[3], other_inputs[4], x,
-                        other_inputs[5])['pmv'] - target_pmv)
+            return pmv(other_inputs[0], other_inputs[1], other_inputs[2],
+                       other_inputs[3], other_inputs[4], x,
+                       other_inputs[5])['pmv'] - target_pmv
     elif missing_pmv_input == 'external work':
         def fn(x):
-            return (pmv(other_inputs[0], other_inputs[1], other_inputs[2],
-                        other_inputs[3], other_inputs[4],
-                        other_inputs[5], x)['pmv'] - target_pmv)
+            return pmv(other_inputs[0], other_inputs[1], other_inputs[2],
+                       other_inputs[3], other_inputs[4],
+                       other_inputs[5], x)['pmv'] - target_pmv
 
     # Solve for the missing input using the function.
-    missing_val = secant(low_bound, up_bound, fn, error)
-    if missing_val == 'NaN':
-        missing_val = bisect(low_bound, up_bound, fn, error)
+    missing_val = secant(low_bound, up_bound, fn, tolerance)
+    if missing_val is None:
+        missing_val = bisect(low_bound, up_bound, fn, tolerance)
 
     return missing_val
