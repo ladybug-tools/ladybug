@@ -2,7 +2,7 @@
 """Distance data type."""
 from __future__ import division
 
-from ._base import DataTypeBase
+from .base import DataTypeBase
 
 
 class Distance(DataTypeBase):

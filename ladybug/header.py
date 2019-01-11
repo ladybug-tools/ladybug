@@ -5,7 +5,7 @@ from __future__ import division
 from copy import deepcopy
 
 from .analysisperiod import AnalysisPeriod
-from .datatype._base import DataTypeBase
+from .datatype.base import DataTypeBase
 
 
 class Header(object):

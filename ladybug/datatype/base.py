@@ -62,9 +62,13 @@ class DataTypeBase(object):
     _max_epw = float('+inf')
     _missing_epw = None
 
-    def __init__(self):
-        """Init DataType."""
-        pass
+    def __init__(self, name=None):
+        """Initialize DataType.
+
+        Args:
+            name: Optional name for the type. Default is derived from the class name.
+        """
+        self._name = name
 
     @classmethod
     def from_json(cls, data):
@@ -73,32 +77,32 @@ class DataTypeBase(object):
         Args:
             data: Data as a dictionary.
                 {
-                    "name": data type name as a string
+                    "name": data type name of the data type as a string
+                    "class_name": the class name of the data type as a string
                     "base_unit": the base unit of the data type
-                    "is_generic": boolean to indicate whether the data type is generic
                 }
         """
         assert 'name' in data, 'Required keyword "name" is missing!'
-        assert 'base_unit' in data, 'Required keyword "base_unit" is missing!'
-        assert 'is_generic' in data, 'Required keyword "is_generic" is missing!'
+        assert 'class_name' in data, 'Required keyword "class_name" is missing!'
 
         from ..datatype import _data_types
         from .generic import GenericType
 
-        formatted_name = data['name'].title().replace(' ', '')
-        if data['is_generic'] is True:
+        if data['class_name'] == 'GenericType':
+            assert 'base_unit' in data, \
+                'Keyword "base_unit" is missing and is required for GenericType.'
             return GenericType(data['name'], data['base_unit'])
-        elif formatted_name in _data_types._TYPES:
-            clss = _data_types._TYPES[formatted_name]
-            return clss()
-        elif data['base_unit'] in _data_types._BASEUNITS:
-            clss = _data_types._TYPES[_data_types._BASEUNITS[data['base_unit']]]
-            instance = clss()
-            instance._name = data['name']
-            return instance
+        elif data['class_name'] in _data_types._TYPES:
+            clss = _data_types._TYPES[data['class_name']]
+            if data['class_name'] == data['name'].title().replace(' ', ''):
+                return clss()
+            else:
+                instance = clss()
+                instance._name = data['name']
+                return instance
         else:
             raise ValueError(
-                'Data Type {} could not be recognized'.format(data['name']))
+                'Data Type {} could not be recognized'.format(data['class_name']))
 
     def is_unit_acceptable(self, unit, raise_exception=True):
         """Check if a certain unit is acceptable for the data type.
@@ -219,8 +223,8 @@ class DataTypeBase(object):
         """Get data type as a json object"""
         return {
             'name': self.name,
-            'base_unit': self.units[0],
-            'is_generic': hasattr(self, 'isGeneric')
+            'class_name': self.__class__.__name__,
+            'base_unit': self.units[0]
         }
 
     # TODO: Un-comment the numeric check once we have gotten rid of the DataPoint class

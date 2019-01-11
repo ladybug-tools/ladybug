@@ -2,7 +2,7 @@
 """Ladybug data types."""
 from __future__ import division
 
-from ._base import DataTypeBase
+from .base import DataTypeBase
 
 from os.path import dirname, basename, isfile, join
 from os import listdir
