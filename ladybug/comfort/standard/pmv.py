@@ -55,7 +55,7 @@ class PMV(ComfortModel):
         # Set default comfort parameters for the PMV model.
         self._comfort_parameters = comfort_parameters
         if comfort_parameters is None:
-            self._comfort_parameters = PMVComfortParameters()
+            self._comfort_parameters = PMVParameters()
 
     @classmethod
     def from_epw_file(cls, epw_file_address, met_rate=None, clo_value=None,
@@ -317,7 +317,7 @@ class PMVParameters(ComfortParameter):
 
     def __init__(self, ppd_comfort_thresh=None, humid_ratio_upper=None,
                  humid_ratio_lower=None, still_air_threshold=None):
-        """Initalize PMVComfortParameters.
+        """Initalize PMV Parameters.
 
         Args:
             ppd_comfort_thresh:  Upper threshold of PPD that is considered acceptable
