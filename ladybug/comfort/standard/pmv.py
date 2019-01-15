@@ -13,10 +13,12 @@ class PMVParameters(ComfortParameter):
     """Parameters of PMV comfort.
 
     Properties:
-        ppd_comfort_thresh
-        humid_ratio_upper
-        humid_ratio_low
-        still_air_threshold
+        ppd_comfort_thresh:  Upper threshold of PPD that is considered acceptable
+        humid_ratio_upper:  Upper limit of humidity ratio considered acceptable.
+        humid_ratio_low: Lower limit of humidity ratioc onsidered acceptable.
+        still_air_threshold: The threshold at which the standard effective
+            temperature (SET) model will be used to correct for the
+            cooling effect of elevated air speeds.
     """
 
     def __init__(self, ppd_comfort_thresh=None, humid_ratio_upper=None,
@@ -86,20 +88,39 @@ class PMVParameters(ComfortParameter):
         return self._still_thresh
 
     def is_comfortable(self, ppd, humidity_ratio):
-        """Determine if conditions are comfortable or not."""
+        """Determine if conditions are comfortable or not.
+
+        Values are one of the following:
+            0 = uncomfortable
+            1 = comfortable
+        """
         return True if (ppd <= self._ppd_thresh and
                         humidity_ratio >= self._hr_lower and
                         humidity_ratio <= self._hr_upper) else False
 
     def thermal_condition(self, pmv, ppd):
-        """Determine whether conditions are cold, neutral or hot."""
+        """Determine whether conditions are cold, neutral or hot.
+
+        Values are one of the following:
+            -1 = cold
+             0 = netural
+            +1 = hot
+        """
         if ppd >= self._ppd_thresh:
             return 1 if pmv > 0 else -1
         else:
             return 0
 
     def discomfort_reason(self, pmv, ppd, humidity_ratio):
-        """Determine if conditions are comfortable or not."""
+        """Determine the reason why conditions are comfortable or not.
+
+        Values are one of the following:
+            -2 = too dry
+            -1 = too cold
+             0 = comfortable
+            +1 = too hot
+            +2 = too humid
+        """
         if ppd >= self._ppd_thresh:
             return 1 if pmv > 0 else -1
         elif humidity_ratio < self._hr_lower:
@@ -130,8 +151,18 @@ class PMV(ComfortModel):
         """Initialize a PMV comfort object from DataCollections of PMV inputs.
 
         Args:
-
-        Returns:
+            air_temperature: DataCollection of air temperature values in degrees Celcius.
+            rel_humidity: DataCollection of relative humidity values in %.
+            rad_temperature: DataCollection of mean radiant temperature (MRT)
+                values in degrees Celcius. If None, this will be the same as
+                the air_temperature.
+            air_speed: DataCollection of air speed values in m/s. If None, this
+                will default to 0.1 m/s.
+            met_rate: DataCollection of metabolic rate in met. If none, default is set
+                to 1.1 met (for seated, typing).
+            clo_value:
+            external_work:
+            comfort_parameters:
         """
         raise NotImplementedError('PMV ComfortModel is not yet implemented.')
 
@@ -169,12 +200,21 @@ class PMV(ComfortModel):
             self._comfort_parameters = PMVParameters()
 
     @classmethod
-    def from_epw_file(cls, epw_file_address, met_rate=None, clo_value=None,
-                      external_work=None):
+    def from_epw_file(cls, epw_file_address, include_wind=False, include_sun=False,
+                      met_rate=None, clo_value=None, external_work=None):
         """Create a PMV comfort object from the conditions within an EPW file.
 
         Args:
             epw_file_address: Address to an EPW file on your system.
+            include_wind: Set to True to include the epw wind speed in the calculation.
+                Default is False. Note that, if set to True, an autmatic conversion
+                will be done from the meteorological wind speed at 10 meters to
+                human height at 1 meter.
+            include_sun: Set to True to include the MRT delta from sun directly
+                shining on people in the PMV calculation.  Default is False.
+                Note that this calculation will assume no surrounding context
+                and an human geometry that always has their left or right
+                side facing the sun.
             met_rate: A value representing the metabolic rate of the human subject in
                 met. 1 met = resting seated. If list is empty, default is set to 1 met.
             clo_value: A lvalue representing the clothing level of the human subject in
