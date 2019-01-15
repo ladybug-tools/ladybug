@@ -60,7 +60,6 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
                     * heat loss by radiation
                     * heat loss by convection
     """
-
     result = {}
     se_temp = pierce_set(ta, tr, vel, rh, met, clo, wme)
 
@@ -78,8 +77,8 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
                                         rh, met, clo, wme)
 
         ce = secant(ce_l, ce_r, fn, eps)
-        if ce == 'NaN':
-            ce = bisect(ce_l, ce_r, fn, eps, 0.)
+        if ce is None:
+            ce = bisect(ce_l, ce_r, fn, eps, 0)
 
         pmv, ppd, heat_loss = fanger_pmv(
             ta - ce, tr - ce, still_air_threshold, rh, met, clo, wme)
@@ -427,12 +426,15 @@ def ppd_from_pmv(pmv):
     return 100.0 - 95.0 * math.exp(-0.03353 * pow(pmv, 4.0) - 0.2179 * pow(pmv, 2.0))
 
 
-def pmv_from_ppd(ppd, ppd_tolerance=0.001):
+def pmv_from_ppd(ppd, pmv_up_bound=3, ppd_tolerance=0.001):
     """Calculate the two possible Predicted Mean Vote (PMV) values for a PPD value.
 
     Args:
         ppd: The percentage of people dissatisfied (PPD) for which you want to know
             the possible PMV.
+        pmv_up_bound: The upper limit of PMV expected for the input PPD.  Putting
+            in a good estimate here will help the model converge on a
+            solution faster. Defaut = 3
         ppd_tolerance: The acceptable error in meeting the target PPD.  Default = 0.001.
 
     Returns:
@@ -442,29 +444,22 @@ def pmv_from_ppd(ppd, ppd_tolerance=0.001):
     assert ppd > 5 and ppd < 100, \
         'PPD value {}% is outside acceptable limits of the PMV model.'.format(ppd)
 
-    pmv_low = -3
-    pmv_mid = 0
-    pmv_hi = 3
-
     def fn(pmv):
         return (100.0 - 95.0 * math.exp(
             -0.03353 * pow(pmv, 4.) - 0.2179 * pow(pmv, 2.0))) - ppd
 
-    # Solve for the missing lower PMV value.
-    pmv_lower = secant(pmv_low, pmv_mid, fn, ppd_tolerance)
-    if pmv_lower == 'NaN':
-        pmv_lower = bisect(pmv_low, pmv_mid, fn, ppd_tolerance)
     # Solve for the missing higher PMV value.
-    pmv_upper = secant(pmv_mid, pmv_hi, fn, ppd_tolerance)
-    if pmv_upper == 'NaN':
-        pmv_upper = bisect(pmv_mid, pmv_hi, fn, ppd_tolerance)
+    pmv_upper = secant(0, pmv_up_bound, fn, ppd_tolerance)
+    if pmv_upper is None:
+        pmv_upper = bisect(0, pmv_up_bound, fn, ppd_tolerance, 0)
+    pmv_lower = pmv_upper * -1
 
     return pmv_lower, pmv_upper
 
 
-def calc_missing_pmv_input(target_pmv, other_inputs,
-                           missing_pmv_input='air temperature',
-                           low_bound=0., up_bound=100., tolerance=0.001):
+def calc_missing_pmv_input(target_pmv, pmv_inputs,
+                           low_bound=0., up_bound=100., tolerance=0.001,
+                           still_air_threshold=0.1):
     """Return the value of a missing_pmv_input given a target_pmv and the 6 other inputs.
 
     This is particularly useful when trying to draw comfort polygons on charts
@@ -473,25 +468,14 @@ def calc_missing_pmv_input(target_pmv, other_inputs,
     Args:
         target_pmv: The target pmv that you are trying to produce from the inputs to
             this pmv object.
-        other_inputs: A list of values for the other 6 inputs of the PMV model that
-            are not the missing input. Values should be in the following order
-            (skipping over the one that is the missing input):
-                0 = air temperature
-                1 = rad temperature
-                2 = air speed
-                3 = rel humidity
-                4 = met rate
-                5 = clo value
-                6 = external work
-        missing_pmv_input: Text representing which of the PMV inputs is missing and
-            should be solved for.  Choose from the following options:
-                air temperature
-                rad temperature
-                air speed
-                rel humidity
-                met rate
-                clo value
-                external work
+        pmv_inputs: A dictionary of 7 pmv inputs with the following keys:
+            'ta', 'tr', 'vel', 'rh', 'met', 'clo', 'wme'.  Each key
+            should correspond to a value that represents that pmv input
+            but one of these inputs should have a value of None.
+            The input corresponding to None will be solved for by this function.
+            Example (solving for relative humidity):
+                `{'ta': 20, 'tr': 20, 'vel': 0.05, 'rh': None,
+                'met': 1.2, 'clo': 0.75, 'wme': 0}`
         low_bound: The lowest possible value of the missing_input you are tying to
             find. Putting in a good value here will help the model converge to a
             solution faster.
@@ -499,53 +483,71 @@ def calc_missing_pmv_input(target_pmv, other_inputs,
             find. Putting in a good value here will help the model converge to a
             solution faster.
         tolerance: The acceptable error in the target_pmv. The default is set to 0.001
+        still_air_threshold: The air velocity in m/s at which the Pierce
+            Standard Effective Temperature (SET) model will be used
+            to correct values in the original Fanger PMV model.
+            Default is 0.1 m/s per the 2015 release of ASHRAE Standard-55.
 
     Returns:
-        missing_val: The value of the missing_input that will produce the target_pmv.
-
+        complete_pmv_inputs: The pmv_inputs dictorary but with 7 keys.
+            The missing input to the PMV model will be filled by the value
+            that returns the target_pmv.
     """
-    missing_pmv_input = missing_pmv_input.lower()
+    assert len(pmv_inputs.keys()) == 7, \
+        'pmv_inputs must have 7 keys. Got {}.'.format(len(pmv_inputs.keys()))
 
     # Determine the function that should be used given the missing_pmv_input.
-    if missing_pmv_input == 'air temperature':
+    if pmv_inputs['ta'] is None:
         def fn(x):
-            return pmv(x, other_inputs[0], other_inputs[1],
-                       other_inputs[2], other_inputs[3], other_inputs[4],
-                       other_inputs[5])['pmv'] - target_pmv
-    elif missing_pmv_input == 'rad temperature':
+            return pmv(x, pmv_inputs['tr'], pmv_inputs['vel'],
+                       pmv_inputs['rh'], pmv_inputs['met'], pmv_inputs['clo'],
+                       pmv_inputs['wme'], still_air_threshold)['pmv'] - target_pmv
+        missing_key = 'ta'
+    elif pmv_inputs['tr'] is None:
         def fn(x):
-            return pmv(other_inputs[0], x, other_inputs[1],
-                       other_inputs[2], other_inputs[3], other_inputs[4],
-                       other_inputs[5])['pmv'] - target_pmv
-    elif missing_pmv_input == 'air speed':
+            return pmv(pmv_inputs['ta'], x, pmv_inputs['vel'],
+                       pmv_inputs['rh'], pmv_inputs['met'], pmv_inputs['clo'],
+                       pmv_inputs['wme'], still_air_threshold)['pmv'] - target_pmv
+        missing_key = 'tr'
+    elif pmv_inputs['vel'] is None:
         def fn(x):
-            return pmv(other_inputs[0], other_inputs[1], x,
-                       other_inputs[2], other_inputs[3], other_inputs[4],
-                       other_inputs[5])['pmv'] - target_pmv
-    elif missing_pmv_input == 'rel humidity':
+            return target_pmv - pmv(pmv_inputs['ta'], pmv_inputs['tr'], x,
+                                    pmv_inputs['rh'], pmv_inputs['met'],
+                                    pmv_inputs['clo'], pmv_inputs['wme'],
+                                    still_air_threshold)['pmv']
+        missing_key = 'vel'
+    elif pmv_inputs['rh'] is None:
         def fn(x):
-            return pmv(other_inputs[0], other_inputs[1], other_inputs[2],
-                       x, other_inputs[3], other_inputs[4],
-                       other_inputs[5])['pmv'] - target_pmv
-    elif missing_pmv_input == 'met rate':
+            return pmv(pmv_inputs['ta'], pmv_inputs['tr'], pmv_inputs['vel'],
+                       x, pmv_inputs['met'], pmv_inputs['clo'],
+                       pmv_inputs['wme'], still_air_threshold)['pmv'] - target_pmv
+        missing_key = 'rh'
+    elif pmv_inputs['met'] is None:
         def fn(x):
-            return pmv(other_inputs[0], other_inputs[1], other_inputs[2],
-                       other_inputs[3], x, other_inputs[4],
-                       other_inputs[5])['pmv'] - target_pmv
-    elif missing_pmv_input == 'clo value':
+            return pmv(pmv_inputs['ta'], pmv_inputs['tr'], pmv_inputs['vel'],
+                       pmv_inputs['rh'], x, pmv_inputs['clo'],
+                       pmv_inputs['wme'], still_air_threshold)['pmv'] - target_pmv
+        missing_key = 'met'
+    elif pmv_inputs['clo'] is None:
         def fn(x):
-            return pmv(other_inputs[0], other_inputs[1], other_inputs[2],
-                       other_inputs[3], other_inputs[4], x,
-                       other_inputs[5])['pmv'] - target_pmv
-    elif missing_pmv_input == 'external work':
+            return pmv(pmv_inputs['ta'], pmv_inputs['tr'], pmv_inputs['vel'],
+                       pmv_inputs['rh'], pmv_inputs['met'], x,
+                       pmv_inputs['wme'], still_air_threshold)['pmv'] - target_pmv
+        missing_key = 'clo'
+    else:
         def fn(x):
-            return pmv(other_inputs[0], other_inputs[1], other_inputs[2],
-                       other_inputs[3], other_inputs[4],
-                       other_inputs[5], x)['pmv'] - target_pmv
+            return pmv(pmv_inputs['ta'], pmv_inputs['tr'], pmv_inputs['vel'],
+                       pmv_inputs['rh'], pmv_inputs['met'], pmv_inputs['clo'],
+                       x, still_air_threshold)['pmv'] - target_pmv
+        missing_key = 'wme'
 
     # Solve for the missing input using the function.
-    missing_val = secant(low_bound, up_bound, fn, tolerance)
+    missing_val = None
+    if missing_key != 'clo':  # bisect is much better at finding reasonable clo values
+        missing_val = secant(low_bound, up_bound, fn, tolerance)
     if missing_val is None:
-        missing_val = bisect(low_bound, up_bound, fn, tolerance)
+        missing_val = bisect(low_bound, up_bound, fn, tolerance, 0)
 
-    return missing_val
+    # complete the input dictionary
+    pmv_inputs[missing_key] = missing_val
+    return pmv_inputs

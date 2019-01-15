@@ -5,9 +5,8 @@ import pytest
 
 from ladybug.comfort.standard.pmv import PMVParameters
 
-from ladybug.comfort.pmv import pmv
-from ladybug.comfort.pmv import fanger_pmv
-from ladybug.comfort.pmv import pierce_set
+from ladybug.comfort.pmv import pmv, fanger_pmv, pierce_set, ppd_from_pmv, \
+    pmv_from_ppd, calc_missing_pmv_input
 
 
 class PMVTestCase(unittest.TestCase):
@@ -28,14 +27,56 @@ class PMVTestCase(unittest.TestCase):
         assert ppd == pytest.approx(14.7373, rel=1e-2)
 
     def test_pierce_set(self):
+        """Test the pierce_set function"""
         set = pierce_set(19, 23, 0.5, 60, 1.5, 0.4)
         assert set == pytest.approx(18.8911, rel=1e-2)
 
     def test_pmv(self):
+        """Test the pmv function"""
         result = pmv(19, 23, 0.5, 60, 1.5, 0.4)
         assert result['pmv'] == pytest.approx(-1.6745, rel=1e-2)
         assert round(result['ppd']) == pytest.approx(60.382974, rel=1e-2)
         assert result['set'] == pytest.approx(18.8911, rel=1e-2)
+
+    def test_ppd_from_pmv(self):
+        """Test the ppd_from_pmv function"""
+        ppd = ppd_from_pmv(-0.5)
+        assert ppd == pytest.approx(10, rel=1e-1)
+        ppd = ppd_from_pmv(-1)
+        assert ppd == pytest.approx(26, rel=1e-1)
+
+    def test_pmv_from_ppd(self):
+        """Test the pmv_from_ppd function"""
+        pmv_lower, pmv_upper = pmv_from_ppd(10)
+        assert pmv_lower == pytest.approx(-0.5, rel=1e-1)
+        assert pmv_upper == pytest.approx(0.5, rel=1e-1)
+        pmv_lower, pmv_upper = pmv_from_ppd(26)
+        assert pmv_lower == pytest.approx(-1, rel=1e-1)
+        assert pmv_upper == pytest.approx(1, rel=1e-1)
+
+    def test_calc_missing_pmv_input(self):
+        """Test the calc_missing_pmv_input function"""
+        input_1 = {'ta': None, 'tr': 20, 'vel': 0.05, 'rh': 50, 'met': 1.2, 'clo': 0.75, 'wme': 0}
+        input_2 = {'ta': 20, 'tr': None, 'vel': 0.05, 'rh': 50, 'met': 1.2, 'clo': 0.75, 'wme': 0}
+        input_3 = {'ta': 22, 'tr': 22, 'vel': None, 'rh': 50, 'met': 1.2, 'clo': 0.75, 'wme': 0}
+        input_4 = {'ta': 20, 'tr': 20, 'vel': 0.05, 'rh': None, 'met': 1.2, 'clo': 0.75, 'wme': 0}
+        input_5 = {'ta': 20, 'tr': 20, 'vel': 0.05, 'rh': 50, 'met': None, 'clo': 0.75, 'wme': 0}
+        input_6 = {'ta': 20, 'tr': 20, 'vel': 0.05, 'rh': 50, 'met': 1.2, 'clo': None, 'wme': 0}
+        input_7 = {'ta': 20, 'tr': 20, 'vel': 0.05, 'rh': 50, 'met': 1.4, 'clo': 0.75, 'wme': None}
+        updated_input_1 = calc_missing_pmv_input(-1, input_1)
+        updated_input_2 = calc_missing_pmv_input(-1, input_2)
+        updated_input_3 = calc_missing_pmv_input(-1, input_3, up_bound=1)
+        updated_input_4 = calc_missing_pmv_input(-1, input_4, up_bound=2)
+        updated_input_5 = calc_missing_pmv_input(-1, input_5, low_bound=0.5, up_bound=1)
+        updated_input_6 = calc_missing_pmv_input(-1, input_6)
+        updated_input_7 = calc_missing_pmv_input(-1, input_7)
+        assert updated_input_1['ta'] == pytest.approx(18.529, rel=1e-1)
+        assert updated_input_2['tr'] == pytest.approx(17.912, rel=1e-1)
+        assert updated_input_3['vel'] == pytest.approx(0.720, rel=1e-1)
+        assert updated_input_4['rh'] == pytest.approx(7.0, rel=1e-1)
+        assert updated_input_5['met'] == pytest.approx(1.1234, rel=1e-2)
+        assert updated_input_6['clo'] == pytest.approx(0.6546, rel=1e-2)
+        assert updated_input_7['wme'] == pytest.approx(0.3577, rel=1e-2)
 
     def test_pmv_parameters(self):
         """Test PMVParameters."""

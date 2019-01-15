@@ -1,13 +1,11 @@
 # coding=utf-8
 """
 A list of useful functions for rapid guess-and-test (or root-finding) situations.
-Using these functions will typically be much faster than a custom-built guess-and-check
-with a while() loop.
-
 
 For more information on these functions, see the wikidepia page on root finding:
 https://en.wikipedia.org/wiki/Root-finding_algorithm
 """
+from __future__ import division
 
 
 def secant(a, b, fn, epsilon):
@@ -24,13 +22,15 @@ def secant(a, b, fn, epsilon):
         b: The highest possible boundary of the value you are tying to find.
         fn: A function representing the relationship between the value you are
             trying to find and the target condition you are trying to satisfy.
-            It should be structured in the following way:
-            def fn(valueTryingToFind):
-                functWResult(valueTryingToFind) - targetDesiredFromfunctWResult
-        epsilon: The acceptable error in the targetDesiredFromfunctWResult.
+            It should typically be structured in the following way:
+            `def fn(value_trying_to_find):
+                funct(value_trying_to_find) - target_desired_from_funct`
+            ...but the subtraction should be swtiched if value_trying_to_find
+            has a negative relationship with the funct.
+        epsilon: The acceptable error in the target_desired_from_funct.
 
     Returns:
-        root: The value that gives the targetDesiredFromfunctWResult.
+        root: The value that gives the target_desired_from_funct.
 
     """
     f1 = fn(a)
@@ -56,22 +56,26 @@ def secant(a, b, fn, epsilon):
 def bisect(a, b, fn, epsilon, target):
     """
     The simplest root-finding algorithm.
-    It is extremely reliable and is gauranteed to converge to a solution as long as a
-    solution exists. However, it converges slowly and, for this reason, it is recommended
-    that this only be used after the secant() method has returned a None.
+
+    It is extremely reliable. However, it converges slowly for this reason,
+    it is recommended that this only be used after the secant() method has
+    returned None.
 
     Args:
-       a: A lower guess of the value you are tying to find.
-       b: A higher guess of the value you are tying to find.
-       fn: A function representing the relationship between the value you are
-           trying to find and the target condition you are trying to satisfy.
-           It should be structured in the following way:
-           def fn(valueTryingToFind):
-               functWResult(valueTryingToFind) - targetDesiredFromfunctWResult
-       epsilon: The acceptable error in the targetDesiredFromfunctWResult.
+        a: A lower guess of the value you are tying to find.
+        b: A higher guess of the value you are tying to find.
+        fn: A function representing the relationship between the value you are
+            trying to find and the target condition you are trying to satisfy.
+            It should typically be structured in the following way:
+            `def fn(value_trying_to_find):
+                funct(value_trying_to_find) - target_desired_from_funct`
+            ...but the subtraction should be swtiched if value_trying_to_find
+            has a negative relationship with the funct.
+        epsilon: The acceptable error in the target_desired_from_funct.
+        target: The target slope (typically 0 for a local minima or maxima).
 
-   Returns:
-       root: The value that gives the targetDesiredFromfunctWResult.
+    Returns:
+        root: The value that gives the target_desired_from_funct.
 
     """
     while (abs(b - a) > 2 * epsilon):
