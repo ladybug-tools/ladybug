@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Utility functions for calculating PMV comfort."""
+"""Utility functions for calculating PMV."""
 from __future__ import division
 
 from ..rootfind import secant
@@ -466,8 +466,8 @@ def calc_missing_pmv_input(target_pmv, pmv_inputs,
     using the PMV model.
 
     Args:
-        target_pmv: The target pmv that you are trying to produce from the inputs to
-            this pmv object.
+        target_pmv: The target PMV that you are trying to produce from the inputs to
+            the PMV model.
         pmv_inputs: A dictionary of 7 pmv inputs with the following keys:
             'ta', 'tr', 'vel', 'rh', 'met', 'clo', 'wme'.  Each key
             should correspond to a value that represents that pmv input
@@ -476,10 +476,10 @@ def calc_missing_pmv_input(target_pmv, pmv_inputs,
             Example (solving for relative humidity):
                 `{'ta': 20, 'tr': 20, 'vel': 0.05, 'rh': None,
                 'met': 1.2, 'clo': 0.75, 'wme': 0}`
-        low_bound: The lowest possible value of the missing_input you are tying to
+        low_bound: The lowest possible value of the missing input you are tying to
             find. Putting in a good value here will help the model converge to a
             solution faster.
-        up_bound: The highest possible value of the missing_input you are tying to
+        up_bound: The highest possible value of the missing input you are tying to
             find. Putting in a good value here will help the model converge to a
             solution faster.
         tolerance: The acceptable error in the target_pmv. The default is set to 0.001
@@ -489,14 +489,14 @@ def calc_missing_pmv_input(target_pmv, pmv_inputs,
             Default is 0.1 m/s per the 2015 release of ASHRAE Standard-55.
 
     Returns:
-        complete_pmv_inputs: The pmv_inputs dictorary but with 7 keys.
+        complete_pmv_inputs: The pmv_inputs dictionary but with values for all inputs.
             The missing input to the PMV model will be filled by the value
             that returns the target_pmv.
     """
     assert len(pmv_inputs.keys()) == 7, \
         'pmv_inputs must have 7 keys. Got {}.'.format(len(pmv_inputs.keys()))
 
-    # Determine the function that should be used given the missing_pmv_input.
+    # Determine the function that should be used given the missing input.
     if pmv_inputs['ta'] is None:
         def fn(x):
             return pmv(x, pmv_inputs['tr'], pmv_inputs['vel'],
