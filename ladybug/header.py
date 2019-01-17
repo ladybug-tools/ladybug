@@ -35,7 +35,7 @@ class Header(object):
             metadata: Optional dictionary of additional metadata,
                 containing information such as 'source', 'city', or 'zone'.
         """
-        assert hasattr(data_type, 'isDataType'), \
+        assert isinstance(data_type, DataTypeBase), \
             'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
         if unit is None:
             unit = data_type.units[0]

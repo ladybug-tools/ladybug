@@ -160,7 +160,7 @@ class DataTypeBase(object):
                 unit will be assumed.
             raise_exception: Set to True to raise an exception if not in range.
         """
-        assert self._is_numeric(values)
+        self._is_numeric(values)
         if unit is None or unit == self.units[0]:
             minimum = self.min
             maximum = self.max
@@ -195,7 +195,7 @@ class DataTypeBase(object):
                 unit will be assumed.
             raise_exception: Set to True to raise an exception if not in range.
         """
-        assert self._is_numeric(values)
+        self._is_numeric(values)
         if unit is None or unit == self.units[0]:
             minimum = self.min_epw
             maximum = self.max_epw
@@ -246,7 +246,7 @@ class DataTypeBase(object):
 
     def _to_unit_base(self, base_unit, values, unit, from_unit):
         """Return values in a given unit given the input from_unit."""
-        assert self._is_numeric(values)
+        self._is_numeric(values)
         namespace = {'self': self, 'values': values}
         if not from_unit == base_unit:
             self.is_unit_acceptable(from_unit, True)
@@ -279,17 +279,17 @@ class DataTypeBase(object):
 
     @property
     def units(self):
-        """A list of all acceptabledata type units."""
+        """A tuple of all acceptable units for the data type."""
         return self._units
 
     @property
     def si_units(self):
-        """A list of acceptable si_units."""
+        """A tuple of acceptable si_units for the data type."""
         return self._si_units
 
     @property
     def ip_units(self):
-        """A list of acceptable ip_units."""
+        """A tuple of acceptable ip_units for the data type."""
         return self._ip_units
 
     @property
