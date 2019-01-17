@@ -294,7 +294,7 @@ class DataTypeBase(object):
 
     @property
     def min(self):
-        """The minimum value of the data type."""
+        """The minimum possible value of the data type."""
         return self._min
 
     @property
@@ -309,7 +309,11 @@ class DataTypeBase(object):
 
     @property
     def unit_descr(self):
-        """A description of the data type."""
+        """A description of the data type units.
+
+        This is useful if numerical values of the units relate to specific categories.
+        (eg. -1 = Cold, 0 = Neutral, +1 = Hot) (eg. 0 = False, 1 = True).
+        """
         return self._unit_descr
 
     @property
