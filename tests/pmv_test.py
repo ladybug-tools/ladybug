@@ -25,6 +25,13 @@ class PMVTestCase(unittest.TestCase):
         pmv_comf, ppd, hl = fanger_pmv(19, 23, 0.1, 60, 1.5, 0.4)
         assert pmv_comf == pytest.approx(-0.680633, rel=1e-2)
         assert ppd == pytest.approx(14.7373, rel=1e-2)
+        assert hl['cond'] == pytest.approx(11.60697, rel=1e-2)
+        assert hl['sweat'] == pytest.approx(12.2115, rel=1e-2)
+        assert hl['res_l'] == pytest.approx(6.7457, rel=1e-2)
+        assert hl['res_s'] == pytest.approx(1.8317, rel=1e-2)
+        assert hl['rad'] == pytest.approx(26.63829, rel=1e-2)
+        assert hl['conv'] == pytest.approx(44.745778, rel=1e-2)
+        assert sum(hl.values()) == pytest.approx(103.78, rel=1e-2)
 
     def test_pierce_set(self):
         """Test the pierce_set function"""

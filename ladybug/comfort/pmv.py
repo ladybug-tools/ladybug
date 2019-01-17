@@ -51,14 +51,14 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
             ta_adj: Air temperature adjusted for air speed [C]
             ce : Cooling effect. The difference between the air temperature
                 and the adjusted air temperature [C]
-            heat_loss: A list with the 6 heat loss terms of the PMV model [W].
-                The terms are ordered as follows:
-                    * heat loss by conduction
-                    * heat loss by sweating
-                    * heat loss by latent respiration
-                    * heat loss by dry respiration
-                    * heat loss by radiation
-                    * heat loss by convection
+            heat_loss: A dictionary with the 6 heat loss terms of the PMV model.
+                The dictionary items are as follows:
+                    'cond': heat loss by conduction [W]
+                    'sweat': heat loss by sweating [W]
+                    'res_l': heat loss by latent respiration [W]
+                    'res_s' heat loss by dry respiration [W]
+                    'rad': heat loss by radiation [W]
+                    'conv' heat loss by convection [W]
     """
     result = {}
     se_temp = pierce_set(ta, tr, vel, rh, met, clo, wme)
@@ -120,14 +120,14 @@ def fanger_pmv(ta, tr, vel, rh, met, clo, wme=0):
     Returns:
         pmv: Predicted mean vote (PMV)
         ppd: Percentage of people dissatisfied (PPD) [%]
-        heat_loss: A list with the 6 heat loss terms of the PMV model [W].
-            The terms are ordered as follows:
-                * heat loss by conduction
-                * heat loss by sweating
-                * heat loss by latent respiration
-                * heat loss by dry respiration
-                * heat loss by radiation
-                * heat loss by convection
+        heat_loss: A dictionary with the 6 heat loss terms of the PMV model.
+            The dictionary items are as follows:
+                'cond': heat loss by conduction [W]
+                'sweat': heat loss by sweating [W]
+                'res_l': heat loss by latent respiration [W]
+                'res_s' heat loss by dry respiration [W]
+                'rad': heat loss by radiation [W]
+                'conv' heat loss by convection [W]
     """
 
     pa = rh * 10. * math.exp(16.6536 - 4030.183 / (ta + 235.))
@@ -193,7 +193,13 @@ def fanger_pmv(ta, tr, vel, rh, met, clo, wme=0):
     ppd = ppd_from_pmv(pmv)
 
     # collect heat loss terms.
-    heat_loss = (hl1, hl2, hl3, hl4, hl5, hl6)
+    heat_loss = {
+        'cond': hl1,
+        'sweat': hl2,
+        'res_l': hl3,
+        'res_s': hl4,
+        'rad': hl5,
+        'conv': hl6}
 
     return pmv, ppd, heat_loss
 
