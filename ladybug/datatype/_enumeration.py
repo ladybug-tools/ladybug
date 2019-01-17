@@ -30,7 +30,7 @@ class DataTypeEnumeration(object):
 
     @property
     def types(self):
-        """A text string indicating all cuurently supported types"""
+        """A text string indicating all curently supported types"""
         return '\n'.join(sorted(self._TYPES.keys()))
 
     @property

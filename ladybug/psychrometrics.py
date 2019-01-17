@@ -20,34 +20,31 @@ def saturated_vapor_pressure(t_kelvin):
     the freezing point of water.
 
     Note:
-        [1] Vaisala. (2013) Humidity Conversion Formulas:
-        Calculation Formulas for Humidity.
-        www.vaisala.com/Vaisala%20Documents/Application%20notes/Humidity_Conversion_Formulas_B210973EN-F.pdf
-
-        [2] W. Wagner and A. Pru:" The IAPWS Formulation 1995 for the Thermodynamic
+        [1] W. Wagner and A. Pru:" The IAPWS Formulation 1995 for the Thermodynamic
         Properties of Ordinary Water Substance for General and Scientific Use ",
         Journal of Physical and Chemical Reference Data,
         June 2002 ,Volume 31, Issue 2, pp. 387535
+
+        [2] Vaisala. (2013) Humidity Conversion Formulas:
+        Calculation Formulas for Humidity.
+        www.vaisala.com/Vaisala%20Documents/Application%20notes/Humidity_Conversion_Formulas_B210973EN-F.pdf
     """
 
     if t_kelvin >= 273.15:
         # Calculate saturation vapor pressure above freezing
-        sigma = 1 - (t_kelvin / 647.096)
-        express_result = (sigma * (-7.85951783)) + ((sigma**1.5) * 1.84408259) + \
-            ((sigma**3) * (-11.7866487)) + \
-            ((sigma**3.5) * 22.6807411) + ((sigma**4) *
-                                           (-15.9618719)) + ((sigma**7.5) * 1.80122502)
+        sig = 1 - (t_kelvin / 647.096)
+        sig_polynomial = (-7.85951783 * sig) + (1.84408259 * sig ** 1.5) + \
+            (-11.7866487 * sig ** 3) + (22.6807411 * sig ** 3.5) + \
+            (-15.9618719 * sig ** 4) + (1.80122502 * sig ** 7.5)
         crit_temp = 647.096 / t_kelvin
-        exponent = crit_temp * express_result
-        power = math.exp(exponent)
-        p_ws = power * 22064000
+        exponent = crit_temp * sig_polynomial
+        p_ws = math.exp(exponent) * 22064000
     else:
         # Calculate saturation vapor pressure below freezing
         theta = t_kelvin / 273.15
-        exponent2 = ((1 - (theta**(-1.5))) * (-13.928169)) + \
-            ((1 - (theta**(-1.25))) * 34.707823)
-        power = math.exp(exponent2)
-        p_ws = power * 611.657
+        exponent = -13.928169 * (1 - theta ** -1.5) + \
+            34.707823 * (1 - theta ** -1.25)
+        p_ws = math.exp(exponent) * 611.657
     return p_ws
 
 

@@ -19,7 +19,7 @@ class DataCollection(object):
 
     __slots__ = ('_header', '_data')
 
-    def __init__(self, data=[], header=None):
+    def __init__(self, data=None, header=None):
         """Init class."""
         if header is None:
             self.header = Header(data_type=GenericType('Unknown Data', 'unknown'))
