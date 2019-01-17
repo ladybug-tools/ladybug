@@ -20,18 +20,18 @@ class UValue(DataTypeBase):
         return value * 5.678263337
 
     def to_unit(self, values, unit, from_unit):
-        """Return values in a given unit given the input from_unit."""
+        """Return values converted to the unit given the input from_unit."""
         return self._to_unit_base('W/m2-K', values, unit, from_unit)
 
     def to_ip(self, values, from_unit):
-        """Return values in IP given the input from_unit."""
+        """Return values in IP and the units to which the values have been converted."""
         if from_unit == 'Btu/h-ft2-F':
             return values, from_unit
         else:
             return self.to_unit(values, 'Btu/h-ft2-F', from_unit), 'Btu/h-ft2-F'
 
     def to_si(self, values, from_unit):
-        """Return values in SI given the input from_unit."""
+        """Return values in SI and the units to which the values have been converted."""
         if from_unit == 'W/m2-K':
             return values, from_unit
         else:

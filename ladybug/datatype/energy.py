@@ -82,11 +82,11 @@ class Energy(DataTypeBase):
         return value / 860.421
 
     def to_unit(self, values, unit, from_unit):
-        """Return values in a given unit given the input from_unit."""
+        """Return values converted to the unit given the input from_unit."""
         return self._to_unit_base('kWh', values, unit, from_unit)
 
     def to_ip(self, values, from_unit):
-        """Return values in IP given the input from_unit."""
+        """Return values in IP and the units to which the values have been converted."""
         if from_unit in self.ip_units:
             return values, from_unit
         elif from_unit == 'Wh':
@@ -95,7 +95,7 @@ class Energy(DataTypeBase):
             return self.to_unit(values, 'kBtu', from_unit), 'kBtu'
 
     def to_si(self, values, from_unit):
-        """Return values in SI given the input from_unit."""
+        """Return values in SI and the units to which the values have been converted."""
         if from_unit in self.si_units:
             return values, from_unit
         elif from_unit == 'Btu':

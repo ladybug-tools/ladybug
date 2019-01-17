@@ -14,14 +14,9 @@ class GenericType(DataTypeBase):
         self._abbreviation = name
 
     def to_ip(self, values, from_unit):
-        """Return values in IP."""
+        """Return values in IP and the units to which the values have been converted."""
         return values, from_unit
 
     def to_si(self, values, from_unit):
-        """Return values in SI."""
+        """Return values in SI and the units to which the values have been converted."""
         return values, from_unit
-
-    @property
-    def isGeneric(self):
-        """Return True."""
-        return True

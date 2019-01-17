@@ -124,19 +124,19 @@ class DataTypeBase(object):
             )
 
     def to_unit(self, values, unit, from_unit=None):
-        """Convert a list of values to a given unit from a given from_unit."""
+        """Return values converted to the unit given the input from_unit."""
         raise NotImplementedError(
             'to_unit is not implemented on %s' % self.__class__.__name__
         )
 
     def to_ip(self, values, from_unit=None):
-        """Converts a list of values to IP from a given from_unit."""
+        """Return values in IP and the units to which the values have been converted."""
         raise NotImplementedError(
             'to_ip is not implemented on %s' % self.__class__.__name__
         )
 
     def to_si(self, values, from_unit=None):
-        """Convert a list of values to SI from a given from_unit."""
+        """Return values in SI and the units to which the values have been converted."""
         raise NotImplementedError(
             'to_si is not implemented on %s' % self.__class__.__name__
         )
