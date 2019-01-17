@@ -1,6 +1,8 @@
 # coding=utf-8
 from __future__ import division
 
+from ladybug import datatype
+from ladybug.datatype import base
 from ladybug.datatype import angle, area, distance, energy, energyflux, \
     energyintensity, generic, illuminance, luminance, mass, massflowrate, \
     percentage, power, pressure, rvalue, speed, temperature, thermalcondition, \
@@ -22,6 +24,37 @@ class DataTypesTestCase(unittest.TestCase):
     def tearDown(self):
         """Nothing to tear down as nothing gets written to file."""
         pass
+
+    def test_global_properties(self):
+        """Test the global properties like TYPES, BASETYPES, and UNITS."""
+        assert isinstance(datatype.TYPES, tuple)
+        assert isinstance(datatype.BASETYPES, tuple)
+        assert isinstance(datatype.UNITS, dict)
+        assert isinstance(datatype.TYPESDICT, dict)
+
+    def test_from_json(self):
+        """Test the from json method."""
+        sample_json = {'name': 'Temperature',
+                       'data_type': 'Temperature',
+                       'base_unit': 'C'}
+        new_temp = base.DataTypeBase.from_json(sample_json)
+        assert isinstance(new_temp, temperature.Temperature)
+
+    def test_to_from_json(self):
+        """Test the to/from json methods."""
+        my_temp = temperature.Temperature()
+        temp_json = my_temp.to_json()
+        new_temp = base.DataTypeBase.from_json(temp_json)
+        new_temp = base.DataTypeBase.from_json(temp_json)
+        assert new_temp.to_json() == temp_json
+
+    def test_json_generic(self):
+        """Test the from json for a generic type."""
+        sample_json = {'name': 'Days Since Last Snowfall',
+                       'data_type': 'GenericType',
+                       'base_unit': 'days'}
+        new_type = base.DataTypeBase.from_json(sample_json)
+        assert isinstance(new_type, base.DataTypeBase)
 
     def test_generic_type(self):
         """Test the creation of generic types."""

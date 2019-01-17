@@ -2,6 +2,9 @@
 """Base data type."""
 from __future__ import division
 
+from os.path import dirname, basename, isfile, join
+from os import listdir
+from importlib import import_module
 import re
 
 
@@ -62,6 +65,8 @@ class DataTypeBase(object):
     _max_epw = float('+inf')
     _missing_epw = None
 
+    _type_enumeration = None
+
     def __init__(self, name=None):
         """Initialize DataType.
 
@@ -78,23 +83,22 @@ class DataTypeBase(object):
             data: Data as a dictionary.
                 {
                     "name": data type name of the data type as a string
-                    "class_name": the class name of the data type as a string
+                    "data_type": the class name of the data type as a string
                     "base_unit": the base unit of the data type
                 }
         """
         assert 'name' in data, 'Required keyword "name" is missing!'
-        assert 'class_name' in data, 'Required keyword "class_name" is missing!'
+        assert 'data_type' in data, 'Required keyword "data_type" is missing!'
+        if cls._type_enumeration is None:
+            cls._type_enumeration = _DataTypeEnumeration(import_modules=False)
 
-        from ..datatype import _data_types
-        from .generic import GenericType
-
-        if data['class_name'] == 'GenericType':
+        if data['data_type'] == 'GenericType':
             assert 'base_unit' in data, \
                 'Keyword "base_unit" is missing and is required for GenericType.'
-            return GenericType(data['name'], data['base_unit'])
-        elif data['class_name'] in _data_types._TYPES:
-            clss = _data_types._TYPES[data['class_name']]
-            if data['class_name'] == data['name'].title().replace(' ', ''):
+            return cls._type_enumeration._GENERICTYPE(data['name'], data['base_unit'])
+        elif data['data_type'] in cls._type_enumeration._TYPES:
+            clss = cls._type_enumeration._TYPES[data['data_type']]
+            if data['data_type'] == data['name'].title().replace(' ', ''):
                 return clss()
             else:
                 instance = clss()
@@ -102,7 +106,7 @@ class DataTypeBase(object):
                 return instance
         else:
             raise ValueError(
-                'Data Type {} could not be recognized'.format(data['class_name']))
+                'Data Type {} could not be recognized'.format(data['data_type']))
 
     def is_unit_acceptable(self, unit, raise_exception=True):
         """Check if a certain unit is acceptable for the data type.
@@ -223,7 +227,7 @@ class DataTypeBase(object):
         """Get data type as a json object"""
         return {
             'name': self.name,
-            'class_name': self.__class__.__name__,
+            'data_type': self.__class__.__name__,
             'base_unit': self.units[0]
         }
 
@@ -345,3 +349,69 @@ class DataTypeBase(object):
     def __repr__(self):
         """Return Ladybug data type as a string."""
         return self.name
+
+
+class _DataTypeEnumeration(object):
+    """Enumerates all data types, base types, and units."""
+    _TYPES = {}
+    _BASETYPES = {}
+    _UNITS = {}
+    _GENERICTYPE = None
+
+    def __init__(self, import_modules=True):
+        if import_modules is True:
+            self._import_modules()
+
+        for clss in DataTypeBase.__subclasses__():
+            if clss.__name__ != 'GenericType':
+                self._TYPES[clss.__name__] = clss
+                self._BASETYPES[clss.__name__] = clss
+                self._UNITS[clss.__name__] = clss._units
+                for subclss in self._all_subclasses(clss):
+                    self._TYPES[subclss.__name__] = subclss
+            else:
+                self._GENERICTYPE = clss
+
+    @property
+    def types(self):
+        """A tuple indicating all curently supported data types."""
+        return tuple(sorted(self._TYPES.keys()))
+
+    @property
+    def base_types(self):
+        """A tuple indicating all base types.
+
+        Base types are the data types on which unit systems are defined.
+        """
+        return tuple(sorted(self._BASETYPES.keys()))
+
+    @property
+    def units(self):
+        """A dictionary containing all currently supported units.
+
+        The keys of this dictionary are the base types (eg. 'Temperature').
+        """
+        return self._UNITS
+
+    @property
+    def types_dict(self):
+        """A dictionary containing pointers to the classes of each data type.
+
+        The keys of this dictionary are the data types.
+        """
+        return self._TYPES
+
+    def _import_modules(self):
+        root_dir = dirname(__file__)
+        modules = listdir(dirname(__file__))
+        modules = [join(root_dir, mod) for mod in modules]
+        importable = ['.{}'.format(basename(f)[:-3]) for f in modules
+                      if isfile(f) and f.endswith('.py')
+                      and not f.endswith('__init__.py')
+                      and not f.endswith('base.py')]
+        for mod in importable:
+            import_module(mod, 'ladybug.datatype')
+
+    def _all_subclasses(self, clss):
+        return set(clss.__subclasses__()).union(
+            [s for c in clss.__subclasses__() for s in self._all_subclasses(c)])

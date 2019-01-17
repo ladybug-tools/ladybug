@@ -7,8 +7,8 @@ from .base import DataTypeBase
 
 class Energy(DataTypeBase):
     """Energy"""
-    _units = ['kWh', 'kBtu', 'Wh', 'Btu', 'MMBtu', 'J', 'kJ', 'MJ', 'GJ',
-              'therm', 'cal', 'kcal']
+    _units = ('kWh', 'kBtu', 'Wh', 'Btu', 'MMBtu', 'J', 'kJ', 'MJ', 'GJ',
+              'therm', 'cal', 'kcal')
     _si_units = ('kWh', 'Wh', 'J', 'kJ', 'MJ', 'GJ')
     _ip_units = ('kBtu', 'Btu', 'MMBtu', 'therm')
     _abbreviation = 'E'
