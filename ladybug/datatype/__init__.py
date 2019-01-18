@@ -5,7 +5,7 @@ Possesses capabilites for unit conversions and range checks.
 It also includes descriptions of the data types and the units.
 
 Properties:
-    TYPES: A tuple indicating all curently supported data types.
+    TYPES: A tuple indicating all currently supported data types.
     BASETYPES: A tuple indicating all base types. Base types are the
         data types on which unit systems are defined.
     UNITS: A dictionary containing all currently supported units. The

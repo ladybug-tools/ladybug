@@ -378,7 +378,7 @@ class _DataTypeEnumeration(object):
 
     @property
     def types(self):
-        """A tuple indicating all curently supported data types."""
+        """A tuple indicating all currently supported data types."""
         return tuple(sorted(self._TYPES.keys()))
 
     @property
