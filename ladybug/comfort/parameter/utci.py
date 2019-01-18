@@ -5,7 +5,7 @@ from __future__ import division
 from ._base import ComfortParameter
 
 
-class UTCIParameters(ComfortParameter):
+class UTCIParameter(ComfortParameter):
     """Parameters of UTCI comfort.
 
     Properties:
@@ -33,6 +33,7 @@ class UTCIParameters(ComfortParameter):
         extreme_heat_thresh:  UTCI temperature above which conditions
             represent extreme heat stress [C]. Default: 46C.
     """
+    _model = 'Universal Thermal Climate Index'
 
     def __init__(self, cold_thresh=None, heat_thresh=None,
                  extreme_cold_thresh=None, very_strong_cold_thresh=None,

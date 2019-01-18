@@ -3,7 +3,7 @@
 import unittest
 import pytest
 
-from ladybug.comfort.standard.utci import UTCIParameters
+from ladybug.comfort.parameter.utci import UTCIParameter
 
 from ladybug.comfort.utci import utci, calc_missing_utci_input
 
@@ -52,7 +52,7 @@ class PMVTestCase(unittest.TestCase):
         very_strong_heat_thresh = 39
         extreme_heat_thresh = 47
 
-        utci_comf = UTCIParameters(
+        utci_comf = UTCIParameter(
             cold_thresh, heat_thresh, extreme_cold_thresh, very_strong_cold_thresh,
             strong_cold_thresh, moderate_cold_thresh, moderate_heat_thresh,
             strong_heat_thresh, very_strong_heat_thresh, extreme_heat_thresh)
@@ -74,13 +74,13 @@ class PMVTestCase(unittest.TestCase):
         heat_thresh = 8
 
         with pytest.raises(AssertionError):
-            UTCIParameters(cold_thresh=cold_thresh)
+            UTCIParameter(cold_thresh=cold_thresh)
         with pytest.raises(AssertionError):
-            UTCIParameters(heat_thresh=heat_thresh)
+            UTCIParameter(heat_thresh=heat_thresh)
 
     def test_comfort_check(self):
         """Test comfort check on UTCI Parameters."""
-        utci_comf = UTCIParameters()
+        utci_comf = UTCIParameter()
         comf_test = utci_comf.is_comfortable(5)
         assert comf_test is False
         comf_test = utci_comf.is_comfortable(22)
@@ -88,7 +88,7 @@ class PMVTestCase(unittest.TestCase):
 
     def test_thermal_condition_check(self):
         """Test the thermal condition check on UTCI Parameters."""
-        utci_comf = UTCIParameters()
+        utci_comf = UTCIParameter()
         condition_test = utci_comf.thermal_condition(5)
         assert condition_test == -1
         condition_test = utci_comf.thermal_condition(22)
@@ -98,7 +98,7 @@ class PMVTestCase(unittest.TestCase):
 
     def test_thermal_condition_low_check(self):
         """Test the thermal condition check on UTCI Parameters."""
-        utci_comf = UTCIParameters()
+        utci_comf = UTCIParameter()
         condition_test = utci_comf.thermal_condition_low(-15)
         assert condition_test == -2
         condition_test = utci_comf.thermal_condition_low(5)
@@ -112,7 +112,7 @@ class PMVTestCase(unittest.TestCase):
 
     def test_thermal_condition_medium_check(self):
         """Test the thermal condition check on UTCI Parameters."""
-        utci_comf = UTCIParameters()
+        utci_comf = UTCIParameter()
         condition_test = utci_comf.thermal_condition_medium(-30)
         assert condition_test == -3
         condition_test = utci_comf.thermal_condition_medium(-15)
@@ -130,7 +130,7 @@ class PMVTestCase(unittest.TestCase):
 
     def test_thermal_condition_high_check(self):
         """Test the thermal condition check on UTCI Parameters."""
-        utci_comf = UTCIParameters()
+        utci_comf = UTCIParameter()
         condition_test = utci_comf.thermal_condition_high(-30)
         assert condition_test == -4
         condition_test = utci_comf.thermal_condition_high(-18)
@@ -152,7 +152,7 @@ class PMVTestCase(unittest.TestCase):
 
     def test_thermal_condition_very_high_check(self):
         """Test the thermal condition check on UTCI Parameters."""
-        utci_comf = UTCIParameters()
+        utci_comf = UTCIParameter()
         condition_test = utci_comf.thermal_condition_very_high(-50)
         assert condition_test == -5
         condition_test = utci_comf.thermal_condition_very_high(-30)

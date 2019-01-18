@@ -2,147 +2,47 @@
 """Object for calculating PMV comfort from DataCollections."""
 from __future__ import division
 
-from ._base import ComfortModel
-from ._base import ComfortParameter
+from ._base import ComfortDataCollection
+from ..parameter.pmv import PMVParameter
 from ...datacollection import DataCollection
 from ...epw import EPW
 from ...psychrometrics import humid_ratio_from_db_rh
 
 
-class PMVParameters(ComfortParameter):
-    """Parameters of PMV comfort.
+class PMV(ComfortDataCollection):
+    """PMV comfort DataCollection object.
 
     Properties:
-        ppd_comfort_thresh:  Upper threshold of PPD that is considered acceptable
-        humid_ratio_upper:  Upper limit of humidity ratio considered acceptable.
-        humid_ratio_low: Lower limit of humidity ratioc onsidered acceptable.
-        still_air_threshold: The threshold at which the standard effective
-            temperature (SET) model will be used to correct for the
-            cooling effect of elevated air speeds.
+        air_temperature
+        rad_temperature
+        air_speed
+        rel_humidity
+        met_rate
+        clo_value
+        external_work
+        pmv
+        ppd
+        standard_effective_temperature
+        is_comfortable
+        thermal_condition
+        discomfort_reason
+        percent_comfortable
+        percent_uncomfortable
+        percent_neutral
+        percent_hot
+        percent_cold
+        percent_dry
+        percent_humid
+        humidity_ratio
+        adjusted_air_temperature
+        heat_loss_conduction
+        heat_loss_sweating
+        heat_loss_latent_respiration
+        heat_loss_dry_respiration
+        heat_loss_radiation
+        heat_loss_convection
     """
-
-    def __init__(self, ppd_comfort_thresh=None, humid_ratio_upper=None,
-                 humid_ratio_lower=None, still_air_threshold=None):
-        """Initalize PMV Parameters.
-
-        Args:
-            ppd_comfort_thresh:  Upper threshold of PPD that is considered acceptable
-            humid_ratio_upper:  Upper limit of humidity ratio considered acceptable.
-            humid_ratio_low: Lower limit of humidity ratioc onsidered acceptable.
-            still_air_threshold: The threshold at which the standard effective
-                temperature (SET) model will be used to correct for the
-                cooling effect of elevated air speeds.
-        """
-
-        self._ppd_thresh = ppd_comfort_thresh if ppd_comfort_thresh is not None else 10
-        self._hr_upper = humid_ratio_upper if humid_ratio_upper is not None else 1
-        self._hr_lower = humid_ratio_lower if humid_ratio_lower is not None else 0
-        self._still_thresh = \
-            still_air_threshold if still_air_threshold is not None else 0.1
-
-        assert 5 <= self._ppd_thresh <= 100, \
-            'ppd_comfort_thresh must be between 5 and 100. Got {}'.format(
-                self._ppd_thresh)
-        assert 0 <= self._hr_upper <= 1, \
-            'humid_ratio_upper must be between 0 and 1. Got {}'.format(
-                self._hr_upper)
-        assert 0 <= self._hr_lower <= 1, \
-            'humid_ratio_lower must be between 0 and 1. Got {}'.format(
-                self._hr_lower)
-        assert 0 <= self._still_thresh, \
-            'still_air_threshold must be greater than 0. Got {}'.format(
-                self._still_thresh)
-        assert self._hr_lower <= self._hr_upper, \
-            'humid_ratio_lower must be less than humid_ratio_upper. {} > {}'.format(
-                self._hr_lower, self._hr_upper)
-
-    @property
-    def ppd_comfort_thresh(self):
-        """The threshold of the percentage of people dissatisfied (PPD) beyond which
-        the conditions are not acceptable.  The default is 10%.
-        """
-        return self._ppd_thresh
-
-    @property
-    def humid_ratio_upper(self):
-        """A number representing the upper boundary of humidity ratio above which conditions
-        are considered too humid to be comfortable.  The default is set to 0.03 kg
-        wather/kg air.
-        """
-        return self._hr_upper
-
-    @property
-    def humid_ratio_lower(self):
-        """A number representing the lower boundary of humidity ratio below which conditions
-        are considered too dry to be comfortable.  The default is set to 0 kg wather/kg
-        air.
-        """
-        return self._hr_lower
-
-    @property
-    def still_air_threshold(self):
-        """A number representing the wind speed beyond which the formula for Standard
-        Effective Temperature (SET) is used to dtermine PMV/PPD (as opposed to Fanger's
-        original equation). The default is set to 0.1 m/s.
-        """
-        return self._still_thresh
-
-    def is_comfortable(self, ppd, humidity_ratio):
-        """Determine if conditions are comfortable or not.
-
-        Values are one of the following:
-            0 = uncomfortable
-            1 = comfortable
-        """
-        return True if (ppd <= self._ppd_thresh and
-                        humidity_ratio >= self._hr_lower and
-                        humidity_ratio <= self._hr_upper) else False
-
-    def thermal_condition(self, pmv, ppd):
-        """Determine whether conditions are cold, neutral or hot.
-
-        Values are one of the following:
-            -1 = cold
-             0 = netural
-            +1 = hot
-        """
-        if ppd >= self._ppd_thresh:
-            return 1 if pmv > 0 else -1
-        else:
-            return 0
-
-    def discomfort_reason(self, pmv, ppd, humidity_ratio):
-        """Determine the reason why conditions are comfortable or not.
-
-        Values are one of the following:
-            -2 = too dry
-            -1 = too cold
-             0 = comfortable
-            +1 = too hot
-            +2 = too humid
-        """
-        if ppd >= self._ppd_thresh:
-            return 1 if pmv > 0 else -1
-        elif humidity_ratio < self._hr_lower:
-            return -2
-        elif humidity_ratio > self._hr_upper:
-            return 2
-        else:
-            return 0
-
-    def ToString(self):
-        """Overwrite .NET ToString."""
-        return self.__repr__()
-
-    def __repr__(self):
-        """PMV comfort parameters representation."""
-        return "PMV Comfort Parameters\n PPD Threshold: {}\nHR Upper: {}"\
-            "\nHR Lower: {}\nStill Air Threshold: {}".format(
-                self._ppd_thresh, self._hr_upper, self._hr_lower, self._still_thresh)
-
-
-class PMV(ComfortModel):
-    """PMV Comfort Object."""
+    _model = 'Predicted Mean Vote'
 
     def __init__(self, air_temperature, rel_humidity,
                  rad_temperature=None, air_speed=None,
@@ -197,7 +97,7 @@ class PMV(ComfortModel):
         # Set default comfort parameters for the PMV model.
         self._comfort_parameters = comfort_parameters
         if comfort_parameters is None:
-            self._comfort_parameters = PMVParameters()
+            self._comfort_parameters = PMVParameter()
 
     @classmethod
     def from_epw_file(cls, epw_file_address, include_wind=False, include_sun=False,
@@ -315,7 +215,7 @@ class PMV(ComfortModel):
         return self._ppd
 
     @property
-    def set(self):
+    def standard_effective_temperature(self):
         """DataCollection of standard effective temperature (SET) for the input conditions.
 
         These temperatures describe what the given input conditions "feel like" in
@@ -402,7 +302,14 @@ class PMV(ComfortModel):
         return self._percent_humid
 
     @property
-    def ta_adj(self):
+    def humidity_ratio(self):
+        """DataCollection of humidity ratio for the input dry bulb and relative humidity.
+        """
+        return [humid_ratio_from_db_rh(db, rh) for db, rh in zip(
+            self.air_temperature, self.rel_humidity)]
+
+    @property
+    def adjusted_air_temperature(self):
         """DataCollection of air temperatures that have been adjusted by the SET model
         to account for the effect of air speed [C].
         """
