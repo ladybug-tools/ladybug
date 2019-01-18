@@ -1,5 +1,7 @@
 # coding=utf-8
 """Ladybug location."""
+from __future__ import division
+
 import re
 
 
@@ -13,7 +15,7 @@ class Location(object):
         longitude: Location longitude between -180 (west) and 180 (east) (Default: 0).
         time_zone: Time zone between -12 hours (west) and 12 hours (east) (Default: 0).
         elevation: A number for elevation of the location.
-        station_id: Id of the location if the location is represnting a weather station.
+        station_id: ID of the location if the location is represnting a weather station.
         source: Source of data (e.g. TMY, TMY3).
     """
 
@@ -21,7 +23,8 @@ class Location(object):
                  "station_id", "source")
 
     def __init__(self, city=None, country=None, latitude=0, longitude=0,
-                 time_zone=0, elevation=0, station_id=None, source=None):
+                 time_zone=0, elevation=0, station_id=None, source=None,
+                 building_id=None, zone_id=None):
         """Create a Ladybug location."""
         self.city = '-' if not city else str(city)
         self.country = '-' if not country else str(country)

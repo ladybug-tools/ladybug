@@ -1,5 +1,7 @@
 # coding=utf-8
 """Ladybug analysis period class."""
+from __future__ import division
+
 from .dt import DateTime
 from datetime import datetime, timedelta
 

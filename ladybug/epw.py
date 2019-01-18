@@ -1,14 +1,17 @@
 # coding=utf-8
+from __future__ import division
+
 from .location import Location
 from .analysisperiod import AnalysisPeriod
-from .datatype import DataPoint  # Temperature, RelativeHumidity, Radiation, Illuminance
+from .datapoint import DataPoint
 from .header import Header
 from .datacollection import DataCollection
 from .dt import DateTime
 from .futil import write_to_file
+from .datatype import angle, distance, energyflux, energyintensity, generic, \
+    illuminance, luminance, percentage, pressure, speed, temperature
 
 import os
-import copy
 import sys
 readmode = 'rb'
 if (sys.version_info > (3, 0)):
@@ -100,6 +103,13 @@ class EPW(object):
             self._import_data(import_location_only=True)
         return self._location
 
+    @property
+    def metadata(self):
+        """Dictionary of metadata about source, country, and city."""
+        if not self.is_location_loaded:
+            self._import_data(import_location_only=True)
+        return self._metadata
+
     # TODO: import EPW header. Currently I just ignore header data
     def _import_data(self, import_location_only=False):
         """Import data from an epw file.
@@ -132,6 +142,13 @@ class EPW(object):
             # TODO: add parsing for header
             self._header = [line] + [epwin.readline() for i in xrange(7)]
 
+            # asemble a dictionary of metadata
+            self._metadata = {
+                'source': self._location.source,
+                'country': self._location.country,
+                'city': self._location.city
+            }
+
             if import_location_only:
                 return
 
@@ -144,12 +161,10 @@ class EPW(object):
 
             # create an empty collection for each field in epw file
             for field_number in range(self._num_of_fields):
-                # create header
                 field = EPWFields.field_by_number(field_number)
-                # the header of data collection
-                header = Header(location=self.location, analysis_period=analysis_period,
-                                data_type=field.name, unit=field.unit,
-                                middle_hour=field.middle_hour)
+                header = Header(data_type=field.name, unit=field.unit,
+                                analysis_period=analysis_period,
+                                metadata=self._metadata)
 
                 # create an empty data list with the header
                 self._data.append(DataCollection(header=header))
@@ -181,8 +196,8 @@ class EPW(object):
 
             # move last item to start position for fields on the hour
             for field_number in xrange(self._num_of_fields):
-                middle_hour = EPWFields.field_by_number(field_number).middle_hour
-                if middle_hour is False:
+                point_in_time = self._data[field_number].header.data_type.point_in_time
+                if point_in_time is True:
                     # shift datetimes for an hour
                     for data in self._data[field_number]:
                         try:
@@ -234,8 +249,8 @@ class EPW(object):
         try:
             # move first item to end position for fields on the hour
             for field in range(0, self._num_of_fields):
-                middle_hour = EPWFields.field_by_number(field).middle_hour
-                if middle_hour is False:
+                point_in_time = self._data[field].header.data_type.point_in_time
+                if point_in_time is True:
                     first_hour = self._data[field].pop(0)
                     self._data[field].append(first_hour)
 
@@ -256,8 +271,8 @@ class EPW(object):
             del(lines)
             # move last item to start position for fields on the hour
             for field in range(0, self._num_of_fields):
-                middle_hour = EPWFields.field_by_number(field).middle_hour
-                if middle_hour is False:
+                point_in_time = self._data[field].header.data_type.point_in_time
+                if point_in_time is True:
                     last_hour = self._data[field].pop()
                     self._data[field].insert(0, last_hour)
 
@@ -396,7 +411,7 @@ class EPW(object):
     def horizontal_infrared_radiation_intensity(self):
         """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data List.
 
-        This is the Horizontal Infrared Radiation Intensity in Wh/m2. If it is missing,
+        This is the Horizontal Infrared Radiation Intensity in W/m2. If it is missing,
         it is calculated from the Opaque Sky Cover field as shown in the following
         explanation. It should have a minimum value of 0; missing value for this field
         is 9999.
@@ -728,9 +743,9 @@ class EPW(object):
         """
         # create sky temperature data collection from horizontal infrared
         horiz_ir = self._get_data_by_field(12)
-        sky_temp_header = copy.copy(horiz_ir.header)
-        sky_temp_header.data_type = 'Sky Temperature'
-        sky_temp_header.unit = 'C'
+        sky_temp_header = Header(data_type=temperature.SkyTemperature(), unit='C',
+                                 analysis_period=AnalysisPeriod(),
+                                 metadata=self._metadata)
 
         # calculate sy temperature for each hour
         sky_temp_data = []
@@ -803,253 +818,179 @@ class EPWFields(object):
     """
 
     FIELDS = {
-        0: {'name': 'Year',
+        0: {'name': generic.GenericType('Year', 'yr'),
             'type': int,
-            'middle_hour': False
+            'unit': 'yr'
             },
 
-        1: {'name': 'Month',
+        1: {'name': generic.GenericType('Month', 'mon'),
             'type': int,
-            'middle_hour': False
+            'unit': 'mon'
             },
 
-        2: {'name': 'Day',
+        2: {'name': generic.GenericType('Day', 'day'),
             'type': int,
-            'middle_hour': False
+            'unit': 'day'
             },
 
-        3: {'name': 'Hour',
+        3: {'name': generic.GenericType('Hour', 'hr'),
             'type': int,
-            'middle_hour': False
+            'unit': 'hr'
             },
 
-        4: {'name': 'Minute',
+        4: {'name': generic.GenericType('Minute', 'min'),
             'type': int,
-            'middle_hour': False
+            'unit': 'min'
             },
 
-        5: {'name': 'Uncertainty Flags',
+        5: {'name': generic.GenericType('Uncertainty Flags', 'flag'),
             'type': str,
-            'middle_hour': False
+            'unit': 'flag'
             },
 
-        6: {'name': 'Dry Bulb Temperature',
+        6: {'name': temperature.DryBulbTemperature(),
             'type': float,
-            'unit': 'C',
-            'min': -70,
-            'max': 70,
-            'missing': 99.9,
-            'middle_hour': False
+            'unit': 'C'
             },
 
-        7: {'name': 'Dew Point Temperature',
+        7: {'name': temperature.DewPointTemperature(),
             'type': float,
-            'unit': 'C',
-            'min': -70,
-            'max': 70,
-            'missing': 99.9,
-            'middle_hour': False
+            'unit': 'C'
             },
 
-        8: {'name': 'Relative Humidity',
+        8: {'name': percentage.RelativeHumidity(),
             'type': int,
-            'unit': '%',
-            'missing': 999,
-            'min': 0,
-            'max': 110,
-            'middle_hour': False
+            'unit': '%'
             },
 
-        9: {'name': 'Atmospheric Station Pressure',
+        9: {'name': pressure.AtmosphericStationPressure(),
             'type': int,
-            'unit': 'Pa',
-            'missing': 999999,
-            'min': 31000,
-            'max': 120000,
-            'middle_hour': False
+            'unit': 'Pa'
             },
 
-        10: {'name': 'Extraterrestrial Horizontal Radiation',
+        10: {'name': energyintensity.ExtraterrestrialHorizontalRadiation(),
              'type': int,
-             'unit': 'Wh/m2',
-             'missing': 9999,
-             'min': 0,
-             'middle_hour': True
+             'unit': 'Wh/m2'
              },
 
-        11: {'name': 'Extraterrestrial Direct Normal Radiation',
+        11: {'name': energyintensity.ExtraterrestrialDirectNormalRadiation(),
              'type': int,
-             'unit': 'Wh/m2',
-             'missing': 9999,
-             'min': 0,
-             'middle_hour': True
+             'unit': 'Wh/m2'
              },
 
-        12: {'name': 'Horizontal Infrared Radiation Intensity',
+        12: {'name': energyflux.HorizontalInfraredRadiationIntensity(),
              'type': int,
-             'unit': 'Wh/m2',
-             'missing': 9999,
-             'min': 0,
-             'middle_hour': False
+             'unit': 'W/m2'
              },
 
-        13: {'name': 'Global Horizontal Radiation',
+        13: {'name': energyintensity.GlobalHorizontalRadiation(),
              'type': int,
-             'unit': 'Wh/m2',
-             'missing': 9999,
-             'min': 0,
-             'middle_hour': True
+             'unit': 'Wh/m2'
              },
 
-        14: {'name': 'Direct Normal Radiation',
+        14: {'name': energyintensity.DirectNormalRadiation(),
              'type': int,
-             'unit': 'Wh/m2',
-             'missing': 9999,
-             'min': 0,
-             'middle_hour': True
+             'unit': 'Wh/m2'
              },
 
-        15: {'name': 'Diffuse Horizontal Radiation',
+        15: {'name': energyintensity.DiffuseHorizontalRadiation(),
              'type': int,
-             'unit': 'Wh/m2',
-             'missing': 9999,
-             'min': 0,
-             'middle_hour': True
+             'unit': 'Wh/m2'
              },
 
-        16: {'name': 'Global Horizontal Illuminance',
+        16: {'name': illuminance.GlobalHorizontalIlluminance(),
              'type': int,
-             'unit': 'lux',
-             'missing': 999999,  # note will be missing if >= 999900
-             'min': 0,
-             'middle_hour': True
+             'unit': 'lux'
              },
 
-        17: {'name': 'Direct Normal Illuminance',
+        17: {'name': illuminance.DirectNormalIlluminance(),
              'type': int,
-             'unit': 'lux',
-             'missing': 999999,  # note will be missing if >= 999900
-             'min': 0,
-             'middle_hour': True
+             'unit': 'lux'
              },
 
-        18: {'name': 'Diffuse Horizontal Illuminance',
+        18: {'name': illuminance.DiffuseHorizontalIlluminance(),
              'type': int,
-             'unit': 'lux',
-             'missing': 999999,  # note will be missing if >= 999900
-             'min': 0,
-             'middle_hour': True
+             'unit': 'lux'
              },
 
-        19: {'name': 'Zenith Luminance',
+        19: {'name': luminance.ZenithLuminance(),
              'type': int,
-             'unit': 'Cd/m2',
-             'missing': 9999,  # note will be missing if >= 9999
-             'min': 0,
-             'middle_hour': True
+             'unit': 'cd/m2'
              },
 
-        20: {'name': 'Wind Direction',
+        20: {'name': angle.WindDirection(),
              'type': int,
-             'unit': 'degrees',
-             'missing': 999,
-             'min': 0,
-             'max': 360,
-             'middle_hour': False
+             'unit': 'degrees'
              },
 
-        21: {'name': 'Wind Speed',
+        21: {'name': speed.WindSpeed(),
              'type': float,
-             'unit': 'm/s',
-             'missing': 999,
-             'min': 0,
-             'max': 40,
-             'middle_hour': False
+             'unit': 'm/s'
              },
 
-        22: {'name': 'Total Sky Cover',  # (used if Horizontal IR Intensity missing)
+        22: {'name': percentage.TotalSkyCover(),  # used if Horizontal IR is missing
              'type': int,
-             'missing': 99,
-             'min': 0,
-             'max': 10,
-             'middle_hour': False
+             'unit': 'tenths'
              },
 
-        23: {'name': 'Opaque Sky Cover',  # (used if Horizontal IR Intensity missing)
+        23: {'name': percentage.OpaqueSkyCover(),  # used if Horizontal IR is missing
              'type': int,
-             'missing': 99,
-             'middle_hour': False
+             'unit': 'tenths'
              },
 
-        24: {'name': 'Visibility',
+        24: {'name': distance.Visibility(),
              'type': float,
-             'unit': 'km',
-             'missing': 9999,
-             'middle_hour': False
+             'unit': 'km'
              },
 
-        25: {'name': 'Ceiling Height',
+        25: {'name': distance.CeilingHeight(),
              'type': int,
-             'unit': 'm',
-             'missing': 99999,
-             'middle_hour': False
+             'unit': 'm'
              },
 
-        26: {'name': 'Present Weather Observation',
+        26: {'name': generic.GenericType('Present Weather Observation', 'observation'),
              'type': int,
-             'middle_hour': False
+             'unit': 'observation'
              },
 
-        27: {'name': 'Present Weather Codes',
+        27: {'name': generic.GenericType('Present Weather Codes', 'codes'),
              'type': int,
-             'middle_hour': False
+             'unit': 'codes'
              },
 
-        28: {'name': 'Precipitable Water',
+        28: {'name': distance.PrecipitableWater(),
              'type': int,
-             'unit': 'mm',
-             'missing': 999,
-             'middle_hour': False
+             'unit': 'mm'
              },
 
-        29: {'name': 'Aerosol Optical Depth',
+        29: {'name': percentage.AerosolOpticalDepth(),
              'type': float,
-             'unit': 'thousandths',
-             'missing': 999,
-             'middle_hour': False
+             'unit': 'fraction'
              },
 
-        30: {'name': 'Snow Depth',
+        30: {'name': distance.SnowDepth(),
              'type': int,
-             'unit': 'cm',
-             'missing': 999,
-             'middle_hour': False
+             'unit': 'cm'
              },
 
-        31: {'name': 'Days Since Last Snowfall',
+        31: {'name': generic.GenericType('Days Since Last Snowfall', 'day'),
              'type': int,
-             'missing': 99,
-             'middle_hour': False
+             'unit': 'day'
              },
 
-        32: {'name': 'Albedo',
+        32: {'name': percentage.Albedo(),
              'type': float,
-             'missing': 999,
-             'middle_hour': False
+             'unit': 'fraction'
              },
 
-        33: {'name': 'Liquid Precipitation Depth',
+        33: {'name': distance.LiquidPrecipitationDepth(),
              'type': float,
-             'unit': 'mm',
-             'missing': 999,
-             'middle_hour': False
+             'unit': 'mm'
              },
 
-        34: {'name': 'Liquid Precipitation Quantity',
+        34: {'name': percentage.LiquidPrecipitationQuantity(),
              'type': float,
-             'unit': 'hr',
-             'missing': 99,
-             'middle_hour': False
+             'unit': 'fraction'
              }
     }
 
@@ -1117,7 +1058,6 @@ class EPWField(object):
     def __init__(self, field_dict):
         self.name = field_dict['name']
         self.value_type = field_dict['type']
-        self.middle_hour = field_dict['middle_hour']
         if 'unit' in field_dict:
             self.unit = field_dict['unit']
         else:

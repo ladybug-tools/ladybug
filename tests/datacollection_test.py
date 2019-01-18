@@ -2,11 +2,14 @@
 
 import unittest
 import pytest
-from ladybug.datatype import DryBulbTemperature
+from ladybug.datapoint import DataPoint
 from ladybug.dt import DateTime
 from ladybug.datacollection import DataCollection
 from ladybug.header import Header
 from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.datatype.generic import GenericType
+from ladybug.datatype.temperature import Temperature
+from ladybug.datatype.percentage import RelativeHumidity
 
 
 class DataCollectionTestCase(unittest.TestCase):
@@ -30,8 +33,8 @@ class DataCollectionTestCase(unittest.TestCase):
         v2 = 30
         average = (v1 + v2) / 2
         # Setup temperature datatypes
-        t1 = DryBulbTemperature(v1, dt1)
-        t2 = DryBulbTemperature(v2, dt2)
+        t1 = DataPoint(v1, dt1)
+        t2 = DataPoint(v2, dt2)
 
         with pytest.raises(Exception):
             DataCollection(3)
@@ -43,13 +46,77 @@ class DataCollectionTestCase(unittest.TestCase):
         # DataCollection.from_data_and_datetimes([v1, v2], [dt1, dt2])
         assert dc1.datetimes == (dt1, dt2)
         assert dc1.data == [v1, v2]
-        assert dc1.average_data() == average
+        assert dc1.average == average
+
+    def test_to_unit(self):
+        """Test the conversion of DataCollection units."""
+        # Setup Datetimes
+        vals = [20]
+        dc1 = DataCollection.from_list(vals, Temperature(), 'C')
+        dc2 = DataCollection.from_list(vals, Temperature(), 'F')
+        dc3 = dc1.to_unit('K')
+        dc4 = dc2.to_unit('K')
+        assert dc1.values[0] == 20
+        assert dc3.values[0] == 293.15
+        assert dc2.values[0] == 20
+        assert dc4.values[0] == pytest.approx(266.483, rel=1e-1)
+
+    def test_to_ip_si(self):
+        """Test the conversion of DataCollection to IP and SI units."""
+        # Setup Datetimes
+        vals = [20]
+        dc1 = DataCollection.from_list(vals, Temperature(), 'C')
+        dc2 = dc1.to_ip()
+        dc3 = dc2.to_si()
+        assert dc1.values[0] == 20
+        assert dc2.values[0] == 68
+        assert dc3.values[0] == dc1.values[0]
+
+    def test_bounds(self):
+        """Test the function to check whether values are in a specific range."""
+        val1 = [50]
+        dc1 = DataCollection.from_list(val1, Temperature(), 'C')
+        min, max = dc1.bounds
+        assert min > 0
+        assert max < 100
+
+    def test_is_in_range_data_type(self):
+        """Test the function to check whether values are in range for the data_type."""
+        val1 = [20]
+        val2 = [-300]
+        val3 = [270]
+        val4 = [-10]
+        dc1 = DataCollection.from_list(val1, Temperature(), 'C')
+        dc2 = DataCollection.from_list(val2, Temperature(), 'C')
+        dc3 = DataCollection.from_list(val3, Temperature(), 'K')
+        dc4 = DataCollection.from_list(val4, Temperature(), 'K')
+        assert dc1._is_in_data_type_range(raise_exception=False) is True
+        assert dc2._is_in_data_type_range(raise_exception=False) is False
+        assert dc3._is_in_data_type_range(raise_exception=False) is True
+        assert dc4._is_in_data_type_range(raise_exception=False) is False
+
+    def test_bounds_epw(self):
+        """Test the function to check whether values are in range for an EPW."""
+        val1 = [50]
+        val2 = [150]
+        val3 = [0.5]
+        val4 = [1.5]
+        dc1 = DataCollection.from_list(val1, RelativeHumidity(), '%')
+        dc2 = DataCollection.from_list(val2, RelativeHumidity(), '%')
+        dc3 = DataCollection.from_list(val3, RelativeHumidity(), 'fraction')
+        dc4 = DataCollection.from_list(val4, RelativeHumidity(), 'fraction')
+        assert dc1._is_in_epw_range(raise_exception=False) is True
+        assert dc2._is_in_epw_range(raise_exception=False) is False
+        assert dc3._is_in_epw_range(raise_exception=False) is True
+        assert dc4._is_in_epw_range(raise_exception=False) is False
 
     def test_interpolation(self):
         # To test an annual data collection, we will just use a range of values
         test_data = range(8760)
         ap = AnalysisPeriod()
-        test_header = Header(None, None, None, ap, False)
+        test_header = Header(
+            data_type=GenericType('Test Type', 'test'),
+            unit=None, analysis_period=ap, metadata=None)
         dc2 = DataCollection.from_data_and_analysis_period(test_data, ap, test_header)
 
         # check the interpolate data functions
@@ -67,7 +134,7 @@ class DataCollectionTestCase(unittest.TestCase):
         test_data = [i * 5 for i in test_data]
         test_count = len(test_data)/2
 
-        dc3 = DataCollection.from_list(lst=test_data)
+        dc3 = DataCollection.from_list(lst=test_data, data_type=Temperature())
 
         test_highest_values, test_highest_values_index = \
             dc3.get_highest_values(test_count)

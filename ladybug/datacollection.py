@@ -1,9 +1,12 @@
+# coding=utf-8
 """Ladybug data collection."""
+from __future__ import division
+
 from .header import Header
-from .datatype import DataPoint
+from .datapoint import DataPoint
+from .datatype.generic import GenericType
 
 from collections import OrderedDict
-
 try:
     from itertools import izip as zip
 except ImportError:
@@ -18,7 +21,10 @@ class DataCollection(object):
 
     def __init__(self, data=None, header=None):
         """Init class."""
-        self.header = header
+        if header is None:
+            self.header = Header(data_type=GenericType('Unknown Data', 'unknown'))
+        else:
+            self.header = header
 
         if not data:
             data = []
@@ -54,21 +60,23 @@ class DataCollection(object):
         return cls(input_data, Header.from_json(data['header']))
 
     @classmethod
-    def from_list(cls, lst, location=None, data_type=None, unit=None,
-                  analysis_period=None):
+    def from_list(cls, lst, data_type, unit=None,
+                  analysis_period=None, metadata=None):
         """Create a data collection from a list.
 
         lst items can be DataPoint or numerical values.
 
         Args:
             lst: A list of data.
-            location: location data as a ladybug Location or location string
-                (Default: unknown).
-            data_type: Type of data (e.g. Temperature) (Default: unknown).
+            data_type: Type of data (e.g. Temperature).
             unit: data_type unit (Default: unknown).
             analysis_period: A Ladybug analysis period (Defualt: None)
+            metadata: Optional dictionary of additional metadata,
+                containing information such as 'source', 'city', or 'zone'.
         """
-        header = Header(location, data_type, unit, analysis_period)
+        header = Header(data_type=data_type, unit=unit,
+                        analysis_period=analysis_period,
+                        metadata=metadata)
         if analysis_period:
             return cls.from_data_and_datetimes(lst, analysis_period.datetimes, header)
         else:
@@ -93,7 +101,8 @@ class DataCollection(object):
 
     @header.setter
     def header(self, h):
-        self._header = None if not h else Header.from_header(h)
+        assert hasattr(h, 'isHeader'), 'Expected Header type. Got {}.'.format(type(h))
+        self._header = h
 
     def append(self, d):
         """Append a single item to the list."""
@@ -144,49 +153,110 @@ class DataCollection(object):
         """Return the list of data points."""
         return self._data
 
+    @property
+    def bounds(self):
+        """Return a tuple as (min, max)."""
+        return (min(self.values), max(self.values))
+
+    @property
+    def min(self):
+        """Return the min of the Datacollection values."""
+        return min(self.values)
+
+    @property
+    def max(self):
+        """Return the max of the Datacollection values."""
+        return max(self.values)
+
+    @property
+    def average(self):
+        """Return the average of the Datacollection values."""
+        return sum(self.values) / len(self.values)
+
     def duplicate(self):
-        """Duplicate current data list."""
-        return DataCollection(self.data, self.header)
+        """Return a copy of the current data list."""
+        return DataCollection(self.data, self.header.duplicate())
+
+    def convert_to_unit(self, unit):
+        """Convert the DataCollection to the input unit"""
+        self._data = [DataPoint(x, self._data[i].datetime) for i, x in enumerate(
+            self._header.data_type.to_unit(
+                self._data, unit, self._header.unit))]
+        self._header._unit = unit
+
+    def convert_to_ip(self):
+        """Convert the DataCollection to IP units"""
+        new_values, self._header._unit = \
+            self._header.data_type.to_ip(
+                self._data, self._header.unit)
+        self._data = [DataPoint(
+            x, self._data[i].datetime) for i, x in enumerate(new_values)]
+
+    def convert_to_si(self):
+        """Convert the DataCollection to SI units"""
+        new_values, self._header._unit = \
+            self._header.data_type.to_si(
+                self._data, self._header.unit)
+        self._data = [DataPoint(
+            x, self._data[i].datetime) for i, x in enumerate(new_values)]
+
+    def to_unit(self, unit):
+        """Return a DataCollection in the input units"""
+        new_data_c = self.duplicate()
+        new_data_c.convert_to_unit(unit)
+        return new_data_c
+
+    def to_ip(self):
+        """Return a DataCollection in IP units"""
+        new_data_c = self.duplicate()
+        new_data_c.convert_to_ip()
+        return new_data_c
+
+    def to_si(self):
+        """Return a DataCollection in SI units"""
+        new_data_c = self.duplicate()
+        new_data_c.convert_to_si()
+        return new_data_c
 
     @staticmethod
-    def average(data):
+    def average_data(data):
         """Return average value for a list of ladybug data."""
         values = (value.value for value in data)
         return sum(values) / len(data)
 
     def get_highest_values(self, count):
         """Find highest values in a list of DataPoints
-        
+
         Args:
             data: A list of DataPoint to be processed
             count: Number of highest values to account for
-            
+
         Return:
             highest_values: The n highest values in data list, ordered from
                 highest to lowest
-            highest_values_index: Indicies of the n highest values in data 
+            highest_values_index: Indicies of the n highest values in data
                 list, ordered from highest to lowest
         """
         data_points = self._data
-        
+
         values = [obj._value for obj in data_points]
-        
+
         lenght_values = len(values)
-        
+
         count = int(count)
-        
+
         assert count <= lenght_values, \
             'Count must be equal to or smaller than list of data lenght'
-            
+
         assert count > 0, \
             'Count must be higher than zero'
-        
-        highest_values = sorted(values, reverse = True)[0:count]
-        
-        highest_values_index = sorted(range(lenght_values), 
-                                      key = lambda k: values[k],
-                                      reverse = True)[0:count]
-        
+
+        highest_values = sorted(values, reverse=True)[0:count]
+
+        highest_values_index = sorted(range(lenght_values),
+                                      key=lambda k: values[k],
+                                      reverse=True)[0:count]
+
         return highest_values, highest_values_index
 
     @staticmethod
@@ -373,7 +443,7 @@ class DataCollection(object):
         """
         return self.update_data_for_hours_of_year(values, analysis_period.hoys)
 
-    def interpolate_data(self, timestep, cumulative=False):
+    def interpolate_data(self, timestep, cumulative=None):
         """Interpolate data for a finer timestep using a linear interpolation.
 
         Args:
@@ -382,15 +452,17 @@ class DataCollection(object):
             cumulative: A boolean that sets whether the interpolation
                 should treat the data colection values as cumulative, in
                 which case the value at each timestep is the value over
-                that timestep (instead of over the hour). The default is set to
-                False to yeild average values in between each of the hours.
+                that timestep (instead of over the hour). The default will
+                check the DataType to see if this type of data is typically
+                cumulative over time.
         """
         assert self.header is not None, 'Header cannot be None for interpolation.'
         assert timestep % self.header.analysis_period.timestep == 0, \
             'Target timestep({}) must be divisable by current timestep({})' \
             .format(timestep, self.header.analysis_period.timestep)
-        assert isinstance(cumulative, bool), \
-            'Expected Boolean got {}'.format(type(cumulative))
+        if cumulative is not None:
+            assert isinstance(cumulative, bool), \
+                'Expected Boolean got {}'.format(type(cumulative))
 
         _minutes_step = int(60 / int(timestep / self.header.analysis_period.timestep))
         _data_length = len(self.data)
@@ -404,13 +476,14 @@ class DataCollection(object):
                                 xrange(timestep))
             ]
 
-        # divide cumulative values by timestep
-        if cumulative is True:
-            for i, d in enumerate(_data):
-                _data[i].value = d.value / timestep
+        # divide cumulative values by the timestep
+        native_cumulative = self.header.data_type.cumulative
+        if cumulative is True or (cumulative is None and native_cumulative):
+                for i, d in enumerate(_data):
+                    _data[i].value = d.value / timestep
 
-        # shift data if half-hour interpolation has been selected.
-        if self.header.middle_hour is True:
+        # shift data by a half-hour if data is averaged or cumulative over an hour
+        if self.header.data_type.point_in_time is False:
             shift_dist = int(timestep / 2)
             _data = _data[-shift_dist:] + _data[:-shift_dist]
             for i, d in enumerate(_data):
@@ -589,13 +662,9 @@ class DataCollection(object):
 
         # average values for each month
         for month, values in monthly_values.items():
-            average_values[month] = self.average(values)
+            average_values[month] = self.average_data(values)
 
         return average_values
-
-    def average_data(self):
-        """Return average value for data collection."""
-        return self.average(self.data)
 
     def average_monthly(self):
         """Return a dictionary of values for average values for available months."""
@@ -618,7 +687,7 @@ class DataCollection(object):
             # group data for each hour
             grouped_hourly_data = self.group_data_by_hour(monthly_values)
             for hour, data in grouped_hourly_data.items():
-                averaged_monthly_values_per_hour[month][hour] = self.average(data)
+                averaged_monthly_values_per_hour[month][hour] = self.average_data(data)
 
         return averaged_monthly_values_per_hour
 
@@ -628,6 +697,19 @@ class DataCollection(object):
         This method returns a dictionary with nested dictionaries for each hour
         """
         return self.average_data_monthly_for_each_hour(self.data)
+
+    def _is_in_data_type_range(self, raise_exception=True):
+        """Check if the DataCollection values are in permissable ranges for the data_type.
+
+        If this method returns False, the DataCollection's data is
+        physically or mathematically impossible for the data_type."""
+        return self._header.data_type.is_in_range(
+            self.values, self._header.unit, raise_exception)
+
+    def _is_in_epw_range(self, raise_exception=True):
+        """Check if DataCollection values are in permissable ranges for EPW files."""
+        return self._header.data_type.is_in_range_epw(
+            self.values, self._header.unit, raise_exception)
 
     def __len__(self):
         return len(self._data)
@@ -669,7 +751,7 @@ class DataCollection(object):
         """_data collection representation."""
         if self.header and self.header.data_type and self.header.unit \
                 and self.header.analysis_period:
-                    return "{} ({}) DataCollection\n{}\n...{} values...".format(
+                    return "{} ({})\n{}\n...{} values...".format(
                         self.header.data_type, self.header.unit,
                         self.header.analysis_period, len(self._data))
         else:

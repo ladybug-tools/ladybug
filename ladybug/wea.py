@@ -1,20 +1,24 @@
 # coding=utf-8
-"""Wea weather file."""
+from __future__ import division
+
 from .epw import EPW
 from .stat import STAT
 from .location import Location
 from .dt import DateTime
 from .header import Header
 from .datacollection import DataCollection
-from .datatype import DataPoint
+from .datapoint import DataPoint
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
 from .euclid import Vector3
 from .futil import write_to_file
 
+from .datatype.energyflux import Irradiance, GlobalHorizontalIrradiance, \
+    DirectNormalIrradiance, DiffuseHorizontalIrradiance, DirectHorizontalIrradiance
+
 from .skymodel import ashrae_revised_clear_sky
 from .skymodel import ashrae_clear_sky
-from .skymodel import zhang_huang_solar_model
+from .skymodel import zhang_huang_solar_split
 
 import math
 import os
@@ -32,22 +36,22 @@ except ImportError:
 
 
 class Wea(object):
-    """An annual WEA object containing solar radiation.
+    """An annual WEA object containing solar irradiance.
 
     Attributes:
         location: Ladybug location object.
-        direct_normal_radiation: An annual DataCollection of direct normal radiation
+        direct_normal_irradiance: An annual DataCollection of direct normal irradiance
             values.
-        diffuse_horizontal_radiation: An annual DataCollection of diffuse horizontal
-            radiation values for every hourly timestep of the year.
+        diffuse_horizontal_irradiance: An annual DataCollection of diffuse horizontal
+            irradiance values for every hourly timestep of the year.
         timestep: An optional integer to set the number of time steps per hour.
             Default is 1 for one value per hour.
         is_leap_year: A boolean to indicate if values are representing a leap year.
             Default is False.
     """
 
-    def __init__(self, location, direct_normal_radiation,
-                 diffuse_horizontal_radiation, timestep=1, is_leap_year=False):
+    def __init__(self, location, direct_normal_irradiance,
+                 diffuse_horizontal_irradiance, timestep=1, is_leap_year=False):
         """Create a wea object."""
         timestep = timestep or 1
         self._timestep = timestep
@@ -56,38 +60,45 @@ class Wea(object):
             ' integer. Got {}'.format(type(timestep))
 
         self.location = location
-        self.direct_normal_radiation = direct_normal_radiation
-        self.diffuse_horizontal_radiation = diffuse_horizontal_radiation
+        self.direct_normal_irradiance = direct_normal_irradiance
+        self.diffuse_horizontal_irradiance = diffuse_horizontal_irradiance
+        self.metadata = {'source': location.source, 'country': location.country,
+                         'city': location.city}
 
     @classmethod
-    def from_values(cls, location, direct_normal_radiation,
-                    diffuse_horizontal_radiation, timestep=1, is_leap_year=False):
-        """Create wea from a list of radiation values.
+    def from_values(cls, location, direct_normal_irradiance,
+                    diffuse_horizontal_irradiance, timestep=1, is_leap_year=False):
+        """Create wea from a list of irradiance values.
 
         This method converts input lists to DataCollection.
         """
         err_message = 'For timestep %d, %d number of data for %s is expected. ' \
             '%d is provided.'
-        if len(direct_normal_radiation) % cls.hour_count(is_leap_year) == 0:
+        if len(direct_normal_irradiance) % cls.hour_count(is_leap_year) == 0:
             # add extra information to err_message
             err_message = err_message + ' Did you forget to set the timestep to %d?' \
-                % (len(direct_normal_radiation) / cls.hour_count(is_leap_year))
+                % (len(direct_normal_irradiance) / cls.hour_count(is_leap_year))
 
-        assert len(direct_normal_radiation) / timestep == cls.hour_count(is_leap_year), \
+        assert len(direct_normal_irradiance) / \
+            timestep == cls.hour_count(is_leap_year), \
             err_message % (timestep, timestep * cls.hour_count(is_leap_year),
-                           'direct normal radiation', len(direct_normal_radiation))
+                           'direct normal irradiance', len(
+                               direct_normal_irradiance))
 
-        assert len(diffuse_horizontal_radiation) / timestep == \
+        assert len(diffuse_horizontal_irradiance) / timestep == \
             cls.hour_count(is_leap_year), \
             err_message % (timestep, timestep * cls.hour_count(is_leap_year),
-                           'diffuse_horizontal_radiation', len(direct_normal_radiation))
+                           'diffuse_horizontal_irradiance', len(
+                               direct_normal_irradiance))
 
-        dnr, dhr = cls._get_empty_data_collections(location, timestep, is_leap_year)
+        metadata = {'source': location.source, 'country': location.country,
+                    'city': location.city}
+        dnr, dhr = cls._get_empty_data_collections(metadata, timestep, is_leap_year)
         dts = cls._get_datetimes(timestep, is_leap_year)
-        for dir_norm, diff_horiz, dt in zip(direct_normal_radiation,
-                                            diffuse_horizontal_radiation, dts):
-            dnr.append(DataPoint(dir_norm, dt, 'SI', 'Direct Normal Radiation'))
-            dhr.append(DataPoint(diff_horiz, dt, 'SI', 'Diffuse Horizontal Radiation'))
+        for dir_norm, diff_horiz, dt in zip(direct_normal_irradiance,
+                                            diffuse_horizontal_irradiance, dts):
+            dnr.append(DataPoint(dir_norm, dt, 'SI', 'Direct Normal Irradiance'))
+            dhr.append(DataPoint(diff_horiz, dt, 'SI', 'Diffuse Horizontal Irradiance'))
         return cls(location, dnr, dhr, timestep, is_leap_year)
 
     @classmethod
@@ -95,15 +106,15 @@ class Wea(object):
         """ Create Wea from json file
             {
             "location": {} , // ladybug location schema
-            "direct_normal_radiation": [], // List of hourly direct normal
-                radiation data points
-            "diffuse_horizontal_radiation": [], // List of hourly diffuse
-                horizontal radiation data points
+            "direct_normal_irradiance": [], // List of hourly direct normal
+                irradiance data points
+            "diffuse_horizontal_irradiance": [], // List of hourly diffuse
+                horizontal irradiance data points
             "timestep": float //timestep between measurements, default is 1
             }
         """
-        required_keys = ('location', 'direct_normal_radiation',
-                         'diffuse_horizontal_radiation')
+        required_keys = ('location', 'direct_normal_irradiance',
+                         'diffuse_horizontal_irradiance')
         optional_keys = ('timestep', 'is_leap_year')
 
         for key in required_keys:
@@ -114,15 +125,15 @@ class Wea(object):
                 data[key] = None
 
         location = Location.from_json(data['location'])
-        direct_normal_radiation = \
-            DataCollection.from_json(data['direct_normal_radiation'])
-        diffuse_horizontal_radiation = \
-            DataCollection.from_json(data['diffuse_horizontal_radiation'])
+        direct_normal_irradiance = \
+            DataCollection.from_json(data['direct_normal_irradiance'])
+        diffuse_horizontal_irradiance = \
+            DataCollection.from_json(data['diffuse_horizontal_irradiance'])
         timestep = data['timestep']
         is_leap_year = data['is_leap_year']
 
-        return cls(location, direct_normal_radiation,
-                   diffuse_horizontal_radiation, timestep, is_leap_year)
+        return cls(location, direct_normal_irradiance,
+                   diffuse_horizontal_irradiance, timestep, is_leap_year)
 
     # TOD(mostapha): If decided that this is a good idea, also parse datetime from wea
     # file. It is currently auto-generated based on timestep to ensure it will be
@@ -154,20 +165,20 @@ class Wea(object):
             location.elevation = float(weaf.readline().split()[-1])
             weaf.readline()  # pass line for weather data units
 
-            # parse radiation values
-            direct_normal_radiation = []
-            diffuse_horizontal_radiation = []
+            # parse irradiance values
+            direct_normal_irradiance = []
+            diffuse_horizontal_irradiance = []
             for line in weaf:
                 dirn, difh = [int(v) for v in line.split()[-2:]]
-                direct_normal_radiation.append(dirn)
-                diffuse_horizontal_radiation.append(difh)
+                direct_normal_irradiance.append(dirn)
+                diffuse_horizontal_irradiance.append(difh)
 
-        return cls.from_values(location, direct_normal_radiation,
-                               diffuse_horizontal_radiation, timestep, is_leap_year)
+        return cls.from_values(location, direct_normal_irradiance,
+                               diffuse_horizontal_irradiance, timestep, is_leap_year)
 
     @classmethod
     def from_epw_file(cls, epwfile, timestep=1):
-        """Create a wea object using the solar radiation values in an epw file.
+        """Create a wea object using the solar irradiance values in an epw file.
 
         Args:
             epwfile: Full path to epw weather file.
@@ -182,7 +193,13 @@ class Wea(object):
         """
         epw = EPW(epwfile)
         direct_normal = epw.direct_normal_radiation
-        diffuse_horizontal = epw.diffuse_horizontal_radiation
+        diffuse_horiz = epw.diffuse_horizontal_radiation
+        direct_normal_header = Header(
+            DirectNormalIrradiance(), 'W/m2', AnalysisPeriod(), epw.metadata)
+        diffuse_horiz_header = Header(
+            DiffuseHorizontalIrradiance(), 'W/m2', AnalysisPeriod(), epw.metadata)
+        direct_normal = DataCollection(direct_normal.data, direct_normal_header)
+        diffuse_horizontal = DataCollection(diffuse_horiz.data, diffuse_horiz_header)
         if timestep != 1:
             print ("Note: timesteps greater than 1 on epw-generated Wea's \n" +
                    "are suitable for thermal models but are not recommended \n" +
@@ -192,21 +209,21 @@ class Wea(object):
             diffuse_horiz_values = diffuse_horizontal.interpolate_data(timestep)
             # build empty dta collections
             direct_normal, diffuse_horizontal = \
-                cls._get_empty_data_collections(epw.location, timestep, False)
+                cls._get_empty_data_collections(epw.metadata, timestep, False)
             # create sunpath to check if the sun is up at a given timestep
             sp = Sunpath.from_location(epw.location)
             # add correct values to the emply data collection
             for e_beam, e_diff in zip(direct_norm_values, diffuse_horiz_values):
-                # set radiation values to 0 when the sun is not up
+                # set irradiance values to 0 when the sun is not up
                 sun = sp.calculate_sun_from_date_time(e_beam.datetime)
                 if sun.altitude > 0:
                     direct_normal.append(e_beam)
                     diffuse_horizontal.append(e_diff)
                 else:
                     direct_normal.append(DataPoint(
-                        0, e_beam.datetime, 'SI', 'Direct Normal Radiation'))
+                        0, e_beam.datetime, 'SI', 'Direct Normal Irradiance'))
                     diffuse_horizontal.append(DataPoint(
-                        0, e_diff.datetime, 'SI', 'Diffuse Horizontal Radiation'))
+                        0, e_diff.datetime, 'SI', 'Diffuse Horizontal Irradiance'))
         else:
             # add half an hour to datetime to put sun in the middle of the hour
             for dnr in direct_normal:
@@ -275,8 +292,10 @@ class Wea(object):
                 Default is False.
         """
         # build empty dta collections
+        metadata = {'source': location.source, 'country': location.country,
+                    'city': location.city}
         direct_norm_rad, diffuse_horiz_rad = \
-            cls._get_empty_data_collections(location, timestep, is_leap_year)
+            cls._get_empty_data_collections(metadata, timestep, is_leap_year)
 
         # create sunpath and get altitude at every timestep of the year
         sp = Sunpath.from_location(location)
@@ -294,9 +313,9 @@ class Wea(object):
                 alt_list, monthly_tau_beam[i_mon], monthly_tau_diffuse[i_mon])
             for e_beam, e_diff in zip(dir_norm_rad, dif_horiz_rad):
                 direct_norm_rad.append(DataPoint(
-                    e_beam, dates[i_dt], 'SI', 'Direct Normal Radiation'))
+                    e_beam, dates[i_dt], 'SI', 'Direct Normal Irradiance'))
                 diffuse_horiz_rad.append(DataPoint(
-                    e_diff, dates[i_dt], 'SI', 'Diffuse Horizontal Radiation'))
+                    e_diff, dates[i_dt], 'SI', 'Diffuse Horizontal Irradiance'))
                 i_dt += 1
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
@@ -309,7 +328,7 @@ class Wea(object):
         The original ASHRAE Clear Sky is intended to determine peak solar load
         and sizing parmeters for HVAC systems.  It is not the sky model
         currently recommended by ASHRAE since it usually overestimates the
-        amount of solar radiation in comparison to the newer ASHRAE Revised
+        amount of solar irradiance in comparison to the newer ASHRAE Revised
         Clear Sky ("Tau Model"). However, the original model here is still
         useful for cases where monthly optical depth values are not known. For
         more information on the ASHRAE Clear Sky model, see the EnergyPlus
@@ -331,8 +350,10 @@ class Wea(object):
                 Default is False.
         """
         # build empty dta collections
+        metadata = {'source': location.source, 'country': location.country,
+                    'city': location.city}
         direct_norm_rad, diffuse_horiz_rad = \
-            cls._get_empty_data_collections(location, timestep, is_leap_year)
+            cls._get_empty_data_collections(metadata, timestep, is_leap_year)
 
         # create sunpath and get altitude at every timestep of the year
         sp = Sunpath.from_location(location)
@@ -343,31 +364,32 @@ class Wea(object):
             sun = sp.calculate_sun_from_date_time(t_date)
             altitudes[sun.datetime.month - 1].append(sun.altitude)
 
-        # compute hourly direct normal and diffuse horizontal radiation
+        # compute hourly direct normal and diffuse horizontal irradiance
         i_dt = 0
         for i_mon, alt_list in enumerate(altitudes):
             dir_norm_rad, dif_horiz_rad = ashrae_clear_sky(
                 alt_list, i_mon + 1, sky_clearness)
             for e_beam, e_diff in zip(dir_norm_rad, dif_horiz_rad):
                 direct_norm_rad.append(DataPoint(
-                    e_beam, dates[i_dt], 'SI', 'Direct Normal Radiation'))
+                    e_beam, dates[i_dt], 'SI', 'Direct Normal Irradiance'))
                 diffuse_horiz_rad.append(DataPoint(
-                    e_diff, dates[i_dt], 'SI', 'Diffuse Horizontal Radiation'))
+                    e_diff, dates[i_dt], 'SI', 'Diffuse Horizontal Irradiance'))
                 i_dt += 1
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
 
     @classmethod
-    def from_zhang_huang_solar_model(cls, location, cloud_cover,
-                                     relative_humidity, dry_bulb_temperature,
-                                     wind_speed, timestep=1, is_leap_year=False):
+    def from_zhang_huang_solar(cls, location, cloud_cover,
+                               relative_humidity, dry_bulb_temperature,
+                               wind_speed, atmospheric_pressure=None,
+                               timestep=1, is_leap_year=False, use_disc=False):
         """Create a wea object from climate data using the Zhang-Huang model.
 
         The Zhang-Huang solar model was developed to estimate solar
-        radiation for weather stations that lack such values, which are
+        irradiance for weather stations that lack such values, which are
         typically colleted with a pyranometer. Using total cloud cover,
         dry-bulb temperature, relative humidity, and wind speed as
-        inputs the Zhang-Huang estimates global horizontal radiation
+        inputs the Zhang-Huang estimates global horizontal irradiance
         by means of a regression model across these variables.
         For more information on the Zhang-Huang model, see the
         EnergyPlus Engineering Reference:
@@ -384,10 +406,15 @@ class Wea(object):
                 represent the dry bulb temperature in degrees Celcius.
             wind_speed: A list of annual float values that
                 represent the wind speed in meters per second.
+            atmospheric_pressure: An optional list of float values that
+                represent the atmospheric pressure in Pa.  If None or
+                left blank, pressure at sea level will be used (101325 Pa).
             timestep: An optional integer to set the number of time steps per
                 hour. Default is 1 for one value per hour.
             is_leap_year: A boolean to indicate if values are representing a leap year.
                 Default is False.
+            use_disc: Set to True to use the original DISC model as opposed to the
+                newer and more accurate DIRINT model. Default is False.
         """
         # check input data
         assert len(cloud_cover) == len(relative_humidity) == \
@@ -397,31 +424,45 @@ class Wea(object):
             'input climate data must be annual.'
         assert isinstance(timestep, int), 'timestep must be an' \
             ' integer. Got {}'.format(type(timestep))
+        if atmospheric_pressure is not None:
+            assert len(atmospheric_pressure) == len(cloud_cover), \
+                'length pf atmospheric_pressure must match the other input lists.'
+        else:
+            atmospheric_pressure = [101325] * cls.hour_count(is_leap_year) * timestep
 
         # initiate sunpath based on location
         sp = Sunpath.from_location(location)
         sp.is_leap_year = is_leap_year
 
-        # calculate zhang-huang radiation
-        direct_norm_rad, diffuse_horiz_rad = \
-            cls._get_empty_data_collections(location, timestep, is_leap_year)
-
+        # calculate parameters needed for zhang-huang irradiance
+        date_times = []
+        altitudes = []
+        doys = []
+        dry_bulb_t3_hrs = []
         for count, t_date in enumerate(cls._get_datetimes(timestep, is_leap_year)):
-            # calculate sun altitude
+            date_times.append(t_date)
             sun = sp.calculate_sun_from_date_time(t_date)
-            alt = sun.altitude
+            altitudes.append(sun.altitude)
+            doys.append(sun.datetime.doy)
+            dry_bulb_t3_hrs.append(dry_bulb_temperature[count - (3 * timestep)])
 
-            dir_ir, diff_ir = zhang_huang_solar_model(
-                alt, cloud_cover[count],
-                relative_humidity[count],
-                dry_bulb_temperature[count],
-                dry_bulb_temperature[count - (3 * timestep)],
-                wind_speed[count])
+        # calculate zhang-huang irradiance
+        dir_ir, diff_ir = zhang_huang_solar_split(altitudes, doys, cloud_cover,
+                                                  relative_humidity,
+                                                  dry_bulb_temperature,
+                                                  dry_bulb_t3_hrs, wind_speed,
+                                                  atmospheric_pressure, use_disc)
 
+        # assemble the results into DataCollections
+        metadata = {'source': location.source, 'country': location.country,
+                    'city': location.city}
+        direct_norm_rad, diffuse_horiz_rad = \
+            cls._get_empty_data_collections(metadata, timestep, is_leap_year)
+        for dni, dhi, t_date in zip(dir_ir, diff_ir, date_times):
             direct_norm_rad.append(DataPoint(
-                dir_ir, t_date, 'SI', 'Direct Normal Radiation'))
+                dni, t_date, 'SI', 'Direct Normal Irradiance'))
             diffuse_horiz_rad.append(DataPoint(
-                diff_ir, t_date, 'SI', 'Diffuse Horizontal Radiation'))
+                dhi, t_date, 'SI', 'Diffuse Horizontal Irradiance'))
 
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
 
@@ -433,12 +474,12 @@ class Wea(object):
     @property
     def hoys(self):
         """Hours of the year in wea file."""
-        return tuple(data.datetime.hoy for data in self.direct_normal_radiation)
+        return tuple(data.datetime.hoy for data in self.direct_normal_irradiance)
 
     @property
     def datetimes(self):
         """Datetimes in wea file."""
-        return tuple(data.datetime for data in self.direct_normal_radiation)
+        return tuple(data.datetime for data in self.direct_normal_irradiance)
 
     @property
     def timestep(self):
@@ -446,73 +487,73 @@ class Wea(object):
         return self._timestep
 
     @property
-    def direct_normal_radiation(self):
-        """Get or set the direct normal radiation."""
-        return self._direct_normal_radiation
+    def direct_normal_irradiance(self):
+        """Get or set the direct normal irradiance."""
+        return self._direct_normal_irradiance
 
-    @direct_normal_radiation.setter
-    def direct_normal_radiation(self, data):
-        assert isinstance(data, DataCollection), 'direct_normal_radiation data' \
+    @direct_normal_irradiance.setter
+    def direct_normal_irradiance(self, data):
+        assert isinstance(data, DataCollection), 'direct_normal_irradiance data' \
             ' must be a data collection. Got {}'.format(type(data))
         assert len(data) / self.timestep == self.hour_count(self.is_leap_year), \
-            'direct_normal_radiation data must be annual.'
-        self._direct_normal_radiation = data
+            'direct_normal_irradiance data must be annual.'
+        self._direct_normal_irradiance = data
 
     @property
-    def diffuse_horizontal_radiation(self):
-        """Get or set the diffuse horizontal radiation."""
-        return self._diffuse_horizontal_radiation
+    def diffuse_horizontal_irradiance(self):
+        """Get or set the diffuse horizontal irradiance."""
+        return self._diffuse_horizontal_irradiance
 
-    @diffuse_horizontal_radiation.setter
-    def diffuse_horizontal_radiation(self, data):
-        assert isinstance(data, DataCollection), 'diffuse_horizontal_radiation data' \
+    @diffuse_horizontal_irradiance.setter
+    def diffuse_horizontal_irradiance(self, data):
+        assert isinstance(data, DataCollection), 'diffuse_horizontal_irradiance data' \
             ' must be a data collection. Got {}'.format(type(data))
         assert len(data) / self.timestep == self.hour_count(self.is_leap_year), \
-            'diffuse_horizontal_radiation data must be annual.'
-        self._diffuse_horizontal_radiation = data
+            'diffuse_horizontal_irradiance data must be annual.'
+        self._diffuse_horizontal_irradiance = data
 
     @property
-    def global_horizontal_radiation(self):
-        """Returns the global horizontal radiation at each timestep."""
+    def global_horizontal_irradiance(self):
+        """Returns the global horizontal irradiance at each timestep."""
         analysis_period = AnalysisPeriod(timestep=self.timestep,
                                          is_leap_year=self.is_leap_year)
-        header_ghr = Header(location=self.location,
-                            analysis_period=analysis_period,
-                            data_type='Global Horizontal Radiation',
-                            unit='W/m2')
+        header_ghr = Header(analysis_period=analysis_period,
+                            data_type=GlobalHorizontalIrradiance(),
+                            unit='W/m2',
+                            metadata=self.metadata)
         global_horizontal_rad = DataCollection(header=header_ghr)
         is_leap_year = self.is_leap_year
         sp = Sunpath.from_location(self.location)
         sp.is_leap_year = is_leap_year
-        for dnr, dhr in zip(self.direct_normal_radiation,
-                            self.diffuse_horizontal_radiation):
+        for dnr, dhr in zip(self.direct_normal_irradiance,
+                            self.diffuse_horizontal_irradiance):
             sun = sp.calculate_sun_from_date_time(dnr.datetime)
             glob_h = dhr + dnr * math.sin(math.radians(sun.altitude))
             global_horizontal_rad.append(
-                DataPoint(glob_h, dnr.datetime, 'SI', 'Global Horizontal Radiation'))
+                DataPoint(glob_h, dnr.datetime, 'SI', 'Global Horizontal Irradiance'))
         return global_horizontal_rad
 
     @property
-    def direct_horizontal_radiation(self):
-        """Returns the direct radiation on a horizontal surface at each timestep.
+    def direct_horizontal_irradiance(self):
+        """Returns the direct irradiance on a horizontal surface at each timestep.
 
-        Note that this is different from the direct_normal_radiation needed
+        Note that this is different from the direct_normal_irradiance needed
         to construct a Wea, which is NORMAL and not HORIZONTAL."""
         analysis_period = AnalysisPeriod(timestep=self.timestep,
                                          is_leap_year=self.is_leap_year)
-        header_dhr = Header(location=self.location,
-                            analysis_period=analysis_period,
-                            data_type='Direct Horizontal Radiation',
-                            unit='W/m2')
+        header_dhr = Header(analysis_period=analysis_period,
+                            data_type=DirectHorizontalIrradiance(),
+                            unit='W/m2',
+                            metadata=self.metadata)
         direct_horizontal_rad = DataCollection(header=header_dhr)
         is_leap_year = self.is_leap_year
         sp = Sunpath.from_location(self.location)
         sp.is_leap_year = is_leap_year
-        for dnr in self.direct_normal_radiation:
+        for dnr in self.direct_normal_irradiance:
             sun = sp.calculate_sun_from_date_time(dnr.datetime)
             dir_h = dnr * math.sin(math.radians(sun.altitude))
             direct_horizontal_rad.append(
-                DataPoint(dir_h, dnr.datetime, 'SI', 'Direct Horizontal Radiation'))
+                DataPoint(dir_h, dnr.datetime, 'SI', 'Direct Horizontal Irradiance'))
         return direct_horizontal_rad
 
     @property
@@ -544,65 +585,76 @@ class Wea(object):
         )
 
     @staticmethod
-    def _get_empty_data_collections(location, timestep, is_leap_year):
+    def _get_empty_data_collections(metadata, timestep, is_leap_year):
         """Return two empty data collection.
 
-        Direct Normal Radiation, Diffuse Horizontal Radiation
+        Direct Normal Irradiance, Diffuse Horizontal Irradiance
         """
         analysis_period = AnalysisPeriod(timestep=timestep, is_leap_year=is_leap_year)
-        header_dnr = Header(location=location,
-                            analysis_period=analysis_period,
-                            data_type='Direct Normal Radiation',
-                            unit='W/m2')
+        header_dnr = Header(analysis_period=analysis_period,
+                            data_type=DirectNormalIrradiance(),
+                            unit='W/m2',
+                            metadata=metadata)
         direct_norm_rad = DataCollection(header=header_dnr)
-        header_dhr = Header(location=location,
-                            analysis_period=analysis_period,
-                            data_type='Diffuse Horizontal Radiation',
-                            unit='W/m2')
+        header_dhr = Header(analysis_period=analysis_period,
+                            data_type=DiffuseHorizontalIrradiance(),
+                            unit='W/m2',
+                            metadata=metadata)
         diffuse_horiz_rad = DataCollection(header=header_dhr)
 
         return direct_norm_rad, diffuse_horiz_rad
 
-    def get_radiation_values(self, month, day, hour):
-        """Get direct and diffuse radiation values for a point in time."""
+    def get_irradiance_values(self, month, day, hour):
+        """Get direct and diffuse irradiance values for a point in time."""
         dt = DateTime(month, day, hour, leap_year=self.is_leap_year)
         count = int(dt.hoy * self.timestep)
-        return self.direct_normal_radiation[count], \
-            self.diffuse_horizontal_radiation[count]
+        return self.direct_normal_irradiance[count], \
+            self.diffuse_horizontal_irradiance[count]
 
-    def get_radiation_values_for_hoy(self, hoy):
-        """Get direct and diffuse radiation values for an hoy."""
+    def get_irradiance_values_for_hoy(self, hoy):
+        """Get direct and diffuse irradiance values for an hoy."""
         count = int(hoy * self.timestep)
-        return self.direct_normal_radiation[count], \
-            self.diffuse_horizontal_radiation[count]
+        return self.direct_normal_irradiance[count], \
+            self.diffuse_horizontal_irradiance[count]
 
-    def directional_radiation(self, altitude=90, azimuth=180,
-                              ground_reflectance=0.2, isotrophic=True):
-        """Returns the radiation components facing a given altitude and azimuth.
+    def directional_irradiance(self, altitude=90, azimuth=180,
+                               ground_reflectance=0.2, isotrophic=True):
+        """Returns the irradiance components facing a given altitude and azimuth.
 
         This method computes unobstructed solar flux facing a given
         altitude and azimuth. The default is set to return the golbal horizontal
-        radiation, assuming an altitude facing straight up (90 degrees).
+        irradiance, assuming an altitude facing straight up (90 degrees).
 
         Args:
             altitude: A number between -90 and 90 that represents the
-                altitude at which radiation is being evaluated in degrees.
+                altitude at which irradiance is being evaluated in degrees.
             azimuth: A number between 0 and 360 that represents the
-                azimuth at wich radiation is being evaluated in degrees.
+                azimuth at wich irradiance is being evaluated in degrees.
             ground_reflectance: A number between 0 and 1 that represents the
-                reflectance of the ground. Default is set to 0.2.
+                reflectance of the ground. Default is set to 0.2. Some
+                common ground reflectances are:
+                    urban: 0.18
+                    grass: 0.20
+                    fresh grass: 0.26
+                    soil: 0.17
+                    sand: 0.40
+                    snow: 0.65
+                    fresh_snow: 0.75
+                    asphalt: 0.12
+                    concrete: 0.30
+                    sea: 0.06
             isotrophic: A boolean value that sets whether an istotrophic sky is
                 used (as opposed to an anisotrophic sky). An isotrophic sky
-                assummes an even distribution of diffuse radiation across the
-                sky while an anisotrophic sky places more diffuse radiation
+                assummes an even distribution of diffuse irradiance across the
+                sky while an anisotrophic sky places more diffuse irradiance
                 near the solar disc. Default is set to True for isotrophic
 
         Returns:
-            total_radiation: A list of total solar radiation at each timestep.
-            direct_radiation: A list of direct solar radiation at each timestep.
-            diffuse_radiation: A list of diffuse sky solar radiation
+            total_irradiance: A list of total solar irradiance at each timestep.
+            direct_irradiance: A list of direct solar irradiance at each timestep.
+            diffuse_irradiance: A list of diffuse sky solar irradiance
                 at each timestep.
-            reflected_radiation: A list of ground reflected solar radiation
+            reflected_irradiance: A list of ground reflected solar irradiance
                 at each timestep.
         """
         # function to convert polar coordinates to xyz.
@@ -617,26 +669,34 @@ class Wea(object):
         normal = pol2cart(math.radians(azimuth), math.radians(altitude))
 
         # create sunpath and get altitude at every timestep of the year
-        direct_radiation = []
-        diffuse_radiation = []
-        reflected_radiation = []
-        total_radiation = []
+        direct_irradiance = DataCollection(header=Header(
+            Irradiance(), 'W/m2',
+            AnalysisPeriod(timestep=self._timestep), self.metadata))
+        diffuse_irradiance = DataCollection(header=Header(
+            Irradiance(), 'W/m2',
+            AnalysisPeriod(timestep=self._timestep), self.metadata))
+        reflected_irradiance = DataCollection(header=Header(
+            Irradiance(), 'W/m2',
+            AnalysisPeriod(timestep=self._timestep), self.metadata))
+        total_irradiance = DataCollection(header=Header(
+            Irradiance(), 'W/m2',
+            AnalysisPeriod(timestep=self._timestep), self.metadata))
         sp = Sunpath.from_location(self.location)
         sp.is_leap_year = self.is_leap_year
-        for dnr, dhr in zip(self.direct_normal_radiation,
-                            self.diffuse_horizontal_radiation):
+        for dnr, dhr in zip(self.direct_normal_irradiance,
+                            self.diffuse_horizontal_irradiance):
             dt = dnr.datetime
             sun = sp.calculate_sun_from_date_time(dt)
             sun_vec = pol2cart(math.radians(sun.azimuth),
                                math.radians(sun.altitude))
             vec_angle = sun_vec.angle(normal)
 
-            # direct radiation on surface
+            # direct irradiance on surface
             srf_dir = 0
             if sun.altitude > 0 and vec_angle < math.pi / 2:
                 srf_dir = dnr * math.cos(vec_angle)
 
-            # diffuse radiation on surface
+            # diffuse irradiance on surface
             if isotrophic is True:
                 srf_dif = dhr * ((math.sin(math.radians(altitude)) / 2) + 0.5)
             else:
@@ -646,23 +706,23 @@ class Wea(object):
                     math.sin(math.radians(abs(90 - altitude)))) +
                     math.cos(math.radians(abs(90 - altitude))))
 
-            # reflected radiation on surface.
+            # reflected irradiance on surface.
             e_glob = dhr + dnr * math.cos(math.radians(90 - sun.altitude))
             srf_ref = e_glob * ground_reflectance * (0.5 - (math.sin(
                 math.radians(altitude)) / 2))
 
             # add it all together
-            direct_radiation.append(
-                DataPoint(srf_dir, dt, 'SI', 'Radiation'))
-            diffuse_radiation.append(
-                DataPoint(srf_dif, dt, 'SI', 'Radiation'))
-            reflected_radiation.append(
-                DataPoint(srf_ref, dt, 'SI', 'Radiation'))
-            total_radiation.append(
-                DataPoint(srf_dir + srf_dif + srf_ref, dt, 'SI', 'Radiation'))
+            direct_irradiance.append(
+                DataPoint(srf_dir, dt, 'SI', 'Irradiance'))
+            diffuse_irradiance.append(
+                DataPoint(srf_dif, dt, 'SI', 'Irradiance'))
+            reflected_irradiance.append(
+                DataPoint(srf_ref, dt, 'SI', 'Irradiance'))
+            total_irradiance.append(
+                DataPoint(srf_dir + srf_dif + srf_ref, dt, 'SI', 'Irradiance'))
 
-        return total_radiation, direct_radiation, \
-            diffuse_radiation, reflected_radiation
+        return total_irradiance, direct_irradiance, \
+            diffuse_irradiance, reflected_irradiance
 
     @property
     def header(self):
@@ -678,19 +738,19 @@ class Wea(object):
         """Write Wea to json file
             {
             "location": {} , // ladybug location schema
-            "direct_normal_radiation": (), // Tuple of hourly direct normal
-                radiation
-            "diffuse_horizontal_radiation": (), // Tuple of hourly diffuse
-                horizontal radiation
+            "direct_normal_irradiance": (), // Tuple of hourly direct normal
+                irradiance
+            "diffuse_horizontal_irradiance": (), // Tuple of hourly diffuse
+                horizontal irradiance
             "timestep": float //timestep between measurements, default is 1
             }
         """
         return {
             'location': self.location.to_json(),
-            'direct_normal_radiation':
-                self.direct_normal_radiation.to_json(),
-            'diffuse_horizontal_radiation':
-                self.diffuse_horizontal_radiation.to_json(),
+            'direct_normal_irradiance':
+                self.direct_normal_irradiance.to_json(),
+            'diffuse_horizontal_irradiance':
+                self.diffuse_horizontal_irradiance.to_json(),
             'timestep': self.timestep,
             'is_leap_year': self.is_leap_year
         }
@@ -698,7 +758,7 @@ class Wea(object):
     def write(self, file_path, hoys=None, write_hours=False):
         """Write the wea file.
 
-        WEA carries radiation values from epw and is what gendaymtx uses to
+        WEA carries irradiance values from epw and is what gendaymtx uses to
         generate the sky.
         """
         if not file_path.lower().endswith('.wea'):
@@ -715,8 +775,8 @@ class Wea(object):
         if full_wea:
             # there is no input user for hoys, write it for all the hours
             # write values
-            for dir_rad, dif_rad in zip(self.direct_normal_radiation,
-                                        self.diffuse_horizontal_radiation):
+            for dir_rad, dif_rad in zip(self.direct_normal_irradiance,
+                                        self.diffuse_horizontal_irradiance):
                 dt = dir_rad.datetime
                 line = "%d %d %.3f %d %d\n" \
                     % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
@@ -725,7 +785,7 @@ class Wea(object):
             # output wea based on user request
             for hoy in hoys:
                 try:
-                    dir_rad, dif_rad = self.get_radiation_values_for_hoy(hoy)
+                    dir_rad, dif_rad = self.get_irradiance_values_for_hoy(hoy)
                 except IndexError:
                     print('Warn: Wea data for {} is not available!'.format(dt))
                     continue
