@@ -1,10 +1,5 @@
 # coding=utf-8
-"""
-A list of useful functions for rapid guess-and-test (or root-finding) situations.
-
-For more information on these functions, see the wikidepia page on root finding:
-https://en.wikipedia.org/wiki/Root-finding_algorithm
-"""
+"""Utilities for finding roots of continuous functions."""
 from __future__ import division
 
 
@@ -32,6 +27,11 @@ def secant(a, b, fn, epsilon):
     Returns:
         root: The value that gives the target_desired_from_funct.
 
+    References
+    ----------
+    [1] Wikipedia contributors. (2018, December 29). Root-finding algorithm.
+    In Wikipedia, The Free Encyclopedia. Retrieved 18:16, December 30, 2018,
+    from https://en.wikipedia.org/wiki/Root-finding_algorithm#Secant_method
     """
     f1 = fn(a)
     if abs(f1) <= epsilon:
@@ -77,6 +77,11 @@ def bisect(a, b, fn, epsilon, target):
     Returns:
         root: The value that gives the target_desired_from_funct.
 
+    References
+    ----------
+    [1] Wikipedia contributors. (2018, December 29). Root-finding algorithm.
+    In Wikipedia, The Free Encyclopedia. Retrieved 18:16, December 30, 2018,
+    from https://en.wikipedia.org/wiki/Root-finding_algorithm#Bisection_method
     """
     while (abs(b - a) > 2 * epsilon):
         midpoint = (b + a) / 2

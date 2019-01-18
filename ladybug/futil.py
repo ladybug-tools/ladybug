@@ -1,4 +1,7 @@
-"""A collection of auxiliary funtions for working with files and directories."""
+# coding=utf-8
+"""Utility functions for working with files and directories."""
+from __future__ import division
+
 import os
 import shutil
 import zipfile

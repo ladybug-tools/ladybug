@@ -1,5 +1,7 @@
-"""Ladybug datetime."""
 # coding=utf-8
+"""Ladybug datetime."""
+from __future__ import division
+
 from datetime import datetime
 
 

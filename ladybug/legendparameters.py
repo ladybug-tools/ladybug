@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import division
+
 from color import ColorRange
 from listoperations import flatten, unflatten
 

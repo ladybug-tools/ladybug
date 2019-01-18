@@ -1,3 +1,6 @@
+# coding=utf-8
+from __future__ import division
+
 from .location import Location
 from .analysisperiod import AnalysisPeriod
 from .designday import DesignDay
