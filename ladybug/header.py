@@ -129,4 +129,4 @@ class Header(object):
         """Return Ladybug header as a string."""
         return "{}({})\n{}\n{}".format(
             repr(self.data_type), self.unit,
-            self.analysis_period, repr(self.metadata))
+            self.analysis_period)

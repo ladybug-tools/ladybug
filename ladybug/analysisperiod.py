@@ -21,19 +21,23 @@ class AnalysisPeriod(object):
                 Note that some months are shorter than 31 days.
         end_hour: An integer between 0-23 for ending hour (default = 23)
         timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+        is_leap_year: A boolean to indicate whether the AnalysisPeriod represents
+            a leap year.
 
     Class methods:
         from_string: Create an Analysis Period object from an analysis period string.
             %s/%s to %s/%s between %s to %s @%s
 
     Properties:
-        isAnalysisPeriod: Always return True. Useful for type checking.
-        datetimes: Sorted list of datetimes in this analysis period.
+        st_time
+        end_time
+        datetimes: A sorted list of datetimes in this analysis period.
         hoys: A sorted list of hours of year in this analysis period.
         int_hoys: A sorted list of hours of year values in this analysis period as
             integers.
-        is_annual: Check if an analysis period is annual.
-        is_overnight: If an analysis perido is not overnight each segments of hours
+        moys: A sorted list of minutes of year in this analysis period as integers.
+        is_annual: Check if the analysis period is annual.
+        is_overnight: If an analysis period is not overnight each segments of hours
             will be in the same day (self.st_time.hoy < self.end_time.hoy)
         is_reversed: A reversed analysis period defines a period that starting month
             is after ending month (e.g DEC to JUN)
@@ -73,8 +77,8 @@ class AnalysisPeriod(object):
         self._is_leap_year = is_leap_year or False
 
         # calculate start time and end time
-        self.st_time = DateTime(int(st_month), int(st_day), int(st_hour),
-                                leap_year=is_leap_year)
+        self._st_time = DateTime(int(st_month), int(st_day), int(st_hour),
+                                 leap_year=is_leap_year)
 
         num_of_days_each_month = self.NUMOFDAYSEACHMONTH if not self.is_leap_year \
             else self.NUMOFDAYSEACHMONTHLEAP
@@ -83,8 +87,8 @@ class AnalysisPeriod(object):
             print("Updated end_day from {} to {}".format(end_day, end))
             end_day = end
 
-        self.end_time = DateTime(int(end_month), int(end_day), int(end_hour),
-                                 leap_year=is_leap_year)
+        self._end_time = DateTime(int(end_month), int(end_day), int(end_hour),
+                                  leap_year=is_leap_year)
 
         if self.st_time.hour <= self.end_time.hour:
             self._is_overnight = False  # each segments of hours will be in a single day
@@ -104,12 +108,11 @@ class AnalysisPeriod(object):
                              "Valid values are %s" % str(self.VALIDTIMESTEPS.keys()))
 
         # calculate time stamp
-        self.timestep = timestep
+        self._timestep = timestep
         self.minute_intervals = timedelta(1 / (24.0 * self.timestep))
         # calculate timestamps and hours_of_year
         # A dictionary for datetimes. Key values will be minute of year
-        self._timestamps_data = []
-        self._calculate_timestamps()
+        self._timestamps_data = None
 
     @classmethod
     def from_json(cls, data):
@@ -201,18 +204,23 @@ class AnalysisPeriod(object):
 
     @property
     def end_month(self):
-        """Start month."""
+        """End month."""
         return self.end_time.month
 
     @property
     def end_day(self):
-        """Start day."""
+        """End day."""
         return self.end_time.day
 
     @property
     def end_hour(self):
-        """Start hour."""
+        """End hour."""
         return self.end_time.hour
+
+    @property
+    def timestep(self):
+        """Timestep."""
+        return self._timestep
 
     @property
     def is_leap_year(self):
@@ -220,28 +228,52 @@ class AnalysisPeriod(object):
         return self._is_leap_year
 
     @property
+    def st_time(self):
+        """Start datetime."""
+        return self._st_time
+
+    @property
+    def end_time(self):
+        """End datetime."""
+        return self._end_time
+
+    @property
     def datetimes(self):
         """A sorted list of datetimes in this analysis period."""
-        # sort dictionary based on key values (minute of the year)
+        if self._timestamps_data is None:
+            self._calculate_timestamps()
         return tuple(DateTime.from_moy(moy, self.is_leap_year)
                      for moy in self._timestamps_data)
 
     @property
     def hoys(self):
         """A sorted list of hours of year in this analysis period."""
+        if self._timestamps_data is None:
+            self._calculate_timestamps()
         return tuple(moy / 60.0 for moy in self._timestamps_data)
 
     @property
     def hoys_int(self):
-        """A sorted list of hours of year values in this analysis period as integers."""
+        """A sorted list of hours of year in this analysis period as integers."""
+        if self._timestamps_data is None:
+            self._calculate_timestamps()
         return tuple(int(moy / 60.0) for moy in self._timestamps_data)
+
+    @property
+    def moys(self):
+        """A sorted list of minutes of year in this analysis period as integers."""
+        if self._timestamps_data is None:
+            self._calculate_timestamps()
+        return self._timestamps_data
 
     @property
     def is_annual(self):
         """Check if an analysis period is annual."""
-        num_of_days = 8760 if not self.is_leap_year else 8760 + 24
-        return True if len(self._timestamps_data) / self.timestep == num_of_days \
-            else False
+        if (self.st_month, self.st_day, self.st_hour, self.end_month,
+                self.end_day, self.end_hour) == (1, 1, 0, 12, 31, 23):
+                    return True
+        else:
+            return False
 
     @property
     def is_reversed(self):
@@ -304,6 +336,7 @@ class AnalysisPeriod(object):
 
     def _calculate_timestamps(self):
         """Return a list of Ladybug DateTime in this analysis period."""
+        self._timestamps_data = []
         if not self._is_reversed:
             self._calc_timestamps(self.st_time, self.end_time)
         else:
@@ -322,6 +355,8 @@ class AnalysisPeriod(object):
         Returns:
             A boolean. True if time is included in analysis period
         """
+        if self._timestamps_data is None:
+            self._calculate_timestamps()
         # time filtering in Ladybug and honeybee is slightly different since
         # start hour and end hour will be applied for every day.
         # For instance 2/20 9am to 2/22 5pm means hour between 9-17

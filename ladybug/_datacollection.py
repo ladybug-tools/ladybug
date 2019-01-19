@@ -8,10 +8,6 @@ from .analysisperiod import AnalysisPeriod
 
 from copy import deepcopy
 import string
-try:
-    from itertools import izip as zip  # python 2
-except ImportError:
-    xrange = range  # python 3
 
 
 class DiscontinuousCollection(object):
@@ -44,7 +40,6 @@ class DiscontinuousCollection(object):
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
         assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
-
         return cls(Header.from_json(data['header']),
                    data['values'],
                    [DateTime.from_json(dat) for dat in data['datetimes']])
@@ -94,7 +89,7 @@ class DiscontinuousCollection(object):
         return sum(self.values) / len(self.values)
 
     def duplicate(self):
-        """Return a copy of the current data list."""
+        """Return a copy of the current Data Collection."""
         return DiscontinuousCollection(
             self.header.duplicate(), deepcopy(self.values), self.datetimes)
 
@@ -131,6 +126,19 @@ class DiscontinuousCollection(object):
         new_data_c = self.duplicate()
         new_data_c.convert_to_si()
         return new_data_c
+
+    def is_in_data_type_range(self, raise_exception=True):
+        """Check if the Data Collection values are in permissable ranges for the data_type.
+
+        If this method returns False, the Data Collection's data is
+        physically or mathematically impossible for the data_type."""
+        return self._header.data_type.is_in_range(
+            self.values, self._header.unit, raise_exception)
+
+    def is_in_epw_range(self, raise_exception=True):
+        """Check if Data Collection values are in permissable ranges for EPW files."""
+        return self._header.data_type.is_in_range_epw(
+            self.values, self._header.unit, raise_exception)
 
     def get_highest_values(self, count):
         """Find the highest values in the Data Collection.
@@ -186,7 +194,7 @@ class DiscontinuousCollection(object):
             statement: A conditional statement as a string (e.g. a > 25 and a%5 == 0).
                 The variable should always be named as 'a' (without quotations).
 
-        Returns:
+        Return:
             A new Data Collection containing only the filtered data
 
         Usage:
@@ -217,7 +225,7 @@ class DiscontinuousCollection(object):
                 with a length matching the length of the Data Collections values
                 but it can also be a pattern to be repeated over the Data Collection.
 
-        Returns:
+        Return:
             A new Data Collection with filtered data
         """
         try:
@@ -239,7 +247,7 @@ class DiscontinuousCollection(object):
             data_collection: The Data Collection which you want to test if this
                 collection is aligned with.
 
-        Returns:
+        Return:
             True if collections are aligned, Fale if not aligned
         """
         if type(self) != type(data_collection):
@@ -261,7 +269,7 @@ class DiscontinuousCollection(object):
             statement: A conditional statement as a string (e.g. a>25 and a%5==0).
                 The variable should always be named as 'a' (without quotations).
 
-        Returns:
+        Return:
             collections: A list of Data Collections that have been filtered based
                 on the statement.
         """
@@ -280,7 +288,7 @@ class DiscontinuousCollection(object):
             statement: A conditional statement as a string (e.g. a>25 and a%5==0).
                 The variable should always be named as 'a' (without quotations).
 
-        Returns:
+        Return:
             pattern: A list of True/False booleans with the length of the
                 Data Collections where True meets the conditional statement
                 and False does not.
@@ -309,7 +317,7 @@ class DiscontinuousCollection(object):
             data_collections: A list of Data Collections for which you want to
                 test if they are al aligned with one another.
 
-        Returns:
+        Return:
             True if collections are aligned, Fale if not aligned
         """
         if len(data_collections) > 1:
@@ -324,7 +332,7 @@ class DiscontinuousCollection(object):
                     return False
         return True
 
-    def _check_conditional_statement(statement, num_collections):
+    def _check_conditional_statement(self, statement, num_collections):
         """Method to check conditional statements to be sure that they are valid.
 
         Args:
@@ -333,7 +341,7 @@ class DiscontinuousCollection(object):
             num_collections: An integer representing the number of data collections
                 that the statement will be evaluating.
 
-        Returns:
+        Return:
             correct_var: A list of the correct variable names that should be
                 used within the statement (eg. ['a', 'b', 'c'])
         """
@@ -353,19 +361,6 @@ class DiscontinuousCollection(object):
             ' and the variables should be named as follows: {}'.format(
                 statement, ', '.join(correct_var))
         return correct_var
-
-    def _is_in_data_type_range(self, raise_exception=True):
-        """Check if the Data Collection values are in permissable ranges for the data_type.
-
-        If this method returns False, the Data Collection's data is
-        physically or mathematically impossible for the data_type."""
-        return self._header.data_type.is_in_range(
-            self.values, self._header.unit, raise_exception)
-
-    def _is_in_epw_range(self, raise_exception=True):
-        """Check if Data Collection values are in permissable ranges for EPW files."""
-        return self._header.data_type.is_in_range_epw(
-            self.values, self._header.unit, raise_exception)
 
     def __len__(self):
         return len(self._values)
@@ -403,7 +398,7 @@ class DiscontinuousCollection(object):
 
     def __repr__(self):
         """Discontinuous Collection representation."""
-        return "Discontinuous Data Collection \n{} ({})\n...{} values...".format(
+        return "Discontinuous Data Collection\n{} ({})\n...{} values...".format(
             self.header.data_type, self.header.unit, len(self._values))
 
 
@@ -431,6 +426,11 @@ class HourlyDiscontinuousCollection(DiscontinuousCollection):
         else:
             return '{} Minute'.format(60 / self.header.analysis_period.timestep)
 
+    def duplicate(self):
+        """Return a copy of the current Data Collection."""
+        return HourlyDiscontinuousCollection(
+            self.header.duplicate(), deepcopy(self.values), self.datetimes)
+
     def filter_by_analysis_period(self, analysis_period):
         """
         Filter a Data Collection based on an analysis period.
@@ -441,12 +441,9 @@ class HourlyDiscontinuousCollection(DiscontinuousCollection):
         Return:
             A new Data Collection with filtered data
         """
-        assert self.header.analysis_period.timestep == analysis_period.timestep, \
-            'analysis_period timestep must match that on the'\
-            'Collection header. {} != {}'.format(
-                analysis_period.timestep, self.header.analysis_period.timestep)
+        self._check_analysis_period_timestep(analysis_period)
         _filtered_data = self.filter_by_hoys(analysis_period.hoys)
-        _filtered_data.header.analysis_period = analysis_period
+        _filtered_data.header._analysis_period = analysis_period
         return _filtered_data
 
     def filter_by_moys(self, moys):
@@ -461,7 +458,7 @@ class HourlyDiscontinuousCollection(DiscontinuousCollection):
         _filt_values = []
         _filt_datetimes = []
         for i, d in enumerate(self.datetimes):
-            if d.datetime.moy in moys:
+            if d.moy in moys:
                 _filt_datetimes.append(d)
                 _filt_values.append(self.values[i])
         _filt_header = self.header.duplicate()
@@ -479,11 +476,17 @@ class HourlyDiscontinuousCollection(DiscontinuousCollection):
         _moys = tuple(int(hour * 60) for hour in hoys)
         return self.filter_by_moys(_moys)
 
+    def _check_analysis_period_timestep(self, analysis_period):
+        assert self.header.analysis_period.timestep == analysis_period.timestep, \
+            'analysis_period timestep must match that on the'\
+            'Collection header. {} != {}'.format(
+                analysis_period.timestep, self.header.analysis_period.timestep)
+
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""
-        return "{} Discontinuous Data Collection \n{} ({})\n{}\n...{} values...".format(
-            self.timestep_text, self.header.data_type, self.header.unit,
-            self.header.analysis_period, len(self._values))
+        return "{} Discontinuous Data Collection\n{}\n{} ({})\n...{} values...".format(
+            self.timestep_text, self.header.analysis_period,
+            self.header.data_type, self.header.unit, len(self._values))
 
 
 class HourlyContinuousCollection(HourlyDiscontinuousCollection):
@@ -495,9 +498,31 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
+        assert header.analysis_period.st_hour == 0, \
+            'analysis_period start hour of {} must be 0. Got {}'.format(
+                self.__class__.__name__, header.analysis_period.st_hour)
+        assert header.analysis_period.end_hour == 23, \
+            'analysis_period end hour of {} must be 23. Got {}'.format(
+                self.__class__.__name__, header.analysis_period.end_hour)
 
-        self.header = header
+        self._header = header
         self.values = values
+        self._datetimes = None
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a Data Collection from a dictionary.
+
+        Args:
+            {
+                "header": A Ladybug Header,
+                "values": An array of values,
+            }
+        """
+        assert 'header' in data, 'Required keyword "header" is missing!'
+        assert 'values' in data, 'Required keyword "values" is missing!'
+        return cls(Header.from_json(data['header']),
+                   data['values'])
 
     @property
     def values(self):
@@ -508,14 +533,202 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     def values(self, values):
         assert isinstance(values, list), \
             'values must be a list. Got {}'.format(type(values))
-        timestamps = self.header.analysis_period._timestamps_data
-        a_period_len = abs(timestamps[-1] - timestamps[0]) / (
-            60 / self.header.analysis_period.timestep)
+        if self.header.analysis_period.is_annual:
+            a_period_len = 8760 * self.header.analysis_period.timestep
+            if self.header.analysis_period.is_leap_year is True:
+                a_period_len = a_period_len + 24 * self.header.analysis_period.timestep
+        else:
+            a_period_len = len(self.header.analysis_period.moys)
         assert len(values) == a_period_len, \
             'Length of values does not match that expected by the '\
             'header analysis_period. {} != {}'.format(
                 len(values), a_period_len)
         self._values = values
+
+    @property
+    def datetimes(self):
+        """Return datetimes for this collection as a tuple."""
+        if self._datetimes is None:
+            self._datetimes = self.header.analysis_period.datetimes
+        return tuple(self._datetimes)
+
+    def interpolate_data(self, timestep, cumulative=None):
+        """Interpolate data for a finer timestep using a linear interpolation.
+
+        Args:
+            timestep: Target timestep as an integer. Target timestep must be
+                divisable by current timestep.
+            cumulative: A boolean that sets whether the interpolation
+                should treat the data colection values as cumulative, in
+                which case the value at each timestep is the value over
+                that timestep (instead of over the hour). The default will
+                check the DataType to see if this type of data is typically
+                cumulative over time.
+
+        Return:
+            A continuous hourly data collection with data interpolated to
+                the input timestep.
+        """
+        assert timestep % self.header.analysis_period.timestep == 0, \
+            'Target timestep({}) must be divisable by current timestep({})' \
+            .format(timestep, self.header.analysis_period.timestep)
+        if cumulative is not None:
+            assert isinstance(cumulative, bool), \
+                'Expected Boolean. Got {}'.format(type(cumulative))
+
+        # generate new data
+        _new_values = []
+        _data_length = len(self._values)
+        for d in xrange(_data_length):
+            for _v in self._xxrange(self[d], self[(d + 1) % _data_length], timestep):
+                _new_values.append(_v)
+
+        # divide cumulative values by the timestep
+        native_cumulative = self.header.data_type.cumulative
+        if cumulative is True or (cumulative is None and native_cumulative):
+            for i, d in enumerate(_new_values):
+                _new_values[i] = d / timestep
+
+        # shift data by a half-hour if data is averaged or cumulative over an hour
+        if self.header.data_type.point_in_time is False:
+            shift_dist = int(timestep / 2)
+            _new_values = _new_values[-shift_dist:] + _new_values[:-shift_dist]
+
+        # build a new header
+        _new_header = self.header.duplicate()
+        _new_header._analysis_period._timestep = timestep
+        return HourlyContinuousCollection(_new_header, _new_values)
+
+    def filter_by_analysis_period(self, analysis_period):
+        """
+        Filter a Data Collection based on an analysis period.
+
+        Args:
+           analysis period: A Ladybug analysis period
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        self._check_analysis_period_timestep(analysis_period)
+        if not self.header.analysis_period.is_annual:
+            self._check_analysis_period_range(analysis_period)
+        if analysis_period.st_hour == 0 and analysis_period.end_hour == 23:
+            # We can still return an Hourly Continuous Data Collection
+            t_s = 60 / analysis_period.timestep
+            st_ind = int((analysis_period.st_time.moy / t_s) -
+                         (self.header.analysis_period.st_time.moy / t_s))
+            end_ind = int((analysis_period.end_time.moy / t_s) -
+                          (analysis_period.st_time.moy / t_s) + st_ind + 1)
+            if end_ind > st_ind:
+                _filt_values = self.values[st_ind:end_ind]
+            else:
+                _filt_values = self.values[st_ind:] + self.values[:end_ind]
+            _filt_header = self.header.duplicate()
+            _filt_header._analysis_period = analysis_period
+            return HourlyContinuousCollection(_filt_header, _filt_values)
+        else:
+            # We have to filter using  HOYs and the result cannot be continuous
+            _filtered_data = self.filter_by_hoys(analysis_period.hoys)
+            _filtered_data.header._analysis_period = analysis_period
+            return _filtered_data
+
+    def filter_by_moys(self, moys):
+        """Filter the list based on a list of minutes of the year.
+
+        Args:
+           moys: A List of minutes of the year [0..8759 * 60]
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        t_s = 60 / self.header.analysis_period.timestep
+        st_ind = self.header.analysis_period.st_time.moy / t_s
+        if self.header.analysis_period.is_reversed is False:
+            _filt_indices = [int(moy / t_s - st_ind) for moy in moys]
+        else:
+            if self.header.analysis_period.is_leap_year is False:
+                eoy_ind = 8759 * self.header.analysis_period.timestep - st_ind
+            else:
+                eoy_ind = 8783 * self.header.analysis_period.timestep - st_ind
+            _filt_indices = []
+            for moy in moys:
+                ind = moy / t_s
+                if ind > st_ind:
+                    _filt_indices.append(int(ind - st_ind))
+                else:
+                    _filt_indices.append(int(ind + eoy_ind))
+
+        _filt_values = [self.values[i] for i in _filt_indices]
+        _filt_datetimes = [self.datetimes[i] for i in _filt_indices]
+        _filt_header = self.header.duplicate()
+        return HourlyDiscontinuousCollection(_filt_header, _filt_values, _filt_datetimes)
+
+    def duplicate(self):
+        """Return a copy of the current Data Collection."""
+        return HourlyContinuousCollection(
+            self.header.duplicate(), deepcopy(self.values))
+
+    def is_collection_aligned(self, data_collection):
+        """Check if this Data Collection is aligned with another.
+
+        Aligned Data Collections are of the same type, the same number of values
+        and have matching datetimes.
+
+        Args:
+            data_collection: The Data Collection which you want to test if this
+                collection is aligned with.
+
+        Return:
+            True if collections are aligned, Fale if not aligned
+        """
+        if type(self) != type(data_collection):
+            return False
+        elif len(self.values) != len(data_collection.values):
+            return False
+        else:
+            ap1 = self.header.analysis_period
+            ap2 = data_collection.header.analysis_period
+            if (ap1.st_time, ap1.end_time) != (ap2.st_time, ap2.end_time):
+                return False
+        return True
+
+    def to_discontinuous(self):
+        """Return a Discontinuous version of the current Collection."""
+
+    def to_json(self):
+        """Convert Data Collection to a dictionary."""
+        return {
+            'header': self.header.to_json(),
+            'values': self._values
+        }
+
+    def _xxrange(self, start, end, step_count):
+        """Generate n values between start and end."""
+        _step = (end - start) / float(step_count)
+        return (start + (i * _step) for i in xrange(int(step_count)))
+
+    def _check_analysis_period_range(self, analysis_period):
+        """Checkthat the analysis_period is a subset of the Data Collection's"""
+        error_msg = 'analysis_period is not a subset of Data Collection.'
+        assert analysis_period.st_hour >= self.header.analysis_period.st_hour, \
+            '{} st_hour is too early.'.format(error_msg)
+        assert analysis_period.end_hour <= self.header.analysis_period.end_hour, \
+            '{} end_hour is too late.'.format(error_msg)
+        assert analysis_period.st_time.doy >= \
+            self.header.analysis_period.st_time.doy, \
+            '{} Start date is too early'.format(error_msg)
+        assert analysis_period.end_time.doy <= \
+            self.header.analysis_period.end_time.doy, \
+            '{} End date is too late'.format(error_msg)
+
+    def __delitem__(self, key):
+        raise TypeError('Convert this Collection to Discontinuous to use del().')
+
+    def __repr__(self):
+        """Hourly Discontinuous Collection representation."""
+        return "{} Continuous Data Collection\n{}\n{} ({})\n...{} values...".format(
+            self.timestep_text, self.header.analysis_period,
+            self.header.data_type, self.header.unit, len(self._values))
 
 
 """Methods to be overwritten:
@@ -525,6 +738,20 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     to_json (no need for datetimes as we have the AnalysisPeriod)
     values.setter (check to be sure that lenth of values aligns with AnalysisPeriod)
     duplicate
-    is_collection_aligned (only need to check the analysisperiod and not all datetimes)
     __delitem__ (can't delete an item without making the collection discontinouous)
+    is_collection_aligned (only need to check the analysisperiod and not all datetimes)
+    filter_by_analysis_period
+    filter_by_moys
+"""
+
+"""Methods to add:
+    interpolate_data
+    group_by_day
+    group_by_month
+    average_daily
+    average_monthly
+    average_monthly_for_each_hour
+    total_daily
+    total_monthly
+    total_monthly_for_each_hour
 """
