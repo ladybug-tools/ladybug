@@ -256,7 +256,7 @@ class AnalysisPeriod(object):
     def is_overnight(self):
         """Return True if the analysis period is overnight.
 
-        If an analysis perido is overnight each segments of hours
+        If an analysis period is overnight each segments of hours
         will be in two different days (e.g. from 9pm to 2am).
         """
         return self._is_overnight
