@@ -97,8 +97,8 @@ class Header(object):
 
     def duplicate(self):
         """Return a copy of the header."""
-        return self.__class__(deepcopy(self.data_type), self.unit,
-                              AnalysisPeriod.from_string(str(self.analysis_period)),
+        return self.__class__(self.data_type.duplicate(), self.unit,
+                              self.analysis_period.duplicate(),
                               deepcopy(self.metadata))
 
     def to_tuple(self):

@@ -18,15 +18,21 @@ except ImportError:
 class BaseCollection(object):
     """Base class for all Data Collections."""
 
-    __slots__ = ('_header', '_values', '_datetimes', '_interval')
+    __slots__ = ('_header', '_values', '_datetimes')
 
     def __init__(self, header, values, datetimes):
-        """Init class."""
+        """Initialize base collection.
+
+        Args:
+            header: A Ladybug Header object.
+            values: A list of values.
+            datetimes: A list of Ladybug DateTime objects that aligns with
+                the list of values.
+        """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(datetimes, list), \
             'datetimes must be a list. Got {}'.format(type(datetimes))
-        self._interval = None
         self._header = header
         self._datetimes = datetimes
         self.values = values
@@ -96,7 +102,7 @@ class BaseCollection(object):
     def duplicate(self):
         """Return a copy of the current Data Collection."""
         return BaseCollection(
-            self.header.duplicate(), deepcopy(self.values), self.datetimes)
+            self.header.duplicate(), deepcopy(self.values), deepcopy(self.datetimes))
 
     def convert_to_unit(self, unit):
         """Convert the Data Collection to the input unit."""
@@ -220,11 +226,11 @@ class BaseCollection(object):
 
         # create a new Data Collection
         _filt_header = self.header.duplicate()
-        if self._interval == 'Hourly':
+        if self.__class__.__name__ == 'HourlyContinuousCollection':
             return HourlyDiscontinuousCollection(
                 _filt_header, _filt_values, _filt_datetimes)
         else:
-            return BaseCollection(_filt_header, _filt_values, _filt_datetimes)
+            return self.__class__(_filt_header, _filt_values, _filt_datetimes)
 
     def filter_by_pattern(self, pattern):
         """Filter the Data Collection based on a list of booleans.
@@ -244,11 +250,11 @@ class BaseCollection(object):
         _filt_values = [d for i, d in enumerate(self.values) if pattern[i % _len]]
         _filt_datetimes = [d for i, d in enumerate(self.datetimes) if pattern[i % _len]]
         _filt_header = self.header.duplicate()
-        if self._interval == 'Hourly':
+        if self.__class__.__name__ == 'HourlyContinuousCollection':
             return HourlyDiscontinuousCollection(
                 _filt_header, _filt_values, _filt_datetimes)
         else:
-            return BaseCollection(_filt_header, _filt_values, _filt_datetimes)
+            return self.__class__(_filt_header, _filt_values, _filt_datetimes)
 
     def is_collection_aligned(self, data_collection):
         """Check if this Data Collection is aligned with another.
@@ -419,7 +425,15 @@ class HourlyDiscontinuousCollection(BaseCollection):
     """Discontinous Data Collection at hourly or sub-hourly intervals."""
 
     def __init__(self, header, values, datetimes):
-        """Init class."""
+        """Initialize hourly discontinuous collection.
+
+        Args:
+            header: A Ladybug Header object.  Note that this header
+                must have an AnalysisPeriod on it.
+            values: A list of values.
+            datetimes: A list of Ladybug DateTime objects that aligns with
+                the list of values.
+        """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
@@ -427,7 +441,6 @@ class HourlyDiscontinuousCollection(BaseCollection):
         assert isinstance(datetimes, list), \
             'datetimes must be a list. Got {}'.format(type(datetimes))
 
-        self._interval = 'Hourly'
         self._header = header
         self._datetimes = datetimes
         self.values = values
@@ -443,7 +456,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
     def duplicate(self):
         """Return a copy of the current Data Collection."""
         return HourlyDiscontinuousCollection(
-            self.header.duplicate(), deepcopy(self.values), self.datetimes)
+            self.header.duplicate(), deepcopy(self.values), deepcopy(self.datetimes))
 
     def filter_by_analysis_period(self, analysis_period):
         """
@@ -475,8 +488,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
             if d.moy in moys:
                 _filt_datetimes.append(d)
                 _filt_values.append(self.values[i])
-        _filt_header = self.header.duplicate()
-        return HourlyDiscontinuousCollection(_filt_header, _filt_values, _filt_datetimes)
+        return HourlyDiscontinuousCollection(self.header.duplicate(),
+                                             _filt_values, _filt_datetimes)
 
     def filter_by_hoys(self, hoys):
         """Filter the Data Collection based on an analysis period.
@@ -490,39 +503,105 @@ class HourlyDiscontinuousCollection(BaseCollection):
         _moys = tuple(int(hour * 60) for hour in hoys)
         return self.filter_by_moys(_moys)
 
+    def average_monthly(self):
+        """Return a monthly data collection of values averaged for each month."""
+        avg_data, months = self._avg_dict(self.group_by_month())
+        return MonthlyCollection(self.header.duplicate(), avg_data, months)
+
+    def total_monthly(self):
+        """Return a monthly data collection of values totaled over each month."""
+        tot_data, months = self._total_dict(self.group_by_month())
+        return MonthlyCollection(self.header.duplicate(), tot_data, months)
+
+    def average_daily(self):
+        """Return a daily data collection of values averaged for each day."""
+        avg_data, days = self._avg_dict(self.group_by_day())
+        return DailyCollection(self.header.duplicate(), avg_data, days)
+
+    def total_daily(self):
+        """Return a monthly data collection of values totaled over each day."""
+        total_data, days = self._total_dict(self.group_by_day())
+        return DailyCollection(self.header.duplicate(), total_data, days)
+
     def group_by_month(self):
-        """Return a dictionary of this collection's values that are grouped by each month.
+        """Return a dictionary of this collection's values grouped by each month.
 
         Key values are between 1-12.
         """
         return self._group_data_by_month(self.values, self.datetimes)
 
     def group_by_day(self):
-        """Return a dictionary of this collection's values that are grouped by each day of year.
+        """Return a dictionary of this collection's values grouped by each day of year.
 
         Key values are between 1-365.
         """
         return self._group_data_by_day(self.values, self.datetimes)
+
+    def group_by_month_per_hour(self):
+        """Return a dictionary of this collection's values grouped by each month per hour.
+
+        Key values are between 1-12.
+        Sub-key values are between 0-24.
+        """
+        month_values, month_datetimes = self._group_data_by_month(
+            self.values, self.datetimes, group_datetimes=True)
+        for m, val, dat in zip(
+                month_values.keys(), month_values.values(), month_datetimes):
+                    month_values[m] = self._group_data_by_hour(val, dat)
+        return month_values
+
+    def _avg_dict(data_dict):
+        """Return averaged data and datetimes from a data dictionary."""
+        avg_data = []
+        d_times = []
+        for d_t, vals in data_dict:
+            if vals != []:
+                avg_data.append(sum(vals)/len(vals))
+                d_times.append(d_t)
+        return avg_data, d_times
+
+    def _total_dict(data_dict):
+        """Return totaled data and datetimes from a data dictionary."""
+        total_data = []
+        d_times = []
+        for d_t, vals in data_dict:
+            if vals != []:
+                total_data.append(sum(vals))
+                d_times.append(d_t)
+        return total_data, d_times
 
     def _group_data_by_day(self, values, datetimes):
         """Return a dictionary of values that are grouped by each day of year."""
         hourly_data_by_day = OrderedDict()
         for d in xrange(1, 366):
             hourly_data_by_day[d] = []
-
         for v, dt in zip(values, datetimes):
             hourly_data_by_day[dt.doy].append(v)
         return hourly_data_by_day
 
-    def _group_data_by_month(self, values, datetimes):
+    def _group_data_by_month(self, values, datetimes, group_datetimes=False):
         """Return a dictionary of values that are grouped for each month."""
         hourly_data_by_month = OrderedDict()
-        for m in xrange(1, 13):
-            hourly_data_by_month[m] = []
-
+        for d in xrange(1, 13):
+            hourly_data_by_month[d] = []
         for v, dt in zip(values, datetimes):
             hourly_data_by_month[dt.month].append(v)
-        return hourly_data_by_month
+        if group_datetimes is False:
+            return hourly_data_by_month
+        else:
+            hourly_datetimes_by_month = [[] for i in xrange(12)]
+            for dt in datetimes:
+                hourly_datetimes_by_month[dt.month - 1].append(dt)
+            return hourly_data_by_month, hourly_datetimes_by_month
+
+    def _group_data_by_hour(self, values, datetimes):
+        """Return a dictionary of values that are grouped for each hour."""
+        hourly_data_by_hour = OrderedDict()
+        for d in xrange(0, 24):
+            hourly_data_by_hour[d] = []
+        for v, dt in zip(values, datetimes):
+            hourly_data_by_hour[dt.hour].append(v)
+        return hourly_data_by_hour
 
     def _check_analysis_period_timestep(self, analysis_period):
         assert self.header.analysis_period.timestep == analysis_period.timestep, \
@@ -541,7 +620,15 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     """Class for Continouus Data Collections at hourly or sub-hourly intervals."""
 
     def __init__(self, header, values):
-        """Init class."""
+        """Initialize hourly discontinuous collection.
+
+        Args:
+            header: A Ladybug Header object.  Note that this header
+                must have an AnalysisPeriod on it that aligns with the
+                list of values.
+            values: A list of values.  Note that the length of this list
+                must align with the AnalysisPeriod on the header.
+        """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
@@ -553,7 +640,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             'analysis_period end hour of {} must be 23. Got {}'.format(
                 self.__class__.__name__, header.analysis_period.end_hour)
 
-        self._interval = 'Hourly'
         self._header = header
         self.values = values
         self._datetimes = None
@@ -649,8 +735,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         return HourlyContinuousCollection(_new_header, _new_values)
 
     def filter_by_analysis_period(self, analysis_period):
-        """
-        Filter a Data Collection based on an analysis period.
+        """Filter the Data Collection based on an analysis period.
 
         Args:
            analysis period: A Ladybug analysis period
@@ -682,7 +767,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             return _filtered_data
 
     def filter_by_moys(self, moys):
-        """Filter the list based on a list of minutes of the year.
+        """Filter the Data Collection based on a list of minutes of the year.
 
         Args:
            moys: A List of minutes of the year [0..8759 * 60]
@@ -734,15 +819,15 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             return False
         elif len(self.values) != len(data_collection.values):
             return False
-        else:
-            ap1 = self.header.analysis_period
-            ap2 = data_collection.header.analysis_period
-            if (ap1.st_time, ap1.end_time) != (ap2.st_time, ap2.end_time):
+        elif self.header.analysis_period != data_collection.header.analysis_period:
                 return False
         return True
 
     def to_discontinuous(self):
-        """Return a Discontinuous version of the current Collection."""
+        """Return a discontinuous version of the current collection."""
+        return HourlyDiscontinuousCollection(self.header.duplicate(),
+                                             deepcopy(self.values),
+                                             deepcopy(self.datetimes))
 
     def to_json(self):
         """Convert Data Collection to a dictionary."""
@@ -757,7 +842,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         return (start + (i * _step) for i in xrange(int(step_count)))
 
     def _check_analysis_period_range(self, analysis_period):
-        """Checkthat the analysis_period is a subset of the Data Collection's"""
+        """Check that the analysis_period is a subset of the Data Collection's"""
         error_msg = 'analysis_period is not a subset of Data Collection.'
         assert analysis_period.st_hour >= self.header.analysis_period.st_hour, \
             '{} st_hour is too early.'.format(error_msg)
@@ -780,6 +865,146 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             self.header.data_type, self.header.unit, len(self._values))
 
 
+class MonthlyCollection(BaseCollection):
+    """Class for Monthly Data Collections."""
+    month_names = {1: 'Jan', 2: 'Feb', 3: 'Mar',  4: 'Apr', 5: 'May', 6: 'Jun',
+                   7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
+
+    def __init__(self, header, values, datetimes):
+        """Initialize monthly collection.
+
+        Args:
+            header: A Ladybug Header object.  Note that this header
+                must have an AnalysisPeriod on it.
+            values: A list of values.
+            datetimes: A list of integers that aligns with the list of values.
+                Each integer in the list is 1-12 and denotes the month of the
+                year for each value of the collection.
+        """
+        assert isinstance(header, Header), \
+            'header must be a Ladybug Header object. Got {}'.format(type(header))
+        assert isinstance(header.analysis_period, AnalysisPeriod), \
+            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
+        assert isinstance(datetimes, list), \
+            'datetimes must be a list. Got {}'.format(type(datetimes))
+
+        self._header = header
+        self._datetimes = datetimes
+        self.values = values
+
+    def duplicate(self):
+        """Return a copy of the current Data Collection."""
+        return MonthlyCollection(
+            self.header.duplicate(), deepcopy(self.values), deepcopy(self.datetimes))
+
+    def filter_by_analysis_period(self, analysis_period):
+        """Filter the Data Collection based on an analysis period.
+
+        Args:
+           analysis period: A Ladybug analysis period
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        _filtered_data = self.filter_by_months(analysis_period.months_int)
+        _filtered_data.header._analysis_period = analysis_period
+        return _filtered_data
+
+    def filter_by_months(self, months):
+        """Filter the Data Collection based on a list of months of the year (as integers).
+
+        Args:
+           months: A List of months of the year [1..12]
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        _filt_values = []
+        _filt_datetimes = []
+        for i, d in enumerate(self.datetimes):
+            if d in months:
+                _filt_datetimes.append(d)
+                _filt_values.append(self.values[i])
+        _filt_header = self.header.duplicate()
+        return MonthlyCollection(_filt_header, _filt_values, _filt_datetimes)
+
+    def __repr__(self):
+        """Monthly Collection representation."""
+        return "Monthly Collection\n{} to {}\n{} ({})\n...{} values...".format(
+            self.month_names[self.header.analysis_period.st_month],
+            self.month_names[self.header.analysis_period.end_month],
+            self.header.data_type, self.header.unit, len(self._values))
+
+
+class DailyCollection(BaseCollection):
+    """Class for Daily Data Collections."""
+
+    def __init__(self, header, values, datetimes):
+        """Initialize monthly collection.
+
+        Args:
+            header: A Ladybug Header object.  Note that this header
+                must have an AnalysisPeriod on it.
+            values: A list of values.
+            datetimes: A list of integers that aligns with the list of values.
+                Each integer in the list is 1-365 and denotes the day of the
+                year for each value of the collection.
+        """
+        assert isinstance(header, Header), \
+            'header must be a Ladybug Header object. Got {}'.format(type(header))
+        assert isinstance(header.analysis_period, AnalysisPeriod), \
+            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
+        assert isinstance(datetimes, list), \
+            'datetimes must be a list. Got {}'.format(type(datetimes))
+
+        self._header = header
+        self._datetimes = datetimes
+        self.values = values
+
+    def duplicate(self):
+        """Return a copy of the current Data Collection."""
+        return DailyCollection(
+            self.header.duplicate(), deepcopy(self.values), deepcopy(self.datetimes))
+
+    def filter_by_analysis_period(self, analysis_period):
+        """Filter the Data Collection based on an analysis period.
+
+        Args:
+           analysis period: A Ladybug analysis period
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        _filtered_data = self.filter_by_doys(analysis_period.doys_int)
+        _filtered_data.header._analysis_period = analysis_period
+        return _filtered_data
+
+    def filter_by_doys(self, doys):
+        """Filter the Data Collection based on a list of days of the year (as integers).
+
+        Args:
+           doys: A List of days of the year [1..365]
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        _filt_values = []
+        _filt_datetimes = []
+        for i, d in enumerate(self.datetimes):
+            if d in doys:
+                _filt_datetimes.append(d)
+                _filt_values.append(self.values[i])
+        _filt_header = self.header.duplicate()
+        return DailyCollection(_filt_header, _filt_values, _filt_datetimes)
+
+    def __repr__(self):
+        """Daily Collection representation."""
+        return "Daily Collection\n{}/ to {}/{}\n{} ({})\n...{} values...".format(
+            self.header.analysis_period.st_month, self.header.analysis_period.st_day,
+            self.header.analysis_period.end_month, self.header.analysis_period.end_day,
+            self.header.data_type, self.header.unit, len(self._values))
+
+
 """Methods to be overwritten:
     __init__ (No need for datetimes but header requires an AnalysisPeriod)
     datetimes (check if they exist and, if not, generate them from AnalysisPeriod)
@@ -791,16 +1016,18 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     is_collection_aligned (only need to check the analysisperiod and not all datetimes)
     filter_by_analysis_period
     filter_by_moys
-"""
 
-"""Methods to add:
-    interpolate_data
     group_by_day
     group_by_month
-    average_daily
+    group_by_month_per_hour
+"""
+
+"""Methods to add to discontinuous collection:
     average_monthly
-    average_monthly_for_each_hour
-    total_daily
     total_monthly
+    average_daily
+    total_daily
+
+    average_monthly_for_each_hour
     total_monthly_for_each_hour
 """

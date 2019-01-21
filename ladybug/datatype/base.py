@@ -223,6 +223,10 @@ class DataTypeBase(object):
                     )
         return True
 
+    def duplicate(self):
+        """Return a copy of the data type."""
+        return self.__class__(self.name)
+
     def to_json(self):
         """Get data type as a json object"""
         return {
