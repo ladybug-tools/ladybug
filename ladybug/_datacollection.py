@@ -7,13 +7,18 @@ from .dt import DateTime
 from .analysisperiod import AnalysisPeriod
 
 from copy import deepcopy
-import string
+from string import ascii_lowercase
+from collections import OrderedDict
+try:
+    from itertools import izip as zip  # python 2
+except ImportError:
+    xrange = range  # python 3
 
 
-class DiscontinuousCollection(object):
-    """Class for Discontinouus Data Collections."""
+class BaseCollection(object):
+    """Base class for all Data Collections."""
 
-    __slots__ = ('_header', '_values', '_datetimes')
+    __slots__ = ('_header', '_values', '_datetimes', '_interval')
 
     def __init__(self, header, values, datetimes):
         """Init class."""
@@ -21,7 +26,7 @@ class DiscontinuousCollection(object):
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(datetimes, list), \
             'datetimes must be a list. Got {}'.format(type(datetimes))
-
+        self._interval = None
         self._header = header
         self._datetimes = datetimes
         self.values = values
@@ -90,7 +95,7 @@ class DiscontinuousCollection(object):
 
     def duplicate(self):
         """Return a copy of the current Data Collection."""
-        return DiscontinuousCollection(
+        return BaseCollection(
             self.header.duplicate(), deepcopy(self.values), self.datetimes)
 
     def convert_to_unit(self, unit):
@@ -215,7 +220,11 @@ class DiscontinuousCollection(object):
 
         # create a new Data Collection
         _filt_header = self.header.duplicate()
-        return DiscontinuousCollection(_filt_header, _filt_values, _filt_datetimes)
+        if self._interval == 'Hourly':
+            return HourlyDiscontinuousCollection(
+                _filt_header, _filt_values, _filt_datetimes)
+        else:
+            return BaseCollection(_filt_header, _filt_values, _filt_datetimes)
 
     def filter_by_pattern(self, pattern):
         """Filter the Data Collection based on a list of booleans.
@@ -235,7 +244,11 @@ class DiscontinuousCollection(object):
         _filt_values = [d for i, d in enumerate(self.values) if pattern[i % _len]]
         _filt_datetimes = [d for i, d in enumerate(self.datetimes) if pattern[i % _len]]
         _filt_header = self.header.duplicate()
-        return DiscontinuousCollection(_filt_header, _filt_values, _filt_datetimes)
+        if self._interval == 'Hourly':
+            return HourlyDiscontinuousCollection(
+                _filt_header, _filt_values, _filt_datetimes)
+        else:
+            return BaseCollection(_filt_header, _filt_values, _filt_datetimes)
 
     def is_collection_aligned(self, data_collection):
         """Check if this Data Collection is aligned with another.
@@ -273,7 +286,7 @@ class DiscontinuousCollection(object):
             collections: A list of Data Collections that have been filtered based
                 on the statement.
         """
-        pattern = DiscontinuousCollection.pattern_from_collections_and_statement(
+        pattern = BaseCollection.pattern_from_collections_and_statement(
             data_collections, statement)
         collections = [coll.filter_by_pattern(pattern) for coll in data_collections]
         return collections
@@ -293,8 +306,8 @@ class DiscontinuousCollection(object):
                 Data Collections where True meets the conditional statement
                 and False does not.
         """
-        DiscontinuousCollection.are_collections_aligned(data_collections)
-        correct_var = DiscontinuousCollection._check_conditional_statement(
+        BaseCollection.are_collections_aligned(data_collections)
+        correct_var = BaseCollection._check_conditional_statement(
             statement, len(data_collections))
 
         pattern = []
@@ -346,7 +359,7 @@ class DiscontinuousCollection(object):
                 used within the statement (eg. ['a', 'b', 'c'])
         """
         # Determine what the list of variables should be based on the num_collections
-        correct_var = list(string.ascii_lowercase)[:num_collections]
+        correct_var = list(ascii_lowercase)[:num_collections]
 
         # Clean out the oeprators of the statement
         st_statement = statement.lower() \
@@ -402,7 +415,7 @@ class DiscontinuousCollection(object):
             self.header.data_type, self.header.unit, len(self._values))
 
 
-class HourlyDiscontinuousCollection(DiscontinuousCollection):
+class HourlyDiscontinuousCollection(BaseCollection):
     """Discontinous Data Collection at hourly or sub-hourly intervals."""
 
     def __init__(self, header, values, datetimes):
@@ -414,6 +427,7 @@ class HourlyDiscontinuousCollection(DiscontinuousCollection):
         assert isinstance(datetimes, list), \
             'datetimes must be a list. Got {}'.format(type(datetimes))
 
+        self._interval = 'Hourly'
         self._header = header
         self._datetimes = datetimes
         self.values = values
@@ -476,6 +490,40 @@ class HourlyDiscontinuousCollection(DiscontinuousCollection):
         _moys = tuple(int(hour * 60) for hour in hoys)
         return self.filter_by_moys(_moys)
 
+    def group_by_month(self):
+        """Return a dictionary of this collection's values that are grouped by each month.
+
+        Key values are between 1-12.
+        """
+        return self._group_data_by_month(self.values, self.datetimes)
+
+    def group_by_day(self):
+        """Return a dictionary of this collection's values that are grouped by each day of year.
+
+        Key values are between 1-365.
+        """
+        return self._group_data_by_day(self.values, self.datetimes)
+
+    def _group_data_by_day(self, values, datetimes):
+        """Return a dictionary of values that are grouped by each day of year."""
+        hourly_data_by_day = OrderedDict()
+        for d in xrange(1, 366):
+            hourly_data_by_day[d] = []
+
+        for v, dt in zip(values, datetimes):
+            hourly_data_by_day[dt.doy].append(v)
+        return hourly_data_by_day
+
+    def _group_data_by_month(self, values, datetimes):
+        """Return a dictionary of values that are grouped for each month."""
+        hourly_data_by_month = OrderedDict()
+        for m in xrange(1, 13):
+            hourly_data_by_month[m] = []
+
+        for v, dt in zip(values, datetimes):
+            hourly_data_by_month[dt.month].append(v)
+        return hourly_data_by_month
+
     def _check_analysis_period_timestep(self, analysis_period):
         assert self.header.analysis_period.timestep == analysis_period.timestep, \
             'analysis_period timestep must match that on the'\
@@ -505,6 +553,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             'analysis_period end hour of {} must be 23. Got {}'.format(
                 self.__class__.__name__, header.analysis_period.end_hour)
 
+        self._interval = 'Hourly'
         self._header = header
         self.values = values
         self._datetimes = None
