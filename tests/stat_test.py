@@ -138,12 +138,12 @@ class StatTestCase(unittest.TestCase):
         typical_summer = stat.typical_summer_week
         typical_autumn = stat.typical_autumn_week
 
-        assert str(extreme_cold) == '1/27 to 2/2 between 0 to 23 @1'
-        assert str(extreme_hot) == '7/13 to 7/19 between 0 to 23 @1'
-        assert str(typical_winter) == '12/22 to 12/28 between 0 to 23 @1'
-        assert str(typical_spring) == '4/26 to 5/2 between 0 to 23 @1'
-        assert str(typical_summer) == '8/24 to 8/30 between 0 to 23 @1'
-        assert str(typical_autumn) == '10/27 to 11/2 between 0 to 23 @1'
+        assert str(extreme_cold) == '1/27 to 2/2 between 0 and 23 @1'
+        assert str(extreme_hot) == '7/13 to 7/19 between 0 and 23 @1'
+        assert str(typical_winter) == '12/22 to 12/28 between 0 and 23 @1'
+        assert str(typical_spring) == '4/26 to 5/2 between 0 and 23 @1'
+        assert str(typical_summer) == '8/24 to 8/30 between 0 and 23 @1'
+        assert str(typical_autumn) == '10/27 to 11/2 between 0 and 23 @1'
 
 
 if __name__ == "__main__":
