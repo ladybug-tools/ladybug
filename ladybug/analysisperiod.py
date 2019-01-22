@@ -3,7 +3,11 @@
 from __future__ import division
 
 from .dt import DateTime
+
 from datetime import datetime, timedelta
+import sys
+if (sys.version_info >= (3, 0)):
+    xrange = range
 
 
 class AnalysisPeriod(object):
@@ -41,6 +45,8 @@ class AnalysisPeriod(object):
             as integers.
         months_int: A sorted list of months of the year in this analysis period
             as integers.
+        months_per_hour_str: A list of strings representing hours per month
+            in this analysis period
         minute_intervals: The number of minutes between each of the timesteps
             of the analysis period
         is_annual: Check if the analysis period is annual.
@@ -54,6 +60,8 @@ class AnalysisPeriod(object):
                       6: 10, 10: 6, 12: 5, 15: 4, 20: 3, 30: 2, 60: 1}
     NUMOFDAYSEACHMONTH = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
     NUMOFDAYSEACHMONTHLEAP = (31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    MONTHNAMES = {1: 'Jan', 2: 'Feb', 3: 'Mar',  4: 'Apr', 5: 'May', 6: 'Jun',
+                  7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 
     # TODO: handle timestep between 1-60
     def __init__(self, st_month=1, st_day=1, st_hour=0, end_month=12,
@@ -289,10 +297,19 @@ class AnalysisPeriod(object):
     def months_int(self):
         """A sorted list of months of the year in this analysis period as integers."""
         if not self._is_reversed:
-            return range(self.st_time.month, self.end_time.month + 1)
+            return xrange(self.st_time.month, self.end_time.month + 1)
         else:
-            months_start = range(self.st_time.month, 13)
-            return months_start + range(1, self.end_time.month)
+            months_start = xrange(self.st_time.month, 13)
+            return months_start + xrange(1, self.end_time.month)
+
+    @property
+    def months_per_hour_str(self):
+        """A list of strings representing months per hour in this analysis period."""
+        month_hour_strings = []
+        hour_range = xrange(self.st_hour, self.end_hour + 1)
+        for month in self.months_int:
+            month_hour_strings.extend(['{}@{}'.format(month, hr) for hr in hour_range])
+        return month_hour_strings
 
     @property
     def minute_intervals(self):
@@ -400,7 +417,7 @@ class AnalysisPeriod(object):
             # This is for cases that timestep is more than one
             # and last hour of the day is part of the calculation
             curr = end_time
-            for i in range(self.timestep)[1:]:
+            for i in xrange(self.timestep)[1:]:
                 curr += self.minute_intervals
                 time = DateTime(curr.month, curr.day, curr.hour, curr.minute,
                                 self.is_leap_year)
@@ -422,7 +439,7 @@ class AnalysisPeriod(object):
         """
         start_doy = sum(self._num_of_days_each_month[:st_time.month-1]) + st_time.day
         end_doy = sum(self._num_of_days_each_month[:end_time.month-1]) + end_time.day + 1
-        return range(start_doy, end_doy)
+        return xrange(start_doy, end_doy)
 
     def __eq__(self, other):
         """Whether the inputs match between two analysis periods."""

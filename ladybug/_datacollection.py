@@ -6,7 +6,6 @@ from .header import Header
 from .dt import DateTime
 from .analysisperiod import AnalysisPeriod
 
-from copy import deepcopy
 from string import ascii_lowercase
 from collections import OrderedDict
 try:
@@ -31,8 +30,11 @@ class BaseCollection(object):
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
-        assert isinstance(datetimes, list), \
-            'datetimes must be a list. Got {}'.format(type(datetimes))
+        assert isinstance(datetimes, (list, tuple)), \
+            'datetimes must be a list or tuple. Got {}'.format(type(datetimes))
+        if isinstance(datetimes, tuple):
+            datetimes = list(datetimes)
+
         self._header = header
         self._datetimes = datetimes
         self.values = values
@@ -68,12 +70,14 @@ class BaseCollection(object):
     @property
     def values(self):
         """Return the list of numerical values."""
-        return self._values
+        return tuple(self._values)
 
     @values.setter
     def values(self, values):
-        assert isinstance(values, list), \
-            'values must be a list. Got {}'.format(type(values))
+        assert isinstance(values, (list, tuple)), \
+            'values must be a list or tuple. Got {}'.format(type(values))
+        if isinstance(values, tuple):
+            values = list(values)
         assert len(values) == len(self.datetimes), \
             'Length of values list must match length of datetimes list. {} != {}'.format(
                 len(values), len(self.datetimes))
@@ -102,7 +106,7 @@ class BaseCollection(object):
     def duplicate(self):
         """Return a copy of the current Data Collection."""
         return BaseCollection(
-            self.header.duplicate(), deepcopy(self.values), deepcopy(self.datetimes))
+            self.header.duplicate(), self.values, self.datetimes)
 
     def convert_to_unit(self, unit):
         """Convert the Data Collection to the input unit."""
@@ -144,12 +148,12 @@ class BaseCollection(object):
         If this method returns False, the Data Collection's data is
         physically or mathematically impossible for the data_type."""
         return self._header.data_type.is_in_range(
-            self.values, self._header.unit, raise_exception)
+            self._values, self._header.unit, raise_exception)
 
     def is_in_epw_range(self, raise_exception=True):
         """Check if Data Collection values are in permissable ranges for EPW files."""
         return self._header.data_type.is_in_range_epw(
-            self.values, self._header.unit, raise_exception)
+            self._values, self._header.unit, raise_exception)
 
     def get_highest_values(self, count):
         """Find the highest values in the Data Collection.
@@ -219,7 +223,7 @@ class BaseCollection(object):
 
         _filt_values = []
         _filt_datetimes = []
-        for i, d in enumerate(self.values):
+        for i, d in enumerate(self._values):
             if eval(statement, globals={'d': d}):
                 _filt_values.append(d)
                 _filt_datetimes.append(self.datetimes[i])
@@ -247,7 +251,7 @@ class BaseCollection(object):
             _len = len(pattern)
         except TypeError:
             raise TypeError("pattern should be a list of Booleans.")
-        _filt_values = [d for i, d in enumerate(self.values) if pattern[i % _len]]
+        _filt_values = [d for i, d in enumerate(self._values) if pattern[i % _len]]
         _filt_datetimes = [d for i, d in enumerate(self.datetimes) if pattern[i % _len]]
         _filt_header = self.header.duplicate()
         if self.__class__.__name__ == 'HourlyContinuousCollection':
@@ -408,7 +412,7 @@ class BaseCollection(object):
         return {
             'header': self.header.to_json(),
             'values': self._values,
-            'datetimes': [dat.to_json() for dat in self._datetimes]
+            'datetimes': [dat.to_json() for dat in self.datetimes]
         }
 
     def ToString(self):
@@ -438,8 +442,10 @@ class HourlyDiscontinuousCollection(BaseCollection):
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
-        assert isinstance(datetimes, list), \
-            'datetimes must be a list. Got {}'.format(type(datetimes))
+        assert isinstance(datetimes, (list, tuple)), \
+            'datetimes must be a list or tuple. Got {}'.format(type(datetimes))
+        if isinstance(datetimes, tuple):
+            datetimes = list(datetimes)
 
         self._header = header
         self._datetimes = datetimes
@@ -456,7 +462,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
     def duplicate(self):
         """Return a copy of the current Data Collection."""
         return HourlyDiscontinuousCollection(
-            self.header.duplicate(), deepcopy(self.values), deepcopy(self.datetimes))
+            self.header.duplicate(), self.values, self.datetimes)
 
     def filter_by_analysis_period(self, analysis_period):
         """
@@ -487,7 +493,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         for i, d in enumerate(self.datetimes):
             if d.moy in moys:
                 _filt_datetimes.append(d)
-                _filt_values.append(self.values[i])
+                _filt_values.append(self._values[i])
         return HourlyDiscontinuousCollection(self.header.duplicate(),
                                              _filt_values, _filt_datetimes)
 
@@ -513,6 +519,13 @@ class HourlyDiscontinuousCollection(BaseCollection):
         tot_data, months = self._total_dict(self.group_by_month())
         return MonthlyCollection(self.header.duplicate(), tot_data, months)
 
+    def group_by_month(self):
+        """Return a dictionary of this collection's values grouped by each month.
+
+        Key values are between 1-12.
+        """
+        return self._group_data_by_month(self._values, self.datetimes)
+
     def average_daily(self):
         """Return a daily data collection of values averaged for each day."""
         avg_data, days = self._avg_dict(self.group_by_day())
@@ -523,51 +536,78 @@ class HourlyDiscontinuousCollection(BaseCollection):
         total_data, days = self._total_dict(self.group_by_day())
         return DailyCollection(self.header.duplicate(), total_data, days)
 
-    def group_by_month(self):
-        """Return a dictionary of this collection's values grouped by each month.
-
-        Key values are between 1-12.
-        """
-        return self._group_data_by_month(self.values, self.datetimes)
-
     def group_by_day(self):
         """Return a dictionary of this collection's values grouped by each day of year.
 
         Key values are between 1-365.
         """
-        return self._group_data_by_day(self.values, self.datetimes)
+        return self._group_data_by_day(self._values, self.datetimes)
 
-    def group_by_month_per_hour(self):
+    def average_monthly_for_each_hour(self):
+        """Return a monthly per hour data collection of average values."""
+        avg_data, months = self._avg_dict_heirarchical(
+            self.group_by_month_for_each_hour())
+        return MonthlyPerHourCollection(self.header.duplicate(), avg_data, months)
+
+    def total_monthly_for_each_hour(self):
+        """Return a monthly per hour data collection of totaled values."""
+        tot_data, months = self._total_dict_heirarchical(
+            self.group_by_month_for_each_hour())
+        return MonthlyPerHourCollection(self.header.duplicate(), tot_data, months)
+
+    def group_by_month_for_each_hour(self):
         """Return a dictionary of this collection's values grouped by each month per hour.
 
         Key values are between 1-12.
         Sub-key values are between 0-24.
         """
         month_values, month_datetimes = self._group_data_by_month(
-            self.values, self.datetimes, group_datetimes=True)
+            self._values, self.datetimes, group_datetimes=True)
         for m, val, dat in zip(
                 month_values.keys(), month_values.values(), month_datetimes):
                     month_values[m] = self._group_data_by_hour(val, dat)
         return month_values
 
-    def _avg_dict(data_dict):
-        """Return averaged data and datetimes from a data dictionary."""
+    def _avg_dict(self, data_dict):
+        """Return averaged data and datetimes from a monthly or daily data dictionary."""
         avg_data = []
         d_times = []
-        for d_t, vals in data_dict:
+        for d_t, vals in data_dict.items():
             if vals != []:
                 avg_data.append(sum(vals)/len(vals))
                 d_times.append(d_t)
         return avg_data, d_times
 
-    def _total_dict(data_dict):
-        """Return totaled data and datetimes from a data dictionary."""
+    def _total_dict(self, data_dict):
+        """Return totaled data and datetimes from a monthly or daily data dictionary."""
         total_data = []
         d_times = []
-        for d_t, vals in data_dict:
+        for d_t, vals in data_dict.items():
             if vals != []:
                 total_data.append(sum(vals))
                 d_times.append(d_t)
+        return total_data, d_times
+
+    def _avg_dict_heirarchical(self, data_dict):
+        """Return averaged data and datetimes from a monthly per hour data dictionary."""
+        avg_data = []
+        d_times = []
+        for mon, d_dict in data_dict.items():
+            for hr, vals in d_dict.items():
+                if vals != []:
+                    avg_data.append(sum(vals)/len(vals))
+                    d_times.append('{}@{}'.format(mon, hr))
+        return avg_data, d_times
+
+    def _total_dict_heirarchical(self, data_dict):
+        """Return averaged data and datetimes from a monthly per hour data dictionary."""
+        total_data = []
+        d_times = []
+        for mon, d_dict in data_dict.items():
+            for hr, vals in d_dict:
+                if vals != []:
+                    total_data.append(sum(vals))
+                    d_times.append('{}@{}'.format(mon, hr))
         return total_data, d_times
 
     def _group_data_by_day(self, values, datetimes):
@@ -656,18 +696,19 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
-        return cls(Header.from_json(data['header']),
-                   data['values'])
+        return cls(Header.from_json(data['header']), data['values'])
 
     @property
     def values(self):
         """Return the list of numerical values."""
-        return self._values
+        return tuple(self._values)
 
     @values.setter
     def values(self, values):
-        assert isinstance(values, list), \
-            'values must be a list. Got {}'.format(type(values))
+        assert isinstance(values, (list, tuple)), \
+            'values must be a list or a tuple. Got {}'.format(type(values))
+        if isinstance(values, tuple):
+            values = list(values)
         if self.header.analysis_period.is_annual:
             a_period_len = 8760 * self.header.analysis_period.timestep
             if self.header.analysis_period.is_leap_year is True:
@@ -754,9 +795,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             end_ind = int((analysis_period.end_time.moy / t_s) -
                           (analysis_period.st_time.moy / t_s) + st_ind + 1)
             if end_ind > st_ind:
-                _filt_values = self.values[st_ind:end_ind]
+                _filt_values = self._values[st_ind:end_ind]
             else:
-                _filt_values = self.values[st_ind:] + self.values[:end_ind]
+                _filt_values = self._values[st_ind:] + self._values[:end_ind]
             _filt_header = self.header.duplicate()
             _filt_header._analysis_period = analysis_period
             return HourlyContinuousCollection(_filt_header, _filt_values)
@@ -792,15 +833,29 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
                 else:
                     _filt_indices.append(int(ind + eoy_ind))
 
-        _filt_values = [self.values[i] for i in _filt_indices]
+        _filt_values = [self._values[i] for i in _filt_indices]
         _filt_datetimes = [self.datetimes[i] for i in _filt_indices]
         _filt_header = self.header.duplicate()
         return HourlyDiscontinuousCollection(_filt_header, _filt_values, _filt_datetimes)
 
+    def group_by_day(self):
+        """Return a dictionary of this collection's values grouped by each day of year.
+
+        Key values are between 1-365.
+        """
+        return self._group_data_by_day(self._values)
+
+    def group_by_month(self):
+        """Return a dictionary of this collection's values grouped by each month.
+
+        Key values are between 1-12.
+        """
+        return self._group_data_by_month(self._values, self.datetimes)
+
     def duplicate(self):
         """Return a copy of the current Data Collection."""
         return HourlyContinuousCollection(
-            self.header.duplicate(), deepcopy(self.values))
+            self.header.duplicate(), self._values)
 
     def is_collection_aligned(self, data_collection):
         """Check if this Data Collection is aligned with another.
@@ -826,8 +881,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     def to_discontinuous(self):
         """Return a discontinuous version of the current collection."""
         return HourlyDiscontinuousCollection(self.header.duplicate(),
-                                             deepcopy(self.values),
-                                             deepcopy(self.datetimes))
+                                             self.values, self.datetimes)
 
     def to_json(self):
         """Convert Data Collection to a dictionary."""
@@ -835,6 +889,33 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             'header': self.header.to_json(),
             'values': self._values
         }
+
+    def _group_data_by_day(self, values):
+        """Return a dictionary of values that are grouped by each day of year."""
+        hourly_data_by_day = OrderedDict()
+        for d in xrange(1, 366):
+            hourly_data_by_day[d] = []
+        a_per = self.header.analysis_period
+        indx_per_day = 24 * a_per.timestep
+        start_doy = sum(a_per._num_of_days_each_month[:a_per.st_time.month-1]) \
+            + a_per.st_time.day
+        for i in range(0, len(values), indx_per_day):
+            hourly_data_by_day[start_doy] = values[i:i + indx_per_day]
+            start_doy += 1
+        return hourly_data_by_day
+
+    def _group_data_by_month(self, values):
+        """Return a dictionary of values that are grouped for each month."""
+        hourly_data_by_month = OrderedDict()
+        for d in xrange(1, 13):
+            hourly_data_by_month[d] = []
+        a_per = self.header.analysis_period
+        st_ind = 0
+        for mon in a_per.months_int:
+            interval = a_per._num_of_days_each_month[mon - 1] * 24 * a_per.timestep
+            hourly_data_by_month[mon].extend(self._values[st_ind:st_ind + interval + 1])
+            st_ind += interval
+        return hourly_data_by_month
 
     def _xxrange(self, start, end, step_count):
         """Generate n values between start and end."""
@@ -867,8 +948,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
 class MonthlyCollection(BaseCollection):
     """Class for Monthly Data Collections."""
-    month_names = {1: 'Jan', 2: 'Feb', 3: 'Mar',  4: 'Apr', 5: 'May', 6: 'Jun',
-                   7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 
     def __init__(self, header, values, datetimes):
         """Initialize monthly collection.
@@ -885,8 +964,10 @@ class MonthlyCollection(BaseCollection):
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
-        assert isinstance(datetimes, list), \
-            'datetimes must be a list. Got {}'.format(type(datetimes))
+        assert isinstance(datetimes, (list, tuple)), \
+            'datetimes must be a list or a tuple. Got {}'.format(type(datetimes))
+        if isinstance(datetimes, tuple):
+            datetimes = list(datetimes)
 
         self._header = header
         self._datetimes = datetimes
@@ -895,7 +976,7 @@ class MonthlyCollection(BaseCollection):
     def duplicate(self):
         """Return a copy of the current Data Collection."""
         return MonthlyCollection(
-            self.header.duplicate(), deepcopy(self.values), deepcopy(self.datetimes))
+            self.header.duplicate(), self.values, self.datetimes)
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -924,15 +1005,15 @@ class MonthlyCollection(BaseCollection):
         for i, d in enumerate(self.datetimes):
             if d in months:
                 _filt_datetimes.append(d)
-                _filt_values.append(self.values[i])
+                _filt_values.append(self._values[i])
         _filt_header = self.header.duplicate()
         return MonthlyCollection(_filt_header, _filt_values, _filt_datetimes)
 
     def __repr__(self):
         """Monthly Collection representation."""
+        a_per = self.header.analysis_period
         return "Monthly Collection\n{} to {}\n{} ({})\n...{} values...".format(
-            self.month_names[self.header.analysis_period.st_month],
-            self.month_names[self.header.analysis_period.end_month],
+            a_per.MONTHNAMES[a_per.st_month], a_per.MONTHNAMES[a_per.end_month],
             self.header.data_type, self.header.unit, len(self._values))
 
 
@@ -940,7 +1021,7 @@ class DailyCollection(BaseCollection):
     """Class for Daily Data Collections."""
 
     def __init__(self, header, values, datetimes):
-        """Initialize monthly collection.
+        """Initialize daily collection.
 
         Args:
             header: A Ladybug Header object.  Note that this header
@@ -954,8 +1035,10 @@ class DailyCollection(BaseCollection):
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
-        assert isinstance(datetimes, list), \
-            'datetimes must be a list. Got {}'.format(type(datetimes))
+        assert isinstance(datetimes, (list, tuple)), \
+            'datetimes must be a list or a tuple. Got {}'.format(type(datetimes))
+        if isinstance(datetimes, tuple):
+            datetimes = list(datetimes)
 
         self._header = header
         self._datetimes = datetimes
@@ -964,7 +1047,7 @@ class DailyCollection(BaseCollection):
     def duplicate(self):
         """Return a copy of the current Data Collection."""
         return DailyCollection(
-            self.header.duplicate(), deepcopy(self.values), deepcopy(self.datetimes))
+            self.header.duplicate(), self.values, self.datetimes)
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -993,16 +1076,97 @@ class DailyCollection(BaseCollection):
         for i, d in enumerate(self.datetimes):
             if d in doys:
                 _filt_datetimes.append(d)
-                _filt_values.append(self.values[i])
+                _filt_values.append(self._values[i])
         _filt_header = self.header.duplicate()
         return DailyCollection(_filt_header, _filt_values, _filt_datetimes)
 
     def __repr__(self):
         """Daily Collection representation."""
-        return "Daily Collection\n{}/ to {}/{}\n{} ({})\n...{} values...".format(
-            self.header.analysis_period.st_month, self.header.analysis_period.st_day,
-            self.header.analysis_period.end_month, self.header.analysis_period.end_day,
+        a_per = self.header.analysis_period
+        return "Daily Collection\n{}/{} to {}/{}\n{} ({})\n...{} values...".format(
+            a_per.st_month, a_per.st_day, a_per.end_month, a_per.end_day,
             self.header.data_type, self.header.unit, len(self._values))
+
+
+class MonthlyPerHourCollection(BaseCollection):
+    """Class for Monthly Per Hour Collections."""
+
+    def __init__(self, header, values, datetimes):
+        """Initialize monthly per hour collection.
+
+        Args:
+            header: A Ladybug Header object.  Note that this header
+                must have an AnalysisPeriod on it.
+            values: A list of values.
+            datetimes: A list of text strings that aligns with the list of values.
+                Each text string is formatted with the month and the hour of the
+                day with an '@' symbol between them.  These text values denotes
+                the month and time for each value of the collection.
+                (eg. 12@23 = December at 11 PM)
+        """
+        assert isinstance(header, Header), \
+            'header must be a Ladybug Header object. Got {}'.format(type(header))
+        assert isinstance(header.analysis_period, AnalysisPeriod), \
+            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
+        assert isinstance(datetimes, (list, tuple)), \
+            'datetimes must be a list or a tuple. Got {}'.format(type(datetimes))
+        if isinstance(datetimes, tuple):
+            datetimes = list(datetimes)
+
+        self._header = header
+        self._datetimes = datetimes
+        self.values = values
+
+    def duplicate(self):
+        """Return a copy of the current Data Collection."""
+        return MonthlyPerHourCollection(
+            self.header.duplicate(), self.values, self.datetimes)
+
+    def filter_by_analysis_period(self, analysis_period):
+        """Filter the Data Collection based on an analysis period.
+
+        Args:
+           analysis period: A Ladybug analysis period
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        _filtered_data = self.filter_by_months_per_hour(
+            analysis_period.months_per_hour_str)
+        _filtered_data.header._analysis_period = analysis_period
+        return _filtered_data
+
+    def filter_by_months_per_hour(self, months_per_hour):
+        """Filter the Data Collection based on a list of months per hour (as strings).
+
+        Args:
+           months_per_hour: A list of strings representing months per hour.
+               Each text string is formatted with the month and the hour of the
+               day with an '@' symbol between them.  These text values denotes
+               the month and time for each value of the collection.
+               (eg. 12@23 = December at 11 PM)
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        _filt_values = []
+        _filt_datetimes = []
+        for i, d in enumerate(self.datetimes):
+            if d in months_per_hour:
+                _filt_datetimes.append(d)
+                _filt_values.append(self._values[i])
+        _filt_header = self.header.duplicate()
+        return MonthlyPerHourCollection(_filt_header, _filt_values, _filt_datetimes)
+
+    def __repr__(self):
+        """Monthly Per Hour Collection representation."""
+        return "Monthly Per Hour Collection\n{}@{} to {}@{}\n"\
+            "{} ({})\n...{} values...".format(
+                self.header.analysis_period.st_month,
+                self.header.analysis_period.st_hour,
+                self.header.analysis_period.end_month,
+                self.header.analysis_period.end_hour,
+                self.header.data_type, self.header.unit, len(self._values))
 
 
 """Methods to be overwritten:
@@ -1016,8 +1180,8 @@ class DailyCollection(BaseCollection):
     is_collection_aligned (only need to check the analysisperiod and not all datetimes)
     filter_by_analysis_period
     filter_by_moys
-
     group_by_day
+
     group_by_month
     group_by_month_per_hour
 """
@@ -1027,7 +1191,6 @@ class DailyCollection(BaseCollection):
     total_monthly
     average_daily
     total_daily
-
     average_monthly_for_each_hour
     total_monthly_for_each_hour
 """
