@@ -146,8 +146,26 @@ class BaseCollection(object):
 
     def duplicate(self):
         """Return a copy of the current Data Collection."""
-        return BaseCollection(
+        return self.__class__(
             self.header.duplicate(), self.values, self.datetimes)
+
+    def get_aligned_collection(self, value=0, data_type=None, unit=None):
+        """Return a Collection aligned with this one that is composed of a single repeated value.
+
+        Args:
+            value: The value to be repeated in the aliged collection values.
+                Default: 0.
+            data_type: The data type of the aligned collection. Default is to
+                use the data type of this collection.
+            unit: The unit of the aligned collection. Default is to
+                use the unit of this collection.
+        """
+        data_type = data_type or self.header.data_type
+        unit = unit or self.header.unit
+        values = [value] * len(self._values)
+        header = Header(data_type, unit, self.header.analysis_period,
+                        self.header.metadata)
+        return self.__class__(header, values, self.datetimes)
 
     def convert_to_unit(self, unit):
         """Convert the Data Collection to the input unit."""
@@ -533,11 +551,6 @@ class HourlyDiscontinuousCollection(BaseCollection):
         else:
             return '{} Minute'.format(60 / self.header.analysis_period.timestep)
 
-    def duplicate(self):
-        """Return a copy of the current Data Collection."""
-        return HourlyDiscontinuousCollection(
-            self.header.duplicate(), self.values, self.datetimes)
-
     def filter_by_analysis_period(self, analysis_period):
         """
         Filter a Data Collection based on an analysis period.
@@ -894,7 +907,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         # build a new header
         _new_header = self.header.duplicate()
         _new_header._analysis_period._timestep = timestep
-        return HourlyContinuousCollection(_new_header, _new_values)
+        return self.__class__(_new_header, _new_values)
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -1016,6 +1029,24 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         return HourlyContinuousCollection(
             self.header.duplicate(), self._values)
 
+    def get_aligned_collection(self, value=0, data_type=None, unit=None):
+        """Return a Collection aligned with this one that is composed of a single repeated value.
+
+        Args:
+            value: The value to be repeated in the aliged collection values.
+                Default: 0.
+            data_type: The data type of the aligned collection. Default is to
+                use the data type of this collection.
+            unit: The unit of the aligned collection. Default is to
+                use the unit of this collection.
+        """
+        data_type = data_type or self.header.data_type
+        unit = unit or self.header.unit
+        values = [value] * len(self._values)
+        header = Header(data_type, unit, self.header.analysis_period,
+                        self.header.metadata)
+        return self.__class__(header, values)
+
     def is_collection_aligned(self, data_collection):
         """Check if this Data Collection is aligned with another.
 
@@ -1120,11 +1151,6 @@ class MonthlyCollection(BaseCollection):
         self._datetimes = datetimes
         self.values = values
 
-    def duplicate(self):
-        """Return a copy of the current Data Collection."""
-        return MonthlyCollection(
-            self.header.duplicate(), self.values, self.datetimes)
-
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
 
@@ -1191,11 +1217,6 @@ class DailyCollection(BaseCollection):
         self._datetimes = datetimes
         self.values = values
 
-    def duplicate(self):
-        """Return a copy of the current Data Collection."""
-        return DailyCollection(
-            self.header.duplicate(), self.values, self.datetimes)
-
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
 
@@ -1261,11 +1282,6 @@ class MonthlyPerHourCollection(BaseCollection):
         self._header = header
         self._datetimes = datetimes
         self.values = values
-
-    def duplicate(self):
-        """Return a copy of the current Data Collection."""
-        return MonthlyPerHourCollection(
-            self.header.duplicate(), self.values, self.datetimes)
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
