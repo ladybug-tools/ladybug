@@ -15,7 +15,7 @@ Discontinuous
 
 
 All Data Collections have the ability to:
-    * get max, min, bounds, average, highest/lowest values
+    * max, min, bounds, average, median, total, get_percentile, get_highest/lowest values
     * filter based on conditional statements
     * perform unit conversions on the data: to_unit, to_ip, to_si
 
@@ -23,12 +23,12 @@ All collections except for the Base have the ability to:
     * filter based on analysis period
 
 The Hourly Continuous Collection should be used for all annual hourly data
-since it possesses all of the features of the other classes but includes
+since it possesses the features of the other classes but includes
 faster versions of certain methods as well as an interpolate_data() method.
 
-If one is applying multiple operations to a Continuous DataCollection, it is
+If one is applying multiple operations to a Continuous Data Collection, it is
 recommended that one filter based on analysis period first since these methods
-are often faster when the collection is continuous.
+are faster when the collection is continuous.
 """
 from __future__ import division
 
@@ -38,6 +38,7 @@ from .analysisperiod import AnalysisPeriod
 
 from string import ascii_lowercase
 from collections import OrderedDict
+import math
 try:
     from itertools import izip as zip  # python 2
 except ImportError:
@@ -116,22 +117,32 @@ class BaseCollection(object):
     @property
     def bounds(self):
         """Return a tuple as (min, max)."""
-        return (min(self.values), max(self.values))
+        return (min(self._values), max(self._values))
 
     @property
     def min(self):
         """Return the min of the Data Collection values."""
-        return min(self.values)
+        return min(self._values)
 
     @property
     def max(self):
         """Return the max of the Data Collection values."""
-        return max(self.values)
+        return max(self._values)
 
     @property
     def average(self):
         """Return the average of the Data Collection values."""
-        return sum(self.values) / len(self.values)
+        return sum(self._values) / len(self._values)
+
+    @property
+    def median(self):
+        """Return the median of the Data Collection values."""
+        return self._percentile(self._values, 50)
+
+    @property
+    def total(self):
+        """Return the total of the Data Collection values."""
+        return sum(self._values)
 
     def duplicate(self):
         """Return a copy of the current Data Collection."""
@@ -171,19 +182,6 @@ class BaseCollection(object):
         new_data_c = self.duplicate()
         new_data_c.convert_to_si()
         return new_data_c
-
-    def is_in_data_type_range(self, raise_exception=True):
-        """Check if the Data Collection values are in permissable ranges for the data_type.
-
-        If this method returns False, the Data Collection's data is
-        physically or mathematically impossible for the data_type."""
-        return self._header.data_type.is_in_range(
-            self._values, self._header.unit, raise_exception)
-
-    def is_in_epw_range(self, raise_exception=True):
-        """Check if Data Collection values are in permissable ranges for EPW files."""
-        return self._header.data_type.is_in_range_epw(
-            self._values, self._header.unit, raise_exception)
 
     def get_highest_values(self, count):
         """Find the highest values in the Data Collection.
@@ -231,6 +229,18 @@ class BaseCollection(object):
         lowest_values_index = sorted(range(len(self._values)),
                                      key=lambda k: self._values[k])[0:count]
         return lowest_values, lowest_values_index
+
+    def get_percentile(self, percentile):
+        """Filter the Data Collection based on a conditional statement.
+
+        Args:
+            percentile: A float value from 0 to 100 representing the
+                requested percentile.
+
+        Return:
+            The Data Collection value at the input percentile
+        """
+        return self._percentile(self._values, percentile)
 
     def filter_by_conditional_statement(self, statement):
         """Filter the Data Collection based on a conditional statement.
@@ -415,6 +425,40 @@ class BaseCollection(object):
                 statement, ', '.join(correct_var))
         return correct_var
 
+    def _is_in_data_type_range(self, raise_exception=True):
+        """Check if the Data Collection values are in permissable ranges for the data_type.
+
+        If this method returns False, the Data Collection's data is
+        physically or mathematically impossible for the data_type."""
+        return self._header.data_type.is_in_range(
+            self._values, self._header.unit, raise_exception)
+
+    def _is_in_epw_range(self, raise_exception=True):
+        """Check if Data Collection values are in permissable ranges for EPW files."""
+        return self._header.data_type.is_in_range_epw(
+            self._values, self._header.unit, raise_exception)
+
+    def _percentile(self, values, percent, key=lambda x: x):
+        """Find the percentile of a list of values.
+
+        Args:
+            values: A list of values for which percentiles are desired
+            percent: A float value from 0 to 100 representing the requested percentile.
+            key: optional key function to compute value from each element of N.
+
+        Return:
+            The percentile of the values
+        """
+        vals = sorted(values)
+        k = (len(vals) - 1) * (percent / 100)
+        f = math.floor(k)
+        c = math.ceil(k)
+        if f == c:
+            return key(vals[int(k)])
+        d0 = key(vals[int(f)]) * (c-k)
+        d1 = key(vals[int(c)]) * (k-f)
+        return d0+d1
+
     def __len__(self):
         return len(self._values)
 
@@ -504,7 +548,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         Return:
             A new Data Collection with filtered data
         """
-        self._check_analysis_period_timestep(analysis_period)
+        self._check_analysis_period(analysis_period)
         _filtered_data = self.filter_by_moys(analysis_period.moys)
         _filtered_data.header._analysis_period = analysis_period
         return _filtered_data
@@ -547,28 +591,48 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return data_by_day
 
     def average_daily(self):
-        """Return a daily data collection of values averaged for each day."""
+        """Return a daily collection of values averaged for each day."""
         data_dict = self.group_by_day()
-        avg_data = []
-        d_times = []
+        avg_data, d_times = [], []
         for i in self.header.analysis_period.doys_int:
             vals = data_dict[i]
             if vals != []:
                 avg_data.append(sum(vals)/len(vals))
                 d_times.append(i)
-        return DailyCollection(self.header.duplicate(), avg_data, d_times)
+        new_header = self.header.duplicate()
+        new_header.metadata['statistical operation'] = 'Average'
+        return DailyCollection(new_header, avg_data, d_times)
 
     def total_daily(self):
-        """Return a monthly data collection of values totaled over each day."""
+        """Return a daily collection of values totaled over each day."""
         data_dict = self.group_by_day()
-        total_data = []
-        d_times = []
+        total_data, d_times = [], []
         for i in self.header.analysis_period.doys_int:
             vals = data_dict[i]
             if vals != []:
                 total_data.append(sum(vals))
                 d_times.append(i)
-        return DailyCollection(self.header.duplicate(), total_data, d_times)
+        new_header = self.header.duplicate()
+        new_header.metadata['statistical operation'] = 'Total'
+        return DailyCollection(new_header, total_data, d_times)
+
+    def percentile_daily(self, percentile):
+        """Return a daily collection of values at the input percentile of each day.
+
+        Args:
+            percentile: A float value from 0 to 100 representing the
+                requested percentile.
+        """
+        data_dict = self.group_by_day()
+        per_data, d_times = [], []
+        for i in self.header.analysis_period.doys_int:
+            vals = data_dict[i]
+            if vals != []:
+                per_data.append(self._percentile(vals, percentile))
+                d_times.append(i)
+        new_header = self.header.duplicate()
+        new_header.metadata['statistical operation'] = '{} Percentile'.format(percentile)
+        return DailyCollection(new_header, per_data, d_times)
 
     def group_by_month(self):
         """Return a dictionary of this collection's values grouped by each month.
@@ -583,28 +647,48 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return data_by_month
 
     def average_monthly(self):
-        """Return a monthly data collection of values averaged for each month."""
+        """Return a monthly collection of values averaged for each month."""
         data_dict = self.group_by_month()
-        avg_data = []
-        d_times = []
+        avg_data, d_times = [], []
         for i in self.header.analysis_period.months_int:
             vals = data_dict[i]
             if vals != []:
                 avg_data.append(sum(vals)/len(vals))
                 d_times.append(i)
-        return MonthlyCollection(self.header.duplicate(), avg_data, d_times)
+        new_header = self.header.duplicate()
+        new_header.metadata['statistical operation'] = 'Average'
+        return MonthlyCollection(new_header, avg_data, d_times)
 
     def total_monthly(self):
-        """Return a monthly data collection of values totaled over each month."""
+        """Return a monthly collection of values totaled over each month."""
         data_dict = self.group_by_month()
-        total_data = []
-        d_times = []
+        total_data, d_times = [], []
         for i in self.header.analysis_period.months_int:
             vals = data_dict[i]
             if vals != []:
                 total_data.append(sum(vals))
                 d_times.append(i)
-        return MonthlyCollection(self.header.duplicate(), total_data, d_times)
+        new_header = self.header.duplicate()
+        new_header.metadata['statistical operation'] = 'Total'
+        return MonthlyCollection(new_header, total_data, d_times)
+
+    def percentile_monthly(self, percentile):
+        """Return a monthly collection of values at the input percentile of each month.
+
+        Args:
+            percentile: A float value from 0 to 100 representing the
+                requested percentile.
+        """
+        data_dict = self.group_by_month()
+        per_data, d_times = [], []
+        for i in self.header.analysis_period.months_int:
+            vals = data_dict[i]
+            if vals != []:
+                per_data.append(self._percentile(vals, percentile))
+                d_times.append(i)
+        new_header = self.header.duplicate()
+        new_header.metadata['statistical operation'] = '{} Percentile'.format(percentile)
+        return MonthlyCollection(new_header, per_data, d_times)
 
     def group_by_month_per_hour(self):
         """Return a dictionary of this collection's values grouped by each month per hour.
@@ -625,26 +709,46 @@ class HourlyDiscontinuousCollection(BaseCollection):
     def average_monthly_per_hour(self):
         """Return a monthly per hour data collection of average values."""
         data_dict = self.group_by_month_per_hour()
-        avg_data = []
-        d_times = []
+        avg_data, d_times = [], []
         for i in self.header.analysis_period.months_per_hour:
-            vals = data_dict[i[0]][i[1]]
+            vals = data_dict[i]
             if vals != []:
                 avg_data.append(sum(vals)/len(vals))
                 d_times.append(i)
-        return MonthlyPerHourCollection(self.header.duplicate(), avg_data, d_times)
+        new_header = self.header.duplicate()
+        new_header.metadata['statistical operation'] = 'Average'
+        return MonthlyPerHourCollection(new_header, avg_data, d_times)
 
     def total_monthly_per_hour(self):
-        """Return a monthly per hour data collection of totaled values."""
+        """Return a monthly per hour collection of totaled values."""
         data_dict = self.group_by_month_per_hour()
-        total_data = []
-        d_times = []
+        total_data, d_times = [], []
         for i in self.header.analysis_period.months_per_hour:
             vals = data_dict[i]
             if vals != []:
                 total_data.append(sum(vals))
                 d_times.append(i)
-        return MonthlyPerHourCollection(self.header.duplicate(), total_data, d_times)
+        new_header = self.header.duplicate()
+        new_header.metadata['statistical operation'] = 'Total'
+        return MonthlyPerHourCollection(new_header, total_data, d_times)
+
+    def percentile_monthly_per_hour(self, percentile):
+        """Return a monthly per hour collection of values at the input percentile.
+
+        Args:
+            percentile: A float value from 0 to 100 representing the
+                requested percentile.
+        """
+        data_dict = self.group_by_month_per_hour()
+        total_data, d_times = [], []
+        for i in self.header.analysis_period.months_per_hour:
+            vals = data_dict[i]
+            if vals != []:
+                total_data.append(self._percentile(vals, percentile))
+                d_times.append(i)
+        new_header = self.header.duplicate()
+        new_header.metadata['statistical operation'] = '{} Percentile'.format(percentile)
+        return MonthlyPerHourCollection(new_header, total_data, d_times)
 
     def _filter_by_moys_slow(self, moys):
         """Filter the Data Collection with a slow method that always works."""
@@ -656,11 +760,15 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 _filt_values.append(self._values[i])
         return _filt_values, _filt_datetimes
 
-    def _check_analysis_period_timestep(self, analysis_period):
-        assert self.header.analysis_period.timestep == analysis_period.timestep, \
+    def _check_analysis_period(self, analysis_period):
+        assert self.header.analysis_period.timestep == analysis_period.timestep,\
             'analysis_period timestep must match that on the'\
             'Collection header. {} != {}'.format(
                 analysis_period.timestep, self.header.analysis_period.timestep)
+        assert self.header.analysis_period.is_leap_year is analysis_period.is_leap_year,\
+            'analysis_period is_leap_year must match that on the'\
+            'Collection header. {} != {}'.format(
+                analysis_period.is_leap_year, self.header.analysis_period.is_leap_year)
 
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""
@@ -797,16 +905,8 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         Return:
             A new Data Collection with filtered data
         """
-        self._check_analysis_period_timestep(analysis_period)
-        if not self._is_period_subset(analysis_period):
-            # I have no choice but to use the slower method
-            _filt_vals, _filt_dts = self._filter_by_moys_slow(analysis_period.moys)
-            if analysis_period.st_hour == 0 and analysis_period.end_hour == 23:
-                return HourlyContinuousCollection(
-                    self.header.duplicate(), _filt_vals, _filt_dts)
-            else:
-                return HourlyDiscontinuousCollection(
-                    self.header.duplicate(), _filt_vals, _filt_dts)
+        self._check_analysis_period(analysis_period)
+        analysis_period = self._get_analysis_period_subset(analysis_period)
 
         if analysis_period.st_hour == 0 and analysis_period.end_hour == 23:
             # We can still return an Hourly Continuous Data Collection
@@ -954,19 +1054,34 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         _step = (end - start) / float(step_count)
         return (start + (i * _step) for i in xrange(int(step_count)))
 
-    def _is_period_subset(self, analysis_period):
-        """Check whether the analysis_period is a subset of the Data Collection"""
+    def _get_analysis_period_subset(self, a_per):
+        """Return an analysis_period is always a subset of the Data Collection"""
         if self.header.analysis_period.is_annual:
-            return True
-        elif analysis_period.st_hour < self.header.analysis_period.st_hour:
-            return False
-        elif analysis_period.end_hour > self.header.analysis_period.end_hour:
-            return False
-        elif analysis_period.st_time.doy < self.header.analysis_period.st_time.doy:
-            return False
-        elif analysis_period.end_time.doy > self.header.analysis_period.end_time.doy:
-            return False
-        return True
+            return a_per
+
+        new_needed = False
+        n_ap = [a_per.st_month, a_per.st_day, a_per.st_hour,
+                a_per.end_month, a_per.end_day, a_per.end_hour,
+                a_per.timestep, a_per.is_leap_year]
+        if a_per.st_hour < self.header.analysis_period.st_hour:
+            n_ap[2] = self.header.analysis_period.st_hour
+            new_needed = True
+        elif a_per.end_hour > self.header.analysis_period.end_hour:
+            n_ap[5] = self.header.analysis_period.end_hour
+            new_needed = True
+        elif a_per.st_time.doy < self.header.analysis_period.st_time.doy:
+            n_ap[0] = self.header.analysis_period.st_month
+            n_ap[1] = self.header.analysis_period.st_day
+            new_needed = True
+        elif a_per.end_time.doy > self.header.analysis_period.end_time.doy:
+            n_ap[3] = self.header.analysis_period.end_month
+            n_ap[4] = self.header.analysis_period.end_day
+            new_needed = True
+        if new_needed is False:
+            return a_per
+        else:
+            return AnalysisPeriod(n_ap[0], n_ap[1], n_ap[2], n_ap[3],
+                                  n_ap[4], n_ap[5], n_ap[6], n_ap[7])
 
     def __delitem__(self, key):
         raise TypeError('Convert this Collection to Discontinuous to use del().')
@@ -1195,21 +1310,3 @@ class MonthlyPerHourCollection(BaseCollection):
                 self.header.analysis_period.end_month,
                 self.header.analysis_period.end_hour,
                 self.header.data_type, self.header.unit, len(self._values))
-
-
-"""Methods to be overwritten:
-    __init__ (No need for datetimes but header requires an AnalysisPeriod)
-    datetimes (check if they exist and, if not, generate them from AnalysisPeriod)
-    from_json (no need for datetimes as we have the AnalysisPeriod)
-    to_json (no need for datetimes as we have the AnalysisPeriod)
-    values.setter (check to be sure that lenth of values aligns with AnalysisPeriod)
-    duplicate
-    __delitem__ (can't delete an item without making the collection discontinouous)
-    is_collection_aligned (only need to check the analysisperiod and not all datetimes)
-    filter_by_analysis_period
-    filter_by_moys
-    group_by_day
-    group_by_month
-
-    group_by_month_per_hour
-"""
