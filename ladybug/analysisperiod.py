@@ -290,25 +290,27 @@ class AnalysisPeriod(object):
         if not self._is_reversed:
             return self._calc_daystamps(self.st_time, self.end_time)
         else:
-            return self._calc_daystamps(self.st_time, DateTime.from_hoy(8759)) + \
-                self._calc_datstamps(DateTime.from_hoy(0), self.end_time)
+            doys_st = self._calc_daystamps(self.st_time, DateTime.from_hoy(8759))
+            doys_end = self._calc_daystamps(DateTime.from_hoy(0), self.end_time)
+            return doys_st + doys_end
 
     @property
     def months_int(self):
         """A sorted list of months of the year in this analysis period as integers."""
         if not self._is_reversed:
-            return xrange(self.st_time.month, self.end_time.month + 1)
+            return list(xrange(self.st_time.month, self.end_time.month + 1))
         else:
-            months_start = xrange(self.st_time.month, 13)
-            return months_start + xrange(1, self.end_time.month)
+            months_st = list(xrange(self.st_time.month, 13))
+            months_end = list(xrange(1, self.end_time.month + 1))
+            return months_st + months_end
 
     @property
-    def months_per_hour_str(self):
-        """A list of strings representing months per hour in this analysis period."""
+    def months_per_hour(self):
+        """A list of tuples representing months per hour in this analysis period."""
         month_hour_strings = []
         hour_range = xrange(self.st_hour, self.end_hour + 1)
         for month in self.months_int:
-            month_hour_strings.extend(['{}@{}'.format(month, hr) for hr in hour_range])
+            month_hour_strings.extend([(month, hr) for hr in hour_range])
         return month_hour_strings
 
     @property
@@ -439,7 +441,7 @@ class AnalysisPeriod(object):
         """
         start_doy = sum(self._num_of_days_each_month[:st_time.month-1]) + st_time.day
         end_doy = sum(self._num_of_days_each_month[:end_time.month-1]) + end_time.day + 1
-        return xrange(start_doy, end_doy)
+        return list(range(start_doy, end_doy))
 
     def __eq__(self, other):
         """Whether the inputs match between two analysis periods."""
