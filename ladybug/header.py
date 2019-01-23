@@ -104,9 +104,9 @@ class Header(object):
 
     def duplicate(self):
         """Return a copy of the header."""
+        a_per = self.analysis_period.duplicate() if self.analysis_period else None
         return self.__class__(self.data_type.duplicate(), self.unit,
-                              self.analysis_period.duplicate(),
-                              deepcopy(self.metadata))
+                              a_per, deepcopy(self.metadata))
 
     def to_tuple(self):
         """Return Ladybug header as a list."""

@@ -17,7 +17,7 @@ Discontinuous
 All Data Collections have the ability to:
     * get max, min, bounds, average, highest/lowest values
     * filter based on conditional statements
-    * perform unit conversions on the data (to_unit, to_ip, to_si)
+    * perform unit conversions on the data: to_unit, to_ip, to_si
 
 All collections except for the Base have the ability to:
     * filter based on analysis period
