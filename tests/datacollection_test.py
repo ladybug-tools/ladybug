@@ -1,15 +1,21 @@
 # coding=utf-8
+from __future__ import division
 
-import unittest
-import pytest
-from ladybug.datapoint import DataPoint
 from ladybug.dt import DateTime
-from ladybug.datacollection import DataCollection
+from ladybug.datacollection import HourlyDiscontinuousCollection, \
+    HourlyContinuousCollection, MonthlyCollection, DailyCollection, \
+    MonthlyPerHourCollection
 from ladybug.header import Header
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.datatype.generic import GenericType
 from ladybug.datatype.temperature import Temperature
 from ladybug.datatype.percentage import RelativeHumidity
+
+import unittest
+import pytest
+import sys
+if (sys.version_info >= (3, 0)):
+    xrange = range
 
 
 class DataCollectionTestCase(unittest.TestCase):
@@ -24,36 +30,49 @@ class DataCollectionTestCase(unittest.TestCase):
         pass
 
     def test_init(self):
-        """Test the init methods to ensure self object creation"""
+        """Test the init methods for dicontinuous collections."""
+        # setup AnalysisPeriod
+        a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
         # Setup Datetimes
-        dt1 = DateTime(6, 21, 12, 0)
-        dt2 = DateTime(9, 21, 12, 0)
+        dt1 = DateTime(6, 21, 12)
+        dt2 = DateTime(6, 21, 13)
         # Define temperature values
         v1 = 20
-        v2 = 30
-        average = (v1 + v2) / 2
-        # Setup temperature datatypes
-        t1 = DataPoint(v1, dt1)
-        t2 = DataPoint(v2, dt2)
+        v2 = 25
+        avg = (v1 + v2) / 2
+        # Setup temperature data collection
+        dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
+                                            [v1, v2], [dt1, dt2])
 
-        with pytest.raises(Exception):
-            DataCollection(3)
-        with pytest.raises(Exception):
-            DataCollection([t1, 2, 3, 4])
-
-        dc1 = DataCollection([t1, t2])
-        # dc_from_data_and_datetimes = \
-        # DataCollection.from_data_and_datetimes([v1, v2], [dt1, dt2])
         assert dc1.datetimes == (dt1, dt2)
-        assert dc1.data == [v1, v2]
-        assert dc1.average == average
+        assert dc1.values == (v1, v2)
+        assert dc1.average == avg
+
+    def test_init_continuous(self):
+        """Test the init methods for continuous collections"""
+        # Setup temperature data collection
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc1 = HourlyContinuousCollection(header, values)
+
+        assert len(dc1.datetimes) == 8760
+        assert list(dc1.values) == list(xrange(8760))
+        assert dc1.average == 4379.5
+
+    def test_init_continuous_incorrect(self):
+        """Test the init methods for continuous collections with incorrect values"""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(10))
+        with pytest.raises(Exception):
+            HourlyContinuousCollection(header, values)
 
     def test_to_unit(self):
         """Test the conversion of DataCollection units."""
-        # Setup Datetimes
-        vals = [20]
-        dc1 = DataCollection.from_list(vals, Temperature(), 'C')
-        dc2 = DataCollection.from_list(vals, Temperature(), 'F')
+        header1 = Header(Temperature(), 'C', AnalysisPeriod())
+        header2 = Header(Temperature(), 'F', AnalysisPeriod())
+        values = [20] * 8760
+        dc1 = HourlyContinuousCollection(header1, values)
+        dc2 = HourlyContinuousCollection(header2, values)
         dc3 = dc1.to_unit('K')
         dc4 = dc2.to_unit('K')
         assert dc1.values[0] == 20
@@ -63,9 +82,9 @@ class DataCollectionTestCase(unittest.TestCase):
 
     def test_to_ip_si(self):
         """Test the conversion of DataCollection to IP and SI units."""
-        # Setup Datetimes
-        vals = [20]
-        dc1 = DataCollection.from_list(vals, Temperature(), 'C')
+        header1 = Header(Temperature(), 'C', AnalysisPeriod())
+        values = [20] * 8760
+        dc1 = HourlyContinuousCollection(header1, values)
         dc2 = dc1.to_ip()
         dc3 = dc2.to_si()
         assert dc1.values[0] == 20
@@ -73,23 +92,26 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc3.values[0] == dc1.values[0]
 
     def test_bounds(self):
-        """Test the function to check whether values are in a specific range."""
-        val1 = [50]
-        dc1 = DataCollection.from_list(val1, Temperature(), 'C')
+        """Test the bounds function."""
+        header1 = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc1 = HourlyContinuousCollection(header1, values)
         min, max = dc1.bounds
-        assert min > 0
-        assert max < 100
+        assert min == 0
+        assert max == 8759
 
     def test_is_in_range_data_type(self):
         """Test the function to check whether values are in range for the data_type."""
-        val1 = [20]
-        val2 = [-300]
-        val3 = [270]
-        val4 = [-10]
-        dc1 = DataCollection.from_list(val1, Temperature(), 'C')
-        dc2 = DataCollection.from_list(val2, Temperature(), 'C')
-        dc3 = DataCollection.from_list(val3, Temperature(), 'K')
-        dc4 = DataCollection.from_list(val4, Temperature(), 'K')
+        header1 = Header(Temperature(), 'C', AnalysisPeriod())
+        header2 = Header(Temperature(), 'K', AnalysisPeriod())
+        val1 = [20] * 8760
+        val2 = [-300] * 8760
+        val3 = [270] * 8760
+        val4 = [-10] * 8760
+        dc1 = HourlyContinuousCollection(header1, val1)
+        dc2 = HourlyContinuousCollection(header1, val2)
+        dc3 = HourlyContinuousCollection(header2, val3)
+        dc4 = HourlyContinuousCollection(header2, val4)
         assert dc1._is_in_data_type_range(raise_exception=False) is True
         assert dc2._is_in_data_type_range(raise_exception=False) is False
         assert dc3._is_in_data_type_range(raise_exception=False) is True
@@ -97,14 +119,16 @@ class DataCollectionTestCase(unittest.TestCase):
 
     def test_bounds_epw(self):
         """Test the function to check whether values are in range for an EPW."""
-        val1 = [50]
-        val2 = [150]
-        val3 = [0.5]
-        val4 = [1.5]
-        dc1 = DataCollection.from_list(val1, RelativeHumidity(), '%')
-        dc2 = DataCollection.from_list(val2, RelativeHumidity(), '%')
-        dc3 = DataCollection.from_list(val3, RelativeHumidity(), 'fraction')
-        dc4 = DataCollection.from_list(val4, RelativeHumidity(), 'fraction')
+        header1 = Header(RelativeHumidity(), '%', AnalysisPeriod())
+        header2 = Header(RelativeHumidity(), 'fraction', AnalysisPeriod())
+        val1 = [50] * 8760
+        val2 = [150] * 8760
+        val3 = [0.5] * 8760
+        val4 = [1.5] * 8760
+        dc1 = HourlyContinuousCollection(header1, val1)
+        dc2 = HourlyContinuousCollection(header1, val2)
+        dc3 = HourlyContinuousCollection(header2, val3)
+        dc4 = HourlyContinuousCollection(header2, val4)
         assert dc1._is_in_epw_range(raise_exception=False) is True
         assert dc2._is_in_epw_range(raise_exception=False) is False
         assert dc3._is_in_epw_range(raise_exception=False) is True
@@ -112,29 +136,32 @@ class DataCollectionTestCase(unittest.TestCase):
 
     def test_interpolation(self):
         # To test an annual data collection, we will just use a range of values
-        test_data = range(8760)
-        ap = AnalysisPeriod()
-        test_header = Header(
-            data_type=GenericType('Test Type', 'test'),
-            unit=None, analysis_period=ap, metadata=None)
-        dc2 = DataCollection.from_data_and_analysis_period(test_data, ap, test_header)
+        values = list(xrange(24))
+        test_header = Header(GenericType('Test Type', 'test'), 'test',
+                             AnalysisPeriod(end_month=1, end_day=1))
+        dc2 = HourlyContinuousCollection(test_header, values)
 
         # check the interpolate data functions
-        assert dc2.interpolate_data(2)[1] == 0.5
-        assert dc2.interpolate_data(2, True)[1] == 0.25
+        interp_coll1 = dc2.interpolate_data(2)
+        interp_coll2 = dc2.interpolate_data(2, True)
+        assert interp_coll1[1] == 0.5
+        assert interp_coll2[1] == 0.25
 
     def test_json_methods(self):
-        pass
-        # I leave the test here as a TODO
-        # assert dc.to_json() == dc_from_data_and_datetimes.to_json()
+        header = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=1))
+        values = list(xrange(24))
+        dc = HourlyContinuousCollection(header, values)
+        dc_json = dc.to_json()
+        reconstruced_dc = HourlyContinuousCollection.from_json(dc_json)
+
+        assert dc_json == reconstruced_dc.to_json()
 
     def test_get_highest_values(self):
         # To test get_highest_values, a range of yearly-hour values will be used
+        header = Header(Temperature(), 'C', AnalysisPeriod())
         test_data = list(range(8760))
-        test_data = [i * 5 for i in test_data]
         test_count = len(test_data)/2
-
-        dc3 = DataCollection.from_list(lst=test_data, data_type=Temperature())
+        dc3 = HourlyContinuousCollection(header, test_data)
 
         test_highest_values, test_highest_values_index = \
             dc3.get_highest_values(test_count)

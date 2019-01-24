@@ -1,7 +1,13 @@
 # coding=utf-8
 
-import unittest
 from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.dt import DateTime
+
+from datetime import timedelta
+import unittest
+import sys
+if (sys.version_info >= (3, 0)):
+    xrange = range
 
 
 class AnalysisPeriodTestCase(unittest.TestCase):
@@ -26,6 +32,7 @@ class AnalysisPeriodTestCase(unittest.TestCase):
         assert ap.st_day == 1
         assert ap.end_day == 31
         assert ap.timestep == 1
+        assert ap.is_leap_year is False
         assert len(ap.datetimes) == 8760
 
     def test_from_string(self):
@@ -41,10 +48,19 @@ class AnalysisPeriodTestCase(unittest.TestCase):
         assert ap.timestep == 1
 
     def test_is_annual(self):
+        """Test the is_annual property."""
         annual_ap = AnalysisPeriod()
         not_annual_ap = AnalysisPeriod(end_month=2)
         assert annual_ap.is_annual
         assert not not_annual_ap.is_annual
+
+    def test_to_from_json(self):
+        """Test the json methods of the AnalysisPeriod."""
+        ap = AnalysisPeriod(st_month=2)
+        ap_json = ap.to_json()
+        rebuilt_ap = AnalysisPeriod.from_json(ap_json)
+        assert rebuilt_ap.st_month == 2
+        assert rebuilt_ap.to_json() == ap_json
 
     def test_include_last_hour(self):
         """Test that analysis period includes the last hour.
@@ -87,6 +103,72 @@ class AnalysisPeriodTestCase(unittest.TestCase):
         not_annual_ap = AnalysisPeriod(end_month=2, is_leap_year=True)
         assert annual_ap.is_annual
         assert not not_annual_ap.is_annual
+
+    def test_moys_hoys_hoys_int(self):
+        """Test the moys, hoys, and hoys_int properties."""
+        ap = AnalysisPeriod(timestep=4)
+        assert ap.moys[1] == 15
+        assert ap.hoys[1] == 0.25
+        assert ap.hoys_int[1] == 0
+        assert isinstance(ap.hoys[1], float)
+        assert isinstance(ap.hoys_int[1], int)
+        assert len(ap.moys) == len(ap.hoys) == len(ap.hoys_int)
+
+    def test_doys_int(self):
+        """Test the doys_int property."""
+        ap = AnalysisPeriod()
+        ap_2 = AnalysisPeriod(st_month=2)
+        assert ap.doys_int == list(xrange(1, 366))
+        assert ap_2.doys_int == list(xrange(32, 366))
+
+    def test_months_int(self):
+        """Test the months_int property."""
+        ap = AnalysisPeriod()
+        ap_2 = AnalysisPeriod(st_month=2)
+        assert ap.months_int == list(xrange(1, 13))
+        assert ap_2.months_int == list(xrange(2, 13))
+
+    def test_months_per_hour(self):
+        """Test the months_per_hour property."""
+        ap = AnalysisPeriod()
+        ap_2 = AnalysisPeriod(st_month=2)
+        ap_3 = AnalysisPeriod(st_hour=5)
+        assert len(ap.months_per_hour) == 12 * 24
+        assert len(ap_2.months_per_hour) == 11 * 24
+        assert len(ap_3.months_per_hour) == 12 * 19
+
+    def test_minute_intervals(self):
+        """Test the minute_intervals property."""
+        ap = AnalysisPeriod()
+        ap_2 = AnalysisPeriod(timestep=6)
+        assert ap.minute_intervals == timedelta(minutes=60)
+        assert ap_2.minute_intervals == timedelta(minutes=10)
+
+    def test_is_reversed(self):
+        """Test the is_reversed property."""
+        ap = AnalysisPeriod()
+        ap_2 = AnalysisPeriod(st_month=6, end_month=2)
+        assert not ap.is_reversed
+        assert ap_2.is_reversed
+
+    def test_is_overnight(self):
+        """Test the is_overnight property."""
+        ap = AnalysisPeriod()
+        ap_2 = AnalysisPeriod(st_hour=20, end_hour=5)
+        assert not ap.is_overnight
+        assert ap_2.is_overnight
+
+    def test_is_time_included(self):
+        """Test the is_time_included method."""
+        ap = AnalysisPeriod(st_month=2, end_month=6)
+        assert ap.is_time_included(DateTime(5, 18, 17))
+        assert not ap.is_time_included(DateTime(1, 10, 12))
+
+    def test_duplicate(self):
+        """Test the duplicate method."""
+        ap = AnalysisPeriod()
+        ap_2 = ap.duplicate()
+        assert ap_2 == ap
 
 
 if __name__ == "__main__":
