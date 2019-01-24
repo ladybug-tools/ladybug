@@ -227,7 +227,7 @@ def zhang_huang_solar_split(altitudes, doys, cloud_cover, relative_humidity,
 """HORIZONTAL INFRARED INTENSITY + SKY TEMPERATURE MODELS"""
 
 
-def horizontal_infrared(sky_cover, dry_bulb, dew_point):
+def calc_horizontal_infrared(sky_cover, dry_bulb, dew_point):
     """Calculate horizontal infrared radiation intensity.
 
     See EnergyPlus Enrineering Reference for more information:
@@ -267,7 +267,7 @@ def horizontal_infrared(sky_cover, dry_bulb, dew_point):
     return horiz_ir
 
 
-def sky_temperature(horiz_ir, dry_bulb):
+def calc_sky_temperature(horiz_ir, dry_bulb):
     """Calculate sky temperature in Celcius.
 
     See EnergyPlus Enrineering Reference for more information:

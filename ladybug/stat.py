@@ -14,6 +14,10 @@ import os
 import re
 import codecs
 import platform
+try:
+    from itertools import izip as zip  # python 2
+except ImportError:
+    xrange = range  # python 3
 
 
 class STAT(object):
@@ -29,6 +33,15 @@ class STAT(object):
         monthly_tau_beam
         monthly_tau_diffuse
     """
+    winter_keys = ('Month', 'DB996', 'DB990', 'DP996', 'HR_DP996', 'DB_DP996',
+                   'DP990', 'HR_DP990', 'DB_DP990', 'WS004c', 'DB_WS004c',
+                   'WS010c', 'DB_WS010c', 'WS_DB996', 'WD_DB996')
+    summer_keys = ('Month', 'DBR', 'DB004', 'WB_DB004', 'DB010', 'WB_DB010',
+                   'DB020', 'WB_DB020', 'WB004', 'DB_WB004', 'WB010', 'DB_WB010',
+                   'WB020', 'DB_WB020', 'WS_DB004', 'WD_DB004', 'DP004',
+                   'HR_DP004', 'DB_DP004', 'DP010', 'HR_DP010', 'DB_DP010',
+                   'DP020', 'HR_DP020', 'DB_DP020', 'EN004', 'DB_EN004',
+                   'EN010', 'DB_EN010', 'EN020', 'DB_EN020', 'Hrs_8-4_&_DB')
 
     def __init__(self, file_path):
         """Initalize the class."""
@@ -87,7 +100,7 @@ class STAT(object):
         try:
             line = statwin.readline()
             # import header with location
-            self._header = [line] + [statwin.readline() for i in range(9)]
+            self._header = [line] + [statwin.readline() for i in xrange(9)]
             self._body = statwin.read()
         except Exception as e:
             import traceback
@@ -106,11 +119,11 @@ class STAT(object):
             station_id = self._header[8].strip().replace('WMO Station ', '')
             if iron_python:
                 # IronPython
-                coord_pattern = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)'}")
+                coord_pattern = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)")
                 matches = coord_pattern.findall(self._header[3].replace('\xb0', 'deg'))
             else:
                 # CPython
-                coord_pattern = re.compile(r"{([NSEW])(\s*\d*) (\s*\d*)'}")
+                coord_pattern = re.compile(r"{([NSEW])(\s*\d*) (\s*\d*)")
                 matches = coord_pattern.findall(self._header[3])
             lat_sign = -1 if matches[0][0] == 'S' else 1
             latitude = lat_sign * (float(matches[0][1]) + (float(matches[0][2]) / 60))
@@ -119,6 +132,9 @@ class STAT(object):
             time_zone = self._regex_check(r"{GMT\s*(\S*)\s*Hours}", self._header[3])
             elev_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)m\s*(\S*)")
             elev_matches = elev_pattern.findall(self._header[4])
+            if len(elev_matches) == 0:
+                elev_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)\s*m\s*(\S*)")
+                elev_matches = elev_pattern.findall(self._header[4])
             elev_sign = -1 if elev_matches[0][-1].lower() == 'below' else 1
             elevation = elev_sign * float(elev_matches[0][0])
             self._location = Location()
@@ -133,7 +149,7 @@ class STAT(object):
 
             # pull out individual properties
             self._stand_press_at_elev = self._regex_check(
-                r"Elevation\s*[-]*\s*(\d*)Pa", self._header[5])
+                r"Elevation\s*[-]*\s*(\d*)", self._header[5])
             self._ashrae_climate_zone = self._regex_check(
                 r'Climate type\s"(\S*)"\s\(A', self._body)
             self._koppen_climate_zone = self._regex_check(
@@ -149,13 +165,12 @@ class STAT(object):
             self._seasonal_weeks = self._regex_typical_week_parse()
 
             # pull out annual design days
-            winter_keys = self._regex_parse(r"Design Stat	Coldest(.*)")
-            winter_vals = self._regex_parse(r"Heating(.*)")
-            for key, val in zip(winter_keys, winter_vals):
-                self._winter_des_day_dict[key] = val
-            summer_keys = self._regex_parse(r"Design Stat	Hottest(.*)")
-            summer_vals = self._regex_parse(r"Cooling(.*)")
-            for key, val in zip(summer_keys, summer_vals):
+            winter_vals = self._regex_parse(r"Heating\s(\d.*)")
+            if len(winter_vals) == 15:
+                for key, val in zip(self.winter_keys, winter_vals):
+                    self._winter_des_day_dict[key] = val
+            summer_vals = self._regex_parse(r"Cooling\s(\d.*)")
+            for key, val in zip(self.summer_keys, summer_vals):
                 self._summer_des_day_dict[key] = val
 
             # Pull out relevant monthly information
@@ -178,6 +193,8 @@ class STAT(object):
                 dirs = self._regex_parse(re_string)
                 if dirs != []:
                     self._monthly_wind_dirs.append(dirs)
+            if self._monthly_wind_dirs == []:
+                self._monthly_wind_dirs = [[0] * 12 for i in xrange(8)]
 
         finally:
             statwin.close()
@@ -235,7 +252,7 @@ class STAT(object):
     @property
     def monthly_found(self):
         if self._monthly_db_range_50 != [] and self._monthly_wb_range_50 != [] \
-            and self._monthly_wind != [] and self._monthly_wind_dirs != [] \
+            and self._monthly_wind != [] \
                 and self._stand_press_at_elev is not None:
                     return True
         else:
@@ -426,7 +443,7 @@ class STAT(object):
                 '5% Cooling Design Day for {}'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                    for i in range(12)]
+                    for i in xrange(12)]
 
     @property
     def monthly_cooling_design_days_100(self):
@@ -446,7 +463,7 @@ class STAT(object):
                 '10% Cooling Design Day for {}'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                    for i in range(12)]
+                    for i in xrange(12)]
 
     @property
     def monthly_cooling_design_days_020(self):
@@ -466,7 +483,7 @@ class STAT(object):
                 '2% Cooling Design Day for {}'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                    for i in range(12)]
+                    for i in xrange(12)]
 
     @property
     def monthly_cooling_design_days_004(self):
@@ -486,7 +503,7 @@ class STAT(object):
                 '0.4% Cooling Design Day for {}'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                    for i in range(12)]
+                    for i in xrange(12)]
 
     @property
     def monthly_db_temp_050(self):
@@ -543,9 +560,9 @@ class STAT(object):
         """A list of 12 monthly clear sky conditions that are used on the design days.
         """
         if self._monthly_tau_diffuse is [] or self._monthly_tau_beam is []:
-            return [OriginalClearSkyCondition(i, 21) for i in range(1, 13)]
+            return [OriginalClearSkyCondition(i, 21) for i in xrange(1, 13)]
         return [RevisedClearSkyCondition(i, 21, x, y) for i, x, y in zip(
-            range(1, 13), self._monthly_tau_beam, self._monthly_tau_diffuse)]
+            list(xrange(1, 13)), self._monthly_tau_beam, self._monthly_tau_diffuse)]
 
     @property
     def monthly_tau_beam(self):

@@ -123,13 +123,12 @@ class AnalysisPeriod(object):
         if timestep not in self.VALIDTIMESTEPS:
             raise ValueError("Invalid timestep."
                              "Valid values are %s" % str(self.VALIDTIMESTEPS.keys()))
-
-        # calculate time stamp
         self._timestep = timestep
         self._minute_intervals = timedelta(1 / (24.0 * self.timestep))
-        # calculate timestamps and hours_of_year
-        # A dictionary for datetimes. Key values will be minute of year
-        self._timestamps_data = None
+
+        # _timestamps_data is a dictionary for datetimes.
+        # key values will be minute of year
+        self._timestamps_data = None  # set to None for now and calculate upon request
 
     @classmethod
     def from_json(cls, data):
@@ -419,7 +418,7 @@ class AnalysisPeriod(object):
             # This is for cases that timestep is more than one
             # and last hour of the day is part of the calculation
             curr = end_time
-            for i in xrange(self.timestep)[1:]:
+            for i in list(xrange(self.timestep))[1:]:
                 curr += self.minute_intervals
                 time = DateTime(curr.month, curr.day, curr.hour, curr.minute,
                                 self.is_leap_year)

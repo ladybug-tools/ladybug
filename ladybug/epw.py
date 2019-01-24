@@ -3,10 +3,9 @@ from __future__ import division
 
 from .location import Location
 from .analysisperiod import AnalysisPeriod
-from .datapoint import DataPoint
 from .header import Header
-from .datacollection import DataCollection
-from .dt import DateTime
+from .datacollection import HourlyContinuousCollection
+from .skymodel import calc_sky_temperature
 from .futil import write_to_file
 from .datatype import angle, distance, energyflux, energyintensity, generic, \
     illuminance, luminance, percentage, pressure, speed, temperature
@@ -159,26 +158,19 @@ class EPW(object):
             # create an annual analysis period
             analysis_period = AnalysisPeriod()
 
-            # create an empty collection for each field in epw file
+            # create headers and an empty list for each field in epw file
+            headers = []
             for field_number in range(self._num_of_fields):
                 field = EPWFields.field_by_number(field_number)
                 header = Header(data_type=field.name, unit=field.unit,
                                 analysis_period=analysis_period,
                                 metadata=self._metadata)
-
-                # create an empty data list with the header
-                self._data.append(DataCollection(header=header))
+                headers.append(header)
+                self._data.append([])
 
             # collect hourly data
             while line:
                 data = line.strip().split(',')
-                year, month, day, hour = map(int, data[:4])
-
-                # in an epw file year can be different for each month
-                # since I'm using this timestamp as the key and will be using it for
-                # sorting. I'm setting it up to 2015 - the real year will be collected
-                # under modelYear
-                timestamp = DateTime(month, day, hour - 1)
 
                 for field_number in xrange(self._num_of_fields):
                     value_type = EPWFields.field_by_number(field_number).value_type
@@ -190,25 +182,21 @@ class EPW(object):
                             raise ValueError(e)
                         value = int(round(float(data[field_number])))
 
-                    self._data[field_number].append(DataPoint(value, timestamp))
+                    self._data[field_number].append(value)
 
                 line = epwin.readline()
 
             # move last item to start position for fields on the hour
             for field_number in xrange(self._num_of_fields):
-                point_in_time = self._data[field_number].header.data_type.point_in_time
+                point_in_time = headers[field_number].data_type.point_in_time
                 if point_in_time is True:
-                    # shift datetimes for an hour
-                    for data in self._data[field_number]:
-                        try:
-                            data.datetime = data.datetime.add_hour(1)
-                        except ValueError:
-                            # this is the last hour
-                            data.datetime = DateTime(1, 1, 0)
-
-                    # now move the last hour to first
+                    # move the last hour to first position
                     last_hour = self._data[field_number].pop()
                     self._data[field_number].insert(0, last_hour)
+
+            # finally, build the data collection objects from the headers and data
+            for i in xrange(self._num_of_fields):
+                self._data[i] = HourlyContinuousCollection(headers[i], self._data[i])
 
             self._is_data_loaded = True
 
@@ -251,13 +239,13 @@ class EPW(object):
             for field in range(0, self._num_of_fields):
                 point_in_time = self._data[field].header.data_type.point_in_time
                 if point_in_time is True:
-                    first_hour = self._data[field].pop(0)
-                    self._data[field].append(first_hour)
+                    first_hour = self._data[field]._values.pop(0)
+                    self._data[field]._values.append(first_hour)
 
             for hour in xrange(0, 8760):
                 line = []
                 for field in range(0, self._num_of_fields):
-                    line.append(str(self._data[field].data[hour].value))
+                    line.append(str(self._data[field]._values[hour]))
                 lines.append(",".join(line) + "\n")
         except IndexError:
             # cleaning up
@@ -273,8 +261,8 @@ class EPW(object):
             for field in range(0, self._num_of_fields):
                 point_in_time = self._data[field].header.data_type.point_in_time
                 if point_in_time is True:
-                    last_hour = self._data[field].pop()
-                    self._data[field].insert(0, last_hour)
+                    last_hour = self._data[field]._values.pop()
+                    self._data[field]._values.insert(0, last_hour)
 
         return file_path
 
@@ -741,20 +729,18 @@ class EPW(object):
         Read more at: https://bigladdersoftware.com/epx/docs/8-9/engineering-reference
             /climate-calculations.html#energyplus-sky-temperature-calculation
         """
-        # create sky temperature data collection from horizontal infrared
-        horiz_ir = self._get_data_by_field(12)
+        # create sky temperature header
         sky_temp_header = Header(data_type=temperature.SkyTemperature(), unit='C',
                                  analysis_period=AnalysisPeriod(),
                                  metadata=self._metadata)
 
         # calculate sy temperature for each hour
+        horiz_ir = self._get_data_by_field(12).values
+        db_temp = self._get_data_by_field(6).values
         sky_temp_data = []
-        for hor_ir in horiz_ir.data:
-            dat = hor_ir.datetime
-            temp = ((float(hor_ir) / (5.6697 * (10**(-8))))**(0.25)) - 273.15
-            sky_temp_data.append(DataPoint(temp, dat))
-        sky_temp = DataCollection(sky_temp_data, sky_temp_header)
-        return sky_temp
+        for hir, dbt in zip(horiz_ir, db_temp):
+            sky_temp_data.append(calc_sky_temperature(hir, dbt))
+        return HourlyContinuousCollection(sky_temp_header, sky_temp_data)
 
     def _get_wea_header(self):
         return "place %s\n" % self.location.city + \
@@ -784,13 +770,14 @@ class EPW(object):
         # write header
         lines = [self._get_wea_header()]
         # write values
+        datetimes = self.direct_normal_radiation.datetimes
         for hoy in hoys:
             dir_rad = self.direct_normal_radiation[hoy]
             dif_rad = self.diffuse_horizontal_radiation[hoy]
             line = "%d %d %.3f %d %d\n" \
-                % (dir_rad.datetime.month,
-                   dir_rad.datetime.day,
-                   dir_rad.datetime.hour + 0.5,
+                % (datetimes[hoy].month,
+                   datetimes[hoy].day,
+                   datetimes[hoy].hour + 0.5,
                    dir_rad, dif_rad)
             lines.append(line)
 
