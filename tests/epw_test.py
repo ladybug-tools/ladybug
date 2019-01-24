@@ -34,6 +34,7 @@ class EPWTestCase(unittest.TestCase):
         skyt = epw.sky_temperature  # test sky temperature calculation
         assert epw.is_data_loaded is True
         assert len(dbt) == 8760
+        assert len(skyt) == 8760
 
     def test_import_tokyo_epw(self):
         """Test import custom epw with wrong types."""
@@ -72,15 +73,11 @@ class EPWTestCase(unittest.TestCase):
 
         # check the order of the data in the file
         with open(wea_path) as wea_f:
-            lines = wea_f.readlines()
-            assert float(lines[6].split(' ')[-2]) == \
-                epw.direct_normal_radiation[0].value
-            assert float(lines[6].split(' ')[-1]) == \
-                epw.diffuse_horizontal_radiation[0].value
-            assert float(lines[17].split(' ')[-2]) == \
-                epw.direct_normal_radiation[11].value
-            assert float(lines[17].split(' ')[-1]) == \
-                epw.diffuse_horizontal_radiation[11].value
+            line = wea_f.readlines()
+            assert float(line[6].split(' ')[-2]) == epw.direct_normal_radiation[0]
+            assert float(line[6].split(' ')[-1]) == epw.diffuse_horizontal_radiation[0]
+            assert float(line[17].split(' ')[-2]) == epw.direct_normal_radiation[11]
+            assert float(line[17].split(' ')[-1]) == epw.diffuse_horizontal_radiation[11]
 
         os.remove(wea_path)
 
