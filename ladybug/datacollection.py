@@ -160,6 +160,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
             percentile: A float value from 0 to 100 representing the
                 requested percentile.
         """
+        assert 0 <= percentile <= 100, \
+            'percentile must be between 0 and 100. Got {}'.format(percentile)
         data_dict = self.group_by_day()
         per_data, d_times = [], []
         for i in self.header.analysis_period.doys_int:
@@ -216,6 +218,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
             percentile: A float value from 0 to 100 representing the
                 requested percentile.
         """
+        assert 0 <= percentile <= 100, \
+            'percentile must be between 0 and 100. Got {}'.format(percentile)
         data_dict = self.group_by_month()
         per_data, d_times = [], []
         for i in self.header.analysis_period.months_int:
@@ -276,6 +280,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
             percentile: A float value from 0 to 100 representing the
                 requested percentile.
         """
+        assert 0 <= percentile <= 100, \
+            'percentile must be between 0 and 100. Got {}'.format(percentile)
         data_dict = self.group_by_month_per_hour()
         total_data, d_times = [], []
         for i in self.header.analysis_period.months_per_hour:

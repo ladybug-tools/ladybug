@@ -229,6 +229,8 @@ class BaseCollection(object):
         Return:
             The Data Collection value at the input percentile
         """
+        assert 0 <= percentile <= 100, \
+            'percentile must be between 0 and 100. Got {}'.format(percentile)
         return self._percentile(self._values, percentile)
 
     def filter_by_conditional_statement(self, statement):
