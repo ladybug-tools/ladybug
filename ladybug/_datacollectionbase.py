@@ -112,32 +112,6 @@ class BaseCollection(object):
         """Return the total of the Data Collection values."""
         return sum(self._values)
 
-    def duplicate(self):
-        """Return a copy of the current Data Collection."""
-        return self.__class__(
-            self.header.duplicate(), self.values, self.datetimes)
-
-    def get_aligned_collection(self, value=0, data_type=None, unit=None):
-        """Return a Collection aligned with this one composed of one repeated value.
-
-        Aligned Data Collections are of the same Data Collection class, have the same
-        number of values and have matching datetimes.
-
-        Args:
-            value: The value to be repeated in the aliged collection values.
-                Default: 0.
-            data_type: The data type of the aligned collection. Default is to
-                use the data type of this collection.
-            unit: The unit of the aligned collection. Default is to
-                use the unit of this collection.
-        """
-        data_type = data_type or self.header.data_type
-        unit = unit or self.header.unit
-        values = [value] * len(self._values)
-        header = Header(data_type, unit, self.header.analysis_period,
-                        self.header.metadata)
-        return self.__class__(header, values, self.datetimes)
-
     def convert_to_unit(self, unit):
         """Convert the Data Collection to the input unit."""
         self._values = self._header.data_type.to_unit(
@@ -282,6 +256,47 @@ class BaseCollection(object):
         else:
             return True
 
+    def get_aligned_collection(self, value=0, data_type=None, unit=None):
+        """Return a Collection aligned with this one composed of one repeated value.
+
+        Aligned Data Collections are of the same Data Collection class, have the same
+        number of values and have matching datetimes.
+
+        Args:
+            value: The value to be repeated in the aliged collection values.
+                Default: 0.
+            data_type: The data type of the aligned collection. Default is to
+                use the data type of this collection.
+            unit: The unit of the aligned collection. Default is to
+                use the unit of this collection or the base unit of the
+                input data_type (if it exists).
+        """
+        if data_type is not None:
+            assert hasattr(data_type, 'isDataType'), \
+                'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
+            if unit is None:
+                unit = data_type.units[0]
+        else:
+            data_type = self.header.data_type
+            unit = unit or self.header.unit
+        values = [value] * len(self._values)
+        header = Header(data_type, unit, self.header.analysis_period,
+                        self.header.metadata)
+        return self.__class__(header, values, self.datetimes)
+
+    def duplicate(self):
+        """Return a copy of the current Data Collection."""
+        return self.__class__(
+            self.header.duplicate(), self.values, self.datetimes)
+
+    def to_json(self):
+        """Convert Data Collection to a dictionary."""
+        return {
+            'header': self.header.to_json(),
+            'values': self._values,
+            'datetimes': [dat.to_json() for dat in self.datetimes]
+        }
+
     @staticmethod
     def filter_collections_by_statement(data_collections, statement):
         """Generate a filtered data collections according to a conditional statement.
@@ -320,13 +335,24 @@ class BaseCollection(object):
         correct_var = BaseCollection._check_conditional_statement(
             statement, len(data_collections))
 
+        # replace the operators of the statement with non-alphanumeric characters
+        # necessary to avoid replacing the characters of the operators
+        num_statement_clean = statement.lower() \
+            .replace("and", "@").replace("or", "|") \
+            .replace("not", "$").replace("in", "_").replace("is", "~")
+
         pattern = []
         for i in xrange(len(data_collections[0])):
-            num_statement = statement
+            num_statement = num_statement_clean
+            # replace the variable names with their numerical values
             for j, coll in enumerate(data_collections):
                 var = correct_var[j]
-                num_statement = num_statement.replace(var, coll[i])
-            pattern.append(eval(num_statement, globals={}))
+                num_statement = num_statement.replace(var, str(coll[i]))
+            # put back the operators
+            num_statement = num_statement.replace("@", "and") \
+                .replace("|", "or").replace("$", "not") \
+                .replace("_", "in").replace("~", "is")
+            pattern.append(eval(num_statement, {}))
         return pattern
 
     @staticmethod
@@ -355,7 +381,8 @@ class BaseCollection(object):
                     return False
         return True
 
-    def _check_conditional_statement(self, statement, num_collections):
+    @staticmethod
+    def _check_conditional_statement(statement, num_collections):
         """Method to check conditional statements to be sure that they are valid.
 
         Args:
@@ -371,27 +398,30 @@ class BaseCollection(object):
         # Determine what the list of variables should be based on the num_collections
         correct_var = list(ascii_lowercase)[:num_collections]
 
-        # Clean out the oeprators of the statement
+        # Clean out the operators of the statement
         st_statement = statement.lower() \
             .replace("and", "").replace("or", "") \
             .replace("not", "").replace("in", "").replace("is", "")
         parsed_st = [s for s in st_statement if s.isalpha()]
 
-        # Perform the chec
-        assert list(set(parsed_st)) == correct_var, \
-            'Invalid conditional statement: {}\n '\
-            'Statement should be a valid Python statement'\
-            ' and the variables should be named as follows: {}'.format(
-                statement, ', '.join(correct_var))
+        # Perform the check
+        for var in parsed_st:
+            if var not in correct_var:
+                raise ValueError(
+                    'Invalid conditional statement: {}\n '
+                    'Statement should be a valid Python statement'
+                    ' and the variables should be named as follows: {}'.format(
+                        statement, ', '.join(correct_var))
+                    )
         return correct_var
 
     def _filter_by_statement(self, statement):
         """Filter the data collection based on a conditional statement."""
-        self._check_conditional_statement(statement, 1)
+        self.__class__._check_conditional_statement(statement, 1)
         statement = statement.replace('a', 'd')
         _filt_values, _filt_datetimes = [], []
         for i, d in enumerate(self._values):
-            if eval(statement, globals={'d': d}):
+            if eval(statement, {'d': d}):
                 _filt_values.append(d)
                 _filt_datetimes.append(self.datetimes[i])
         return _filt_values, _filt_datetimes
@@ -462,14 +492,6 @@ class BaseCollection(object):
 
     def __contains__(self, item):
         return item in self._values
-
-    def to_json(self):
-        """Convert Data Collection to a dictionary."""
-        return {
-            'header': self.header.to_json(),
-            'values': self._values,
-            'datetimes': [dat.to_json() for dat in self.datetimes]
-        }
 
     @property
     def isDataCollection(self):

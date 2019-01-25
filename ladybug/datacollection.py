@@ -454,7 +454,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             A new Data Collection containing only the filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_statement(statement)
-        return self.HourlyDiscontinuousCollection(
+        return HourlyDiscontinuousCollection(
             self.header.duplicate(), _filt_values, _filt_datetimes)
 
     def filter_by_pattern(self, pattern):
@@ -469,7 +469,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             A new Data Collection with filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_pattern(pattern)
-        return self.HourlyDiscontinuousCollection(
+        return HourlyDiscontinuousCollection(
             self.header.duplicate(), _filt_values, _filt_datetimes)
 
     def filter_by_analysis_period(self, analysis_period):
@@ -604,10 +604,17 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             data_type: The data type of the aligned collection. Default is to
                 use the data type of this collection.
             unit: The unit of the aligned collection. Default is to
-                use the unit of this collection.
+                use the unit of this collection or the base unit of the
+                input data_type (if it exists).
         """
-        data_type = data_type or self.header.data_type
-        unit = unit or self.header.unit
+        if data_type is not None:
+            assert hasattr(data_type, 'isDataType'), \
+                'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
+            if unit is None:
+                unit = data_type.units[0]
+        else:
+            data_type = self.header.data_type
+            unit = unit or self.header.unit
         values = [value] * len(self._values)
         header = Header(data_type, unit, self.header.analysis_period,
                         self.header.metadata)
