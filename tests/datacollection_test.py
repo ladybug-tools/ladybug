@@ -1,12 +1,13 @@
 # coding=utf-8
 from __future__ import division
 
-from ladybug.dt import DateTime
+from ladybug._datacollectionbase import BaseCollection
 from ladybug.datacollection import HourlyDiscontinuousCollection, \
     HourlyContinuousCollection, MonthlyCollection, DailyCollection, \
     MonthlyPerHourCollection
 from ladybug.header import Header
 from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.dt import DateTime
 from ladybug.datatype.generic import GenericType
 from ladybug.datatype.temperature import Temperature
 from ladybug.datatype.percentage import RelativeHumidity
@@ -22,22 +23,69 @@ class DataCollectionTestCase(unittest.TestCase):
     """Test for (ladybug/datacollection.py)"""
 
     def test_init(self):
-        """Test the init methods for dicontinuous collections."""
-        # setup AnalysisPeriod
+        """Test the init methods for base collections."""
         a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
-        # Setup Datetimes
-        dt1 = DateTime(6, 21, 12)
-        dt2 = DateTime(6, 21, 13)
-        # Define temperature values
-        v1 = 20
-        v2 = 25
+        dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
+        v1, v2 = 20, 25
         avg = (v1 + v2) / 2
-        # Setup temperature data collection
+        # Setup data collection
+        dc1 = BaseCollection(Header(Temperature(), 'C', a_per), [v1, v2], [dt1, dt2])
+
+        assert dc1.datetimes == (dt1, dt2)
+        assert dc1.values == (v1, v2)
+        assert dc1.average == avg
+
+    def test_init_hourly(self):
+        """Test the init methods for dicontinuous collections."""
+        a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+        dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
+        v1, v2 = 20, 25
+        avg = (v1 + v2) / 2
+        # Setup data collection
         dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
                                             [v1, v2], [dt1, dt2])
 
         assert dc1.datetimes == (dt1, dt2)
         assert dc1.values == (v1, v2)
+        assert dc1.average == avg
+
+    def test_init_daily(self):
+        """Test the init methods for daily collections."""
+        a_per = AnalysisPeriod(6, 21, 0, 6, 22, 23)
+        v1, v2 = 20, 25
+        avg = (v1 + v2) / 2
+        # Setup data collection
+        dc1 = DailyCollection(Header(Temperature(), 'C', a_per),
+                              [v1, v2], a_per.doys_int)
+
+        assert dc1.datetimes == tuple(a_per.doys_int)
+        assert dc1.values == (v1, v2)
+        assert dc1.average == avg
+
+    def test_init_monthly(self):
+        """Test the init methods for monthly collections."""
+        a_per = AnalysisPeriod(6, 1, 0, 7, 31, 23)
+        v1, v2 = 20, 25
+        avg = (v1 + v2) / 2
+        # Setup data collection
+        dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per),
+                                [v1, v2], a_per.months_int)
+
+        assert dc1.datetimes == tuple(a_per.months_int)
+        assert dc1.values == (v1, v2)
+        assert dc1.average == avg
+
+    def test_init_monthly_per_hour(self):
+        """Test the init methods for monthly per hour collections."""
+        a_per = AnalysisPeriod(6, 1, 0, 7, 31, 23)
+        vals = [20] * 24 + [25] * 24
+        avg = sum(vals) / 48
+        # Setup data collection
+        dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per),
+                                       vals, a_per.months_per_hour)
+
+        assert dc1.datetimes == tuple(a_per.months_per_hour)
+        assert dc1.values == tuple(vals)
         assert dc1.average == avg
 
     def test_init_continuous(self):
@@ -233,6 +281,9 @@ class DataCollectionTestCase(unittest.TestCase):
         """Test the test_is_collection_aligned method for discontinuous collections."""
         header = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=1))
         header3 = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=2))
+        header4 = Header(Temperature(), 'C', AnalysisPeriod(
+            st_day=2, end_month=1, end_day=2))
+        header5 = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=24))
         values1 = list(xrange(24))
         values2 = [12] * 24
         values3 = [12] * 48
@@ -242,11 +293,18 @@ class DataCollectionTestCase(unittest.TestCase):
                                             header.analysis_period.datetimes)
         dc3 = HourlyDiscontinuousCollection(header3, values3,
                                             header3.analysis_period.datetimes)
+        dc4 = HourlyDiscontinuousCollection(header4, values1,
+                                            header4.analysis_period.datetimes)
+        dc5 = DailyCollection(header5, values1, header5.analysis_period.doys_int)
 
         assert dc1.is_collection_aligned(dc2)
         assert dc2.is_collection_aligned(dc1)
         assert not dc1.is_collection_aligned(dc3)
         assert not dc3.is_collection_aligned(dc1)
+        assert not dc1.is_collection_aligned(dc4)
+        assert not dc4.is_collection_aligned(dc1)
+        assert not dc1.is_collection_aligned(dc5)
+        assert not dc5.is_collection_aligned(dc1)
 
         assert HourlyDiscontinuousCollection.are_collections_aligned([dc1, dc2])
         assert not HourlyDiscontinuousCollection.are_collections_aligned(
