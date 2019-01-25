@@ -13,15 +13,6 @@ if (sys.version_info >= (3, 0)):
 class AnalysisPeriodTestCase(unittest.TestCase):
     """Test for (analysisperiod.py)"""
 
-    # preparing to test.
-    def setUp(self):
-        """set up."""
-        pass
-
-    def tearDown(self):
-        """Nothing to tear down as nothing gets written to file."""
-        pass
-
     def test_default_values(self):
         """Test the default values."""
         ap = AnalysisPeriod()
@@ -34,10 +25,12 @@ class AnalysisPeriodTestCase(unittest.TestCase):
         assert ap.timestep == 1
         assert ap.is_leap_year is False
         assert len(ap.datetimes) == 8760
+        str(ap)  # test the string representation
 
     def test_from_string(self):
         """Test creating analysis priod from a string."""
         ap_string = '2/21 to 3/22 between 5 to 17 @1'
+        ap = AnalysisPeriod.from_analysis_period(ap_string)
         ap = AnalysisPeriod.from_string(ap_string)
         assert ap.st_hour == 5
         assert ap.end_hour == 17

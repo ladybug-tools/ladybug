@@ -75,6 +75,17 @@ class HourlyDiscontinuousCollection(BaseCollection):
         else:
             return '{} Minute'.format(60 / self.header.analysis_period.timestep)
 
+    @property
+    def moys_dict(self):
+        """Return a dictionary of this collection's values where the keys are the moys.
+
+        This is useful for aligning the values with another list of datetimes.
+        """
+        moy_dict = {}
+        for val, dt in zip(self.values, self.datetimes):
+            moy_dict[dt.moy] = val
+        return moy_dict
+
     def filter_by_analysis_period(self, analysis_period):
         """
         Filter a Data Collection based on an analysis period.
@@ -313,6 +324,10 @@ class HourlyDiscontinuousCollection(BaseCollection):
             'Collection header. {} != {}'.format(
                 analysis_period.is_leap_year, self.header.analysis_period.is_leap_year)
 
+    @property
+    def isHourly(self):
+        return True
+
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""
         return "{} Discontinuous Data Collection\n{}\n{} ({})\n...{} values...".format(
@@ -504,6 +519,20 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             _filtered_data.header._analysis_period = analysis_period
             return _filtered_data
 
+    def filter_by_hoys(self, hoys):
+        """Filter the Data Collection based onva list of hoys.
+
+        Args:
+           hoys: A List of hours of the year 0..8759
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        existing_hoys = self.header.analysis_period.hoys
+        hoys = [h for h in hoys if h in existing_hoys]
+        _moys = tuple(int(hour * 60) for hour in hoys)
+        return self.filter_by_moys(_moys)
+
     def filter_by_moys(self, moys):
         """Filter the Data Collection based on a list of minutes of the year.
 
@@ -670,14 +699,14 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         if a_per.st_hour < self.header.analysis_period.st_hour:
             n_ap[2] = self.header.analysis_period.st_hour
             new_needed = True
-        elif a_per.end_hour > self.header.analysis_period.end_hour:
+        if a_per.end_hour > self.header.analysis_period.end_hour:
             n_ap[5] = self.header.analysis_period.end_hour
             new_needed = True
-        elif a_per.st_time.doy < self.header.analysis_period.st_time.doy:
+        if a_per.st_time.doy < self.header.analysis_period.st_time.doy:
             n_ap[0] = self.header.analysis_period.st_month
             n_ap[1] = self.header.analysis_period.st_day
             new_needed = True
-        elif a_per.end_time.doy > self.header.analysis_period.end_time.doy:
+        if a_per.end_time.doy > self.header.analysis_period.end_time.doy:
             n_ap[3] = self.header.analysis_period.end_month
             n_ap[4] = self.header.analysis_period.end_day
             new_needed = True
@@ -687,6 +716,10 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             return AnalysisPeriod(n_ap[0], n_ap[1], n_ap[2], n_ap[3],
                                   n_ap[4], n_ap[5], n_ap[6], n_ap[7])
 
+    @property
+    def isContinuous(self):
+        return True
+
     def __delitem__(self, key):
         raise TypeError('Convert this Collection to Discontinuous to use del().')
 
@@ -694,72 +727,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """Hourly Discontinuous Collection representation."""
         return "{} Continuous Data Collection\n{}\n{} ({})\n...{} values...".format(
             self.timestep_text, self.header.analysis_period,
-            self.header.data_type, self.header.unit, len(self._values))
-
-
-class MonthlyCollection(BaseCollection):
-    """Class for Monthly Data Collections."""
-
-    def __init__(self, header, values, datetimes):
-        """Initialize monthly collection.
-
-        Args:
-            header: A Ladybug Header object.  Note that this header
-                must have an AnalysisPeriod on it.
-            values: A list of values.
-            datetimes: A list of integers that aligns with the list of values.
-                Each integer in the list is 1-12 and denotes the month of the
-                year for each value of the collection.
-        """
-        assert isinstance(header, Header), \
-            'header must be a Ladybug Header object. Got {}'.format(type(header))
-        assert isinstance(header.analysis_period, AnalysisPeriod), \
-            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
-        assert isinstance(datetimes, (list, tuple)), \
-            'datetimes must be a list or a tuple. Got {}'.format(type(datetimes))
-        if isinstance(datetimes, tuple):
-            datetimes = list(datetimes)
-
-        self._header = header
-        self._datetimes = datetimes
-        self.values = values
-
-    def filter_by_analysis_period(self, analysis_period):
-        """Filter the Data Collection based on an analysis period.
-
-        Args:
-           analysis period: A Ladybug analysis period
-
-        Return:
-            A new Data Collection with filtered data
-        """
-        _filtered_data = self.filter_by_months(analysis_period.months_int)
-        _filtered_data.header._analysis_period = analysis_period
-        return _filtered_data
-
-    def filter_by_months(self, months):
-        """Filter the Data Collection based on a list of months of the year (as integers).
-
-        Args:
-           months: A List of months of the year [1..12]
-
-        Return:
-            A new Data Collection with filtered data
-        """
-        _filt_values = []
-        _filt_datetimes = []
-        for i, d in enumerate(self.datetimes):
-            if d in months:
-                _filt_datetimes.append(d)
-                _filt_values.append(self._values[i])
-        _filt_header = self.header.duplicate()
-        return MonthlyCollection(_filt_header, _filt_values, _filt_datetimes)
-
-    def __repr__(self):
-        """Monthly Collection representation."""
-        a_per = self.header.analysis_period
-        return "Monthly Collection\n{} to {}\n{} ({})\n...{} values...".format(
-            a_per.MONTHNAMES[a_per.st_month], a_per.MONTHNAMES[a_per.end_month],
             self.header.data_type, self.header.unit, len(self._values))
 
 
@@ -821,11 +788,85 @@ class DailyCollection(BaseCollection):
         _filt_header = self.header.duplicate()
         return DailyCollection(_filt_header, _filt_values, _filt_datetimes)
 
+    @property
+    def isDaily(self):
+        return True
+
     def __repr__(self):
         """Daily Collection representation."""
         a_per = self.header.analysis_period
         return "Daily Collection\n{}/{} to {}/{}\n{} ({})\n...{} values...".format(
             a_per.st_month, a_per.st_day, a_per.end_month, a_per.end_day,
+            self.header.data_type, self.header.unit, len(self._values))
+
+
+class MonthlyCollection(BaseCollection):
+    """Class for Monthly Data Collections."""
+
+    def __init__(self, header, values, datetimes):
+        """Initialize monthly collection.
+
+        Args:
+            header: A Ladybug Header object.  Note that this header
+                must have an AnalysisPeriod on it.
+            values: A list of values.
+            datetimes: A list of integers that aligns with the list of values.
+                Each integer in the list is 1-12 and denotes the month of the
+                year for each value of the collection.
+        """
+        assert isinstance(header, Header), \
+            'header must be a Ladybug Header object. Got {}'.format(type(header))
+        assert isinstance(header.analysis_period, AnalysisPeriod), \
+            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
+        assert isinstance(datetimes, (list, tuple)), \
+            'datetimes must be a list or a tuple. Got {}'.format(type(datetimes))
+        if isinstance(datetimes, tuple):
+            datetimes = list(datetimes)
+
+        self._header = header
+        self._datetimes = datetimes
+        self.values = values
+
+    def filter_by_analysis_period(self, analysis_period):
+        """Filter the Data Collection based on an analysis period.
+
+        Args:
+           analysis period: A Ladybug analysis period
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        _filtered_data = self.filter_by_months(analysis_period.months_int)
+        _filtered_data.header._analysis_period = analysis_period
+        return _filtered_data
+
+    def filter_by_months(self, months):
+        """Filter the Data Collection based on a list of months of the year (as integers).
+
+        Args:
+           months: A List of months of the year [1..12]
+
+        Return:
+            A new Data Collection with filtered data
+        """
+        _filt_values = []
+        _filt_datetimes = []
+        for i, d in enumerate(self.datetimes):
+            if d in months:
+                _filt_datetimes.append(d)
+                _filt_values.append(self._values[i])
+        _filt_header = self.header.duplicate()
+        return MonthlyCollection(_filt_header, _filt_values, _filt_datetimes)
+
+    @property
+    def isMonthly(self):
+        return True
+
+    def __repr__(self):
+        """Monthly Collection representation."""
+        a_per = self.header.analysis_period
+        return "Monthly Collection\n{} to {}\n{} ({})\n...{} values...".format(
+            a_per.MONTHNAMES[a_per.st_month], a_per.MONTHNAMES[a_per.end_month],
             self.header.data_type, self.header.unit, len(self._values))
 
 
@@ -866,7 +907,7 @@ class MonthlyPerHourCollection(BaseCollection):
             A new Data Collection with filtered data
         """
         _filtered_data = self.filter_by_months_per_hour(
-            analysis_period.months_per_hour_str)
+            analysis_period.months_per_hour)
         _filtered_data.header._analysis_period = analysis_period
         return _filtered_data
 
@@ -889,6 +930,10 @@ class MonthlyPerHourCollection(BaseCollection):
                 _filt_values.append(self._values[i])
         return MonthlyPerHourCollection(
             self.header.duplicate(), _filt_values, _filt_datetimes)
+
+    @property
+    def isMonthlyPerHour(self):
+        return True
 
     def __repr__(self):
         """Monthly Per Hour Collection representation."""

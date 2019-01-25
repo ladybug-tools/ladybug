@@ -34,7 +34,8 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == (dt1, dt2)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
-        str(dc1)
+        str(dc1)  # Test the string representation of the collection
+        str(dc1.header)  # Test the string representation of the header
 
     def test_init_hourly(self):
         """Test the init methods for dicontinuous collections."""
@@ -49,7 +50,8 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == (dt1, dt2)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
-        str(dc1)
+        str(dc1)  # Test the string representation of the collection
+        str(dc1.header)  # Test the string representation of the header
 
     def test_init_daily(self):
         """Test the init methods for daily collections."""
@@ -63,7 +65,8 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == tuple(a_per.doys_int)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
-        str(dc1)
+        str(dc1)  # Test the string representation of the collection
+        str(dc1.header)  # Test the string representation of the header
 
     def test_init_monthly(self):
         """Test the init methods for monthly collections."""
@@ -77,7 +80,8 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == tuple(a_per.months_int)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
-        str(dc1)
+        str(dc1)  # Test the string representation of the collection
+        str(dc1.header)  # Test the string representation of the header
 
     def test_init_monthly_per_hour(self):
         """Test the init methods for monthly per hour collections."""
@@ -91,7 +95,8 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == tuple(a_per.months_per_hour)
         assert dc1.values == tuple(vals)
         assert dc1.average == avg
-        str(dc1)
+        str(dc1)  # Test the string representation of the collection
+        str(dc1.header)  # Test the string representation of the header
 
     def test_init_continuous(self):
         """Test the init methods for continuous collections"""
@@ -103,7 +108,8 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(dc1.datetimes) == 8760
         assert list(dc1.values) == list(xrange(8760))
         assert dc1.average == 4379.5
-        str(dc1)
+        str(dc1)  # Test the string representation of the collection
+        str(dc1.header)  # Test the string representation of the header
 
     def test_init_continuous_incorrect(self):
         """Test the init methods for continuous collections with incorrect values"""
@@ -258,6 +264,18 @@ class DataCollectionTestCase(unittest.TestCase):
 
     def test_filter_by_conditional_statement(self):
         """Test filter by conditional statement."""
+        a_per = AnalysisPeriod(end_month=1, end_day=2)
+        header1 = Header(Temperature(), 'C', a_per)
+        values = list(xrange(48))
+        dc1 = HourlyDiscontinuousCollection(header1, values, a_per.datetimes)
+
+        dc2 = dc1.filter_by_conditional_statement('a > 23')
+        assert len(dc2) == 24
+        for d in dc2.values:
+            assert d > 23
+
+    def test_filter_by_conditional_statement_continuous(self):
+        """Test filter by conditional statement."""
         header1 = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=2))
         values = list(xrange(48))
         dc1 = HourlyContinuousCollection(header1, values)
@@ -266,9 +284,19 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(dc2) == 24
         for d in dc2.values:
             assert d > 23
-        assert isinstance(dc2, HourlyDiscontinuousCollection)
+        assert not isinstance(dc2, HourlyContinuousCollection)
 
     def test_filter_by_pattern(self):
+        """Test filter by pattern."""
+        a_per = AnalysisPeriod(end_month=1, end_day=2)
+        header1 = Header(Temperature(), 'C', a_per)
+        values = list(xrange(48))
+        dc1 = HourlyDiscontinuousCollection(header1, values, a_per.datetimes)
+
+        dc2 = dc1.filter_by_pattern([True, False] * 24)
+        assert len(dc2) == 24
+
+    def test_filter_by_pattern_continuous(self):
         """Test filter by pattern."""
         header1 = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=2))
         values = list(xrange(48))
@@ -276,7 +304,271 @@ class DataCollectionTestCase(unittest.TestCase):
 
         dc2 = dc1.filter_by_pattern([True, False] * 24)
         assert len(dc2) == 24
-        assert isinstance(dc2, HourlyDiscontinuousCollection)
+        assert not isinstance(dc2, HourlyContinuousCollection)
+
+    def test_filter_by_analysis_period_hourly(self):
+        """Test filtering by analysis period on hourly discontinuous collection."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyDiscontinuousCollection(header, values,
+                                           header.analysis_period.datetimes)
+        a_per = AnalysisPeriod(st_month=3, end_month=3)
+        filt_dc = dc.filter_by_analysis_period(a_per)
+        assert len(filt_dc) == 31 * 24
+        assert filt_dc.header.analysis_period == a_per
+        assert filt_dc.datetimes[0] == DateTime(3, 1, 0)
+        assert filt_dc.datetimes[-1] == DateTime(3, 31, 23)
+
+    def test_filter_by_analysis_period_daily(self):
+        """Test filtering by analysis period on daily collection."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(365))
+        dc = DailyCollection(header, values, AnalysisPeriod().doys_int)
+        a_per = AnalysisPeriod(st_month=3, end_month=4, end_day=30)
+        filt_dc = dc.filter_by_analysis_period(a_per)
+        assert len(filt_dc) == 31 + 30
+        assert filt_dc.header.analysis_period == a_per
+        assert filt_dc.datetimes[0] == 31 + 28 + 1
+        assert filt_dc.datetimes[-1] == 31 + 28 + 31 + 30
+
+    def test_filter_by_analysis_period_monthly(self):
+        """Test filtering by analysis period on monthly collection."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(12))
+        dc = MonthlyCollection(header, values, AnalysisPeriod().months_int)
+        a_per = AnalysisPeriod(st_month=3, end_month=6)
+        filt_dc = dc.filter_by_analysis_period(a_per)
+        assert len(filt_dc) == 4
+        assert filt_dc.header.analysis_period == a_per
+        assert filt_dc.datetimes[0] == 3
+        assert filt_dc.datetimes[-1] == 6
+
+    def test_filter_by_analysis_period_monthly_per_hour(self):
+        """Test filtering by analysis period on monthly per hour collection."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(12 * 24))
+        dc = MonthlyPerHourCollection(header, values, AnalysisPeriod().months_per_hour)
+        a_per = AnalysisPeriod(st_month=3, end_month=4, end_day=30)
+        filt_dc = dc.filter_by_analysis_period(a_per)
+        assert len(filt_dc) == 2 * 24
+        assert filt_dc.header.analysis_period == a_per
+        assert filt_dc.datetimes[0] == (3, 0)
+        assert filt_dc.datetimes[-1] == (4, 23)
+
+    def test_filter_by_analysis_period_continuous(self):
+        """Test filtering by analysis period on hourly continuous collection."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyContinuousCollection(header, values)
+        a_per = AnalysisPeriod(st_month=3, end_month=3)
+        filt_dc = dc.filter_by_analysis_period(a_per)
+        assert len(filt_dc) == 31 * 24
+        assert filt_dc.header.analysis_period == a_per
+        assert filt_dc.datetimes[0] == DateTime(3, 1, 0)
+        assert filt_dc.datetimes[-1] == DateTime(3, 31, 23)
+        assert isinstance(filt_dc, HourlyContinuousCollection)
+
+    def test_filter_by_analysis_period_continuous_reversed(self):
+        """Test filtering by reversed analysis period on hourly continuous collection."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyContinuousCollection(header, values)
+        a_per = AnalysisPeriod(st_month=12, end_month=3)
+        filt_dc = dc.filter_by_analysis_period(a_per)
+        assert len(filt_dc) == (31 + 31 + 28 + 31) * 24
+        assert filt_dc.header.analysis_period == a_per
+        assert filt_dc.datetimes[0] == DateTime(12, 1, 0)
+        assert filt_dc.datetimes[-1] == DateTime(3, 31, 23)
+        assert isinstance(filt_dc, HourlyContinuousCollection)
+
+    def test_filter_by_analysis_period_continuous_hour_subset(self):
+        """Test filtering hour subset analysis period on hourly continuous collection."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyContinuousCollection(header, values)
+        a_per = AnalysisPeriod(3, 2, 9, 3, 8, 17)
+        filt_dc = dc.filter_by_analysis_period(a_per)
+        assert len(filt_dc) == 7 * 9
+        assert filt_dc.header.analysis_period == a_per
+        assert filt_dc.datetimes[0] == DateTime(3, 2, 9)
+        assert filt_dc.datetimes[-1] == DateTime(3, 8, 17)
+        assert not isinstance(filt_dc, HourlyContinuousCollection)
+
+    def test_filter_by_analysis_period_continuous_large(self):
+        """Test filtering large analysis period on hourly continuous collection."""
+        header = Header(Temperature(), 'C', AnalysisPeriod(st_month=3, end_month=3))
+        values = list(xrange(24 * 31))
+        dc = HourlyContinuousCollection(header, values)
+        a_per = AnalysisPeriod(st_hour=9, end_hour=17)
+        filt_dc = dc.filter_by_analysis_period(a_per)
+        assert len(filt_dc) == 31 * 9
+        assert filt_dc.header.analysis_period == AnalysisPeriod(3, 1, 9, 3, 31, 17)
+        assert filt_dc.datetimes[0] == DateTime(3, 1, 9)
+        assert filt_dc.datetimes[-1] == DateTime(3, 31, 17)
+        assert not isinstance(filt_dc, HourlyContinuousCollection)
+
+    def test_filter_by_hoys(self):
+        """Test filter_by_hoys method."""
+        a_per = AnalysisPeriod(st_month=3, end_month=3)
+        header = Header(Temperature(), 'C', a_per)
+        values = list(xrange(24 * 31))
+        dc = HourlyDiscontinuousCollection(header, values, a_per.datetimes)
+        hoys = AnalysisPeriod(st_hour=9, end_hour=17).hoys
+        filt_dc = dc.filter_by_hoys(hoys)
+        assert len(filt_dc) == 31 * 9
+        assert filt_dc.datetimes[0] == DateTime(3, 1, 9)
+        assert filt_dc.datetimes[-1] == DateTime(3, 31, 17)
+
+    def test_filter_by_hoys_continuous(self):
+        """Test filter_by_hoys method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod(st_month=3, end_month=3))
+        values = list(xrange(24 * 31))
+        dc = HourlyContinuousCollection(header, values)
+        hoys = AnalysisPeriod(st_hour=9, end_hour=17).hoys
+        filt_dc = dc.filter_by_hoys(hoys)
+        assert len(filt_dc) == 31 * 9
+        assert filt_dc.datetimes[0] == DateTime(3, 1, 9)
+        assert filt_dc.datetimes[-1] == DateTime(3, 31, 17)
+        assert not isinstance(filt_dc, HourlyContinuousCollection)
+
+    def test_average_daily(self):
+        """Test the average daily method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyContinuousCollection(header, values)
+        new_dc = dc.average_daily()
+        assert isinstance(new_dc, DailyCollection)
+        assert len(new_dc) == 365
+        assert new_dc.datetimes[0] == 1
+        assert new_dc.datetimes[-1] == 365
+        for i, val in dc.group_by_day().items():
+            assert new_dc[i - 1] == sum(val) / len(val)
+
+    def test_total_daily(self):
+        """Test the total daily method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyContinuousCollection(header, values)
+        new_dc = dc.total_daily()
+        assert isinstance(new_dc, DailyCollection)
+        assert len(new_dc) == 365
+        assert new_dc.datetimes[0] == 1
+        assert new_dc.datetimes[-1] == 365
+        for i, val in dc.group_by_day().items():
+            assert new_dc[i - 1] == sum(val)
+
+    def test_percentile_daily(self):
+        """Test the percentile daily method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(24)) * 365
+        dc = HourlyContinuousCollection(header, values)
+        new_dc = dc.percentile_daily(25)
+        assert isinstance(new_dc, DailyCollection)
+        assert len(new_dc) == 365
+        assert new_dc.datetimes[0] == 1
+        assert new_dc.datetimes[-1] == 365
+        for i, val in dc.group_by_day().items():
+            assert new_dc[i - 1] == 5.75
+
+    def test_average_monthly(self):
+        """Test the average monthly method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyContinuousCollection(header, values)
+        new_dc = dc.average_monthly()
+        assert isinstance(new_dc, MonthlyCollection)
+        assert len(new_dc) == 12
+        assert new_dc.datetimes[0] == 1
+        assert new_dc.datetimes[-1] == 12
+        for i, val in dc.group_by_month().items():
+            assert new_dc[i - 1] == sum(val) / len(val)
+
+    def test_total_monthly(self):
+        """Test the total monthly method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyContinuousCollection(header, values)
+        new_dc = dc.total_monthly()
+        assert isinstance(new_dc, MonthlyCollection)
+        assert len(new_dc) == 12
+        assert new_dc.datetimes[0] == 1
+        assert new_dc.datetimes[-1] == 12
+        for i, val in dc.group_by_month().items():
+            assert new_dc[i - 1] == sum(val)
+
+    def test_percentile_monthly(self):
+        """Test the percentile monthly method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = [50] * 8760
+        dc = HourlyContinuousCollection(header, values)
+        new_dc = dc.percentile_monthly(25)
+        assert isinstance(new_dc, MonthlyCollection)
+        assert len(new_dc) == 12
+        assert new_dc.datetimes[0] == 1
+        assert new_dc.datetimes[-1] == 12
+        for i, val in dc.group_by_month().items():
+            assert new_dc[i - 1] == 50
+
+    def test_average_monthly_per_hour(self):
+        """Test the average monthly per hour method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyContinuousCollection(header, values)
+        new_dc = dc.average_monthly_per_hour()
+        assert isinstance(new_dc, MonthlyPerHourCollection)
+        assert len(new_dc) == 12 * 24
+        assert new_dc.datetimes[0] == (1, 0)
+        assert new_dc.datetimes[-1] == (12, 23)
+        for i, val in enumerate(dc.group_by_month_per_hour().values()):
+            assert new_dc[i] == sum(val) / len(val)
+
+    def test_total_monthly_per_hour(self):
+        """Test the total monthly per hour method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyContinuousCollection(header, values)
+        new_dc = dc.total_monthly_per_hour()
+        assert isinstance(new_dc, MonthlyPerHourCollection)
+        assert len(new_dc) == 12 * 24
+        assert new_dc.datetimes[0] == (1, 0)
+        assert new_dc.datetimes[-1] == (12, 23)
+        for i, val in enumerate(dc.group_by_month_per_hour().values()):
+            assert new_dc[i] == sum(val)
+
+    def test_percentile_monthly_per_hour(self):
+        """Test the percentile monthly per hour method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(24)) * 365
+        dc = HourlyContinuousCollection(header, values)
+        new_dc = dc.percentile_monthly_per_hour(25)
+        assert isinstance(new_dc, MonthlyPerHourCollection)
+        assert len(new_dc) == 12 * 24
+        assert new_dc.datetimes[0] == (1, 0)
+        assert new_dc.datetimes[-1] == (12, 23)
+        pct_vals = list(xrange(24)) * 12
+        for i, val in enumerate(pct_vals):
+            assert new_dc[i] == val
+
+    def test_group_by_day_discontinuous(self):
+        """Test the group by day method for dicontinuous collections."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyDiscontinuousCollection(header, values, AnalysisPeriod().datetimes)
+        day_dict = dc.group_by_day()
+        assert list(day_dict.keys()) == list(xrange(1, 366))
+        for val in day_dict.values():
+            assert len(val) == 24
+
+    def test_group_by_month_discontinuous(self):
+        """Test the group by month method for dicontinuous collections."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(8760))
+        dc = HourlyDiscontinuousCollection(header, values, AnalysisPeriod().datetimes)
+        day_dict = dc.group_by_month()
+        assert list(day_dict.keys()) == list(xrange(1, 13))
+        days_per_month = AnalysisPeriod().NUMOFDAYSEACHMONTH
+        for i, val in enumerate(day_dict.values()):
+            assert len(val) == 24 * days_per_month[i]
 
     def test_interpolation(self):
         """Test the interoplation method on the continuous collection."""
@@ -290,6 +582,7 @@ class DataCollectionTestCase(unittest.TestCase):
         interp_coll2 = dc2.interpolate_data(2, True)
         assert interp_coll1[1] == 0.5
         assert interp_coll2[1] == 0.25
+        assert 'Minute' in interp_coll1.timestep_text
 
     def test_is_collection_aligned(self):
         """Test the test_is_collection_aligned method for discontinuous collections."""
