@@ -34,6 +34,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == (dt1, dt2)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
+        str(dc1)
 
     def test_init_hourly(self):
         """Test the init methods for dicontinuous collections."""
@@ -48,6 +49,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == (dt1, dt2)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
+        str(dc1)
 
     def test_init_daily(self):
         """Test the init methods for daily collections."""
@@ -61,6 +63,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == tuple(a_per.doys_int)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
+        str(dc1)
 
     def test_init_monthly(self):
         """Test the init methods for monthly collections."""
@@ -74,6 +77,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == tuple(a_per.months_int)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
+        str(dc1)
 
     def test_init_monthly_per_hour(self):
         """Test the init methods for monthly per hour collections."""
@@ -87,6 +91,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == tuple(a_per.months_per_hour)
         assert dc1.values == tuple(vals)
         assert dc1.average == avg
+        str(dc1)
 
     def test_init_continuous(self):
         """Test the init methods for continuous collections"""
@@ -98,6 +103,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(dc1.datetimes) == 8760
         assert list(dc1.values) == list(xrange(8760))
         assert dc1.average == 4379.5
+        str(dc1)
 
     def test_init_continuous_incorrect(self):
         """Test the init methods for continuous collections with incorrect values"""
@@ -112,6 +118,10 @@ class DataCollectionTestCase(unittest.TestCase):
         values = list(xrange(8760))
         dc = HourlyDiscontinuousCollection(header, values,
                                            header.analysis_period.datetimes)
+        # test the contains and reversed methods
+        assert 10 in dc
+        assert list(reversed(dc)) == list(reversed(values))
+
         # test setting individual values
         assert dc[0] == 0
         dc[0] = 10
@@ -122,9 +132,11 @@ class DataCollectionTestCase(unittest.TestCase):
         dc.values = val_rev
         assert dc[0] == 8759
 
-        # make sure that people can't change the number of values
+        # make sure that people can't change the values without changing datetimes
         with pytest.raises(Exception):
             dc.values.append(10)
+        del dc[10]
+        assert len(dc.values) == len(dc.datetimes) == 8759
 
     def test_setting_values_continuous(self):
         """Test the methods for setting values on the continuous data collection"""
@@ -141,6 +153,8 @@ class DataCollectionTestCase(unittest.TestCase):
         # make sure that people can't change the number of values
         with pytest.raises(Exception):
             dc.values.append(10)
+        with pytest.raises(Exception):
+            del dc[10]
 
     def test_bounds(self):
         """Test the bounds method."""
