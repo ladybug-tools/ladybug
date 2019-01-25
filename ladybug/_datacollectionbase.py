@@ -337,9 +337,7 @@ class BaseCollection(object):
 
         # replace the operators of the statement with non-alphanumeric characters
         # necessary to avoid replacing the characters of the operators
-        num_statement_clean = statement.lower() \
-            .replace("and", "@").replace("or", "|") \
-            .replace("not", "$").replace("in", "_").replace("is", "~")
+        num_statement_clean = BaseCollection._replace_operators(statement)
 
         pattern = []
         for i in xrange(len(data_collections[0])):
@@ -349,9 +347,7 @@ class BaseCollection(object):
                 var = correct_var[j]
                 num_statement = num_statement.replace(var, str(coll[i]))
             # put back the operators
-            num_statement = num_statement.replace("@", "and") \
-                .replace("|", "or").replace("$", "not") \
-                .replace("_", "in").replace("~", "is")
+            num_statement = BaseCollection._restore_operators(num_statement)
             pattern.append(eval(num_statement, {}))
         return pattern
 
@@ -399,9 +395,7 @@ class BaseCollection(object):
         correct_var = list(ascii_lowercase)[:num_collections]
 
         # Clean out the operators of the statement
-        st_statement = statement.lower() \
-            .replace("and", "").replace("or", "") \
-            .replace("not", "").replace("in", "").replace("is", "")
+        st_statement = BaseCollection._remove_operators(statement)
         parsed_st = [s for s in st_statement if s.isalpha()]
 
         # Perform the check
@@ -414,6 +408,24 @@ class BaseCollection(object):
                         statement, ', '.join(correct_var))
                     )
         return correct_var
+
+    @staticmethod
+    def _remove_operators(statement):
+        """Remove logical operators from a statement."""
+        return statement.lower().replace("and", "").replace("or", "") \
+            .replace("not", "").replace("in", "").replace("is", "")
+
+    @staticmethod
+    def _replace_operators(statement):
+        """Replace logical operators of a statement with non-alphanumeric characters."""
+        return statement.lower().replace("and", "&&").replace("or", "||") \
+            .replace("not", "~").replace("in", "<<").replace("is", "$")
+
+    @staticmethod
+    def _restore_operators(statement):
+        """Restore python logical operators from previusly replaced ones."""
+        return statement.replace("&&", "and").replace("||", "or") \
+            .replace("~", "not").replace("<<", "in").replace("$", "is")
 
     def _filter_by_statement(self, statement):
         """Filter the data collection based on a conditional statement."""
