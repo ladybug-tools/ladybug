@@ -2,19 +2,25 @@
 from __future__ import division
 
 from .location import Location
-from .analysisperiod import AnalysisPeriod
-from .header import Header
+from .designday import DesignDay
 from .datacollection import HourlyContinuousCollection
-from .skymodel import calc_sky_temperature
-from .futil import write_to_file
+from .datacollection import MonthlyCollection
+from .header import Header
+from .analysisperiod import AnalysisPeriod
 from .datatype import angle, distance, energyflux, energyintensity, generic, \
     illuminance, luminance, percentage, pressure, speed, temperature
+from .skymodel import calc_sky_temperature
+from .futil import write_to_file
 
+
+from collections import OrderedDict
+from copy import copy
 import os
-import sys
 readmode = 'rb'
-if (sys.version_info > (3, 0)):
-    xrange = range
+try:
+    from itertools import izip as zip  # python 2
+except ImportError:
+    xrange = range  # python 3
     readmode = 'r'
 
 
@@ -57,6 +63,9 @@ class EPW(object):
         liquid_precipitation_quantity
         sky_temperature
     """
+    extreme_hot_txt = 'Week Nearest Max Temperature For Period'
+    extreme_cold_txt = 'Week Nearest Min Temperature For Period'
+    typical_txt = 'Week Nearest Average Temperature For Period'
 
     def __init__(self, file_path):
         """Init class."""
@@ -69,7 +78,25 @@ class EPW(object):
 
         self._is_data_loaded = False
         self._is_location_loaded = False
-        self._data = []  # place holder for data as ladybug data collection
+
+        # placeholders for the EPW data that will be imported
+        self._data = []
+        self._winter_dict = OrderedDict()
+        self._summer_dict = OrderedDict()
+        self._extremes_dict = OrderedDict()
+        self._extreme_hot_week = None
+        self._extreme_cold_week = None
+        self._typical_summer_week = None
+        self._typical_winter_week = None
+        self._typical_spring_week = None
+        self._typical_autumn_week = None
+        self._monthly_ground_temps = OrderedDict()
+        self._is_leap_year = False
+        self.daylight_savings_start = '0'
+        self.daylight_savings_end = '0'
+        self.comments_1 = ''
+        self.comments_2 = ''
+
         self._header = None  # epw header
         self._num_of_fields = 35  # it is 35 for TMY3 files
 
@@ -89,13 +116,6 @@ class EPW(object):
         return self._is_location_loaded
 
     @property
-    def header(self):
-        """Return epw file header."""
-        if not self.is_location_loaded:
-            self._import_data(import_location_only=True)
-        return self._header
-
-    @property
     def location(self):
         """Return location data."""
         if not self.is_location_loaded:
@@ -109,7 +129,114 @@ class EPW(object):
             self._import_data(import_location_only=True)
         return self._metadata
 
-    # TODO: import EPW header. Currently I just ignore header data
+    @property
+    def annual_heating_design_day_996(self):
+        """A design day object representing the annual 99.6% heating design day."""
+        self._load_data_check()
+        if len(self._winter_dict) != 0:
+            return DesignDay.from_ashrae_dict_heating(
+                self._winter_dict, self.location, False,
+                self.atmospheric_station_pressure.average)
+        else:
+            return None
+
+    @property
+    def annual_heating_design_day_990(self):
+        """A design day object representing the annual 99.0% heating design day."""
+        self._load_data_check()
+        if len(self._winter_dict) != 0:
+            return DesignDay.from_ashrae_dict_heating(
+                self._winter_dict, self.location, True,
+                self.atmospheric_station_pressure.average)
+        else:
+            return None
+
+    @property
+    def annual_cooling_design_day_004(self):
+        """A design day object representing the annual 0.4% cooling design day."""
+        self._load_data_check()
+        if len(self._summer_dict) != 0:
+            return DesignDay.from_ashrae_dict_cooling(
+                self._summer_dict, self.location, False,
+                self.atmospheric_station_pressure.average)
+        else:
+            return None
+
+    @property
+    def annual_cooling_design_day_010(self):
+        """A design day object representing the annual 1.0% cooling design day."""
+        self._load_data_check()
+        if len(self._summer_dict) != 0:
+            return DesignDay.from_ashrae_dict_cooling(
+                self._summer_dict, self.location, True,
+                self.atmospheric_station_pressure.average)
+        else:
+            return None
+
+    @property
+    def extreme_cold_week(self):
+        """An AnalysisPeriod representing the coldest week within the EPW."""
+        self._load_data_check()
+        return self._extreme_cold_week
+
+    @property
+    def extreme_hot_week(self):
+        """An AnalysisPeriod representing the hottest week within the EPW."""
+        self._load_data_check()
+        return self._extreme_hot_week
+
+    @property
+    def typical_winter_week(self):
+        """An AnalysisPeriod representing a typical winter week within the EPW."""
+        self._load_data_check()
+        return self._typical_winter_week
+
+    @property
+    def typical_spring_week(self):
+        """An AnalysisPeriod representing a typical spring week within the EPW."""
+        self._load_data_check()
+        return self._typical_spring_week
+
+    @property
+    def typical_summer_week(self):
+        """An AnalysisPeriod representing a typical summer week within the EPW."""
+        self._load_data_check()
+        return self._typical_summer_week
+
+    @property
+    def typical_autumn_week(self):
+        """An AnalysisPeriod representing a typical autumn week within the EPW."""
+        self._load_data_check()
+        return self._typical_autumn_week
+
+    @property
+    def monthly_ground_temperature(self):
+        """Return a dictionary of Mothly Data collections.
+
+        The keys of this dictionary are the depths at which each set
+        of temperatures occurrs."""
+        self._load_data_check()
+        return self._monthly_ground_temps
+
+    @monthly_ground_temperature.setter
+    def monthly_ground_temperature(self, data):
+        assert isinstance(data, OrderedDict), 'monthly_ground_temperature' \
+            'must be an OrderedDict. Got {}.'.format(type(data))
+        for val in data.values():
+            assert isinstance(data, MonthlyCollection), 'monthly_ground_temperature' \
+                'values must be MonthlyCollection objects. Got {}.'.format(type(val))
+        self._monthly_ground_temps = data
+
+    @property
+    def is_leap_year(self):
+        """Boolean to denote whether the EPW is a leap year or not."""
+        return self._is_leap_year
+
+    def _load_data_check(self):
+        """Check if data is loaded and, if not load it."""
+        if not self.is_data_loaded:
+            self._import_data()
+
     def _import_data(self, import_location_only=False):
         """Import data from an epw file.
 
@@ -128,6 +255,7 @@ class EPW(object):
                 self._location = Location()
                 self._location.city = location_data[1].replace('\\', ' ') \
                     .replace('/', ' ')
+                self._location.state = location_data[2]
                 self._location.country = location_data[3]
                 self._location.source = location_data[4]
                 self._location.station_id = location_data[5]
@@ -151,12 +279,80 @@ class EPW(object):
             if import_location_only:
                 return
 
+            # parse the summer, winter and extreme design day conditions.
+            dday_data = self._header[1].strip().split(',')
+            if len(dday_data) >= 2 and int(dday_data[1]) == 1:
+                if dday_data[4] == 'Heating':
+                    for key, val in zip(DesignDay.heating_keys, dday_data[5:20]):
+                        self._winter_dict[key] = val
+                if dday_data[20] == 'Cooling':
+                    for key, val in zip(DesignDay.cooling_keys, dday_data[21:53]):
+                        self._summer_dict[key] = val
+                if dday_data[53] == 'Extremes':
+                    for key, val in zip(DesignDay.extreme_keys, dday_data[54:70]):
+                        self._extremes_dict[key] = val
+
+            # parse typical and extreme periods into analysis periods.
+            week_data = self._header[2].split(',')
+            num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
+            st_ind = 2
+            for depth in xrange(num_weeks):
+                week_dat = week_data[st_ind:st_ind + 4]
+                st_ind += 4
+                st = [int(num) for num in week_dat[2].split('/')]
+                end = [int(num) for num in week_dat[3].split('/')]
+                if len(st) == 3:
+                    a_per = AnalysisPeriod(st[1], st[2], 0, end[1], end[2], 23)
+                elif len(st) == 2:
+                    a_per = AnalysisPeriod(st[0], st[1], 0, end[0], end[1], 23)
+                if 'Summer' in week_dat[0] and week_dat[1] == 'Extreme':
+                    self._extreme_hot_week = a_per
+                elif 'Summer' in week_dat[0] and week_dat[1] == 'Typical':
+                    self._typical_summer_week = a_per
+                elif 'Winter' in week_dat[0] and week_dat[1] == 'Extreme':
+                    self._extreme_cold_week = a_per
+                elif 'Winter' in week_dat[0] and week_dat[1] == 'Typical':
+                    self._typical_winter_week = a_per
+                elif 'Spring' in week_dat[0] and week_dat[1] == 'Typical':
+                    self._typical_spring_week = a_per
+                elif 'Autumn' in week_dat[0] and week_dat[1] == 'Typical':
+                    self._typical_autumn_week = a_per
+
+            # parse the monthly ground temperatures in the header.
+            grnd_data = self._header[3].strip().split(',')
+            num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
+            st_ind = 2
+            for depth in xrange(num_depths):
+                header_meta = copy(self._metadata)
+                header_meta['depth'] = float(grnd_data[st_ind])
+                header_meta['soil conductivity'] = grnd_data[st_ind + 1]
+                header_meta['soil density'] = grnd_data[st_ind + 2]
+                header_meta['soil specific heat'] = grnd_data[st_ind + 3]
+                grnd_header = Header(temperature.GroundTemperature(), 'C',
+                                     AnalysisPeriod(), header_meta)
+                grnd_vlas = [float(x) for x in grnd_data[st_ind + 4: st_ind + 16]]
+                self._monthly_ground_temps[float(grnd_data[st_ind])] = \
+                    MonthlyCollection(grnd_header, grnd_vlas, list(xrange(12)))
+                st_ind += 16
+
+            # parse leap year, daylight savings and comments.
+            leap_dl_sav = self._header[4].strip().split(',')
+            self._is_leap_year = True if leap_dl_sav[1] == 'Yes' else False
+            self.daylight_savings_start = leap_dl_sav[2]
+            self.daylight_savings_end = leap_dl_sav[3]
+            comments_1 = self._header[5].strip().split(',')
+            if len(comments_1) > 0:
+                self.comments_1 = comments_1[-1]
+            comments_2 = self._header[6].strip().split(',')
+            if len(comments_2) > 0:
+                self.comments_2 = comments_2[-1]
+
             # read first line of data to overwrite the number of fields
             line = epwin.readline()
             self._num_of_fields = min(len(line.strip().split(',')), 35)
 
             # create an annual analysis period
-            analysis_period = AnalysisPeriod()
+            analysis_period = AnalysisPeriod(is_leap_year=self.is_leap_year)
 
             # create headers and an empty list for each field in epw file
             headers = []
@@ -222,6 +418,72 @@ class EPW(object):
 
         return self._data[field_number]
 
+    @property
+    def header(self):
+        """Text representing the full header (the first 8 lines) of the EPW."""
+        self._load_data_check()
+        loc_str = 'LOCATION,{},{},{},{},{},{},{},{},{}\n'.format(
+            self.location.city, self.location.state, self.location.country,
+            self.location.source, self.location.station_id,
+            self.location.latitude, self.location.longitude,
+            self.location.time_zone, self.location.elevation)
+        winter_found = bool(self._winter_dict)
+        summer_found = bool(self._summer_dict)
+        extreme_found = bool(self._extremes_dict)
+        if winter_found and summer_found and extreme_found:
+            des_str = 'DESIGN CONDITIONS,1,Climate Design Data 2009 ASHRAE Handbook,,'
+            des_str = des_str + 'Heating,{},Cooling,{},Extremes,{}\n'.format(
+                ','.join(self._winter_dict.values()),
+                ','.join(self._summer_dict.values()),
+                ','.join(self._extremes_dict.values()))
+        else:
+            des_str = 'DESIGN CONDITIONS,0\n'
+        weeks = []
+        if self.extreme_hot_week:
+            name = 'Summer - {}'.format(self.extreme_hot_txt)
+            weeks.append(self._format_week(self.extreme_hot_week, 'Extreme', name))
+        if self.typical_summer_week:
+            name = 'Summer - {}'.format(self.typical_txt)
+            weeks.append(self._format_week(self.typical_summer_week, 'Typical', name))
+        if self.extreme_cold_week:
+            name = 'Winter - {}'.format(self.extreme_cold_txt)
+            weeks.append(self._format_week(self.extreme_cold_week, 'Extreme', name))
+        if self.typical_winter_week:
+            name = 'Winter - {}'.format(self.typical_txt)
+            weeks.append(self._format_week(self.typical_winter_week, 'Typical', name))
+        if self.typical_autumn_week:
+            name = 'Autumn - {}'.format(self.typical_txt)
+            weeks.append(self._format_week(self.typical_autumn_week, 'Typical', name))
+        if self.typical_spring_week:
+            name = 'Spring - {}'.format(self.typical_txt)
+            weeks.append(self._format_week(self.typical_spring_week, 'Typical', name))
+        week_str = 'TYPICAL/EXTREME PERIODS,{},{}\n'.format(len(weeks), ','.join(weeks))
+        grnd_st = 'GROUND TEMPERATURES,{}'.format(len(self._monthly_ground_temps.keys()))
+        for depth, dc in self._monthly_ground_temps.items():
+            grnd_st = grnd_st + ',{},{}'.format(depth, self._fromat_ground_t(dc))
+        grnd_st = grnd_st + '\n'
+        leap_yr = 'Yes' if self._is_leap_year is True else 'No'
+        leap_str = 'HOLIDAYS/DAYLIGHT SAVINGS,{},{},{},0\n'.format(
+            leap_yr, self.daylight_savings_start, self.daylight_savings_end)
+        comment_str = 'COMMENTS 1,{}\nCOMMENTS 2,{}\n'.format(
+            self.comments_1, self.comments_2)
+        data_str = 'DATA PERIODS,1,1,Data,Sunday, 1/ 1,12/31'
+        return [loc_str, des_str, week_str, grnd_st, leap_str, comment_str, data_str]
+
+    def _format_week(self, a_per, type, name):
+        """Format an AnalysisPeriod into string for the EPW header."""
+        return '{},{},{}/{},{}/{}'.format(name, type, a_per.st_month, a_per.st_day,
+                                          a_per.end_month, a_per.end_day)
+
+    def _fromat_ground_t(self, data_c):
+        """Format monthly ground data collection into string for the EPW header."""
+        monthly_str = '{},{},{},{}'.format(
+            data_c.header.metadata['soil conductivity'],
+            data_c.header.metadata['soil density'],
+            data_c.header.metadata['soil specific heat'],
+            ','.join(['%.2f' % x for x in data_c.values]))
+        return monthly_str
+
     def save(self, file_path):
         """Save epw object as an epw file.
 
@@ -233,7 +495,7 @@ class EPW(object):
             self._import_data()
 
         # write the file
-        lines = self._header
+        lines = self.header
         try:
             # move first item to end position for fields on the hour
             for field in range(0, self._num_of_fields):
@@ -242,14 +504,15 @@ class EPW(object):
                     first_hour = self._data[field]._values.pop(0)
                     self._data[field]._values.append(first_hour)
 
-            for hour in xrange(0, 8760):
+            annual_a_per = AnalysisPeriod(is_leap_year=self.is_leap_year)
+            for hour in xrange(0, len(annual_a_per.datetimes)):
                 line = []
                 for field in range(0, self._num_of_fields):
                     line.append(str(self._data[field]._values[hour]))
                 lines.append(",".join(line) + "\n")
         except IndexError:
             # cleaning up
-            length_error_msg = 'Data length is not 8760 hours and cannot be ' + \
+            length_error_msg = 'Data length is not for a full year and cannot be ' + \
                 'saved as an EPW file.'
             raise ValueError(length_error_msg)
         else:
@@ -267,7 +530,7 @@ class EPW(object):
         return file_path
 
     def import_data_by_field(self, field_number):
-        """Return annual values for any field_number in epw file.
+        """Return an annual data collection for any field_number in epw file.
 
         This is a useful method to get the values for fields that Ladybug currently
         doesn't import by default. You can find list of fields by typing
@@ -317,12 +580,12 @@ class EPW(object):
 
     @property
     def years(self):
-        """Return years as a Ladybug Data List."""
+        """Return years as a Ladybug Data Collection."""
         return self._get_data_by_field(0)
 
     @property
     def dry_bulb_temperature(self):
-        """Return annual Dry Bulb Temperature as a Ladybug Data List.
+        """Return annual Dry Bulb Temperature as a Ladybug Data Collection.
 
         This is the dry bulb temperature in C at the time indicated. Note that
         this is a full numeric field (i.e. 23.6) and not an integer representation
@@ -336,7 +599,7 @@ class EPW(object):
 
     @property
     def dew_point_temperature(self):
-        u"""Return annual Dew Point Temperature as a Ladybug Data List.
+        u"""Return annual Dew Point Temperature as a Ladybug Data Collection.
 
         This is the dew point temperature in C at the time indicated. Note that this is
         a full numeric field (i.e. 23.6) and not an integer representation with tenths.
@@ -348,7 +611,7 @@ class EPW(object):
 
     @property
     def relative_humidity(self):
-        u"""Return annual Relative Humidity as a Ladybug Data List.
+        u"""Return annual Relative Humidity as a Ladybug Data Collection.
 
         This is the Relative Humidity in percent at the time indicated. Valid values
         range from 0% to 110%. Missing value for this field is 999.
@@ -359,7 +622,7 @@ class EPW(object):
 
     @property
     def atmospheric_station_pressure(self):
-        """Return annual Atmospheric Station Pressure as a Ladybug Data List.
+        """Return annual Atmospheric Station Pressure as a Ladybug Data Collection.
 
         This is the station pressure in Pa at the time indicated. Valid values range
         from 31,000 to 120,000. (These values were chosen from the standard barometric
@@ -371,7 +634,7 @@ class EPW(object):
 
     @property
     def extraterrestrial_horizontal_radiation(self):
-        """Return annual Extraterrestrial Horizontal Radiation as a Ladybug Data List.
+        """Return annual Extraterrestrial Horizontal Radiation as a Ladybug Data Collection.
 
         This is the Extraterrestrial Horizontal Radiation in Wh/m2. It is not currently
         used in EnergyPlus calculations. It should have a minimum value of 0; missing
@@ -383,7 +646,7 @@ class EPW(object):
 
     @property
     def extraterrestrial_direct_normal_radiation(self):
-        """Return annual Extraterrestrial Direct Normal Radiation as a Ladybug Data List.
+        """Return annual Extraterrestrial Direct Normal Radiation as a Ladybug Data Collection.
 
         This is the Extraterrestrial Direct Normal Radiation in Wh/m2. (Amount of solar
         radiation in Wh/m2 received on a surface normal to the rays of the sun at the top
@@ -397,7 +660,7 @@ class EPW(object):
 
     @property
     def horizontal_infrared_radiation_intensity(self):
-        """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data List.
+        """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data Collection.
 
         This is the Horizontal Infrared Radiation Intensity in W/m2. If it is missing,
         it is calculated from the Opaque Sky Cover field as shown in the following
@@ -410,7 +673,7 @@ class EPW(object):
 
     @property
     def global_horizontal_radiation(self):
-        """Return annual Global Horizontal Radiation as a Ladybug Data List.
+        """Return annual Global Horizontal Radiation as a Ladybug Data Collection.
 
         This is the Global Horizontal Radiation in Wh/m2. (Total amount of direct and
         diffuse solar radiation in Wh/m2 received on a horizontal surface during the
@@ -424,7 +687,7 @@ class EPW(object):
 
     @property
     def direct_normal_radiation(self):
-        """Return annual Direct Normal Radiation as a Ladybug Data List.
+        """Return annual Direct Normal Radiation as a Ladybug Data Collection.
 
         This is the Direct Normal Radiation in Wh/m2. (Amount of solar radiation in
         Wh/m2 received directly from the solar disk on a surface perpendicular to the
@@ -438,7 +701,7 @@ class EPW(object):
 
     @property
     def diffuse_horizontal_radiation(self):
-        """Return annual Diffuse Horizontal Radiation as a Ladybug Data List.
+        """Return annual Diffuse Horizontal Radiation as a Ladybug Data Collection.
 
         This is the Diffuse Horizontal Radiation in Wh/m2. (Amount of solar radiation in
         Wh/m2 received from the sky (excluding the solar disk) on a horizontal surface
@@ -452,7 +715,7 @@ class EPW(object):
 
     @property
     def global_horizontal_illuminance(self):
-        """Return annual Global Horizontal Illuminance as a Ladybug Data List.
+        """Return annual Global Horizontal Illuminance as a Ladybug Data Collection.
 
         This is the Global Horizontal Illuminance in lux. (Average total amount of
         direct and diffuse illuminance in hundreds of lux received on a horizontal
@@ -467,7 +730,7 @@ class EPW(object):
 
     @property
     def direct_normal_illuminance(self):
-        """Return annual Direct Normal Illuminance as a Ladybug Data List.
+        """Return annual Direct Normal Illuminance as a Ladybug Data Collection.
 
         This is the Direct Normal Illuminance in lux. (Average amount of illuminance in
         hundreds of lux received directly from the solar disk on a surface perpendicular
@@ -483,7 +746,7 @@ class EPW(object):
 
     @property
     def diffuse_horizontal_illuminance(self):
-        """Return annual Diffuse Horizontal Illuminance as a Ladybug Data List.
+        """Return annual Diffuse Horizontal Illuminance as a Ladybug Data Collection.
 
         This is the Diffuse Horizontal Illuminance in lux. (Average amount of illuminance
         in hundreds of lux received from the sky (excluding the solar disk) on a
@@ -499,7 +762,7 @@ class EPW(object):
 
     @property
     def zenith_luminance(self):
-        """Return annual Zenith Luminance as a Ladybug Data List.
+        """Return annual Zenith Luminance as a Ladybug Data Collection.
 
         This is the Zenith Illuminance in Cd/m2. (Average amount of luminance at
         the sky's zenith in tens of Cd/m2 during the number of minutes preceding
@@ -513,7 +776,7 @@ class EPW(object):
 
     @property
     def wind_direction(self):
-        """Return annual Wind Direction as a Ladybug Data List.
+        """Return annual Wind Direction as a Ladybug Data Collection.
 
         This is the Wind Direction in degrees where the convention is that North=0.0,
         East=90.0, South=180.0, West=270.0. (Wind direction in degrees at the time
@@ -527,7 +790,7 @@ class EPW(object):
 
     @property
     def wind_speed(self):
-        """Return annual Wind Speed as a Ladybug Data List.
+        """Return annual Wind Speed as a Ladybug Data Collection.
 
         This is the wind speed in m/sec. (Wind speed at time indicated.) Values can
         range from 0 to 40. Missing value is 999.
@@ -539,7 +802,7 @@ class EPW(object):
 
     @property
     def total_sky_cover(self):
-        """Return annual Total Sky Cover as a Ladybug Data List.
+        """Return annual Total Sky Cover as a Ladybug Data Collection.
 
         This is the value for total sky cover (tenths of coverage). (i.e. 1 is 1/10
         covered. 10 is total coverage). (Amount of sky dome in tenths covered by clouds
@@ -553,7 +816,7 @@ class EPW(object):
 
     @property
     def opaque_sky_cover(self):
-        """Return annual Opaque Sky Cover as a Ladybug Data List.
+        """Return annual Opaque Sky Cover as a Ladybug Data Collection.
 
         This is the value for opaque sky cover (tenths of coverage). (i.e. 1 is 1/10
         covered. 10 is total coverage). (Amount of sky dome in tenths covered by
@@ -570,7 +833,7 @@ class EPW(object):
 
     @property
     def visibility(self):
-        """Return annual Visibility as a Ladybug Data List.
+        """Return annual Visibility as a Ladybug Data Collection.
 
         This is the value for visibility in km. (Horizontal visibility at the time
         indicated.) It is not currently used in EnergyPlus calculations. Missing
@@ -583,7 +846,7 @@ class EPW(object):
 
     @property
     def ceiling_height(self):
-        """Return annual Ceiling Height as a Ladybug Data List.
+        """Return annual Ceiling Height as a Ladybug Data Collection.
 
         This is the value for ceiling height in m. (77777 is unlimited ceiling height.
         88888 is cirroform ceiling.) It is not currently used in EnergyPlus calculations.
@@ -596,7 +859,7 @@ class EPW(object):
 
     @property
     def present_weather_observation(self):
-        """Return annual Present Weather Observation as a Ladybug Data List.
+        """Return annual Present Weather Observation as a Ladybug Data Collection.
 
         If the value of the field is 0, then the observed weather codes are taken from
         the following field. If the value of the field is 9, then "missing" weather is
@@ -611,7 +874,7 @@ class EPW(object):
 
     @property
     def present_weather_codes(self):
-        """Return annual Present Weather Codes as a Ladybug Data List.
+        """Return annual Present Weather Codes as a Ladybug Data Collection.
 
         The present weather codes field is assumed to follow the TMY2 conventions for
         this field. Note that though this field may be represented as numeric (e.g. in
@@ -630,7 +893,7 @@ class EPW(object):
 
     @property
     def precipitable_water(self):
-        """Return annual Precipitable Water as a Ladybug Data List.
+        """Return annual Precipitable Water as a Ladybug Data Collection.
 
         This is the value for Precipitable Water in mm. (This is not rain - rain is
         inferred from the PresWeathObs field but a better result is from the Liquid
@@ -645,7 +908,7 @@ class EPW(object):
 
     @property
     def aerosol_optical_depth(self):
-        """Return annual Aerosol Optical Depth as a Ladybug Data List.
+        """Return annual Aerosol Optical Depth as a Ladybug Data Collection.
 
         This is the value for Aerosol Optical Depth in thousandths. It is not currently
         used in EnergyPlus calculations. Missing value is .999.
@@ -657,7 +920,7 @@ class EPW(object):
 
     @property
     def snow_depth(self):
-        """Return annual Snow Depth as a Ladybug Data List.
+        """Return annual Snow Depth as a Ladybug Data Collection.
 
         This is the value for Snow Depth in cm. This field is used to tell when snow
         is on the ground and, thus, the ground reflectance may change. Missing value
@@ -670,7 +933,7 @@ class EPW(object):
 
     @property
     def days_since_last_snowfall(self):
-        """Return annual Days Since Last Snow Fall as a Ladybug Data List.
+        """Return annual Days Since Last Snow Fall as a Ladybug Data Collection.
 
         This is the value for Days Since Last Snowfall. It is not currently used in
         EnergyPlus calculations. Missing value is 99.
@@ -682,7 +945,7 @@ class EPW(object):
 
     @property
     def albedo(self):
-        """Return annual Albedo values as a Ladybug Data List.
+        """Return annual Albedo values as a Ladybug Data Collection.
 
         The ratio (unitless) of reflected solar irradiance to global horizontal
         irradiance. It is not currently used in EnergyPlus.
@@ -694,7 +957,7 @@ class EPW(object):
 
     @property
     def liquid_precipitation_depth(self):
-        """Return annual liquid precipitation depth as a Ladybug Data List.
+        """Return annual liquid precipitation depth as a Ladybug Data Collection.
 
         The amount of liquid precipitation (mm) observed at the indicated time for the
         period indicated in the liquid precipitation quantity field. If this value is
@@ -709,7 +972,7 @@ class EPW(object):
 
     @property
     def liquid_precipitation_quantity(self):
-        """Return annual Liquid Precipitation Quantity as a Ladybug Data List.
+        """Return annual Liquid Precipitation Quantity as a Ladybug Data Collection.
 
         The period of accumulation (hr) for the liquid precipitation depth field.
         It is not currently used in EnergyPlus.
@@ -721,7 +984,7 @@ class EPW(object):
 
     @property
     def sky_temperature(self):
-        """Return annual Sky Temperature as a Ladybug Data List.
+        """Return annual Sky Temperature as a Ladybug Data Collection.
 
         This value in degrees Celcius is derived from the Horizontal Infrared
         Radiation Intensity in Wh/m2. It represents the long wave radiant
@@ -760,7 +1023,7 @@ class EPW(object):
             file_path: Full file path for output file.
             hoys: List of hours of the year. Default is 0-8759.
         """
-        hoys = hoys or xrange(8760)
+        hoys = hoys or xrange(len(self.direct_normal_radiation.datetimes))
         if not file_path:
             file_path = self.file_path[:-4] + '.wea'
 

@@ -151,7 +151,7 @@ class DDY(object):
         for dd in self._design_days:
             if dd.location != self._location:
                 dd.location = self._location
-                print ('Updating location of {} to {}.'.format(dd, self._location))
+                print('Updating location of {} to {}.'.format(dd, self._location))
 
     @property
     def design_days(self):
@@ -169,7 +169,7 @@ class DDY(object):
         for dd in self._design_days:
             if dd.location != self._location:
                 dd.location = self._location
-                print ('Updating location of {} to {}.'.format(dd, self._location))
+                print('Updating location of {} to {}.'.format(dd, self._location))
 
     @property
     def isDdy(self):
@@ -194,16 +194,76 @@ class DesignDay(object):
         name: A text string to set the name of the design day
         day_type: Choose from 'SummerDesignDay', 'WinterDesignDay' or other
             EnergyPlus days visible under the day_types property of this object.
-        location: Location for the design day
+        location: Location object for the design day
         dry_bulb_condition: Ladyubug DryBulbCondition object
         humidity_condition: Ladyubug HumidityCondition object
         wind_condition: Ladyubug WindCondition object
         sky_condition: Ladybug SkyCondition object
     """
+    # possible day types
+    day_types = ('SummerDesignDay', 'WinterDesignDay', 'Sunday', 'Monday',
+                 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Holiday',
+                 'CustomDay1', 'CustomDay2')
 
-    def __init__(self, name, day_type, location, dry_bulb_condition, humidity_condition,
+    # keys denoting the values from which design days are derived
+    # these keys and their order com from Climate Design Data of ASHRAE Handbook
+    heating_keys = ('Month', 'DB996', 'DB990', 'DP996', 'HR_DP996', 'DB_DP996',
+                    'DP990', 'HR_DP990', 'DB_DP990', 'WS004c', 'DB_WS004c',
+                    'WS010c', 'DB_WS010c', 'WS_DB996', 'WD_DB996')
+    cooling_keys = ('Month', 'DBR', 'DB004', 'WB_DB004', 'DB010', 'WB_DB010',
+                    'DB020', 'WB_DB020', 'WB004', 'DB_WB004', 'WB010', 'DB_WB010',
+                    'WB020', 'DB_WB020', 'WS_DB004', 'WD_DB004', 'DP004',
+                    'HR_DP004', 'DB_DP004', 'DP010', 'HR_DP010', 'DB_DP010',
+                    'DP020', 'HR_DP020', 'DB_DP020', 'EN004', 'DB_EN004',
+                    'EN010', 'DB_EN010', 'EN020', 'DB_EN020', 'Hrs_8-4_&_DB')
+    extreme_keys = ('WS010', 'WS025', 'WS050', 'WBmax', 'DBmin_mean', 'DBmax_mean',
+                    'DBmin_stddev', 'DBmax_stddev', 'DBmin05years', 'DBmax05years',
+                    'DBmin10years', 'DBmax10years', 'DBmin20years', 'DBmax20years',
+                    'DBmin50years', 'DBmax50years')
+
+    # comments that go along with the EP string representation of the design day
+    comments = ('!- Name',
+                '!- Month',
+                '!- Day of Month',
+                '!- Day Type',
+                '!- Max Dry-Bulb Temp [C]',
+                '!- Daily Dry-Bulb Temp Range [C]',
+                '!- Dry-Bulb Temp Range Modifier Type',
+                '!- Dry-Bulb Temp Range Modifier Schedule Name',
+                '!- Humidity Condition Type',
+                '!- Wetbulb/Dewpoint at Max Dry-Bulb [C]',
+                '!- Humidity Indicating Day Schedule Name',
+                '!- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}',
+                '!- Enthalpy at Maximum Dry-Bulb {J/kg}',
+                '!- Daily Wet-Bulb Temperature Range [deltaC]',
+                '!- Barometric Pressure [Pa]',
+                '!- Wind Speed {m/s}',
+                '!- Wind Direction [Degrees; N=0, S=180]',
+                '!- Rain [Yes/No]',
+                '!- Snow on ground [Yes/No]',
+                '!- Daylight Savings Time Indicator',
+                '!- Solar Model Indicator',
+                '!- Beam Solar Day Schedule Name',
+                '!- Diffuse Solar Day Schedule Name',
+                '!- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)',
+                '!- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)',
+                '!- Clearness [0.0 to 1.2]')
+
+    def __init__(self, name, day_type, location,
+                 dry_bulb_condition, humidity_condition,
                  wind_condition, sky_condition):
-        """Initalize the class."""
+        """Initalize the class
+
+        Args:
+            name: A text string to set the name of the design day
+            day_type: Choose from 'SummerDesignDay', 'WinterDesignDay' or other
+                EnergyPlus days visible under the day_types property of this object.
+            location: Location object for the design day
+            dry_bulb_condition: Ladyubug DryBulbCondition object
+            humidity_condition: Ladyubug HumidityCondition object
+            wind_condition: Ladyubug WindCondition object
+            sky_condition: Ladybug SkyCondition object
+        """
         self.name = str(name)
         self.day_type = day_type
         self.location = location
@@ -317,6 +377,74 @@ class DesignDay(object):
         return cls(name, day_type, location, dry_bulb_condition,
                    humidity_condition, wind_condition, sky_condition)
 
+    @classmethod
+    def from_ashrae_dict_heating(cls, ashrae_dict, location,
+                                 use_990=False, pressure=None):
+        """Create a heating design day object from a ASHRAE HOF dictionary.
+
+        Args:
+            ashrae_dict: A dictionary with 15 keys that match those in the
+                heating_keys property of this object. Each key should
+                correspond to a value.
+            location: Location object for the design day
+            use_990: Boolean to denote what type of design day to create
+                (wether it is a 99.0% or a 99.6% design day).  Default is
+                False for a 99.6% annual heating design day
+            pressure: Atmospheric pressure in Pa that should be used in the
+                creation of the humidity condition. Default is 101325 Pa
+                for pressure at sea level.
+        """
+        db_key = 'DB996' if use_990 is False else 'DB990'
+        perc_str = '99.6' if use_990 is False else '99.0'
+        pressure = pressure if pressure is not None else 101325
+        db_cond = DryBulbCondition(float(ashrae_dict[db_key]), 0)
+        hu_cond = HumidityCondition('Wetbulb', float(ashrae_dict[db_key]), pressure)
+        ws_cond = WindCondition(float(ashrae_dict['WS_DB996']),
+                                float(ashrae_dict['WD_DB996']))
+        sky_cond = OriginalClearSkyCondition(int(ashrae_dict['Month']), 21, 0)
+        name = '{}% Heating Design Day for {}'.format(perc_str, location.city)
+        return cls(name, 'WinterDesignDay', location,
+                   db_cond, hu_cond, ws_cond, sky_cond)
+
+    @classmethod
+    def from_ashrae_dict_cooling(cls, ashrae_dict, location,
+                                 use_010=False, pressure=None, tau=None):
+        """Create a heating design day object from a ASHRAE HOF dictionary.
+
+        Args:
+            ashrae_dict: A dictionary with 32 keys that match those in the
+                cooling_keys property of this object. Each key should
+                correspond to a value.
+            location: Location object for the design day
+            use_010: Boolean to denote what type of design day to create
+                (wether it is a 1.0% or a 0.4% design day).  Default is
+                False for a 0.4% annual cooling design day
+            pressure: Atmospheric pressure in Pa that should be used in the
+                creation of the humidity condition. Default is 101325 Pa
+                for pressure at sea level.
+            tau: Optional tuple containing two values, which will set the
+                sky condition to be a revised ASHRAE clear sky (Tau model).
+                The first item of the tuple should be the tau beam value
+                and the second is for the tau diffuse value.  Default is
+                None, which will default to the original ASHRAE Clear Sky.
+        """
+        db_key = 'DB004' if use_010 is False else 'DB010'
+        wb_key = 'WB_DB004' if use_010 is False else 'WB_DB010'
+        perc_str = '0.4' if use_010 is False else '1.0'
+        pressure = pressure if pressure is not None else 101325
+        db_cond = DryBulbCondition(float(ashrae_dict[db_key]), float(ashrae_dict['DBR']))
+        hu_cond = HumidityCondition('Wetbulb', float(ashrae_dict[wb_key]), pressure)
+        ws_cond = WindCondition(float(ashrae_dict['WS_DB004']),
+                                float(ashrae_dict['WD_DB004']))
+        month_num = int(ashrae_dict['Month'])
+        if tau is not None:
+            sky_cond = RevisedClearSkyCondition(month_num, 21, tau[0], tau[1])
+        else:
+            sky_cond = OriginalClearSkyCondition(month_num, 21)
+        name = '{}% Cooling Design Day for {}'.format(perc_str, location.city)
+        return cls(name, 'SummerDesignDay', location,
+                   db_cond, hu_cond, ws_cond, sky_cond)
+
     @property
     def ep_style_string(self):
         """Serialize object to an EnerygPlus SizingPeriod:DesignDay.
@@ -365,7 +493,7 @@ class DesignDay(object):
 
         # put everything together into one string
         comented_str = ['  {},{}{}\n'.format(
-            str(val), ' ' * (60 - len(str(val))), self._comments[i])
+            str(val), ' ' * (60 - len(str(val))), self.comments[i])
                         for i, val in enumerate(ep_vals)]
         comented_str[-1] = comented_str[-1].replace(',', ';')
         comented_str.insert(0, 'SizingPeriod:DesignDay,\n')
@@ -557,43 +685,6 @@ class DesignDay(object):
                                        'country': self._location.country,
                                        'city': self._location.city})
         return HourlyContinuousCollection(data_header, values)
-
-    @property
-    def day_types(self):
-        """Possible design day types."""
-        return ('SummerDesignDay', 'WinterDesignDay', 'Sunday', 'Monday',
-                'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Holiday',
-                'CustomDay1', 'CustomDay2')
-
-    @property
-    def _comments(self):
-        """Comments that go along with the EP string representation of the design day."""
-        return ('!- Name',
-                '!- Month',
-                '!- Day of Month',
-                '!- Day Type',
-                '!- Max Dry-Bulb Temp [C]',
-                '!- Daily Dry-Bulb Temp Range [C]',
-                '!- Dry-Bulb Temp Range Modifier Type',
-                '!- Dry-Bulb Temp Range Modifier Schedule Name',
-                '!- Humidity Condition Type',
-                '!- Wetbulb/Dewpoint at Max Dry-Bulb [C]',
-                '!- Humidity Indicating Day Schedule Name',
-                '!- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}',
-                '!- Enthalpy at Maximum Dry-Bulb {J/kg}',
-                '!- Daily Wet-Bulb Temperature Range [deltaC]',
-                '!- Barometric Pressure [Pa]',
-                '!- Wind Speed {m/s}',
-                '!- Wind Direction [Degrees; N=0, S=180]',
-                '!- Rain [Yes/No]',
-                '!- Snow on ground [Yes/No]',
-                '!- Daylight Savings Time Indicator',
-                '!- Solar Model Indicator',
-                '!- Beam Solar Day Schedule Name',
-                '!- Diffuse Solar Day Schedule Name',
-                '!- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)',
-                '!- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)',
-                '!- Clearness [0.0 to 1.2]')
 
     @property
     def isDesignDay(self):

@@ -10,6 +10,7 @@ from .designday import WindCondition
 from .designday import RevisedClearSkyCondition
 from .designday import OriginalClearSkyCondition
 
+from collections import OrderedDict
 import os
 import re
 import codecs
@@ -33,15 +34,6 @@ class STAT(object):
         monthly_tau_beam
         monthly_tau_diffuse
     """
-    winter_keys = ('Month', 'DB996', 'DB990', 'DP996', 'HR_DP996', 'DB_DP996',
-                   'DP990', 'HR_DP990', 'DB_DP990', 'WS004c', 'DB_WS004c',
-                   'WS010c', 'DB_WS010c', 'WS_DB996', 'WD_DB996')
-    summer_keys = ('Month', 'DBR', 'DB004', 'WB_DB004', 'DB010', 'WB_DB010',
-                   'DB020', 'WB_DB020', 'WB004', 'DB_WB004', 'WB010', 'DB_WB010',
-                   'WB020', 'DB_WB020', 'WS_DB004', 'WD_DB004', 'DP004',
-                   'HR_DP004', 'DB_DP004', 'DP010', 'HR_DP010', 'DB_DP010',
-                   'DP020', 'HR_DP020', 'DB_DP020', 'EN004', 'DB_EN004',
-                   'EN010', 'DB_EN010', 'EN020', 'DB_EN020', 'Hrs_8-4_&_DB')
 
     def __init__(self, file_path):
         """Initalize the class."""
@@ -56,8 +48,8 @@ class STAT(object):
         self._folder, self._file_name = os.path.split(self.file_path)
 
         # defaults empty state for certain parameters
-        self._winter_des_day_dict = {}
-        self._summer_des_day_dict = {}
+        self._winter_des_day_dict = OrderedDict()
+        self._summer_des_day_dict = OrderedDict()
         self._monthly_wind_dirs = []
 
         # import the data from the file
@@ -162,15 +154,15 @@ class STAT(object):
             self._extreme_cold_week = self._regex_week_parse(
                 r"Extreme Cold Week Period selected:"
                 "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
-            self._seasonal_weeks = self._regex_typical_week_parse()
+            self._typical_weeks = self._regex_typical_week_parse()
 
             # pull out annual design days
             winter_vals = self._regex_parse(r"Heating\s(\d.*)")
             if len(winter_vals) == 15:
-                for key, val in zip(self.winter_keys, winter_vals):
+                for key, val in zip(DesignDay.heating_keys, winter_vals):
                     self._winter_des_day_dict[key] = val
             summer_vals = self._regex_parse(r"Cooling\s(\d.*)")
-            for key, val in zip(self.summer_keys, summer_vals):
+            for key, val in zip(DesignDay.cooling_keys, summer_vals):
                 self._summer_des_day_dict[key] = val
 
             # Pull out relevant monthly information
@@ -303,8 +295,8 @@ class STAT(object):
     def typical_winter_week(self):
         """An AnalysisPeriod representing a typical winter week within the corresponding EPW.
         """
-        if len(self._seasonal_weeks) >= 2:
-            return self._seasonal_weeks[1]
+        if len(self._typical_weeks) >= 2:
+            return self._typical_weeks[1]
         else:
             return None
 
@@ -312,8 +304,8 @@ class STAT(object):
     def typical_spring_week(self):
         """An AnalysisPeriod representing a typical spring week within the corresponding EPW.
         """
-        if len(self._seasonal_weeks) >= 4:
-            return self._seasonal_weeks[3]
+        if len(self._typical_weeks) >= 4:
+            return self._typical_weeks[3]
         else:
             return None
 
@@ -321,8 +313,8 @@ class STAT(object):
     def typical_summer_week(self):
         """An AnalysisPeriod representing a typical summer week within the corresponding EPW.
         """
-        if len(self._seasonal_weeks) >= 1:
-            return self._seasonal_weeks[0]
+        if len(self._typical_weeks) >= 1:
+            return self._typical_weeks[0]
         else:
             return None
 
@@ -330,105 +322,68 @@ class STAT(object):
     def typical_autumn_week(self):
         """An AnalysisPeriod representing a typical autumn week within the corresponding EPW.
         """
-        if len(self._seasonal_weeks) >= 3:
-            return self._seasonal_weeks[2]
+        if len(self._typical_weeks) >= 3:
+            return self._typical_weeks[2]
         else:
             return None
-
-    def _winter_des_day_conds(self, db_key, ws_key, wd_key):
-        """Returns winter design day conditions given keys for the winter dictionary
-        """
-        db_cond = DryBulbCondition(
-            float(self._winter_des_day_dict[db_key]), 0)
-        hu_cond = HumidityCondition(
-            'Wetbulb', float(self._winter_des_day_dict[db_key]),
-            self._stand_press_at_elev)
-        ws_cond = WindCondition(
-            float(self._winter_des_day_dict[ws_key]),
-            float(self._winter_des_day_dict[wd_key]))
-        sky_cond = OriginalClearSkyCondition(
-            int(self._winter_des_day_dict['Month']), 21, 0)
-        return db_cond, hu_cond, ws_cond, sky_cond
-
-    def _summer_des_day_conds(self, db_key, dbr_key, wb_key, ws_key, wd_key):
-        """Returns summer design day conditions given keys for the summer dictionary
-        """
-        db_cond = DryBulbCondition(
-            float(self._summer_des_day_dict[db_key]),
-            float(self._summer_des_day_dict[dbr_key]))
-        hu_cond = HumidityCondition(
-            'Wetbulb', float(self._summer_des_day_dict[wb_key]),
-            self._stand_press_at_elev)
-        ws_cond = WindCondition(
-            float(self._summer_des_day_dict[ws_key]),
-            float(self._summer_des_day_dict[wd_key]))
-        month_num = int(self._summer_des_day_dict['Month'])
-        if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
-                and self._monthly_tau_beam[month_num - 1] is not None and \
-                self._monthly_tau_diffuse[month_num - 1] is not None:
-                    sky_cond = RevisedClearSkyCondition(
-                        month_num, 21, self._monthly_tau_beam[month_num - 1],
-                        self._monthly_tau_diffuse[month_num - 1])
-        else:
-            sky_cond = OriginalClearSkyCondition(month_num, 21, 0)
-        return db_cond, hu_cond, ws_cond, sky_cond
 
     @property
     def annual_heating_design_day_996(self):
-        """A design day object representing the annual 99.6% heating design day.
-        """
-        if self._winter_des_day_dict == {} or self._stand_press_at_elev is None:
-            return None
+        """A design day object representing the annual 99.6% heating design day."""
+        if len(self._winter_des_day_dict) != 0:
+            return DesignDay.from_ashrae_dict_heating(
+                self._winter_des_day_dict, self.location, False,
+                self._stand_press_at_elev)
         else:
-            db_cond, hu_cond, ws_cond, sky_cond = self._winter_des_day_conds(
-                'DB996', 'WS_DB996', 'WD_DB996')
-            return DesignDay(
-                '99.6% Heating Design Day for {}'.format(self._location.city),
-                'WinterDesignDay', self._location, db_cond, hu_cond, ws_cond, sky_cond)
+            return None
 
     @property
     def annual_heating_design_day_990(self):
-        """A design day object representing the annual 99.0% heating design day.
-        """
-        if self._winter_des_day_dict == {} or self._stand_press_at_elev is None:
-            return None
+        """A design day object representing the annual 99.0% heating design day."""
+        if len(self._winter_des_day_dict) != 0:
+            return DesignDay.from_ashrae_dict_heating(
+                self._winter_des_day_dict, self.location, True,
+                self._stand_press_at_elev)
         else:
-            db_cond, hu_cond, ws_cond, sky_cond = self._winter_des_day_conds(
-                'DB990', 'WS_DB996', 'WD_DB996')
-            return DesignDay(
-                '99.0% Heating Design Day for {}'.format(self._location.city),
-                'WinterDesignDay', self._location, db_cond, hu_cond, ws_cond, sky_cond)
+            return None
 
     @property
     def annual_cooling_design_day_004(self):
-        """A design day object representing the annual 0.4% cooling design day.
-        """
-        if self._summer_des_day_dict == {} or self._stand_press_at_elev is None:
-            return None
+        """A design day object representing the annual 0.4% cooling design day."""
+        if len(self._summer_des_day_dict) != 0:
+            tau = None
+            month_num = int(self._summer_des_day_dict['Month'])
+            if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
+                and self._monthly_tau_beam[month_num - 1] is not None and \
+                    self._monthly_tau_diffuse[month_num - 1] is not None:
+                        tau = (self._monthly_tau_beam[month_num - 1],
+                               self._monthly_tau_diffuse[month_num - 1])
+            return DesignDay.from_ashrae_dict_cooling(
+                self._summer_des_day_dict, self.location, False,
+                self._stand_press_at_elev, tau)
         else:
-            db_cond, hu_cond, ws_cond, sky_cond = self._summer_des_day_conds(
-                'DB004', 'DBR', 'WB_DB004', 'WS_DB004', 'WD_DB004')
-            return DesignDay(
-                '0.4% Cooling Design Day for {}'.format(self._location.city),
-                'SummerDesignDay', self._location, db_cond, hu_cond, ws_cond, sky_cond)
+            return None
 
     @property
     def annual_cooling_design_day_010(self):
-        """A design day object representing the annual 1.0% cooling design day.
-        """
-        if self._summer_des_day_dict == {} or self._stand_press_at_elev is None:
-            return None
+        """A design day object representing the annual 1.0% cooling design day."""
+        if len(self._summer_des_day_dict) != 0:
+            tau = None
+            month_num = int(self._summer_des_day_dict['Month'])
+            if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
+                and self._monthly_tau_beam[month_num - 1] is not None and \
+                    self._monthly_tau_diffuse[month_num - 1] is not None:
+                        tau = (self._monthly_tau_beam[month_num - 1],
+                               self._monthly_tau_diffuse[month_num - 1])
+            return DesignDay.from_ashrae_dict_cooling(
+                self._summer_des_day_dict, self.location, True,
+                self._stand_press_at_elev, tau)
         else:
-            db_cond, hu_cond, ws_cond, sky_cond = self._summer_des_day_conds(
-                'DB010', 'DBR', 'WB_DB010', 'WS_DB004', 'WD_DB004')
-            return DesignDay(
-                '1.0% Cooling Design Day for {}'.format(self._location.city),
-                'SummerDesignDay', self._location, db_cond, hu_cond, ws_cond, sky_cond)
+            return None
 
     @property
     def monthly_cooling_design_days_050(self):
-        """A list of 12 objects representing monthly 5.0% cooling design days.
-        """
+        """A list of 12 objects representing monthly 5.0% cooling design days."""
         if self.monthly_found is False or self._monthly_db_50 == [] \
                 or self._monthly_wb_50 == []:
                     return []
@@ -447,8 +402,7 @@ class STAT(object):
 
     @property
     def monthly_cooling_design_days_100(self):
-        """A list of 12 objects representing monthly 10.0% cooling design days.
-        """
+        """A list of 12 objects representing monthly 10.0% cooling design days."""
         if self.monthly_found is False or self._monthly_db_100 == [] \
                 or self._monthly_wb_100 == []:
                     return []

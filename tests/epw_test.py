@@ -2,7 +2,12 @@
 
 import unittest
 import os
+from collections import OrderedDict
+
 from ladybug.epw import EPW
+from ladybug.datacollection import HourlyContinuousCollection, MonthlyCollection
+from ladybug.designday import DesignDay
+from ladybug.analysisperiod import AnalysisPeriod
 
 
 class EPWTestCase(unittest.TestCase):
@@ -48,6 +53,66 @@ class EPWTestCase(unittest.TestCase):
         dbt = epw.dry_bulb_temperature
         assert epw.is_data_loaded is True
         assert len(dbt) == 8760
+
+    def test_import_design_days(self):
+        """Test the functions that import design days."""
+        relative_path = './tests/epw/chicago.epw'
+        epw = EPW(relative_path)
+        assert isinstance(epw.annual_heating_design_day_996, DesignDay)
+        assert epw.annual_heating_design_day_996.dry_bulb_condition.dry_bulb_max == -20.0
+        assert isinstance(epw.annual_heating_design_day_990, DesignDay)
+        assert epw.annual_heating_design_day_990.dry_bulb_condition.dry_bulb_max == -16.6
+        assert isinstance(epw.annual_cooling_design_day_004, DesignDay)
+        assert epw.annual_cooling_design_day_004.dry_bulb_condition.dry_bulb_max == 33.3
+        assert isinstance(epw.annual_cooling_design_day_010, DesignDay)
+        assert epw.annual_cooling_design_day_010.dry_bulb_condition.dry_bulb_max == 31.6
+
+    def test_import_typical_extreme_weeks(self):
+        """Test the functions that import the typical and extreme weeks."""
+        relative_path = './tests/epw/chicago.epw'
+        epw = EPW(relative_path)
+        ext_cold = epw.extreme_cold_week
+        ext_hot = epw.extreme_hot_week
+        assert isinstance(ext_cold, AnalysisPeriod)
+        assert len(ext_cold.doys_int) == 7
+        assert (ext_cold.st_month, ext_cold.st_day, ext_cold.end_month,
+                ext_cold.end_day) == (1, 27, 2, 2)
+        assert isinstance(ext_hot, AnalysisPeriod)
+        assert len(ext_hot.doys_int) == 7
+        assert (ext_hot.st_month, ext_hot.st_day, ext_hot.end_month,
+                ext_hot.end_day) == (7, 13, 7, 19)
+        assert isinstance(epw.typical_winter_week, AnalysisPeriod)
+        assert len(epw.typical_winter_week.doys_int) == 7
+        assert isinstance(epw.typical_summer_week, AnalysisPeriod)
+        assert len(epw.typical_summer_week.doys_int) == 7
+        assert isinstance(epw.typical_spring_week, AnalysisPeriod)
+        assert len(epw.typical_spring_week.doys_int) == 7
+        assert isinstance(epw.typical_autumn_week, AnalysisPeriod)
+        assert len(epw.typical_autumn_week.doys_int) == 7
+
+    def test_import_ground_temperatures(self):
+        """Test the functions that import ground temprature."""
+        relative_path = './tests/epw/chicago.epw'
+        epw = EPW(relative_path)
+        assert len(epw.monthly_ground_temperature.keys()) == 3
+        assert tuple(epw.monthly_ground_temperature.keys()) == (0.5, 2.0, 4.0)
+        assert isinstance(epw.monthly_ground_temperature[0.5], MonthlyCollection)
+        assert epw.monthly_ground_temperature[0.5].values == \
+            (-1.89, -3.06, -0.99, 2.23, 10.68, 17.2,
+             21.6, 22.94, 20.66, 15.6, 8.83, 2.56)
+        assert epw.monthly_ground_temperature[2].values == \
+            (2.39, 0.31, 0.74, 2.45, 8.1, 13.21,
+             17.3, 19.5, 19.03, 16.16, 11.5, 6.56)
+        assert epw.monthly_ground_temperature[4].values == \
+            (5.93, 3.8, 3.34, 3.98, 7.18, 10.62,
+             13.78, 15.98, 16.49, 15.25, 12.51, 9.17)
+
+    def test_epw_header(self):
+        """Check that the process of parsing the EPW header hasn't mutated it."""
+        relative_path = './tests/epw/chicago.epw'
+        epw = EPW(relative_path)
+        for char1, char2 in zip(''.join(epw.header), ''.join(epw._header)):
+            assert char1 == char2
 
     def test_save_epw(self):
         """Test save epw_rel."""

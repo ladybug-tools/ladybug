@@ -10,6 +10,7 @@ class Location(object):
 
     Attributes:
         city: Name of the city as a string.
+        state: Optional state in which the city is located.
         country: Name of the country as a string.
         latitude: Location latitude between -90 and 90 (Default: 0).
         longitude: Location longitude between -180 (west) and 180 (east) (Default: 0).
@@ -19,14 +20,15 @@ class Location(object):
         source: Source of data (e.g. TMY, TMY3).
     """
 
-    __slots__ = ("city", "country", "_lat", "_lon", "_tz", "_elev",
+    __slots__ = ("city", "state", "country", "_lat", "_lon", "_tz", "_elev",
                  "station_id", "source")
 
-    def __init__(self, city=None, country=None, latitude=0, longitude=0,
+    def __init__(self, city=None, state=None, country=None, latitude=0, longitude=0,
                  time_zone=0, elevation=0, station_id=None, source=None,
                  building_id=None, zone_id=None):
         """Create a Ladybug location."""
         self.city = '-' if not city else str(city)
+        self.state = '-' if not state else str(state)
         self.country = '-' if not country else str(country)
         self.latitude = latitude or 0
         self.longitude = longitude or 0
@@ -49,6 +51,8 @@ class Location(object):
         d = loc_json
         if 'city' not in d:
             d['city'] = None
+        if 'state' not in d:
+            d['state'] = None
         if 'country' not in d:
             d['country'] = None
         if 'latitude' not in d:
@@ -60,7 +64,7 @@ class Location(object):
         if 'elevation' not in d:
             d['elevation'] = None
 
-        return cls(d['city'], d['country'], d['latitude'], d['longitude'],
+        return cls(d['city'], d['state'], d['country'], d['latitude'], d['longitude'],
                    d['time_zone'], d['elevation'])
 
     @classmethod
@@ -195,6 +199,7 @@ class Location(object):
         """
         return {
             "city": self.city,
+            "state": self.state,
             "country": self.country,
             "latitude": self.latitude,
             "longitude": self.longitude,
