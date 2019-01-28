@@ -107,9 +107,9 @@ class LocationTestCase(unittest.TestCase):
                        longitude=longitude, time_zone=time_zone,
                        elevation=elevation)
 
-        assert loc.to_json() == {"city": city, "country": country, "latitude": latitude,
-                                 "longitude": longitude, "time_zone": time_zone,
-                                 "elevation": elevation}
+        assert loc.to_json() == {"city": city, "state": '-', "country": country,
+                                 "latitude": latitude, "longitude": longitude,
+                                 "time_zone": time_zone, "elevation": elevation}
 
         loc_from_json = Location.from_json(loc.to_json())
 

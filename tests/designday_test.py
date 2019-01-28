@@ -76,7 +76,7 @@ class DdyTestCase(unittest.TestCase):
 
     def test_design_day_from_properties(self):
         """Test hourly data properties of a standard ddy."""
-        location = Location('Test City', 'USA', 34.20, -118.35, -8, 226)
+        location = Location('Test City', '-', 'USA', 34.20, -118.35, -8, 226)
         a_period = AnalysisPeriod(12, 21, 0, 12, 21, 23)
         des_day = DesignDay.from_design_day_properties('Test Day', 'WinterDesignDay',
                                                        location, a_period, 3.9, 0,
@@ -93,7 +93,7 @@ class DdyTestCase(unittest.TestCase):
 
     def test_design_day_hourly_data(self):
         """Test hourly data properties of a standard ddy."""
-        location = Location('Test City', 'USA', 34.20, -118.35, -8, 226)
+        location = Location('Test City', '-', 'USA', 34.20, -118.35, -8, 226)
         a_period = AnalysisPeriod(8, 21, 0, 8, 21, 23)
         des_day = DesignDay.from_design_day_properties('Test Day', 'SummerDesignDay',
                                                        location, a_period, 36.8, 13.2,

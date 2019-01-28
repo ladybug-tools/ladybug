@@ -70,7 +70,7 @@ class WeaTestCase(unittest.TestCase):
     def test_from_clear_sky(self):
         """Test from original clear sky"""
         location = Location(
-            'Chicago Ohare Intl Ap', 'USA', 41.98, -87.92, -6.0, 201.0)
+            'Chicago Ohare Intl Ap', '-', 'USA', 41.98, -87.92, -6.0, 201.0)
         wea_from_clear_sky = Wea.from_ashrae_clear_sky(location)
 
         assert wea_from_clear_sky.location.city == 'Chicago Ohare Intl Ap'
@@ -241,7 +241,7 @@ class WeaTestCase(unittest.TestCase):
     def test_leap_year(self):
         """Test clear sky with leap year."""
         location = Location(
-            'Chicago Ohare Intl Ap', 'USA', 41.98, -87.92, -6.0, 201.0)
+            'Chicago Ohare Intl Ap', '-', 'USA', 41.98, -87.92, -6.0, 201.0)
         wea = Wea.from_ashrae_clear_sky(location, is_leap_year=True)
 
         assert wea.diffuse_horizontal_irradiance.datetimes[1416].month == 2
