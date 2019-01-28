@@ -29,7 +29,7 @@ if (sys.version_info > (3, 0)):
 
 
 class DDY(object):
-    """Import data from a local .ddy file.
+    """A DDY object containing all of the data of a .ddy file.
 
     properties:
         location: A Ladybug location object

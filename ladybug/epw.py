@@ -25,12 +25,23 @@ except ImportError:
 
 
 class EPW(object):
-    """Import epw data from a local epw file.
-
-    args:
-        file_path: Local file address to an epw file.
+    """An EPW object containing all of the data of an .epw file.
 
     properties:
+        location
+        annual_heating_design_day_996
+        annual_heating_design_day_990
+        annual_cooling_design_day_004
+        annual_cooling_design_day_010
+        heating_design_condition_dictionary
+        cooling_design_condition_dictionary
+        extreme_design_condition_dictionary
+        extreme_hot_weeks
+        extreme_cold_weeks
+        typeical_weeks
+        monthly_ground_temperature
+        header
+
         years
         dry_bulb_temperature
         dew_point_temperature
@@ -63,33 +74,25 @@ class EPW(object):
         liquid_precipitation_quantity
         sky_temperature
     """
-    extreme_hot_txt = 'Week Nearest Max Temperature For Period'
-    extreme_cold_txt = 'Week Nearest Min Temperature For Period'
-    typical_txt = 'Week Nearest Average Temperature For Period'
 
     def __init__(self, file_path):
-        """Init class."""
-        self._file_path = os.path.normpath(file_path)
-        if not os.path.isfile(self._file_path):
-            raise ValueError(
-                'Cannot find an epw file at {}'.format(self._file_path))
-        if not file_path.lower().endswith('epw'):
-            raise TypeError('{} is not an .epw file.'.format(file_path))
+        """Initalize the class from from a local epw file.
 
+        Args:
+            file_path: Local file address to an epw file.
+        """
+        self._file_path = os.path.normpath(file_path)
+        self._is_header_loaded = False
         self._is_data_loaded = False
-        self._is_location_loaded = False
 
         # placeholders for the EPW data that will be imported
         self._data = []
-        self._winter_dict = OrderedDict()
-        self._summer_dict = OrderedDict()
+        self._heating_dict = OrderedDict()
+        self._cooling_dict = OrderedDict()
         self._extremes_dict = OrderedDict()
-        self._extreme_hot_week = None
-        self._extreme_cold_week = None
-        self._typical_summer_week = None
-        self._typical_winter_week = None
-        self._typical_spring_week = None
-        self._typical_autumn_week = None
+        self._extreme_hot_weeks = OrderedDict()
+        self._extreme_cold_weeks = OrderedDict()
+        self._typical_weeks = OrderedDict()
         self._monthly_ground_temps = OrderedDict()
         self._is_leap_year = False
         self.daylight_savings_start = '0'
@@ -111,31 +114,29 @@ class EPW(object):
         return self._is_data_loaded
 
     @property
-    def is_location_loaded(self):
+    def is_header_loaded(self):
         """Return True if location data is loaded."""
-        return self._is_location_loaded
+        return self._is_header_loaded
 
     @property
     def location(self):
         """Return location data."""
-        if not self.is_location_loaded:
-            self._import_data(import_location_only=True)
+        self._load_header_check()
         return self._location
 
     @property
     def metadata(self):
         """Dictionary of metadata about source, country, and city."""
-        if not self.is_location_loaded:
-            self._import_data(import_location_only=True)
+        self._load_header_check()
         return self._metadata
 
     @property
     def annual_heating_design_day_996(self):
         """A design day object representing the annual 99.6% heating design day."""
-        self._load_data_check()
-        if len(self._winter_dict) != 0:
+        self._load_header_check()
+        if len(self._heating_dict) != 0:
             return DesignDay.from_ashrae_dict_heating(
-                self._winter_dict, self.location, False,
+                self._heating_dict, self.location, False,
                 self.atmospheric_station_pressure.average)
         else:
             return None
@@ -143,10 +144,10 @@ class EPW(object):
     @property
     def annual_heating_design_day_990(self):
         """A design day object representing the annual 99.0% heating design day."""
-        self._load_data_check()
-        if len(self._winter_dict) != 0:
+        self._load_header_check()
+        if len(self._heating_dict) != 0:
             return DesignDay.from_ashrae_dict_heating(
-                self._winter_dict, self.location, True,
+                self._heating_dict, self.location, True,
                 self.atmospheric_station_pressure.average)
         else:
             return None
@@ -154,10 +155,10 @@ class EPW(object):
     @property
     def annual_cooling_design_day_004(self):
         """A design day object representing the annual 0.4% cooling design day."""
-        self._load_data_check()
-        if len(self._summer_dict) != 0:
+        self._load_header_check()
+        if len(self._cooling_dict) != 0:
             return DesignDay.from_ashrae_dict_cooling(
-                self._summer_dict, self.location, False,
+                self._cooling_dict, self.location, False,
                 self.atmospheric_station_pressure.average)
         else:
             return None
@@ -165,49 +166,49 @@ class EPW(object):
     @property
     def annual_cooling_design_day_010(self):
         """A design day object representing the annual 1.0% cooling design day."""
-        self._load_data_check()
-        if len(self._summer_dict) != 0:
+        self._load_header_check()
+        if len(self._cooling_dict) != 0:
             return DesignDay.from_ashrae_dict_cooling(
-                self._summer_dict, self.location, True,
+                self._cooling_dict, self.location, True,
                 self.atmospheric_station_pressure.average)
         else:
             return None
 
     @property
-    def extreme_cold_week(self):
-        """An AnalysisPeriod representing the coldest week within the EPW."""
-        self._load_data_check()
-        return self._extreme_cold_week
+    def heating_design_condition_dictionary(self):
+        """Dictionary with ASHRAE HOF Climate Design Data for heating conditions."""
+        self._load_header_check()
+        return self._heating_dict
 
     @property
-    def extreme_hot_week(self):
-        """An AnalysisPeriod representing the hottest week within the EPW."""
-        self._load_data_check()
-        return self._extreme_hot_week
+    def cooling_design_condition_dictionary(self):
+        """Dictionary with ASHRAE HOF Climate Design Data for cooling conditions."""
+        self._load_header_check()
+        return self._cooling_dict
 
     @property
-    def typical_winter_week(self):
-        """An AnalysisPeriod representing a typical winter week within the EPW."""
-        self._load_data_check()
-        return self._typical_winter_week
+    def extreme_design_condition_dictionary(self):
+        """Dictionary with ASHRAE HOF Climate Design Data for extreme conditions."""
+        self._load_header_check()
+        return self._extremes_dict
 
     @property
-    def typical_spring_week(self):
-        """An AnalysisPeriod representing a typical spring week within the EPW."""
-        self._load_data_check()
-        return self._typical_spring_week
+    def extreme_cold_weeks(self):
+        """A dictionary with AnalysisPeriods for the coldest weeks within the EPW."""
+        self._load_header_check()
+        return self._extreme_cold_weeks
 
     @property
-    def typical_summer_week(self):
-        """An AnalysisPeriod representing a typical summer week within the EPW."""
-        self._load_data_check()
-        return self._typical_summer_week
+    def extreme_hot_weeks(self):
+        """A dictionary with AnalysisPeriods for the hottest week within the EPW."""
+        self._load_header_check()
+        return self._extreme_hot_weeks
 
     @property
-    def typical_autumn_week(self):
-        """An AnalysisPeriod representing a typical autumn week within the EPW."""
-        self._load_data_check()
-        return self._typical_autumn_week
+    def typical_weeks(self):
+        """A dictionary with AnalysisPeriods for the typical weeks within the EPW."""
+        self._load_header_check()
+        return self._typical_weeks
 
     @property
     def monthly_ground_temperature(self):
@@ -215,7 +216,7 @@ class EPW(object):
 
         The keys of this dictionary are the depths at which each set
         of temperatures occurrs."""
-        self._load_data_check()
+        self._load_header_check()
         return self._monthly_ground_temps
 
     @monthly_ground_temperature.setter
@@ -230,27 +231,33 @@ class EPW(object):
     @property
     def is_leap_year(self):
         """Boolean to denote whether the EPW is a leap year or not."""
+        self._load_header_check()
         return self._is_leap_year
 
-    def _load_data_check(self):
+    def _load_header_check(self):
         """Check if data is loaded and, if not load it."""
-        if not self.is_data_loaded:
-            self._import_data()
+        if not self.is_header_loaded:
+            self._import_data(import_header_only=True)
 
-    def _import_data(self, import_location_only=False):
+    def _import_data(self, import_header_only=False):
         """Import data from an epw file.
 
-        Hourly data will be saved in self.data and location data
-        will be saved in self.location
+        Hourly data will be saved in self.data and the various header data
+        will be saved in the properties above.
         """
+        # perform checks on the file before opening it.
+        assert os.path.isfile(self._file_path), 'Cannot find an epw file at {}'.format(
+            self._file_path)
+        assert self._file_path.lower().endswith('epw'), '{} is not an .epw file. \n' \
+            'It does not possess the .epw file extension.'.format(self._file_path)
+
         with open(self._file_path, readmode) as epwin:
             line = epwin.readline()
 
             # import location data
             # first line has location data - Here is an example
-            # LOCATION,Denver Centennial  Golden   Nr,CO,USA,TMY3,724666,39.74,
-            # -105.18,-7.0,1829.0
-            if not self._is_location_loaded:
+            # LOCATION,Denver Golden Nr,CO,USA,TMY3,724666,39.74,-105.18,-7.0,1829.0
+            if not self._is_header_loaded:
                 location_data = line.strip().split(',')
                 self._location = Location()
                 self._location.city = location_data[1].replace('\\', ' ') \
@@ -264,10 +271,7 @@ class EPW(object):
                 self._location.time_zone = location_data[8]
                 self._location.elevation = location_data[9]
 
-                self._is_location_loaded = True
-
-            # TODO: add parsing for header
-            self._header = [line] + [epwin.readline() for i in xrange(7)]
+                self._is_header_loaded = True
 
             # asemble a dictionary of metadata
             self._metadata = {
@@ -276,18 +280,17 @@ class EPW(object):
                 'city': self._location.city
             }
 
-            if import_location_only:
-                return
+            self._header = [line] + [epwin.readline() for i in xrange(7)]
 
-            # parse the summer, winter and extreme design day conditions.
+            # parse the heating, cooling and extreme design conditions.
             dday_data = self._header[1].strip().split(',')
             if len(dday_data) >= 2 and int(dday_data[1]) == 1:
                 if dday_data[4] == 'Heating':
                     for key, val in zip(DesignDay.heating_keys, dday_data[5:20]):
-                        self._winter_dict[key] = val
+                        self._heating_dict[key] = val
                 if dday_data[20] == 'Cooling':
                     for key, val in zip(DesignDay.cooling_keys, dday_data[21:53]):
-                        self._summer_dict[key] = val
+                        self._cooling_dict[key] = val
                 if dday_data[53] == 'Extremes':
                     for key, val in zip(DesignDay.extreme_keys, dday_data[54:70]):
                         self._extremes_dict[key] = val
@@ -296,7 +299,7 @@ class EPW(object):
             week_data = self._header[2].split(',')
             num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
             st_ind = 2
-            for depth in xrange(num_weeks):
+            for i in xrange(num_weeks):
                 week_dat = week_data[st_ind:st_ind + 4]
                 st_ind += 4
                 st = [int(num) for num in week_dat[2].split('/')]
@@ -305,24 +308,18 @@ class EPW(object):
                     a_per = AnalysisPeriod(st[1], st[2], 0, end[1], end[2], 23)
                 elif len(st) == 2:
                     a_per = AnalysisPeriod(st[0], st[1], 0, end[0], end[1], 23)
-                if 'Summer' in week_dat[0] and week_dat[1] == 'Extreme':
-                    self._extreme_hot_week = a_per
-                elif 'Summer' in week_dat[0] and week_dat[1] == 'Typical':
-                    self._typical_summer_week = a_per
-                elif 'Winter' in week_dat[0] and week_dat[1] == 'Extreme':
-                    self._extreme_cold_week = a_per
-                elif 'Winter' in week_dat[0] and week_dat[1] == 'Typical':
-                    self._typical_winter_week = a_per
-                elif 'Spring' in week_dat[0] and week_dat[1] == 'Typical':
-                    self._typical_spring_week = a_per
-                elif 'Autumn' in week_dat[0] and week_dat[1] == 'Typical':
-                    self._typical_autumn_week = a_per
+                if 'Max' in week_dat[0] and week_dat[1] == 'Extreme':
+                    self._extreme_hot_weeks[week_dat[0]] = a_per
+                elif 'Min' in week_dat[0] and week_dat[1] == 'Extreme':
+                    self._extreme_cold_weeks[week_dat[0]] = a_per
+                elif week_dat[1] == 'Typical':
+                    self._typical_weeks[week_dat[0]] = a_per
 
             # parse the monthly ground temperatures in the header.
             grnd_data = self._header[3].strip().split(',')
             num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
             st_ind = 2
-            for depth in xrange(num_depths):
+            for i in xrange(num_depths):
                 header_meta = copy(self._metadata)
                 header_meta['depth'] = float(grnd_data[st_ind])
                 header_meta['soil conductivity'] = grnd_data[st_ind + 1]
@@ -342,10 +339,13 @@ class EPW(object):
             self.daylight_savings_end = leap_dl_sav[3]
             comments_1 = self._header[5].strip().split(',')
             if len(comments_1) > 0:
-                self.comments_1 = comments_1[-1]
+                self.comments_1 = ','.join(comments_1[1:])
             comments_2 = self._header[6].strip().split(',')
             if len(comments_2) > 0:
-                self.comments_2 = comments_2[-1]
+                self.comments_2 = ','.join(comments_2[1:])
+
+            if import_header_only:
+                return
 
             # read first line of data to overwrite the number of fields
             line = epwin.readline()
@@ -396,67 +396,36 @@ class EPW(object):
 
             self._is_data_loaded = True
 
-    def _get_data_by_field(self, field_number):
-        """Return a data field by field number.
-
-        This is a useful method to get the values for fields that Ladybug
-        currently doesn't import by default. You can find list of fields by typing
-        EPWFields.fields
-
-        Args:
-            field_number: a value between 0 to 34 for different available epw fields.
-
-        Returns:
-            An annual Ladybug list
-        """
-        if not self.is_data_loaded:
-            self._import_data()
-
-        # check input data
-        if not 0 <= field_number < self._num_of_fields:
-            raise ValueError("Field number should be between 0-%d" % self._num_of_fields)
-
-        return self._data[field_number]
-
     @property
     def header(self):
         """Text representing the full header (the first 8 lines) of the EPW."""
-        self._load_data_check()
+        self._load_header_check()
         loc_str = 'LOCATION,{},{},{},{},{},{},{},{},{}\n'.format(
             self.location.city, self.location.state, self.location.country,
             self.location.source, self.location.station_id,
             self.location.latitude, self.location.longitude,
             self.location.time_zone, self.location.elevation)
-        winter_found = bool(self._winter_dict)
-        summer_found = bool(self._summer_dict)
+        winter_found = bool(self._heating_dict)
+        summer_found = bool(self._cooling_dict)
         extreme_found = bool(self._extremes_dict)
         if winter_found and summer_found and extreme_found:
             des_str = 'DESIGN CONDITIONS,1,Climate Design Data 2009 ASHRAE Handbook,,'
             des_str = des_str + 'Heating,{},Cooling,{},Extremes,{}\n'.format(
-                ','.join(self._winter_dict.values()),
-                ','.join(self._summer_dict.values()),
+                ','.join(self._heating_dict.values()),
+                ','.join(self._cooling_dict.values()),
                 ','.join(self._extremes_dict.values()))
         else:
             des_str = 'DESIGN CONDITIONS,0\n'
         weeks = []
-        if self.extreme_hot_week:
-            name = 'Summer - {}'.format(self.extreme_hot_txt)
-            weeks.append(self._format_week(self.extreme_hot_week, 'Extreme', name))
-        if self.typical_summer_week:
-            name = 'Summer - {}'.format(self.typical_txt)
-            weeks.append(self._format_week(self.typical_summer_week, 'Typical', name))
-        if self.extreme_cold_week:
-            name = 'Winter - {}'.format(self.extreme_cold_txt)
-            weeks.append(self._format_week(self.extreme_cold_week, 'Extreme', name))
-        if self.typical_winter_week:
-            name = 'Winter - {}'.format(self.typical_txt)
-            weeks.append(self._format_week(self.typical_winter_week, 'Typical', name))
-        if self.typical_autumn_week:
-            name = 'Autumn - {}'.format(self.typical_txt)
-            weeks.append(self._format_week(self.typical_autumn_week, 'Typical', name))
-        if self.typical_spring_week:
-            name = 'Spring - {}'.format(self.typical_txt)
-            weeks.append(self._format_week(self.typical_spring_week, 'Typical', name))
+        if bool(self.extreme_hot_weeks) is True:
+            for week_name, a_per in self.extreme_hot_weeks.items():
+                weeks.append(self._format_week(week_name, 'Extreme', a_per))
+        if bool(self.extreme_cold_weeks):
+            for week_name, a_per in self.extreme_cold_weeks.items():
+                weeks.append(self._format_week(week_name, 'Extreme', a_per))
+        if bool(self.typical_weeks):
+            for week_name, a_per in self.typical_weeks.items():
+                weeks.append(self._format_week(week_name, 'Typical', a_per))
         week_str = 'TYPICAL/EXTREME PERIODS,{},{}\n'.format(len(weeks), ','.join(weeks))
         grnd_st = 'GROUND TEMPERATURES,{}'.format(len(self._monthly_ground_temps.keys()))
         for depth, dc in self._monthly_ground_temps.items():
@@ -470,7 +439,7 @@ class EPW(object):
         data_str = 'DATA PERIODS,1,1,Data,Sunday, 1/ 1,12/31'
         return [loc_str, des_str, week_str, grnd_st, leap_str, comment_str, data_str]
 
-    def _format_week(self, a_per, type, name):
+    def _format_week(self, name, type, a_per):
         """Format an AnalysisPeriod into string for the EPW header."""
         return '{},{},{}/{},{}/{}'.format(name, type, a_per.st_month, a_per.st_day,
                                           a_per.end_month, a_per.end_day)
@@ -528,6 +497,28 @@ class EPW(object):
                     self._data[field]._values.insert(0, last_hour)
 
         return file_path
+
+    def _get_data_by_field(self, field_number):
+        """Return a data field by field number.
+
+        This is a useful method to get the values for fields that Ladybug
+        currently doesn't import by default. You can find list of fields by typing
+        EPWFields.fields
+
+        Args:
+            field_number: a value between 0 to 34 for different available epw fields.
+
+        Returns:
+            An annual Ladybug list
+        """
+        if not self.is_data_loaded:
+            self._import_data()
+
+        # check input data
+        if not 0 <= field_number < self._num_of_fields:
+            raise ValueError("Field number should be between 0-%d" % self._num_of_fields)
+
+        return self._data[field_number]
 
     def import_data_by_field(self, field_number):
         """Return an annual data collection for any field_number in epw file.

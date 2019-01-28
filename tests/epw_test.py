@@ -2,6 +2,7 @@
 
 import unittest
 import os
+import pytest
 from collections import OrderedDict
 
 from ladybug.epw import EPW
@@ -44,15 +45,39 @@ class EPWTestCase(unittest.TestCase):
     def test_import_tokyo_epw(self):
         """Test import custom epw with wrong types."""
         path = './tests/epw/tokyo.epw'
-
         epw = EPW(path)
-        assert epw.is_location_loaded is False
+        assert epw.is_header_loaded is False
         assert epw.location.city == 'Tokyo'
-        assert epw.is_location_loaded is True
+        assert epw.is_header_loaded is True
         assert epw.is_data_loaded is False
         dbt = epw.dry_bulb_temperature
         assert epw.is_data_loaded is True
         assert len(dbt) == 8760
+
+    def test_invalid_epw(self):
+        """Test the import of incorrect epw files."""
+        path = './tests/epw/non-exitent.epw'
+        with pytest.raises(Exception):
+            epw = EPW(path)
+            epw.location
+
+    def test_non_epw(self):
+        """Test the import of incorrect epw files."""
+        path = './tests/stat/chicago.stat'
+        with pytest.raises(Exception):
+            epw = EPW(path)
+            epw.location
+
+    def test_import_design_conditions(self):
+        """Test the functions that import design conditions."""
+        relative_path = './tests/epw/chicago.epw'
+        epw = EPW(relative_path)
+        assert isinstance(epw.heating_design_condition_dictionary, OrderedDict)
+        assert len(epw.heating_design_condition_dictionary.keys()) == 15
+        assert isinstance(epw.cooling_design_condition_dictionary, OrderedDict)
+        assert len(epw.cooling_design_condition_dictionary.keys()) == 32
+        assert isinstance(epw.extreme_design_condition_dictionary, OrderedDict)
+        assert len(epw.extreme_design_condition_dictionary.keys()) == 16
 
     def test_import_design_days(self):
         """Test the functions that import design days."""
@@ -67,12 +92,12 @@ class EPWTestCase(unittest.TestCase):
         assert isinstance(epw.annual_cooling_design_day_010, DesignDay)
         assert epw.annual_cooling_design_day_010.dry_bulb_condition.dry_bulb_max == 31.6
 
-    def test_import_typical_extreme_weeks(self):
-        """Test the functions that import the typical and extreme weeks."""
+    def test_import_extreme_weeks(self):
+        """Test the functions that import the extreme weeks."""
         relative_path = './tests/epw/chicago.epw'
         epw = EPW(relative_path)
-        ext_cold = epw.extreme_cold_week
-        ext_hot = epw.extreme_hot_week
+        ext_cold = list(epw.extreme_cold_weeks.values())[0]
+        ext_hot = list(epw.extreme_hot_weeks.values())[0]
         assert isinstance(ext_cold, AnalysisPeriod)
         assert len(ext_cold.doys_int) == 7
         assert (ext_cold.st_month, ext_cold.st_day, ext_cold.end_month,
@@ -81,14 +106,16 @@ class EPWTestCase(unittest.TestCase):
         assert len(ext_hot.doys_int) == 7
         assert (ext_hot.st_month, ext_hot.st_day, ext_hot.end_month,
                 ext_hot.end_day) == (7, 13, 7, 19)
-        assert isinstance(epw.typical_winter_week, AnalysisPeriod)
-        assert len(epw.typical_winter_week.doys_int) == 7
-        assert isinstance(epw.typical_summer_week, AnalysisPeriod)
-        assert len(epw.typical_summer_week.doys_int) == 7
-        assert isinstance(epw.typical_spring_week, AnalysisPeriod)
-        assert len(epw.typical_spring_week.doys_int) == 7
-        assert isinstance(epw.typical_autumn_week, AnalysisPeriod)
-        assert len(epw.typical_autumn_week.doys_int) == 7
+
+    def test_import_typical_weeks(self):
+        """Test the functions that import the typical weeks."""
+        relative_path = './tests/epw/chicago.epw'
+        epw = EPW(relative_path)
+        typ_weeks = list(epw.typical_weeks.values())
+        assert len(typ_weeks) == 4
+        for week in typ_weeks:
+            assert isinstance(week, AnalysisPeriod)
+            assert len(week.doys_int) == 7
 
     def test_import_ground_temperatures(self):
         """Test the functions that import ground temprature."""
