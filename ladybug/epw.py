@@ -73,10 +73,10 @@ class EPW(object):
     """
 
     def __init__(self, file_path):
-        """Initalize the class from from a local epw file.
+        """Initalize an EPW object from from a local .epw file.
 
         Args:
-            file_path: Local file address to an epw file.
+            file_path: Local file address to an .epw file.
         """
         self._file_path = os.path.normpath(file_path) if file_path is not None else None
         self._is_header_loaded = False
@@ -100,6 +100,75 @@ class EPW(object):
 
         self._header = None  # epw header
         self._num_of_fields = 35  # it is 35 for TMY3 files
+
+    @classmethod
+    def from_missing_values(cls, is_leap_year=False):
+        """Initalize an EPW object with all data missing or empty.
+
+        Note that this classmethod is intended for workflows where one plans
+        to set all of the data within the EPW object.  The EPW file written
+        out from the use of this method is not simulate-abe or useful since
+        all hourly data slots just possess the missing value for that data
+        type. To obtain a EPW that is simulate-able in EnergyPlus, one must
+        at least set the following properties:
+            location
+            dry_bulb_temperature
+            dew_point_temperature
+            relative_humidity
+            atmospheric_station_pressure
+            direct_normal_radiation
+            diffuse_horizontal_radiation
+            wind_direction
+            wind_speed
+            total_sky_cover
+            opaque_sky_cover
+
+        Args:
+            is_leap_year: A boolean to set whether the EPW object is for a leap year
+        """
+        # Initialize the class with all data missing
+        epw_obj = cls(None)
+        epw_obj._is_leap_year = is_leap_year
+        epw_obj._location = Location()
+
+        # create an annual analysis period
+        analysis_period = AnalysisPeriod(is_leap_year=is_leap_year)
+
+        # create headers and an empty list for each field in epw file
+        headers = []
+        for field_number in xrange(epw_obj._num_of_fields):
+            field = EPWFields.field_by_number(field_number)
+            header = Header(data_type=field.name, unit=field.unit,
+                            analysis_period=analysis_period)
+            headers.append(header)
+            epw_obj._data.append([])
+
+        # fill in missing datetime values and uncertainty flags.
+        uncertainty = '?9?9?9?9E0?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9*9*9?9?9?9'
+        for dt in analysis_period.datetimes:
+            hr = dt.hour if dt.hour != 0 else 24
+            epw_obj._data[0].append(dt.year)
+            epw_obj._data[1].append(dt.month)
+            epw_obj._data[2].append(dt.day)
+            epw_obj._data[3].append(hr)
+            epw_obj._data[4].append(0)
+            epw_obj._data[5].append(uncertainty)
+
+        # generate missing hourly data
+        calc_length = len(analysis_period.datetimes)
+        for field_number in xrange(6, epw_obj._num_of_fields):
+            data_type = EPWFields.field_by_number(field_number).name
+            mis_val = data_type.missing_epw if data_type.missing_epw is not None else 0
+            for dt in xrange(calc_length):
+                epw_obj._data[field_number].append(mis_val)
+
+        # finally, build the data collection objects from the headers and data
+        for i in xrange(epw_obj._num_of_fields):
+            epw_obj._data[i] = HourlyContinuousCollection(headers[i], epw_obj._data[i])
+
+        epw_obj._is_header_loaded = True
+        epw_obj._is_data_loaded = True
+        return epw_obj
 
     @property
     def file_path(self):
@@ -142,6 +211,8 @@ class EPW(object):
         assert isinstance(meta_d, dict), 'metadata' \
             'must be a dictionary. Got {}.'.format(type(meta_d))
         self._metadata = meta_d
+        for coll in self._data:
+            coll.header.metadata = meta_d
 
     @property
     def annual_heating_design_day_996(self):
@@ -425,7 +496,7 @@ class EPW(object):
 
             # create headers and an empty list for each field in epw file
             headers = []
-            for field_number in range(self._num_of_fields):
+            for field_number in xrange(self._num_of_fields):
                 field = EPWFields.field_by_number(field_number)
                 header = Header(data_type=field.name, unit=field.unit,
                                 analysis_period=analysis_period,
@@ -451,7 +522,7 @@ class EPW(object):
 
                 line = epwin.readline()
 
-            # move last item to start position for fields on the hour
+            # if the first value is at 1 AM, move last item to start position
             for field_number in xrange(self._num_of_fields):
                 point_in_time = headers[field_number].data_type.point_in_time
                 if point_in_time is True:
@@ -536,8 +607,8 @@ class EPW(object):
         # write the file
         lines = self.header
         try:
-            # move first item to end position for fields on the hour
-            for field in range(0, self._num_of_fields):
+            # if the first value is at 1AM, move first item to end position
+            for field in xrange(0, self._num_of_fields):
                 point_in_time = self._data[field].header.data_type.point_in_time
                 if point_in_time is True:
                     first_hour = self._data[field]._values.pop(0)
@@ -546,7 +617,7 @@ class EPW(object):
             annual_a_per = AnalysisPeriod(is_leap_year=self.is_leap_year)
             for hour in xrange(0, len(annual_a_per.datetimes)):
                 line = []
-                for field in range(0, self._num_of_fields):
+                for field in xrange(0, self._num_of_fields):
                     line.append(str(self._data[field]._values[hour]))
                 lines.append(",".join(line) + "\n")
         except IndexError:
@@ -560,7 +631,7 @@ class EPW(object):
         finally:
             del(lines)
             # move last item to start position for fields on the hour
-            for field in range(0, self._num_of_fields):
+            for field in xrange(0, self._num_of_fields):
                 point_in_time = self._data[field].header.data_type.point_in_time
                 if point_in_time is True:
                     last_hour = self._data[field]._values.pop()

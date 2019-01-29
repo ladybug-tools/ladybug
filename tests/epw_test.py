@@ -42,7 +42,7 @@ class EPWTestCase(unittest.TestCase):
         assert len(skyt) == 8760
 
     def test_import_tokyo_epw(self):
-        """Test import custom epw with wrong types."""
+        """Test import standard epw from another location."""
         path = './tests/epw/tokyo.epw'
         epw = EPW(path)
         assert epw.is_header_loaded is False
@@ -52,6 +52,14 @@ class EPWTestCase(unittest.TestCase):
         dbt = epw.dry_bulb_temperature
         assert epw.is_data_loaded is True
         assert len(dbt) == 8760
+
+    def test_epw_from_missing_values(self):
+        """Test import custom epw with wrong types."""
+        epw = EPW.from_missing_values()
+        assert epw.is_header_loaded is True
+        assert epw.is_data_loaded is True
+        assert len(epw.dry_bulb_temperature) == 8760
+        assert list(epw.dry_bulb_temperature.values) == [99.9] * 8760
 
     def test_invalid_epw(self):
         """Test the import of incorrect epw files."""
@@ -277,13 +285,20 @@ class EPWTestCase(unittest.TestCase):
         assert os.stat(modified_path).st_size > 1
         os.remove(modified_path)
 
+    def test_save_epw_from_missing_values(self):
+        """Test import custom epw with wrong types."""
+        epw = EPW.from_missing_values()
+        file_path = './tests/epw/missing.epw'
+        epw.save(file_path)
+        assert os.path.isfile(file_path)
+        assert os.stat(file_path).st_size > 1
+        os.remove(file_path)
+
     def test_save_wea(self):
         """Test save wea_rel."""
         path = './tests/epw/chicago.epw'
         epw = EPW(path)
-
         wea_path = './tests/wea/chicago_epw.wea'
-
         epw.to_wea(wea_path)
         assert os.path.isfile(wea_path)
         assert os.stat(wea_path).st_size > 1
