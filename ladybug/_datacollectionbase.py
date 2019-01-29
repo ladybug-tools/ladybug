@@ -4,7 +4,6 @@
 from __future__ import division
 
 from .header import Header
-from .dt import DateTime
 
 from string import ascii_lowercase
 import math

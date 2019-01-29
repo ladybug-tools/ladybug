@@ -81,6 +81,7 @@ class EPW(object):
         self._file_path = os.path.normpath(file_path) if file_path is not None else None
         self._is_header_loaded = False
         self._is_data_loaded = False
+        self._is_ip = False  # track if collections have been coverted to IP
 
         # placeholders for the EPW data that will be imported
         self._data = []
@@ -98,7 +99,6 @@ class EPW(object):
         self.comments_1 = ''
         self.comments_2 = ''
 
-        self._header = None  # epw header
         self._num_of_fields = 35  # it is 35 for TMY3 files
 
     @classmethod
@@ -198,6 +198,7 @@ class EPW(object):
                     analysis period schemas signifying typical weeks.
                 "monthly_ground_temps": {}, // dict with keys as floats signifying
                     depths in meters below ground and values of monthly collection schema
+                "is_ip": Boolean // denote whether the data is in IP units
                 "is_leap_year": Boolean, // denote whether data is for a leap year
                 "daylight_savings_start": 0, // signify when daylight savings starts
                     or 0 for no daylight savings
@@ -232,6 +233,8 @@ class EPW(object):
                          for dc in data['data_collections']]
         if 'is_leap_year' in data:
             epw_obj._is_leap_year = data['is_leap_year']
+        if 'is_ip' in data:
+            epw_obj._is_ip = data['is_ip']
 
         # Check that the required properties all make sense.
         for dc in epw_obj._data:
@@ -284,6 +287,11 @@ class EPW(object):
     def is_data_loaded(self):
         """Return True if weather data is loaded."""
         return self._is_data_loaded
+
+    @property
+    def is_ip(self):
+        """Returns True if the data collections of this file are in IP units."""
+        return self._is_ip
 
     @property
     def location(self):
@@ -718,9 +726,13 @@ class EPW(object):
         args:
             file_path: A string representing the path to write the epw file to.
         """
-        # load data if it's  not loaded
+        # load data if it's  not loaded convert to SI if it is in IP
         if not self.is_data_loaded:
             self._import_data()
+        originally_ip = False
+        if self.is_ip is True:
+            self.convert_to_si()
+            originally_ip = True
 
         # write the file
         lines = self.header
@@ -755,7 +767,35 @@ class EPW(object):
                     last_hour = self._data[field]._values.pop()
                     self._data[field]._values.insert(0, last_hour)
 
+        if originally_ip is True:
+            self.convert_to_ip()
+
         return file_path
+
+    def convert_to_ip(self):
+        """Convert all Data Collections of this EPW object to IP units.
+
+        This is useful when one knows that all graphics produced from this
+        EPW should be in Imperial units."""
+        if not self.is_data_loaded:
+            self._import_data()
+        if self.is_ip is False:
+            for coll in self._data:
+                coll.convert_to_ip()
+        self._is_ip = True
+
+    def convert_to_si(self):
+        """Convert all Data Collections of this EPW object to SI units.
+
+        This is useful when one needs to convert the EPW back to SI units
+        from imperial units for processes like computing thermal comfort
+        from EPW data."""
+        if not self.is_data_loaded:
+            self._import_data()
+        if self.is_ip is True:
+            for coll in self._data:
+                coll.convert_to_si()
+        self._is_ip = False
 
     def _get_data_by_field(self, field_number):
         """Return a data field by field number.
@@ -840,8 +880,7 @@ class EPW(object):
         This is the dry bulb temperature in C at the time indicated. Note that
         this is a full numeric field (i.e. 23.6) and not an integer representation
         with tenths. Valid values range from -70C to 70 C. Missing value for this
-        field is 99.9
-
+        field is 99.9.
         Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
             /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
@@ -1263,7 +1302,7 @@ class EPW(object):
             "site_elevation %.1f\n" % self.location.elevation + \
             "weather_data_file_unit 1\n"
 
-    def to_wea(self, file_path=None, hoys=None):
+    def to_wea(self, file_path, hoys=None):
         """Write an wea file from the epw file.
 
         WEA carries radiation values from epw. Gendaymtx uses these values to
@@ -1274,11 +1313,13 @@ class EPW(object):
             hoys: List of hours of the year. Default is 0-8759.
         """
         hoys = hoys or xrange(len(self.direct_normal_radiation.datetimes))
-        if not file_path:
-            file_path = self.file_path[:-4] + '.wea'
-
         if not file_path.lower().endswith('.wea'):
             file_path += '.wea'
+
+        originally_ip = False
+        if self.is_ip is True:
+            self.convert_to_si()
+            originally_ip = True
 
         # write header
         lines = [self._get_wea_header()]
@@ -1296,6 +1337,9 @@ class EPW(object):
 
         file_data = ''.join(lines)
         write_to_file(file_path, file_data, True)
+
+        if originally_ip is True:
+            self.convert_to_ip()
 
         return file_path
 
@@ -1325,6 +1369,7 @@ class EPW(object):
             'extreme_cold_weeks': cold_wks,
             'typical_weeks': typ_wks,
             "monthly_ground_temps": grnd_temps,
+            "is_ip": self._is_ip,
             "is_leap_year": self.is_leap_year,
             "daylight_savings_start": self.daylight_savings_start,
             "daylight_savings_end": self.daylight_savings_end,

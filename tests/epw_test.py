@@ -118,6 +118,20 @@ class EPWTestCase(unittest.TestCase):
         assert isinstance(epw.liquid_precipitation_quantity, HourlyContinuousCollection)
         assert isinstance(epw.sky_temperature, HourlyContinuousCollection)
 
+    def test_convert_to_ip(self):
+        """Test the method that converts the data to IP units."""
+        relative_path = './tests/epw/chicago.epw'
+        epw = EPW(relative_path)
+
+        assert epw.dry_bulb_temperature.header.unit == 'C'
+        assert epw.dry_bulb_temperature.values[0] == -6.1
+        epw.convert_to_ip()
+        assert epw.dry_bulb_temperature.header.unit == 'F'
+        assert epw.dry_bulb_temperature.values[0] == pytest.approx(21.02, rel=1e-2)
+        epw.convert_to_si()
+        assert epw.dry_bulb_temperature.header.unit == 'C'
+        assert epw.dry_bulb_temperature.values[0] == pytest.approx(-6.1, rel=1e-5)
+
     def test_set_data(self):
         """Test the ability to set the data of any of the epw hourly data."""
         relative_path = './tests/epw/chicago.epw'
@@ -300,6 +314,21 @@ class EPWTestCase(unittest.TestCase):
         assert os.path.isfile(file_path)
         assert os.stat(file_path).st_size > 1
         os.remove(file_path)
+
+    def test_save_converted_epw(self):
+        """Test that the saved EPW always has SI units."""
+        relative_path = './tests/epw/chicago.epw'
+        epw = EPW(relative_path)
+        epw.convert_to_ip()
+        modified_path = './tests/epw/chicago_modified.epw'
+        epw.save(modified_path)
+        assert epw.dry_bulb_temperature.header.unit == 'F'
+        assert epw.dry_bulb_temperature.values[0] == pytest.approx(21.02, rel=1e-2)
+
+        new_epw = EPW(modified_path)
+        assert new_epw.dry_bulb_temperature.header.unit == 'C'
+        assert new_epw.dry_bulb_temperature.values[0] == pytest.approx(-6.1, rel=1e-5)
+        os.remove(modified_path)
 
     def test_save_wea(self):
         """Test save wea_rel."""
