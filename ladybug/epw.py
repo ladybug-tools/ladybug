@@ -193,6 +193,7 @@ class EPW(object):
 
     @location.setter
     def location(self, loc):
+        self._load_header_check()
         assert isinstance(loc, Location), 'location' \
             'must be a Location object. Got {}.'.format(type(loc))
         self._location = loc
@@ -208,6 +209,7 @@ class EPW(object):
 
     @metadata.setter
     def metadata(self, meta_d):
+        self._load_header_check()
         assert isinstance(meta_d, dict), 'metadata' \
             'must be a dictionary. Got {}.'.format(type(meta_d))
         self._metadata = meta_d
@@ -270,6 +272,7 @@ class EPW(object):
 
     @heating_design_condition_dictionary.setter
     def heating_design_condition_dictionary(self, des_dict):
+        self._load_header_check()
         self._des_dict_check(des_dict, DesignDay.heating_keys,
                              'heating_design_condition_dictionary')
         self._heating_dict = des_dict
@@ -282,6 +285,7 @@ class EPW(object):
 
     @cooling_design_condition_dictionary.setter
     def cooling_design_condition_dictionary(self, des_dict):
+        self._load_header_check()
         self._des_dict_check(des_dict, DesignDay.cooling_keys,
                              'cooling_design_condition_dictionary')
         self._cooling_dict = des_dict
@@ -294,6 +298,7 @@ class EPW(object):
 
     @extreme_design_condition_dictionary.setter
     def extreme_design_condition_dictionary(self, des_dict):
+        self._load_header_check()
         self._des_dict_check(des_dict, DesignDay.extreme_keys,
                              'extreme_design_condition_dictionary')
         self._extremes_dict = des_dict
@@ -302,12 +307,14 @@ class EPW(object):
     def extreme_cold_weeks(self):
         """A dictionary with AnalysisPeriods for the coldest weeks within the EPW."""
         self._load_header_check()
+        self._extreme_cold_weeks.values()
         return self._extreme_cold_weeks
 
     @extreme_cold_weeks.setter
     def extreme_cold_weeks(self, data):
+        self._load_header_check()
         self._weeks_check(data, 'extreme_cold_weeks')
-        self._extreme_cold_weeks = data
+        self._extreme_cold_weeks = dict(data)
 
     @property
     def extreme_hot_weeks(self):
@@ -317,6 +324,7 @@ class EPW(object):
 
     @extreme_hot_weeks.setter
     def extreme_hot_weeks(self, data):
+        self._load_header_check()
         self._weeks_check(data, 'extreme_hot_weeks')
         self._extreme_hot_weeks = data
 
@@ -328,6 +336,7 @@ class EPW(object):
 
     @typical_weeks.setter
     def typical_weeks(self, data):
+        self._load_header_check()
         self._weeks_check(data, 'typical_weeks')
         self._typical_weeks = data
 
@@ -342,6 +351,7 @@ class EPW(object):
 
     @monthly_ground_temperature.setter
     def monthly_ground_temperature(self, data):
+        self._load_header_check()
         assert isinstance(data, dict), 'monthly_ground_temperature' \
             'must be an OrderedDict. Got {}.'.format(type(data))
         for val in data.values():
@@ -1330,12 +1340,14 @@ class EPWFields(object):
              'unit': 'm'
              },
 
-        26: {'name': generic.GenericType('Present Weather Observation', 'observation'),
+        26: {'name': generic.GenericType(name='Present Weather Observation',
+                                         unit='observation', missing_epw=9),
              'type': int,
              'unit': 'observation'
              },
 
-        27: {'name': generic.GenericType('Present Weather Codes', 'codes'),
+        27: {'name': generic.GenericType(name='Present Weather Codes',
+                                         unit='codes', missing_epw=999999999),
              'type': int,
              'unit': 'codes'
              },
@@ -1355,7 +1367,8 @@ class EPWFields(object):
              'unit': 'cm'
              },
 
-        31: {'name': generic.GenericType('Days Since Last Snowfall', 'day'),
+        31: {'name': generic.GenericType(name='Days Since Last Snowfall',
+                                         unit='day', missing_epw=99),
              'type': int,
              'unit': 'day'
              },
