@@ -61,15 +61,22 @@ class EPWTestCase(unittest.TestCase):
         assert len(epw.dry_bulb_temperature) == 8760
         assert list(epw.dry_bulb_temperature.values) == [99.9] * 8760
 
+    def test_json_methods(self):
+        """Test JSON serialization methods"""
+        relative_path = './tests/epw/chicago.epw'
+        epw = EPW(relative_path)
+
+        epw_json = epw.to_json()
+        rebuilt_epw = EPW.from_json(epw_json)
+        assert epw_json == rebuilt_epw.to_json()
+
     def test_invalid_epw(self):
-        """Test the import of incorrect epw files."""
+        """Test the import of incorrect file type and a non-existent epw file."""
         path = './tests/epw/non-exitent.epw'
         with pytest.raises(Exception):
             epw = EPW(path)
             epw.location
 
-    def test_non_epw(self):
-        """Test the import of incorrect epw files."""
         path = './tests/stat/chicago.stat'
         with pytest.raises(Exception):
             epw = EPW(path)

@@ -33,6 +33,7 @@ from __future__ import division
 from ._datacollectionbase import BaseCollection
 from .header import Header
 from .analysisperiod import AnalysisPeriod
+from .dt import DateTime
 
 from collections import OrderedDict
 try:
@@ -66,6 +67,24 @@ class HourlyDiscontinuousCollection(BaseCollection):
         self._header = header
         self._datetimes = datetimes
         self.values = values
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a Data Collection from a dictionary.
+
+        Args:
+            {
+                "header": A Ladybug Header,
+                "values": An array of values,
+                "datetimes": An array of datetimes
+            }
+        """
+        assert 'header' in data, 'Required keyword "header" is missing!'
+        assert 'values' in data, 'Required keyword "values" is missing!'
+        assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
+        return cls(Header.from_json(data['header']),
+                   data['values'],
+                   [DateTime.from_json(dat) for dat in data['datetimes']])
 
     @property
     def timestep_text(self):
@@ -303,6 +322,14 @@ class HourlyDiscontinuousCollection(BaseCollection):
         new_header = self.header.duplicate()
         new_header.metadata['statistical operation'] = '{} Percentile'.format(percentile)
         return MonthlyPerHourCollection(new_header, total_data, d_times)
+
+    def to_json(self):
+        """Convert Data Collection to a dictionary."""
+        return {
+            'header': self.header.to_json(),
+            'values': self._values,
+            'datetimes': [dat.to_json() for dat in self.datetimes]
+        }
 
     def _filter_by_moys_slow(self, moys):
         """Filter the Data Collection with a slow method that always works."""

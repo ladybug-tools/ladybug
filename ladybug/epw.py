@@ -124,7 +124,14 @@ class EPW(object):
             opaque_sky_cover
 
         Args:
-            is_leap_year: A boolean to set whether the EPW object is for a leap year
+            is_leap_year: A boolean to set whether the EPW object is for a leap year.
+
+        Usage:
+            from ladybug.epw import EPW
+            from ladybug.location import Location
+            epw = EPW.from_missing_values()
+            epw.location = Location('Denver Golden','CO','USA',39.74,-105.18,-7.0,1829.0)
+            epw.dry_bulb_temperature.values = [20] * 8760
         """
         # Initialize the class with all data missing
         epw_obj = cls(None)
@@ -170,20 +177,113 @@ class EPW(object):
         epw_obj._is_data_loaded = True
         return epw_obj
 
+    @classmethod
+    def from_json(cls, data):
+        """ Create EPW from json dictionary.
+
+            Args:
+                data: {
+                "location": {} , // ladybug location schema
+                "data_collections": [], // list of hourly annual hourly data collection
+                    schemas for each of the 35 fields within the EPW file.
+                "metadata": {},  // dict of metadata assigned to all data collections
+                "heating_dict": {}, // dict containing heating design conditions
+                "cooling_dict": {}, // dict containing cooling design conditions
+                "extremes_dict": {}, // dict containing extreme design conditions
+                "extreme_hot_weeks": {}, // dict with values of week-long ladybug
+                    analysis period schemas signifying extreme hot weeks.
+                "extreme_cold_weeks": {}, // dict with values of week-long ladybug
+                    analysis period schemas signifying extreme cold weeks.
+                "typical_weeks": {}, // dict with values of week-long ladybug
+                    analysis period schemas signifying typical weeks.
+                "monthly_ground_temps": {}, // dict with keys as floats signifying
+                    depths in meters below ground and values of monthly collection schema
+                "is_leap_year": Boolean, // denote whether data is for a leap year
+                "daylight_savings_start": 0, // signify when daylight savings starts
+                    or 0 for no daylight savings
+                "daylight_savings_end" 0, // signify when daylight savings ends
+                    or 0 for no daylight savings
+                "comments_1": String, // epw comments
+                "comments_2": String // epw comments
+            }
+        """
+        # Initialize the class with all data missing
+        epw_obj = cls(None)
+        epw_obj._is_header_loaded = True
+        epw_obj._is_data_loaded = True
+
+        # Check required and optional keys
+        required_keys = ('location', 'data_collections')
+        option_keys_dict = ('metadata', 'heating_dict', 'cooling_dict',
+                            'extremes_dict', 'extreme_hot_weeks', 'extreme_cold_weeks',
+                            'typical_weeks', 'monthly_ground_temps')
+        for key in required_keys:
+            assert key in data, 'Required key "{}" is missing!'.format(key)
+        assert len(data['data_collections']) == epw_obj._num_of_fields, \
+            'The number of data_collections must be {}. Got {}.'.format(
+                epw_obj._num_of_fields, len(data['data_collections']))
+        for key in option_keys_dict:
+            if key not in data:
+                data[key] = {}
+
+        # Set the required properties of the EPW object.
+        epw_obj._location = Location.from_json(data['location'])
+        epw_obj._data = [HourlyContinuousCollection.from_json(dc)
+                         for dc in data['data_collections']]
+        if 'is_leap_year' in data:
+            epw_obj._is_leap_year = data['is_leap_year']
+
+        # Check that the required properties all make sense.
+        for dc in epw_obj._data:
+            assert isinstance(dc, HourlyContinuousCollection), 'data_collections must ' \
+                'be of HourlyContinuousCollection schema. Got {}'.format(type(dc))
+            assert dc.header.analysis_period.is_annual, 'data_collections ' \
+                'analysis_period must be annual.'
+            assert dc.header.analysis_period.is_leap_year == epw_obj._is_leap_year, \
+                'data_collections is_leap_year is not aligned with that of the EPW.'
+
+        # Set all of the header properties if they exist in the dictionary.
+        epw_obj._metadata = data['metadata']
+        epw_obj.heating_design_condition_dictionary = data['heating_dict']
+        epw_obj.cooling_design_condition_dictionary = data['cooling_dict']
+        epw_obj.extreme_design_condition_dictionary = data['extremes_dict']
+
+        def _dejson(parent_dict, obj):
+            new_dict = {}
+            for key, val in parent_dict.items():
+                new_dict[key] = obj.from_json(val)
+            return new_dict
+        epw_obj.extreme_hot_weeks = _dejson(data['extreme_hot_weeks'], AnalysisPeriod)
+        epw_obj.extreme_cold_weeks = _dejson(data['extreme_cold_weeks'], AnalysisPeriod)
+        epw_obj.typical_weeks = _dejson(data['typical_weeks'], AnalysisPeriod)
+        epw_obj.monthly_ground_temperature = _dejson(
+            data['monthly_ground_temps'], MonthlyCollection)
+
+        if 'daylight_savings_start' in data:
+            epw_obj.daylight_savings_start = data['daylight_savings_start']
+        if 'daylight_savings_end' in data:
+            epw_obj.daylight_savings_end = data['daylight_savings_end']
+        if 'comments_1' in data:
+            epw_obj.comments_1 = data['comments_1']
+        if 'comments_2' in data:
+            epw_obj.comments_2 = data['comments_2']
+
+        return epw_obj
+
     @property
     def file_path(self):
         """Get path to epw file."""
         return self._file_path
 
     @property
-    def is_data_loaded(self):
-        """Return True if weather data is loaded."""
-        return self._is_data_loaded
-
-    @property
     def is_header_loaded(self):
         """Return True if location data is loaded."""
         return self._is_header_loaded
+
+    @property
+    def is_data_loaded(self):
+        """Return True if weather data is loaded."""
+        return self._is_data_loaded
 
     @property
     def location(self):
@@ -214,13 +314,13 @@ class EPW(object):
             'must be a dictionary. Got {}.'.format(type(meta_d))
         self._metadata = meta_d
         for coll in self._data:
-            coll.header.metadata = meta_d
+            coll.header._metadata = meta_d
 
     @property
     def annual_heating_design_day_996(self):
         """A design day object representing the annual 99.6% heating design day."""
         self._load_header_check()
-        if len(self._heating_dict) != 0:
+        if bool(self._heating_dict) is True:
             avg_press = self.atmospheric_station_pressure.average
             avg_press = None if avg_press == 999999 else avg_press
             return DesignDay.from_ashrae_dict_heating(
@@ -232,7 +332,7 @@ class EPW(object):
     def annual_heating_design_day_990(self):
         """A design day object representing the annual 99.0% heating design day."""
         self._load_header_check()
-        if len(self._heating_dict) != 0:
+        if bool(self._heating_dict) is True:
             avg_press = self.atmospheric_station_pressure.average
             avg_press = None if avg_press == 999999 else avg_press
             return DesignDay.from_ashrae_dict_heating(
@@ -244,7 +344,7 @@ class EPW(object):
     def annual_cooling_design_day_004(self):
         """A design day object representing the annual 0.4% cooling design day."""
         self._load_header_check()
-        if len(self._cooling_dict) != 0:
+        if bool(self._cooling_dict) is True:
             avg_press = self.atmospheric_station_pressure.average
             avg_press = None if avg_press == 999999 else avg_press
             return DesignDay.from_ashrae_dict_cooling(
@@ -256,7 +356,7 @@ class EPW(object):
     def annual_cooling_design_day_010(self):
         """A design day object representing the annual 1.0% cooling design day."""
         self._load_header_check()
-        if len(self._cooling_dict) != 0:
+        if bool(self._cooling_dict) is True:
             avg_press = self.atmospheric_station_pressure.average
             avg_press = None if avg_press == 999999 else avg_press
             return DesignDay.from_ashrae_dict_cooling(
@@ -353,10 +453,11 @@ class EPW(object):
     def monthly_ground_temperature(self, data):
         self._load_header_check()
         assert isinstance(data, dict), 'monthly_ground_temperature' \
-            'must be an OrderedDict. Got {}.'.format(type(data))
-        for val in data.values():
-            assert isinstance(val, MonthlyCollection), 'monthly_ground_temperature' \
-                'must contain MonthlyCollection objects. Got {}.'.format(type(val))
+            ' must be an OrderedDict. Got {}.'.format(type(data))
+        if bool(data) is True:
+            for val in data.values():
+                assert isinstance(val, MonthlyCollection), 'monthly_ground_temperature' \
+                    ' must contain MonthlyCollection objects. Got {}.'.format(type(val))
         self._monthly_ground_temps = data
 
     @property
@@ -373,21 +474,24 @@ class EPW(object):
     def _des_dict_check(self, des_dict, req_keys, cond_name):
         """Check if an input design condition dictionary is acceptable."""
         assert isinstance(des_dict, dict), '{}' \
-            'must be a dictionary. Got {}.'.format(cond_name, type(des_dict))
-        input_keys = list(des_dict.keys())
-        for key in req_keys:
-            assert key in input_keys, 'Required key "{}" was not found in ' \
-                '{}'.format(key, cond_name)
+            ' must be a dictionary. Got {}.'.format(cond_name, type(des_dict))
+        if bool(des_dict) is True:
+            input_keys = list(des_dict.keys())
+            for key in req_keys:
+                assert key in input_keys, 'Required key "{}" was not found in ' \
+                    '{}'.format(key, cond_name)
 
     def _weeks_check(self, data, week_type):
         """Check if input for the typical/extreme weeks of the header is correct."""
         assert isinstance(data, dict), '{}' \
-            'must be an OrderedDict. Got {}.'.format(week_type, type(data))
-        for val in data.values():
-            assert isinstance(val, AnalysisPeriod), '{} dictionary must contain' \
-                'AnalysisPeriod objects. Got {}.'.format(week_type, type(val))
-            assert len(val.doys_int) == 7, '{} AnalysisPeriod must be for'\
-                'a week.  Got AnalysisPeriod for {} days.'.format(week_type, type(val))
+            ' must be an OrderedDict. Got {}.'.format(week_type, type(data))
+        if bool(data) is True:
+            for val in data.values():
+                assert isinstance(val, AnalysisPeriod), '{} dictionary must contain' \
+                    ' AnalysisPeriod objects. Got {}.'.format(week_type, type(val))
+                assert len(val.doys_int) == 7, '{} AnalysisPeriod must be for'\
+                    ' a week.  Got AnalysisPeriod for {} days.'.format(
+                        week_type, type(val))
 
     def _import_data(self, import_header_only=False):
         """Import data from an epw file.
@@ -403,11 +507,12 @@ class EPW(object):
 
         with open(self._file_path, readmode) as epwin:
             line = epwin.readline()
+            original_header_load = bool(self._is_header_loaded)
 
-            # import location data
-            # first line has location data - Here is an example
-            # LOCATION,Denver Golden Nr,CO,USA,TMY3,724666,39.74,-105.18,-7.0,1829.0
             if not self._is_header_loaded:
+                # import location data
+                # first line has location data - Here is an example
+                # LOCATION,Denver Golden Nr,CO,USA,TMY3,724666,39.74,-105.18,-7.0,1829.0
                 location_data = line.strip().split(',')
                 self._location = Location()
                 self._location.city = location_data[1].replace('\\', ' ') \
@@ -421,83 +526,86 @@ class EPW(object):
                 self._location.time_zone = location_data[8]
                 self._location.elevation = location_data[9]
 
+                # asemble a dictionary of metadata
+                self._metadata = {
+                    'source': self._location.source,
+                    'country': self._location.country,
+                    'city': self._location.city
+                }
+
+                self._header = [line] + [epwin.readline() for i in xrange(7)]
+
+                # parse the heating, cooling and extreme design conditions.
+                dday_data = self._header[1].strip().split(',')
+                if len(dday_data) >= 2 and int(dday_data[1]) == 1:
+                    if dday_data[4] == 'Heating':
+                        for key, val in zip(DesignDay.heating_keys, dday_data[5:20]):
+                            self._heating_dict[key] = val
+                    if dday_data[20] == 'Cooling':
+                        for key, val in zip(DesignDay.cooling_keys, dday_data[21:53]):
+                            self._cooling_dict[key] = val
+                    if dday_data[53] == 'Extremes':
+                        for key, val in zip(DesignDay.extreme_keys, dday_data[54:70]):
+                            self._extremes_dict[key] = val
+
+                # parse typical and extreme periods into analysis periods.
+                week_data = self._header[2].split(',')
+                num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
+                st_ind = 2
+                for i in xrange(num_weeks):
+                    week_dat = week_data[st_ind:st_ind + 4]
+                    st_ind += 4
+                    st = [int(num) for num in week_dat[2].split('/')]
+                    end = [int(num) for num in week_dat[3].split('/')]
+                    if len(st) == 3:
+                        a_per = AnalysisPeriod(st[1], st[2], 0, end[1], end[2], 23)
+                    elif len(st) == 2:
+                        a_per = AnalysisPeriod(st[0], st[1], 0, end[0], end[1], 23)
+                    if 'Max' in week_dat[0] and week_dat[1] == 'Extreme':
+                        self._extreme_hot_weeks[week_dat[0]] = a_per
+                    elif 'Min' in week_dat[0] and week_dat[1] == 'Extreme':
+                        self._extreme_cold_weeks[week_dat[0]] = a_per
+                    elif week_dat[1] == 'Typical':
+                        self._typical_weeks[week_dat[0]] = a_per
+
+                # parse the monthly ground temperatures in the header.
+                grnd_data = self._header[3].strip().split(',')
+                num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
+                st_ind = 2
+                for i in xrange(num_depths):
+                    header_meta = dict(self._metadata)  # copying the metadata dictionary
+                    header_meta['depth'] = float(grnd_data[st_ind])
+                    header_meta['soil conductivity'] = grnd_data[st_ind + 1]
+                    header_meta['soil density'] = grnd_data[st_ind + 2]
+                    header_meta['soil specific heat'] = grnd_data[st_ind + 3]
+                    grnd_header = Header(temperature.GroundTemperature(), 'C',
+                                         AnalysisPeriod(), header_meta)
+                    grnd_vlas = [float(x) for x in grnd_data[st_ind + 4: st_ind + 16]]
+                    self._monthly_ground_temps[float(grnd_data[st_ind])] = \
+                        MonthlyCollection(grnd_header, grnd_vlas, list(xrange(12)))
+                    st_ind += 16
+
+                # parse leap year, daylight savings and comments.
+                leap_dl_sav = self._header[4].strip().split(',')
+                self._is_leap_year = True if leap_dl_sav[1] == 'Yes' else False
+                self.daylight_savings_start = leap_dl_sav[2]
+                self.daylight_savings_end = leap_dl_sav[3]
+                comments_1 = self._header[5].strip().split(',')
+                if len(comments_1) > 0:
+                    self.comments_1 = ','.join(comments_1[1:])
+                comments_2 = self._header[6].strip().split(',')
+                if len(comments_2) > 0:
+                    self.comments_2 = ','.join(comments_2[1:])
+
                 self._is_header_loaded = True
-
-            # asemble a dictionary of metadata
-            self._metadata = {
-                'source': self._location.source,
-                'country': self._location.country,
-                'city': self._location.city
-            }
-
-            self._header = [line] + [epwin.readline() for i in xrange(7)]
-
-            # parse the heating, cooling and extreme design conditions.
-            dday_data = self._header[1].strip().split(',')
-            if len(dday_data) >= 2 and int(dday_data[1]) == 1:
-                if dday_data[4] == 'Heating':
-                    for key, val in zip(DesignDay.heating_keys, dday_data[5:20]):
-                        self._heating_dict[key] = val
-                if dday_data[20] == 'Cooling':
-                    for key, val in zip(DesignDay.cooling_keys, dday_data[21:53]):
-                        self._cooling_dict[key] = val
-                if dday_data[53] == 'Extremes':
-                    for key, val in zip(DesignDay.extreme_keys, dday_data[54:70]):
-                        self._extremes_dict[key] = val
-
-            # parse typical and extreme periods into analysis periods.
-            week_data = self._header[2].split(',')
-            num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
-            st_ind = 2
-            for i in xrange(num_weeks):
-                week_dat = week_data[st_ind:st_ind + 4]
-                st_ind += 4
-                st = [int(num) for num in week_dat[2].split('/')]
-                end = [int(num) for num in week_dat[3].split('/')]
-                if len(st) == 3:
-                    a_per = AnalysisPeriod(st[1], st[2], 0, end[1], end[2], 23)
-                elif len(st) == 2:
-                    a_per = AnalysisPeriod(st[0], st[1], 0, end[0], end[1], 23)
-                if 'Max' in week_dat[0] and week_dat[1] == 'Extreme':
-                    self._extreme_hot_weeks[week_dat[0]] = a_per
-                elif 'Min' in week_dat[0] and week_dat[1] == 'Extreme':
-                    self._extreme_cold_weeks[week_dat[0]] = a_per
-                elif week_dat[1] == 'Typical':
-                    self._typical_weeks[week_dat[0]] = a_per
-
-            # parse the monthly ground temperatures in the header.
-            grnd_data = self._header[3].strip().split(',')
-            num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
-            st_ind = 2
-            for i in xrange(num_depths):
-                header_meta = dict(self._metadata)  # copying the metadata dictionary
-                header_meta['depth'] = float(grnd_data[st_ind])
-                header_meta['soil conductivity'] = grnd_data[st_ind + 1]
-                header_meta['soil density'] = grnd_data[st_ind + 2]
-                header_meta['soil specific heat'] = grnd_data[st_ind + 3]
-                grnd_header = Header(temperature.GroundTemperature(), 'C',
-                                     AnalysisPeriod(), header_meta)
-                grnd_vlas = [float(x) for x in grnd_data[st_ind + 4: st_ind + 16]]
-                self._monthly_ground_temps[float(grnd_data[st_ind])] = \
-                    MonthlyCollection(grnd_header, grnd_vlas, list(xrange(12)))
-                st_ind += 16
-
-            # parse leap year, daylight savings and comments.
-            leap_dl_sav = self._header[4].strip().split(',')
-            self._is_leap_year = True if leap_dl_sav[1] == 'Yes' else False
-            self.daylight_savings_start = leap_dl_sav[2]
-            self.daylight_savings_end = leap_dl_sav[3]
-            comments_1 = self._header[5].strip().split(',')
-            if len(comments_1) > 0:
-                self.comments_1 = ','.join(comments_1[1:])
-            comments_2 = self._header[6].strip().split(',')
-            if len(comments_2) > 0:
-                self.comments_2 = ','.join(comments_2[1:])
 
             if import_header_only:
                 return
 
             # read first line of data to overwrite the number of fields
+            if original_header_load is True:
+                for i in xrange(7):
+                    epwin.readline()
             line = epwin.readline()
             self._num_of_fields = min(len(line.strip().split(',')), 35)
 
@@ -1190,6 +1298,39 @@ class EPW(object):
         write_to_file(file_path, file_data, True)
 
         return file_path
+
+    def to_json(self):
+        """Convert the EPW to a dictionary."""
+        # load data if it's not loaded
+        if not self.is_data_loaded:
+            self._import_data()
+
+        def jsonify_dict(base_dict):
+            new_dict = {}
+            for key, val in base_dict.items():
+                new_dict[key] = val.to_json()
+            return new_dict
+        hot_wks = jsonify_dict(self.extreme_hot_weeks)
+        cold_wks = jsonify_dict(self.extreme_cold_weeks)
+        typ_wks = jsonify_dict(self.typical_weeks)
+        grnd_temps = jsonify_dict(self.monthly_ground_temperature)
+        return {
+            'location': self.location.to_json(),
+            'data_collections': [dc.to_json() for dc in self._data],
+            'metadata': self.metadata,
+            'heating_dict': self.heating_design_condition_dictionary,
+            'cooling_dict': self.cooling_design_condition_dictionary,
+            'extremes_dict': self.extreme_design_condition_dictionary,
+            'extreme_hot_weeks': hot_wks,
+            'extreme_cold_weeks': cold_wks,
+            'typical_weeks': typ_wks,
+            "monthly_ground_temps": grnd_temps,
+            "is_leap_year": self.is_leap_year,
+            "daylight_savings_start": self.daylight_savings_start,
+            "daylight_savings_end": self.daylight_savings_end,
+            "comments_1": self.comments_1,
+            "comments_2": self.comments_2
+        }
 
     def ToString(self):
         """Overwrite .NET ToString."""

@@ -52,9 +52,7 @@ class BaseCollection(object):
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
         assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
-        return cls(Header.from_json(data['header']),
-                   data['values'],
-                   [DateTime.from_json(dat) for dat in data['datetimes']])
+        return cls(Header.from_json(data['header']), data['values'], data['datetimes'])
 
     @property
     def header(self):
@@ -294,7 +292,7 @@ class BaseCollection(object):
         return {
             'header': self.header.to_json(),
             'values': self._values,
-            'datetimes': [dat.to_json() for dat in self.datetimes]
+            'datetimes': self.datetimes
         }
 
     @staticmethod
