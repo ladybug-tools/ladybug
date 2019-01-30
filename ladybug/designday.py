@@ -35,7 +35,6 @@ class DDY(object):
         location: A Ladybug location object
         design_days: A list of the design days in the ddy file.
     """
-    # TODO: set the default file path to use the ladybug default folder.
     def __init__(self, location, design_days):
         """Initalize the class."""
         assert hasattr(location, 'isLocation'), 'Expected' \
@@ -44,6 +43,22 @@ class DDY(object):
         self._location = location
         self.design_days = design_days
         self._file_path = None
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a DDY from a dictionary.
+
+        Args:
+            data = {
+            "location": ladybug Location schema,
+            "design_days": [] // list of ladybug DesignDay schemas}
+        """
+        required_keys = ('location', 'design_days')
+        for key in required_keys:
+            assert key in data, 'Required key "{}" is missing!'.format(key)
+
+        return cls(Location.from_json(data['location']),
+                   [DesignDay.from_json(des_day) for des_day in data['design_days']])
 
     @classmethod
     def from_ddy_file(cls, file_path):
@@ -176,6 +191,13 @@ class DDY(object):
         """Return True."""
         return True
 
+    def to_json(self):
+        """Convert the Design Day to a dictionary."""
+        return {
+            'location': self.location.to_json(),
+            'design_days': [des_d.to_json() for des_d in self.design_days]
+        }
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -271,6 +293,31 @@ class DesignDay(object):
         self.humidity_condition = humidity_condition
         self.wind_condition = wind_condition
         self.sky_condition = sky_condition
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a Design Day from a dictionary.
+
+        Args:
+            data = {
+            "name": string,
+            "day_type": string,
+            "location": ladybug Location schema,
+            "dry_bulb_condition": ladybug DryBulbCondition schema,
+            "humidity_condition": ladybug HumidityCondition schema,
+            "wind_condition": ladybug WindCondition schema,
+            "sky_condition": ladybug SkyCondition schema}
+        """
+        required_keys = ('name', 'day_type', 'location', 'dry_bulb_condition',
+                         'humidity_condition', 'wind_condition', 'sky_condition')
+        for key in required_keys:
+            assert key in data, 'Required key "{}" is missing!'.format(key)
+
+        return cls(data['name'], data['day_type'], Location.from_json(data['location']),
+                   DryBulbCondition.from_json(data['dry_bulb_condition']),
+                   HumidityCondition.from_json(data['humidity_condition']),
+                   WindCondition.from_json(data['wind_condition']),
+                   SkyCondition.from_json(data['sky_condition']))
 
     @classmethod
     def from_ep_string(cls, ep_string, location):
@@ -449,7 +496,7 @@ class DesignDay(object):
     def ep_style_string(self):
         """Serialize object to an EnerygPlus SizingPeriod:DesignDay.
 
-        returns:
+        Returns:
             ep_string: A full string representing a SizingPeriod:DesignDay.
         """
         # Put together the values in the order that they exist in the ddy file
@@ -691,6 +738,18 @@ class DesignDay(object):
         """Return True."""
         return True
 
+    def to_json(self):
+        """Convert the Design Day to a dictionary."""
+        return {
+            'name': self.name,
+            'day_type': self.day_type,
+            'location': self.location.to_json(),
+            'dry_bulb_condition': self.dry_bulb_condition.to_json(),
+            'humidity_condition': self.humidity_condition.to_json(),
+            'wind_condition': self.wind_condition.to_json(),
+            'sky_condition': self.sky_condition.to_json()
+        }
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -704,7 +763,7 @@ class DesignDay(object):
 class DryBulbCondition(object):
     """Represents dry bulb conditions on a design day.
 
-    attributes:
+    Properties:
         dry_bulb_max
         dry_bulb_range
         modifier_type
@@ -717,6 +776,30 @@ class DryBulbCondition(object):
         self.dry_bulb_range = dry_bulb_range
         self.modifier_type = str(modifier_type)
         self.modifier_schedule = str(modifier_schedule)
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a Dry Bulb Condition from a dictionary.
+
+        Args:
+            data = {
+            "dry_bulb_max": float,
+            "dry_bulb_range": float,
+            "modifier_type": string,
+            "modifier_schedule": string}
+        """
+        # Check required and optional keys
+        required_keys = ('dry_bulb_max', 'dry_bulb_range')
+        optional_keys = {'modifier_type': 'DefaultMultipliers',
+                         'modifier_schedule': ''}
+        for key in required_keys:
+            assert key in data, 'Required key "{}" is missing!'.format(key)
+        for key, val in optional_keys.items():
+            if key not in data:
+                data[key] = val
+
+        return cls(data['dry_bulb_max'], data['dry_bulb_range'], data['modifier_type'],
+                   data['modifier_schedule'])
 
     @property
     def hourly_values(self):
@@ -760,6 +843,15 @@ class DryBulbCondition(object):
         """Return True."""
         return True
 
+    def to_json(self):
+        """Convert the Dry Bulb Condition to a dictionary."""
+        return {
+            'dry_bulb_max': self.dry_bulb_max,
+            'dry_bulb_range': self.dry_bulb_range,
+            'modifier_type': self.modifier_type,
+            'modifier_schedule': self.modifier_schedule
+        }
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -773,7 +865,7 @@ class DryBulbCondition(object):
 class HumidityCondition(object):
     """Represents humidity conditions on the design day.
 
-    attributes:
+    Properties:
         hum_type: Choose from
             Wetbulb, Dewpoint, HumidityRatio, Enthalpy
         hum_value: The value of the condition above
@@ -789,6 +881,31 @@ class HumidityCondition(object):
         self.barometric_pressure = barometric_pressure
         self.schedule = schedule
         self.wet_bulb_range = wet_bulb_range
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a Humidity Condition from a dictionary.
+
+        Args:
+            data = {
+            "hum_type": string,
+            "hum_value": float,
+            "barometric_pressure": float,
+            "schedule": string,
+            "wet_bulb_range": string}
+        """
+        # Check required and optional keys
+        required_keys = ('hum_type', 'hum_value')
+        optional_keys = {'barometric_pressure': 101325,
+                         'schedule': '', 'wet_bulb_range': ''}
+        for key in required_keys:
+            assert key in data, 'Required key "{}" is missing!'.format(key)
+        for key, val in optional_keys.items():
+            if key not in data:
+                data[key] = val
+
+        return cls(data['hum_type'], data['hum_value'], data['barometric_pressure'],
+                   data['schedule'], data['wet_bulb_range'])
 
     def hourly_dew_point_values(self, dry_bulb_condition):
         """Get a list of dew points (C) at each hour over the design day.
@@ -871,6 +988,16 @@ class HumidityCondition(object):
         """Return True."""
         return True
 
+    def to_json(self):
+        """Convert the Humidity Condition to a dictionary."""
+        return {
+            'hum_type': self.hum_type,
+            'hum_value': self.hum_value,
+            'barometric_pressure': self.barometric_pressure,
+            'schedule': self.schedule,
+            'wet_bulb_range': self.wet_bulb_range,
+        }
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -884,7 +1011,7 @@ class HumidityCondition(object):
 class WindCondition(object):
     """Represents wind and rain conditions on the design day.
 
-    attributes:
+    Properties:
         wind_speed
         wind_direction
         rain
@@ -897,6 +1024,27 @@ class WindCondition(object):
         self.wind_direction = wind_direction
         self.rain = rain
         self.snow_on_ground = snow_on_ground
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a Wind Condition from a dictionary.
+
+        Args:
+            data = {
+            "wind_speed": float,
+            "wind_direction": float,
+            "rain": bool,
+            "snow_on_ground": bool}
+        """
+        # Check required and optional keys
+        optional_keys = {'wind_direction': 0, 'rain': False, 'snow_on_ground': False}
+        assert 'wind_speed' in data, 'Required key "wind_speed" is missing!'
+        for key, val in optional_keys.items():
+            if key not in data:
+                data[key] = val
+
+        return cls(data['wind_speed'], data['wind_direction'], data['rain'],
+                   data['snow_on_ground'])
 
     @property
     def hourly_values(self):
@@ -965,6 +1113,15 @@ class WindCondition(object):
         """Return True."""
         return True
 
+    def to_json(self):
+        """Convert the Wind Condition to a dictionary."""
+        return {
+            'wind_speed': self.wind_speed,
+            'wind_direction': self.wind_direction,
+            'rain': self.rain,
+            'snow_on_ground': self.snow_on_ground
+        }
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -975,11 +1132,10 @@ class WindCondition(object):
             str(self._wind_speed), str(self._wind_direction))
 
 
-# TODO: add support for zhang huang solar model in sky condition object.
 class SkyCondition(object):
     """An object representing a sky on the design day.
 
-    attributes:
+    Properties:
         solar_model
         month
         day_of_month
@@ -995,6 +1151,38 @@ class SkyCondition(object):
         self.daylight_savings_indicator = daylight_savings_indicator
         self.beam_shced = beam_shced
         self.diff_sched = diff_sched
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a Sky Condition from a dictionary.
+
+        Args:
+            data = {
+            "solar_model": string,
+            "month": int,
+            "day_of_month": int,
+            "daylight_savings_indicator": string // "Yes" or "No"}
+        """
+        # Check required and optional keys
+        required_keys = ('solar_model', 'month', 'day_of_month')
+        for key in required_keys:
+            assert key in data, 'Required key "{}" is missing!'.format(key)
+
+        if data['solar_model'] == 'ASHRAEClearSky':
+            return OriginalClearSkyCondition.from_json(data)
+        if data['solar_model'] == 'ASHRAETau':
+            return RevisedClearSkyCondition.from_json(data)
+
+        if 'daylight_savings_indicator' not in data:
+            data['daylight_savings_indicator'] = 'No'
+        optional_keys = ('beam_shced', 'diff_sched')
+        for key in optional_keys:
+            if key not in data:
+                data[key] = ''
+
+        return cls(data['month'], data['day_of_month'], data['clearness'],
+                   data['daylight_savings_indicator'],
+                   data['beam_shced'], data['diff_sched'])
 
     @property
     def solar_model(self):
@@ -1060,6 +1248,17 @@ class SkyCondition(object):
         """Return True."""
         return True
 
+    def to_json(self):
+        """Convert the Sky Condition to a dictionary."""
+        return {
+            'solar_model': self.solar_model,
+            'month': self.month,
+            'day_of_month': self.day_of_month,
+            'daylight_savings_indicator': self.daylight_savings_indicator,
+            'beam_shced': self.beam_shced,
+            'diff_sched': self.diff_sched
+        }
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -1073,7 +1272,7 @@ class SkyCondition(object):
 class OriginalClearSkyCondition(SkyCondition):
     """An object representing an original ASHRAE Clear Sky.
 
-    attributes:
+    Properties:
         month
         day_of_month
         clearness
@@ -1093,6 +1292,28 @@ class OriginalClearSkyCondition(SkyCondition):
         _check_analysis_period(analysis_period)
         return cls(analysis_period.st_month, analysis_period.st_day, clearness,
                    daylight_savings_indicator)
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a Sky Condition from a dictionary.
+
+        Args:
+            data = {
+            "solar_model": string,
+            "month": int,
+            "day_of_month": int,
+            "clearness": float,
+            "daylight_savings_indicator": string // "Yes" or "No"}
+        """
+        # Check required and optional keys
+        required_keys = ('solar_model', 'month', 'day_of_month', 'clearness')
+        for key in required_keys:
+            assert key in data, 'Required key "{}" is missing!'.format(key)
+        if 'daylight_savings_indicator' not in data:
+            data['daylight_savings_indicator'] = 'No'
+
+        return cls(data['month'], data['day_of_month'], data['clearness'],
+                   data['daylight_savings_indicator'])
 
     @property
     def clearness(self):
@@ -1133,11 +1354,21 @@ class OriginalClearSkyCondition(SkyCondition):
                       alt, dnr, dhr in zip(altitudes, dir_norm, diff_horiz)]
         return dir_norm, diff_horiz, glob_horiz
 
+    def to_json(self):
+        """Convert the Sky Condition to a dictionary."""
+        return {
+            'solar_model': self.solar_model,
+            'month': self.month,
+            'day_of_month': self.day_of_month,
+            'clearness': self.clearness,
+            'daylight_savings_indicator': self.daylight_savings_indicator
+        }
+
 
 class RevisedClearSkyCondition(SkyCondition):
     """An object representing an ASHRAE Revised Clear Sky (Tau model).
 
-    attributes:
+    Properties:
         month
         day_of_month
         tau_b
@@ -1159,6 +1390,29 @@ class RevisedClearSkyCondition(SkyCondition):
         _check_analysis_period(analysis_period)
         return cls(analysis_period.st_month, analysis_period.st_day, tau_b, tau_d,
                    daylight_savings_indicator)
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a Sky Condition from a dictionary.
+
+        Args:
+            data = {
+            "solar_model": string,
+            "month": int,
+            "day_of_month": int,
+            "tau_b": float,
+            "tau_d": float,
+            "daylight_savings_indicator": string // "Yes" or "No"}
+        """
+        # Check required and optional keys
+        required_keys = ('solar_model', 'month', 'day_of_month', 'tau_b', 'tau_d')
+        for key in required_keys:
+            assert key in data, 'Required key "{}" is missing!'.format(key)
+        if 'daylight_savings_indicator' not in data:
+            data['daylight_savings_indicator'] = 'No'
+
+        return cls(data['month'], data['day_of_month'], data['tau_b'], data['tau_d'],
+                   data['daylight_savings_indicator'])
 
     @property
     def tau_b(self):
@@ -1197,6 +1451,17 @@ class RevisedClearSkyCondition(SkyCondition):
         glob_horiz = [dhr + dnr * math.sin(math.radians(alt)) for
                       alt, dnr, dhr in zip(altitudes, dir_norm, diff_horiz)]
         return dir_norm, diff_horiz, glob_horiz
+
+    def to_json(self):
+        """Convert the Sky Condition to a dictionary."""
+        return {
+            'solar_model': self.solar_model,
+            'month': self.month,
+            'day_of_month': self.day_of_month,
+            'tau_b': self.tau_b,
+            'tau_d': self.tau_d,
+            'daylight_savings_indicator': self.daylight_savings_indicator
+        }
 
 
 def _check_analysis_period(analysis_period):

@@ -23,6 +23,15 @@ class DdyTestCase(unittest.TestCase):
         assert ddy.file_path == abs_path
         assert ddy_rel.file_path == os.path.normpath(relative_path)
 
+    def test_json_methods(self):
+        """Test json methods for the DDY object."""
+        relative_path = './tests/ddy/chicago.ddy'
+        ddy = DDY.from_ddy_file(relative_path)
+
+        ddy_json = ddy.to_json()
+        reconstructed_ddy = DDY.from_json(ddy_json)
+        assert ddy_json == reconstructed_ddy.to_json()
+
     def test_ddy_from_design_day(self):
         """Test ddy from design day method."""
         relative_path = './tests/ddy/chicago_monthly.ddy'

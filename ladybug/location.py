@@ -24,8 +24,7 @@ class Location(object):
                  "station_id", "source")
 
     def __init__(self, city=None, state=None, country=None, latitude=0, longitude=0,
-                 time_zone=0, elevation=0, station_id=None, source=None,
-                 building_id=None, zone_id=None):
+                 time_zone=0, elevation=0, station_id=None, source=None):
         """Create a Ladybug location."""
         self.city = '-' if not city else str(city)
         self.state = '-' if not state else str(state)
@@ -38,34 +37,26 @@ class Location(object):
         self.source = source
 
     @classmethod
-    def from_json(cls, loc_json):
-        """Create a location from json.
-        {
-          "city": "-",
-          "latitude": 0,
-          "longitude": 0,
-          "time_zone": 0,
-          "elevation": 0
-        }
-        """
-        d = loc_json
-        if 'city' not in d:
-            d['city'] = None
-        if 'state' not in d:
-            d['state'] = None
-        if 'country' not in d:
-            d['country'] = None
-        if 'latitude' not in d:
-            d['latitude'] = None
-        if 'longitude' not in d:
-            d['longitude'] = None
-        if 'time_zone' not in d:
-            d['time_zone'] = None
-        if 'elevation' not in d:
-            d['elevation'] = None
+    def from_json(cls, data):
+        """Create a location from a dictionary.
 
-        return cls(d['city'], d['state'], d['country'], d['latitude'], d['longitude'],
-                   d['time_zone'], d['elevation'])
+        Args:
+            data: {
+            "city": "-",
+            "latitude": 0,
+            "longitude": 0,
+            "time_zone": 0,
+            "elevation": 0}
+        """
+        optional_keys = ('city', 'state', 'country', 'latitude', 'longitude',
+                         'time_zone', 'elevation', 'station_id', 'source')
+        for key in optional_keys:
+            if key not in data:
+                data[key] = None
+
+        return cls(data['city'], data['state'], data['country'], data['latitude'],
+                   data['longitude'], data['time_zone'], data['elevation'],
+                   data['station_id'], data['source'])
 
     @classmethod
     def from_location(cls, location):
@@ -204,7 +195,9 @@ class Location(object):
             "latitude": self.latitude,
             "longitude": self.longitude,
             "time_zone": self.time_zone,
-            "elevation": self.elevation
+            "elevation": self.elevation,
+            "station_id": self.station_id,
+            "source": self.source
         }
 
     def __repr__(self):
