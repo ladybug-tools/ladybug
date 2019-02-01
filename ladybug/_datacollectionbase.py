@@ -144,7 +144,7 @@ class BaseCollection(object):
         return new_data_c
 
     def get_highest_values(self, count):
-        """Find the highest values in the Data Collection.
+        """Get a list of the the x highest values of the Data Collection and their indices.
 
         Args:
             count: Integer representing the number of highest values to account for.
@@ -168,7 +168,7 @@ class BaseCollection(object):
         return highest_values, highest_values_index
 
     def get_lowest_values(self, count):
-        """Find the lowest values in the Data Collection.
+        """Get a list of the the x lowest values of the Data Collection and their indices.
 
         Args:
             count: Integer representing the number of lowest values to account for.
@@ -191,7 +191,7 @@ class BaseCollection(object):
         return lowest_values, lowest_values_index
 
     def get_percentile(self, percentile):
-        """Filter the Data Collection based on a conditional statement.
+        """Get a value representing a the input percentile of the Data Collection.
 
         Args:
             percentile: A float value from 0 to 100 representing the
@@ -242,7 +242,7 @@ class BaseCollection(object):
                 collection is aligned with.
 
         Return:
-            True if collections are aligned, Fale if not aligned
+            True if collections are aligned, False if not aligned
         """
         if type(self) != type(data_collection):
             return False
@@ -360,7 +360,7 @@ class BaseCollection(object):
                 test if they are al aligned with one another.
 
         Return:
-            True if collections are aligned, Fale if not aligned
+            True if collections are aligned, False if not aligned
         """
         if len(data_collections) > 1:
             first_coll = data_collections[0]
