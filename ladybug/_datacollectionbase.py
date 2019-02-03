@@ -477,7 +477,7 @@ class BaseCollection(object):
         if f == c:
             return key(vals[int(k)])
         d0 = key(vals[int(f)]) * (c - k)
-        d1 = key(vals[int(c)]) * (k-f)
+        d1 = key(vals[int(c)]) * (k - f)
         return d0+d1
 
     def __len__(self):
