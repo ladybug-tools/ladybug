@@ -164,7 +164,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         for i in self.header.analysis_period.doys_int:
             vals = data_dict[i]
             if vals != []:
-                avg_data.append(sum(vals)/len(vals))
+                avg_data.append(sum(vals) / len(vals))
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = 'average'
