@@ -478,7 +478,7 @@ class BaseCollection(object):
             return key(vals[int(k)])
         d0 = key(vals[int(f)]) * (c - k)
         d1 = key(vals[int(c)]) * (k - f)
-        return d0+d1
+        return d0 + d1
 
     def __len__(self):
         return len(self._values)
