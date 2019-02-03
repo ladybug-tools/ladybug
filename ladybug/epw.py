@@ -121,7 +121,7 @@ class EPW(object):
             wind_direction
             wind_speed
             total_sky_cover
-            opaque_sky_cover
+            opaque_sky_cover or horizontal_infrared_radiation_intensity
 
         Args:
             is_leap_year: A boolean to set whether the EPW object is for a leap year.

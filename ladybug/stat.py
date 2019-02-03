@@ -222,13 +222,23 @@ class STAT(object):
             return None
 
     def _regex_typical_week_parse(self):
-        typ_str = r"Typical Week Period selected:" \
+        typ_weeks = {'other': []}
+        typ_str = r"(\S*)\s*Typical Week Period selected:" \
             "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),"
         matches = re.compile(typ_str).findall(self._body)
-        if len(matches) == 4:
-            return [self._regex_week(match) for match in matches]
-        else:
-            return []
+        for match in matches:
+            a_per = self._regex_week(match[1:])
+            if 'winter' in match[0]:
+                typ_weeks['winter'] = a_per
+            elif 'spring' in match[0]:
+                typ_weeks['spring'] = a_per
+            elif 'summer' in match[0]:
+                typ_weeks['summer'] = a_per
+            elif 'autumn' in match[0]:
+                typ_weeks['autumn'] = a_per
+            else:
+                typ_weeks['other'].append(a_per)
+        return typ_weeks
 
     def _regex_parse(self, regex_str):
         matches = re.compile(regex_str).findall(self._body)
@@ -281,51 +291,50 @@ class STAT(object):
 
     @property
     def extreme_cold_week(self):
-        """An AnalysisPeriod representing the coldest week within the corresponding EPW.
-        """
+        """AnalysisPeriod for the coldest week within the corresponding EPW."""
         return self._extreme_cold_week
 
     @property
     def extreme_hot_week(self):
-        """An AnalysisPeriod representing the hottest week within the corresponding EPW.
-        """
+        """AnalysisPeriod for the hottest week within the corresponding EPW."""
         return self._extreme_hot_week
 
     @property
     def typical_winter_week(self):
-        """An AnalysisPeriod representing a typical winter week within the corresponding EPW.
-        """
-        if len(self._typical_weeks) >= 2:
-            return self._typical_weeks[1]
-        else:
+        """AnalysisPeriod for a typical winter week within the corresponding EPW."""
+        try:
+            return self._typical_weeks['winter']
+        except KeyError:
             return None
 
     @property
     def typical_spring_week(self):
-        """An AnalysisPeriod representing a typical spring week within the corresponding EPW.
-        """
-        if len(self._typical_weeks) >= 4:
-            return self._typical_weeks[3]
-        else:
+        """AnalysisPeriod for a typical spring week within the corresponding EPW."""
+        try:
+            return self._typical_weeks['spring']
+        except KeyError:
             return None
 
     @property
     def typical_summer_week(self):
-        """An AnalysisPeriod representing a typical summer week within the corresponding EPW.
-        """
-        if len(self._typical_weeks) >= 1:
-            return self._typical_weeks[0]
-        else:
+        """AnalysisPeriod for a typical summer week within the corresponding EPW."""
+        try:
+            return self._typical_weeks['summer']
+        except KeyError:
             return None
 
     @property
     def typical_autumn_week(self):
-        """An AnalysisPeriod representing a typical autumn week within the corresponding EPW.
-        """
-        if len(self._typical_weeks) >= 3:
-            return self._typical_weeks[2]
-        else:
+        """AnalysisPeriod for a typical autumn week within the corresponding EPW."""
+        try:
+            return self._typical_weeks['autumn']
+        except KeyError:
             return None
+
+    @property
+    def other_typical_weeks(self):
+        """List of AnalysisPeriods for typical weeks outside of the seasonal weeks."""
+        return self._typical_weeks['other']
 
     @property
     def annual_heating_design_day_996(self):
