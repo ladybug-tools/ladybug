@@ -167,7 +167,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 avg_data.append(sum(vals)/len(vals))
                 d_times.append(i)
         new_header = self.header.duplicate()
-        new_header.metadata['statistical operation'] = 'Average'
+        new_header.metadata['operation'] = 'average'
         return DailyCollection(new_header, avg_data, d_times)
 
     def total_daily(self):
@@ -180,7 +180,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 total_data.append(sum(vals))
                 d_times.append(i)
         new_header = self.header.duplicate()
-        new_header.metadata['statistical operation'] = 'Total'
+        new_header.metadata['operation'] = 'total'
         return DailyCollection(new_header, total_data, d_times)
 
     def percentile_daily(self, percentile):
@@ -200,7 +200,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 per_data.append(self._percentile(vals, percentile))
                 d_times.append(i)
         new_header = self.header.duplicate()
-        new_header.metadata['statistical operation'] = '{} Percentile'.format(percentile)
+        new_header.metadata['operation'] = '{} percentile'.format(percentile)
         return DailyCollection(new_header, per_data, d_times)
 
     def group_by_month(self):
@@ -225,7 +225,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 avg_data.append(sum(vals)/len(vals))
                 d_times.append(i)
         new_header = self.header.duplicate()
-        new_header.metadata['statistical operation'] = 'Average'
+        new_header.metadata['operation'] = 'average'
         return MonthlyCollection(new_header, avg_data, d_times)
 
     def total_monthly(self):
@@ -238,7 +238,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 total_data.append(sum(vals))
                 d_times.append(i)
         new_header = self.header.duplicate()
-        new_header.metadata['statistical operation'] = 'Total'
+        new_header.metadata['operation'] = 'total'
         return MonthlyCollection(new_header, total_data, d_times)
 
     def percentile_monthly(self, percentile):
@@ -258,7 +258,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 per_data.append(self._percentile(vals, percentile))
                 d_times.append(i)
         new_header = self.header.duplicate()
-        new_header.metadata['statistical operation'] = '{} Percentile'.format(percentile)
+        new_header.metadata['operation'] = '{} percentile'.format(percentile)
         return MonthlyCollection(new_header, per_data, d_times)
 
     def group_by_month_per_hour(self):
@@ -287,7 +287,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 avg_data.append(sum(vals)/len(vals))
                 d_times.append(i)
         new_header = self.header.duplicate()
-        new_header.metadata['statistical operation'] = 'Average'
+        new_header.metadata['operation'] = 'average'
         return MonthlyPerHourCollection(new_header, avg_data, d_times)
 
     def total_monthly_per_hour(self):
@@ -300,7 +300,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 total_data.append(sum(vals))
                 d_times.append(i)
         new_header = self.header.duplicate()
-        new_header.metadata['statistical operation'] = 'Total'
+        new_header.metadata['operation'] = 'total'
         return MonthlyPerHourCollection(new_header, total_data, d_times)
 
     def percentile_monthly_per_hour(self, percentile):
@@ -320,7 +320,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 total_data.append(self._percentile(vals, percentile))
                 d_times.append(i)
         new_header = self.header.duplicate()
-        new_header.metadata['statistical operation'] = '{} Percentile'.format(percentile)
+        new_header.metadata['operation'] = '{} percentile'.format(percentile)
         return MonthlyPerHourCollection(new_header, total_data, d_times)
 
     def to_json(self):
@@ -740,8 +740,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         if new_needed is False:
             return a_per
         else:
-            return AnalysisPeriod(n_ap[0], n_ap[1], n_ap[2], n_ap[3],
-                                  n_ap[4], n_ap[5], n_ap[6], n_ap[7])
+            return AnalysisPeriod(*n_ap)
 
     @property
     def isContinuous(self):

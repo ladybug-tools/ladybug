@@ -306,11 +306,11 @@ class AnalysisPeriod(object):
     @property
     def months_per_hour(self):
         """A list of tuples representing months per hour in this analysis period."""
-        month_hour_strings = []
+        month_hour = []
         hour_range = xrange(self.st_hour, self.end_hour + 1)
         for month in self.months_int:
-            month_hour_strings.extend([(month, hr) for hr in hour_range])
-        return month_hour_strings
+            month_hour.extend([(month, hr) for hr in hour_range])
+        return month_hour
 
     @property
     def minute_intervals(self):
@@ -368,8 +368,8 @@ class AnalysisPeriod(object):
         """
         if self._timestamps_data is None:
             self._calculate_timestamps()
-        # time filtering in Ladybug and honeybee is slightly different since
-        # start hour and end hour will be applied for every day.
+        # time filtering in Ladybug Tools is slightly different than "normal"
+        # filtering since start hour and end hour will be applied for every day.
         # For instance 2/20 9am to 2/22 5pm means hour between 9-17
         # during 20, 21 and 22 of Feb.
         return time.moy in self._timestamps_data

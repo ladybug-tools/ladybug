@@ -427,11 +427,10 @@ class BaseCollection(object):
     def _filter_by_statement(self, statement):
         """Filter the data collection based on a conditional statement."""
         self.__class__._check_conditional_statement(statement, 1)
-        statement = statement.replace('a', 'd')
         _filt_values, _filt_datetimes = [], []
-        for i, d in enumerate(self._values):
-            if eval(statement, {'d': d}):
-                _filt_values.append(d)
+        for i, a in enumerate(self._values):
+            if eval(statement, {'a': a}):
+                _filt_values.append(a)
                 _filt_datetimes.append(self.datetimes[i])
         return _filt_values, _filt_datetimes
 
@@ -495,9 +494,6 @@ class BaseCollection(object):
 
     def __iter__(self):
         return iter(self._values)
-
-    def __reversed__(self):
-        return reversed(self._values)
 
     def __contains__(self, item):
         return item in self._values
