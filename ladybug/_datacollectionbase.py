@@ -146,6 +146,12 @@ class BaseCollection(object):
     def get_highest_values(self, count):
         """Get a list of the the x highest values of the Data Collection and their indices.
 
+        This is useful for situations where one needs to know the times of
+        the year when the largest values of a data collection occur.  For example,
+        there is a European dayight code that requires an analysis for the hours
+        of the year with the greatest exterior illuminance level.  This method
+        can be used to help build a shcedule for such a study.
+
         Args:
             count: Integer representing the number of highest values to account for.
 
@@ -169,6 +175,9 @@ class BaseCollection(object):
 
     def get_lowest_values(self, count):
         """Get a list of the the x lowest values of the Data Collection and their indices.
+
+        This is useful for situations where one needs to know the times of
+        the year when the smallest values of a data collection occur.
 
         Args:
             count: Integer representing the number of lowest values to account for.
