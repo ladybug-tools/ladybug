@@ -29,7 +29,7 @@ class StatTestCase(unittest.TestCase):
         stat = STAT(relative_path)
 
         # Test accuracy of import
-        assert len(stat.header) == 10
+        assert len(stat._header) == 10
         assert stat.location.city == 'TOKYO HYAKURI'
         assert stat.location.country == 'JPN'
         assert stat.location.source == 'IWEC Data'
@@ -135,6 +135,15 @@ class StatTestCase(unittest.TestCase):
         assert str(typical_spring) == '4/26 to 5/2 between 0 and 23 @1'
         assert str(typical_summer) == '8/24 to 8/30 between 0 and 23 @1'
         assert str(typical_autumn) == '10/27 to 11/2 between 0 and 23 @1'
+
+    def test_json_methods(self):
+        """Test JSON serialization methods"""
+        relative_path = './tests/stat/chicago.stat'
+        stat_obj = STAT(relative_path)
+
+        stat_json = stat_obj.to_json()
+        rebuilt_stat = STAT.from_json(stat_json)
+        assert stat_json == rebuilt_stat.to_json()
 
 
 if __name__ == "__main__":

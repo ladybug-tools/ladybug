@@ -10,7 +10,6 @@ from .designday import WindCondition
 from .designday import RevisedClearSkyCondition
 from .designday import OriginalClearSkyCondition
 
-from collections import OrderedDict
 import os
 import re
 import codecs
@@ -24,51 +23,161 @@ except ImportError:
 class STAT(object):
     """Import data from a local .stat file.
 
-    args:
-        file_path: Local file address to a .stat file.
-
-    properties:
+    Properties:
         location
         ashrae_climate_zone
         koppen_climate_zone
+        extreme_cold_week
+        extreme_hot_week
+        typical_winter_week
+        typical_spring_week
+        typical_summer_week
+        typical_autumn_week
+        other_typical_weeks
+        annual_heating_design_day_996
+        annual_heating_design_day_990
+        annual_cooling_design_day_004
+        annual_cooling_design_day_010
+        monthly_cooling_design_days_100
+        monthly_cooling_design_days_050
+        monthly_cooling_design_days_020
+        monthly_cooling_design_days_004
+        monthly_db_temp_050
+        monthly_wb_temp_050
+        monthly_db_temp_range_050
+        monthly_wb_temp_range_050
+        standard_pressure_at_elev
+        monthly_wind_conditions
+        monthly_ws_avg
+        monthly_wind_dirs
+        monthly_clear_sky_conditions
         monthly_tau_beam
         monthly_tau_diffuse
     """
+    _months = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+               'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+    _wind_dirs = (0, 45, 90, 135, 180, 225, 270, 315)
+    _wind_dir_names = ('North', 'NorthEast', 'East', 'SouthEast', 'South',
+                       'SouthWest', 'West', 'NorthWest')
 
     def __init__(self, file_path):
-        """Initalize the class."""
-        if not os.path.isfile(file_path):
-            raise ValueError(
-                'Cannot find an stat file at {}'.format(file_path))
+        """Initalize the class.
 
-        if not file_path.lower().endswith('stat'):
-            raise TypeError('{} is not an .stat file.'.format(file_path))
-
-        self._file_path = os.path.normpath(file_path)
-        self._folder, self._file_name = os.path.split(self.file_path)
+        Args:
+            file_path: Address to a local .stat file.
+        """
+        if file_path is not None:
+            if not os.path.isfile(file_path):
+                raise ValueError(
+                    'Cannot find an stat file at {}'.format(file_path))
+            if not file_path.lower().endswith('stat'):
+                raise TypeError('{} is not an .stat file.'.format(file_path))
+            self._file_path = os.path.normpath(file_path)
 
         # defaults empty state for certain parameters
-        self._winter_des_day_dict = OrderedDict()
-        self._summer_des_day_dict = OrderedDict()
+        self._winter_des_day_dict = {}
+        self._summer_des_day_dict = {}
         self._monthly_wind_dirs = []
 
         # import the data from the file
-        self._import_data()
+        if file_path is not None:
+            self._import_data()
+
+    @classmethod
+    def from_json(cls, data):
+        """ Create STAT from json dictionary.
+
+            Args:
+                data: {
+                'location': {} , // ladybug location schema
+                'ashrae_climate_zone': str,
+                'koppen_climate_zone': str,
+                'extreme_cold_week': {}, // ladybug analysis period schema
+                'extreme_hot_week': {}, // ladybug analysis period schema
+                'typical_weeks': {}, // dict of ladybug analysis period schemas
+                'heating_dict': {}, // dict containing heating design conditions
+                'cooling_dict': {}, // dict containing cooling design conditions
+                "monthly_db_50": [],  // list of 12 float values for each month
+                "monthly_wb_50": [],  // list of 12 float values for each month
+                "monthly_db_range_50": [],  // list of 12 float values for each month
+                "monthly_wb_range_50": [],  // list of 12 float values for each month
+                "monthly_db_100": [],  // list of 12 float values for each month
+                "monthly_wb_100": [],  // list of 12 float values for each month
+                "monthly_db_20": [],  // list of 12 float values for each month
+                "monthly_wb_20": [],  // list of 12 float values for each month
+                "monthly_db_04": [],  // list of 12 float values for each month
+                "monthly_wb_04": [],  // list of 12 float values for each month
+                "monthly_wind": [],  // list of 12 float values for each month
+                "monthly_wind_dirs": [], // matrix with 12 cols for months of the year
+                    and 8 rows for the cardinal directions.
+                "standard_pressure_at_elev": float, // float value for pressure in Pa
+                "monthly_tau_beam":[], // list of 12 float values for each month
+                "monthly_tau_diffuse": [] // list of 12 float values for each month
+            }
+        """
+        # Initialize the class with all data missing
+        stat_ob = cls(None)
+
+        # Check required and optional keys
+        option_keys_none = ('ashrae_climate_zone', 'koppen_climate_zone',
+                            'extreme_cold_week', 'extreme_hot_week',
+                            'standard_pressure_at_elev')
+        option_keys_list = ('monthly_db_50', 'monthly_wb_50',
+                            'monthly_db_range_50', 'monthly_wb_range_50',
+                            'monthly_db_100', 'monthly_wb_100', 'monthly_db_20',
+                            'monthly_wb_20', 'monthly_db_04', 'monthly_wb_04',
+                            'monthly_wind', 'monthly_wind_dirs',
+                            'monthly_tau_beam', 'monthly_tau_diffuse')
+        option_keys_dict = ('typical_weeks', 'heating_dict', 'cooling_dict')
+        assert 'location' in data, 'Required key "location" is missing!'
+        for key in option_keys_none:
+            if key not in data:
+                data[key] = None
+        for key in option_keys_list:
+            if key not in data:
+                data[key] = []
+        for key in option_keys_dict:
+            if key not in data:
+                data[key] = {}
+
+        # assign the properties of the dictionary to the stat object.
+        stat_ob._location = Location.from_json(data['location'])
+        stat_ob._ashrae_climate_zone = data['ashrae_climate_zone']
+        stat_ob._koppen_climate_zone = data['koppen_climate_zone']
+        stat_ob._extreme_cold_week = AnalysisPeriod.from_json(data['extreme_cold_week'])\
+            if data['extreme_cold_week'] else None
+        stat_ob._extreme_hot_week = AnalysisPeriod.from_json(data['extreme_hot_week'])\
+            if data['extreme_hot_week'] else None
+        stat_ob._typical_weeks = {}
+        for key, val in data['typical_weeks'].items():
+            if isinstance(val, list):
+                stat_ob._typical_weeks[key] = [AnalysisPeriod.from_json(v) for v in val]
+            else:
+                stat_ob._typical_weeks[key] = AnalysisPeriod.from_json(val)
+        stat_ob._winter_des_day_dict = data['heating_dict']
+        stat_ob._summer_des_day_dict = data['cooling_dict']
+        stat_ob._monthly_db_50 = data['monthly_db_50']
+        stat_ob._monthly_wb_50 = data['monthly_wb_50']
+        stat_ob._monthly_db_range_50 = data['monthly_db_range_50']
+        stat_ob._monthly_wb_range_50 = data['monthly_wb_range_50']
+        stat_ob._monthly_db_100 = data['monthly_db_100']
+        stat_ob._monthly_wb_100 = data['monthly_wb_100']
+        stat_ob._monthly_db_20 = data['monthly_db_20']
+        stat_ob._monthly_wb_20 = data['monthly_wb_20']
+        stat_ob._monthly_db_04 = data['monthly_db_04']
+        stat_ob._monthly_wb_04 = data['monthly_wb_04']
+        stat_ob._monthly_wind = data['monthly_wind']
+        stat_ob._monthly_wind_dirs = data['monthly_wind_dirs']
+        stat_ob._stand_press_at_elev = data['standard_pressure_at_elev']
+        stat_ob._monthly_tau_beam = data['monthly_tau_beam']
+        stat_ob._monthly_tau_diffuse = data['monthly_tau_diffuse']
+
+        return stat_ob
 
     @property
     def file_path(self):
         """Get the path to the stat file."""
         return self._file_path
-
-    @property
-    def folder(self):
-        """Get stat file folder."""
-        return self._folder
-
-    @property
-    def file_name(self):
-        """Get stat file name."""
-        return self._file_name
 
     def _import_data(self):
         """Import data from a stat file.
@@ -158,9 +267,8 @@ class STAT(object):
 
             # pull out annual design days
             winter_vals = self._regex_parse(r"Heating\s(\d.*)")
-            if len(winter_vals) == 15:
-                for key, val in zip(DesignDay.heating_keys, winter_vals):
-                    self._winter_des_day_dict[key] = val
+            for key, val in zip(DesignDay.heating_keys, winter_vals):
+                self._winter_des_day_dict[key] = val
             summer_vals = self._regex_parse(r"Cooling\s(\d.*)")
             for key, val in zip(DesignDay.cooling_keys, summer_vals):
                 self._summer_des_day_dict[key] = val
@@ -261,11 +369,6 @@ class STAT(object):
             return False
 
     @property
-    def header(self):
-        """Return stat file header."""
-        return self._header
-
-    @property
     def location(self):
         """Return ladybug location object."""
         return self._location
@@ -339,7 +442,7 @@ class STAT(object):
     @property
     def annual_heating_design_day_996(self):
         """A design day object representing the annual 99.6% heating design day."""
-        if len(self._winter_des_day_dict) != 0:
+        if bool(self._winter_des_day_dict) is True:
             return DesignDay.from_ashrae_dict_heating(
                 self._winter_des_day_dict, self.location, False,
                 self._stand_press_at_elev)
@@ -349,7 +452,7 @@ class STAT(object):
     @property
     def annual_heating_design_day_990(self):
         """A design day object representing the annual 99.0% heating design day."""
-        if len(self._winter_des_day_dict) != 0:
+        if bool(self._winter_des_day_dict) is True:
             return DesignDay.from_ashrae_dict_heating(
                 self._winter_des_day_dict, self.location, True,
                 self._stand_press_at_elev)
@@ -359,7 +462,7 @@ class STAT(object):
     @property
     def annual_cooling_design_day_004(self):
         """A design day object representing the annual 0.4% cooling design day."""
-        if len(self._summer_des_day_dict) != 0:
+        if bool(self._summer_des_day_dict) is True:
             tau = None
             month_num = int(self._summer_des_day_dict['Month'])
             if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
@@ -376,7 +479,7 @@ class STAT(object):
     @property
     def annual_cooling_design_day_010(self):
         """A design day object representing the annual 1.0% cooling design day."""
-        if len(self._summer_des_day_dict) != 0:
+        if bool(self._summer_des_day_dict) is True:
             tau = None
             month_num = int(self._summer_des_day_dict['Month'])
             if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
@@ -430,8 +533,7 @@ class STAT(object):
 
     @property
     def monthly_cooling_design_days_020(self):
-        """A list of 12 objects representing monthly 2.0% cooling design days.
-        """
+        """A list of 12 objects representing monthly 2.0% cooling design days."""
         if self.monthly_found is False or self._monthly_db_20 == [] \
                 or self._monthly_wb_20 == []:
                     return []
@@ -450,8 +552,7 @@ class STAT(object):
 
     @property
     def monthly_cooling_design_days_004(self):
-        """A list of 12 objects representing monthly 0.4% cooling design days.
-        """
+        """A list of 12 objects representing monthly 0.4% cooling design days."""
         if self.monthly_found is False or self._monthly_db_04 == [] \
                 or self._monthly_wb_04 == []:
                     return []
@@ -470,58 +571,49 @@ class STAT(object):
 
     @property
     def monthly_db_temp_050(self):
-        """A list of 12 float values for monthly 5.0% dry bulb temperature.
-        """
+        """A list of 12 float values for monthly 5.0% dry bulb temperature."""
         return self._monthly_db_50
 
     @property
     def monthly_wb_temp_050(self):
-        """A list of 12 float values for monthly 5.0% wet bulb temperature.
-        """
+        """A list of 12 float values for monthly 5.0% wet bulb temperature."""
         return self._monthly_wb_50
 
     @property
     def monthly_db_temp_range_050(self):
-        """A list of 12 values for monthly ranges of dry bulb temperatures at 5.0%.
-        """
+        """A list of 12 values for monthly ranges of dry bulb temperatures at 5.0%."""
         return self._monthly_db_range_50
 
     @property
     def monthly_wb_temp_range_050(self):
-        """A list of 12 values for monthly ranges of wet bulb temperatures at 5.0%.
-        """
+        """A list of 12 values for monthly ranges of wet bulb temperatures at 5.0%."""
         return self._monthly_wb_range_50
 
     @property
     def standard_pressure_at_elev(self):
-        """The standard pressure on pascals at the elevation of the location.
-        """
+        """The standard pressure on pascals at the elevation of the location."""
         return self._stand_press_at_elev
 
     @property
     def monthly_wind_conditions(self):
-        """A list of 12 monthly wind conditions that are used on the design days.
-        """
+        """A list of 12 monthly wind conditions that are used on the design days."""
         return [WindCondition(x, y) for x, y in zip(
             self._monthly_wind, self.monthly_wind_dirs)]
 
     @property
     def monthly_ws_avg(self):
-        """A list of 12 float values for monthly average wind speeds.
-        """
+        """A list of 12 float values for monthly average wind speeds."""
         return self._monthly_wind
 
     @property
     def monthly_wind_dirs(self):
-        """A list of prevailing wind directions for each month.
-        """
+        """A list of prevailing wind directions for each month."""
         mwd = zip(*self._monthly_wind_dirs)
         return [self._wind_dirs[mon.index(max(mon))] for mon in mwd]
 
     @property
     def monthly_clear_sky_conditions(self):
-        """A list of 12 monthly clear sky conditions that are used on the design days.
-        """
+        """A list of 12 monthly clear sky conditions that are used on the design days."""
         if self._monthly_tau_diffuse is [] or self._monthly_tau_beam is []:
             return [OriginalClearSkyCondition(i, 21) for i in xrange(1, 13)]
         return [RevisedClearSkyCondition(i, 21, x, y) for i, x, y in zip(
@@ -547,19 +639,43 @@ class STAT(object):
         """
         return self._monthly_tau_diffuse
 
-    @property
-    def _months(self):
-        return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
-                'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-    @property
-    def _wind_dirs(self):
-        return [0, 45, 90, 135, 180, 225, 270, 315]
-
-    @property
-    def _wind_dir_names(self):
-        return ['North', 'NorthEast', 'East', 'SouthEast', 'South',
-                'SouthWest', 'West', 'NorthWest']
+    def to_json(self):
+        """Convert the STAT object to a dictionary."""
+        def jsonify_dict(base_dict):
+            new_dict = {}
+            for key, val in base_dict.items():
+                if isinstance(val, list):
+                    new_dict[key] = [v.to_json() for v in val]
+                else:
+                    new_dict[key] = val.to_json()
+            return new_dict
+        return {
+            'location': self.location.to_json(),
+            'ashrae_climate_zone': self.ashrae_climate_zone,
+            'koppen_climate_zone': self.koppen_climate_zone,
+            'extreme_cold_week': self.extreme_cold_week.to_json()
+            if self.extreme_cold_week else None,
+            'extreme_hot_week': self.extreme_hot_week.to_json()
+            if self.extreme_cold_week else None,
+            'typical_weeks': jsonify_dict(self._typical_weeks),
+            'heating_dict': self._winter_des_day_dict,
+            'cooling_dict': self._summer_des_day_dict,
+            "monthly_db_50": self._monthly_db_50,
+            "monthly_wb_50": self._monthly_wb_50,
+            "monthly_db_range_50": self._monthly_db_range_50,
+            "monthly_wb_range_50": self._monthly_wb_range_50,
+            "monthly_db_100": self._monthly_db_100,
+            "monthly_wb_100": self._monthly_wb_100,
+            "monthly_db_20": self._monthly_db_20,
+            "monthly_wb_20": self._monthly_wb_20,
+            "monthly_db_04": self._monthly_db_04,
+            "monthly_wb_04": self._monthly_wb_04,
+            "monthly_wind": self._monthly_wind,
+            "monthly_wind_dirs": self._monthly_wind_dirs,
+            "standard_pressure_at_elev": self.standard_pressure_at_elev,
+            "monthly_tau_beam": self.monthly_tau_beam,
+            "monthly_tau_diffuse": self.monthly_tau_diffuse
+        }
 
     @property
     def isStat(self):
