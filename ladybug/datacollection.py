@@ -36,6 +36,7 @@ from .analysisperiod import AnalysisPeriod
 from .dt import DateTime
 
 from collections import OrderedDict
+from collections import Iterable
 try:
     from itertools import izip as zip  # python 2
 except ImportError:
@@ -59,10 +60,10 @@ class HourlyDiscontinuousCollection(BaseCollection):
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
-        assert isinstance(datetimes, (list, tuple)), \
-            'datetimes must be a list or tuple. Got {}'.format(type(datetimes))
-        if isinstance(datetimes, tuple):
-            datetimes = list(datetimes)
+        assert isinstance(datetimes, Iterable) \
+            and not isinstance(datetimes, (str, dict)), \
+            'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
+        datetimes = list(datetimes)
 
         self._header = header
         self._datetimes = datetimes
@@ -411,10 +412,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
     @values.setter
     def values(self, values):
-        assert isinstance(values, (list, tuple)), \
-            'values must be a list or a tuple. Got {}'.format(type(values))
-        if isinstance(values, tuple):
-            values = list(values)
+        assert isinstance(values, Iterable) and not isinstance(values, (str, dict)), \
+            'values should be a list or tuple. Got {}'.format(type(values))
+        values = list(values)
         if self.header.analysis_period.is_annual:
             a_period_len = 8760 * self.header.analysis_period.timestep
             if self.header.analysis_period.is_leap_year is True:
@@ -774,10 +774,10 @@ class DailyCollection(BaseCollection):
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
-        assert isinstance(datetimes, (list, tuple)), \
-            'datetimes must be a list or a tuple. Got {}'.format(type(datetimes))
-        if isinstance(datetimes, tuple):
-            datetimes = list(datetimes)
+        assert isinstance(datetimes, Iterable) \
+            and not isinstance(datetimes, (str, dict)), \
+            'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
+        datetimes = list(datetimes)
 
         self._header = header
         self._datetimes = datetimes
@@ -844,10 +844,10 @@ class MonthlyCollection(BaseCollection):
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
-        assert isinstance(datetimes, (list, tuple)), \
-            'datetimes must be a list or a tuple. Got {}'.format(type(datetimes))
-        if isinstance(datetimes, tuple):
-            datetimes = list(datetimes)
+        assert isinstance(datetimes, Iterable) \
+            and not isinstance(datetimes, (str, dict)), \
+            'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
+        datetimes = list(datetimes)
 
         self._header = header
         self._datetimes = datetimes
@@ -914,10 +914,10 @@ class MonthlyPerHourCollection(BaseCollection):
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
-        assert isinstance(datetimes, (list, tuple)), \
-            'datetimes must be a list or a tuple. Got {}'.format(type(datetimes))
-        if isinstance(datetimes, tuple):
-            datetimes = list(datetimes)
+        assert isinstance(datetimes, Iterable) \
+            and not isinstance(datetimes, (str, dict)), \
+            'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
+        datetimes = list(datetimes)
 
         self._header = header
         self._datetimes = datetimes

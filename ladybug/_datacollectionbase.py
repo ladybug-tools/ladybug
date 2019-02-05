@@ -5,6 +5,7 @@ from __future__ import division
 
 from .header import Header
 
+from collections import Iterable
 from string import ascii_lowercase
 import math
 import sys
@@ -28,10 +29,10 @@ class BaseCollection(object):
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
-        assert isinstance(datetimes, (list, tuple)), \
-            'datetimes must be a list or tuple. Got {}'.format(type(datetimes))
-        if isinstance(datetimes, tuple):
-            datetimes = list(datetimes)
+        assert isinstance(datetimes, Iterable) \
+            and not isinstance(datetimes, (str, dict)), \
+            'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
+        datetimes = list(datetimes)
 
         self._header = header
         self._datetimes = datetimes
@@ -70,10 +71,9 @@ class BaseCollection(object):
 
     @values.setter
     def values(self, values):
-        assert isinstance(values, (list, tuple)), \
-            'values must be a list or tuple. Got {}'.format(type(values))
-        if isinstance(values, tuple):
-            values = list(values)
+        assert isinstance(values, Iterable) and not isinstance(values, (str, dict)), \
+            'values should be a list or tuple. Got {}'.format(type(values))
+        values = list(values)
         assert len(values) == len(self.datetimes), \
             'Length of values list must match length of datetimes list. {} != {}'.format(
                 len(values), len(self.datetimes))

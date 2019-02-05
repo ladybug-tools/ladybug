@@ -37,6 +37,24 @@ class DataCollectionTestCase(unittest.TestCase):
         str(dc1)  # Test the string representation of the collection
         str(dc1.header)  # Test the string representation of the header
 
+    def test_init_incorrect(self):
+        """Test the init methods for base collections with incorrect inputs."""
+        a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+        dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
+        v1, v2 = 20, 25
+        avg = (v1 + v2) / 2
+
+        dc1 = BaseCollection(Header(Temperature(), 'C', a_per), [v1, v2], [dt1, dt2])
+        dc1 = BaseCollection(Header(Temperature(), 'C', a_per), [v1, v2], (dt1, dt2))
+        dc1 = BaseCollection(Header(Temperature(), 'C', a_per), [v1, v2], xrange(2))
+        assert dc1.average == avg
+        with pytest.raises(Exception):
+            dc1 = BaseCollection(Header(Temperature(), 'C', a_per), [v1, v2], 'te')
+
+        with pytest.raises(Exception):
+            dc1 = BaseCollection(Header(Temperature(), 'C', a_per),
+                                 [v1, v2], {'1': 1, '2': 2})
+
     def test_init_hourly(self):
         """Test the init methods for dicontinuous collections."""
         a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
