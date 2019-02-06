@@ -6,6 +6,7 @@ import os
 import shutil
 import zipfile
 import sys
+import csv
 
 if (sys.version_info < (3, 0)):
     import urllib2
@@ -277,3 +278,29 @@ def unzip_file(source_file, dest_dir=None, mkdir=False):
                     continue
                 dest_dir = os.path.join(dest_dir, word)
             zf.extract(member, dest_dir)
+
+
+def csv_to_matrix(csv_file_path):
+    """Load a CSV file into a Python matrix of strings.
+
+    Args:
+        csv_file_path: Full path to a valid CSV file (e.g. c:/ladybug/test.csv)
+    """
+    mtx = []
+    with open(csv_file_path) as csvDataFile:
+        csv_reader = csv.reader(csvDataFile)
+        for row in csv_reader:
+            mtx.append(row)
+
+
+def csv_to_numerical_matrix(csv_file_path):
+    """Load a CSV file consisting only of numbers into a Python matrix of floats.
+
+    Args:
+        csv_file_path: Full path to a valid CSV file (e.g. c:/ladybug/test.csv)
+    """
+    mtx = []
+    with open(csv_file_path) as csvDataFile:
+        csv_reader = csv.reader(csvDataFile)
+        for row in csv_reader:
+            mtx.append([float(val) for val in row])

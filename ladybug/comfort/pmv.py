@@ -18,7 +18,7 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
     Fanger's original equation (> 0.1 m/s).
 
     Note:
-        [1] ASHRAE Standard 55 (2010). "Thermal Environmental Conditions
+        [1] ASHRAE Standard 55 (2017). "Thermal Environmental Conditions
         for Human Occupancy".
 
         [2] Hoyt Tyler, Schiavon Stefano, Piccioli Alberto, Cheung Toby, Moon Dustin,
