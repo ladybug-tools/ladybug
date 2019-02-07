@@ -11,17 +11,21 @@ https://escholarship.org/uc/item/89m1h2dg
 [2] ASHRAE Standard 55 (2017). "Thermal Environmental Conditions for Human Occupancy".
 """
 from __future__ import division
+from os.path import dirname, abspath
+import inspect
+import math
 
 from ..skymodel import sky_temperature
-from ..futil import csv_to_numerical_matrix
+from ..futil import csv_to_num_matrix
 try:
+    cur_dir = dirname(abspath(inspect.getfile(inspect.currentframe())))
     projection_splines = {
-        'seated': csv_to_numerical_matrix('./mannequindata/seatedspline.csv'),
-        'standing': csv_to_numerical_matrix('./mannequindata/standingspline.csv')}
+        'seated': csv_to_num_matrix(cur_dir + '/mannequindata/seatedspline.csv'),
+        'standing': csv_to_num_matrix(cur_dir + '/mannequindata/standingspline.csv')}
 except IOError:
     projection_splines = {}
-
-import math
+    print ('Failed to import projection factor splines from CSV.'
+           '\nA simpler interoplation method will be used')
 
 
 def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_solar,
@@ -29,7 +33,7 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
                           sky_view=1, fract_exposed=1, floor_reflectance=0.25,
                           posture='standing', body_azimuth=None,
                           body_absortivity=0.7, body_emissivity=0.95):
-    """Perform a full outdoor sky radiant heat exchange using typical data.
+    """Perform a full outdoor sky radiant heat exchange.
 
     Args:
         srfs_temp: The temperature of surfaces around the person in degrees
@@ -61,33 +65,208 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
             back to the sun at all times in order to avoid glare.
         body_absortivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
-            Default is 0.7 for average (brown) skin and medium-bright clothing.
+            Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
+            Typical skin values - white: 0.57, brown: 0.65, black: 0.84
+            Default is 0.7 for average (brown) skin and medium clothing.
         body_emissivity: A number between 0 and 1 representing the average
             longwave emissivity of the body.  Default is 0.95, which is almost
             always the case except in rare situations of wearing metalic clothing.
+
+    Returns:
+        heat_exch_result: A dictionary containing results with the following keys:
+            s_erf : The shortwave effective radiant field (ERF) in W/m2.
+            s_dmrt : The MRT delta as a result of shortwave irradinace in C.
+            l_erf : The longwave effective radiant field (ERF) in W/m2.
+            l_dmrt : The MRT delta as a result of longwave sky exchange in C.
+            mrt: The final MRT expereinced as a result of sky heat excahnge in C.
     """
+    # set defaults using the input parameters
     fract_efficiency = 0.696 if posture == 'seated' else 0.725
-    sharp = 135
     if body_azimuth is not None:
         sharp = sharp_from_solar_and_body_azimuth(solar_azimuth, body_azimuth)
-    short_sol = body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar,
-                                           solar_altitude, sharp, sky_view,
-                                           fract_exposed, floor_reflectance, posture)
-    short_erf = erf_from_solar_flux(short_sol, body_absortivity, body_emissivity)
-    short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
+    else:
+        sharp = 135
 
+    # calculate the influence of shorwave irradiance
+    if solar_altitude > 0:
+        s_flux = body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar,
+                                            solar_altitude, sharp, sky_view,
+                                            fract_exposed, floor_reflectance, posture)
+        short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
+        short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
+    else:
+        short_erf = 0
+        short_mrt_delta = 0
+
+    # calculate the influence of longwave heat exchange with the sky
     long_mrt_delta = longwave_mrt_delta_from_horiz_ir(horiz_ir, srfs_temp,
                                                       sky_view, body_emissivity)
     long_erf = erf_from_mrt_delta(long_mrt_delta, fract_efficiency)
 
+    # calculate final MRT as a result of both longwave and shortwave heat exchange
     sky_adjusted_mrt = srfs_temp + short_mrt_delta + long_mrt_delta
-
     heat_exch_result = {
-        'short_erf': short_erf,
-        'short_dmrt': short_mrt_delta,
-        'long_erf': long_erf,
-        'long_dmrt': long_mrt_delta,
-        'full_mrt': sky_adjusted_mrt
+        's_erf': short_erf,
+        's_dmrt': short_mrt_delta,
+        'l_erf': long_erf,
+        'l_dmrt': long_mrt_delta,
+        'mrt': sky_adjusted_mrt
+    }
+    return heat_exch_result
+
+
+def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
+                         solar_altitude, solar_azimuth,
+                         sky_view=1, fract_exposed=1, floor_reflectance=0.25,
+                         posture='seated', body_azimuth=None,
+                         body_absortivity=0.7, body_emissivity=0.95):
+    """Perform a full indoor sky radiant heat exchange.
+
+    Args:
+        longwave_mrt: The longwave mean radiant temperature (MRT) expereinced
+            as a result of indoor surface temperatures in C.
+        diff_horiz_solar: Diffuse horizontal solar irradiance in W/m2.
+        dir_normal_solar: Direct normal solar irradiance in W/m2.
+        solar_altitude: The altitude of the sun in degrees [0-90].
+        solar_azimuth: The azimuth of the sun in degrees [0-360].
+        sky_view: A number between 0 and 1 representing the fraction of the
+            sky vault in occupant’s view. Default is 1 for outdoors in an
+            open field.
+        fract_exposed: A number between 0 and 1 representing the fraction of
+            the body exposed to direct sunlight. Note that this does not include the
+            body’s self-shading; only the shading from surroundings.
+            Default is 1 for a person standing in an open area.
+        floor_reflectance: A number between 0 and 1 the represents the
+            reflectance of the floor. Default is for 0.25 which is characteristic
+            of outdoor grass or dry bare soil.
+        posture: A text string indicating the posture of the body. Letters must
+            be lowercase.  Choose from the following: "standing", "seated", "supine".
+            Default is "standing".
+        body_azimuth: A number between 0 and 360 representing the direction that
+            the human is facing in degrees (0=North, 90=East, 180=South, 270=West).
+            Default is None, which will assume that the person is always facing 135
+            degrees from the sun, meaning that the person faces their side or
+            back to the sun at all times in order to avoid glare.
+        body_absortivity: A number between 0 and 1 representing the average
+            shortwave absorptivity of the body (including clothing and skin color).
+            Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
+            Typical skin values - white: 0.57, brown: 0.65, black: 0.84
+            Default is 0.7 for average (brown) skin and medium clothing.
+        body_emissivity: A number between 0 and 1 representing the average
+            longwave emissivity of the body.  Default is 0.95, which is almost
+            always the case except in rare situations of wearing metalic clothing.
+
+    Returns:
+        heat_exch_result: A dictionary containing results with the following keys:
+            erf : The shortwave effective radiant field (ERF) in W/m2.
+            dmrt : The MRT delta as a result of shortwave irradinace in C.
+            mrt: The final MRT expereinced as a result of sky heat excahnge in C.
+    """
+    # set defaults using the input parameters
+    fract_efficiency = 0.696 if posture == 'seated' else 0.725
+    if body_azimuth is not None:
+        sharp = sharp_from_solar_and_body_azimuth(solar_azimuth, body_azimuth)
+    else:
+        sharp = 135
+
+    # calculate the influence of shorwave irradiance
+    if solar_altitude > 0:
+        s_flux = body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar,
+                                            solar_altitude, sharp, sky_view,
+                                            fract_exposed, floor_reflectance, posture)
+        short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
+        short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
+    else:
+        short_erf = 0
+        short_mrt_delta = 0
+
+    # calculate final MRT
+    sky_adjusted_mrt = longwave_mrt + short_mrt_delta
+    heat_exch_result = {
+        'erf': short_erf,
+        'dmrt': short_mrt_delta,
+        'mrt': sky_adjusted_mrt
+    }
+    return heat_exch_result
+
+
+def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar,
+                               solar_altitude, solar_azimuth,
+                               fract_exposed=1, floor_reflectance=0.25,
+                               posture='standing', body_azimuth=None,
+                               body_absortivity=0.7, body_emissivity=0.95):
+    """Perform a shortwave radiant heat exchange using horizontal solar components.
+
+    This is useful when building a map of MRT using the direct and diffuse
+    results of a Radiance study instead of the solar components directly from
+    an EPW or Wea file.  Note that all input radiation components should already
+    account for the amount of sky seen and solar heat reflections off of surfaces.
+
+    Args:
+        longwave_mrt: The longwave mean radiant temperature (MRT) expereinced
+            as a result of indoor surface temperatures in C.
+        horiz_ir: The horizontal infrared radiation intensity from the sky in W/m2.
+        diff_horiz_solar: Diffuse horizontal solar irradiance in W/m2.
+        dir_horiz_solar: Direct horizontal solar irradiance in W/m2.
+        solar_altitude: The altitude of the sun in degrees [0-90].
+        solar_azimuth: The azimuth of the sun in degrees [0-360].
+        sky_view: A number between 0 and 1 representing the fraction of the
+            sky vault in occupant’s view. Default is 1 for outdoors in an
+            open field.
+        fract_exposed: A number between 0 and 1 representing the fraction of
+            the body exposed to direct sunlight. Note that this does not include the
+            body’s self-shading; only the shading from surroundings.
+            Default is 1 for a person standing in an open area.
+        floor_reflectance: A number between 0 and 1 the represents the
+            reflectance of the floor. Default is for 0.25 which is characteristic
+            of outdoor grass or dry bare soil.
+        posture: A text string indicating the posture of the body. Letters must
+            be lowercase.  Choose from the following: "standing", "seated", "supine".
+            Default is "standing".
+        body_azimuth: A number between 0 and 360 representing the direction that
+            the human is facing in degrees (0=North, 90=East, 180=South, 270=West).
+            Default is None, which will assume that the person is always facing 135
+            degrees from the sun, meaning that the person faces their side or
+            back to the sun at all times in order to avoid glare.
+        body_absortivity: A number between 0 and 1 representing the average
+            shortwave absorptivity of the body (including clothing and skin color).
+            Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
+            Typical skin values - white: 0.57, brown: 0.65, black: 0.84
+            Default is 0.7 for average (brown) skin and medium clothing.
+        body_emissivity: A number between 0 and 1 representing the average
+            longwave emissivity of the body.  Default is 0.95, which is almost
+            always the case except in rare situations of wearing metalic clothing.
+
+    Returns:
+        heat_exch_result: A dictionary containing results with the following keys:
+            erf : The shortwave effective radiant field (ERF) in W/m2.
+            dmrt : The MRT delta as a result of shortwave irradinace in C.
+            mrt: The final MRT expereinced as a result of sky heat excahnge in C.
+    """
+    # set defaults using the input parameters
+    fract_efficiency = 0.696 if posture == 'seated' else 0.725
+    if body_azimuth is not None:
+        sharp = sharp_from_solar_and_body_azimuth(solar_azimuth, body_azimuth)
+    else:
+        sharp = 135
+
+    # calculate the influence of shorwave irradiance
+    if solar_altitude > 0:
+        s_flux = body_solar_flux_from_horiz_parts(diff_horiz_solar, dir_horiz_solar,
+                                                  solar_altitude, sharp, fract_exposed,
+                                                  floor_reflectance, posture)
+        short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
+        short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
+    else:
+        short_erf = 0
+        short_mrt_delta = 0
+
+    # calculate final MRT as a result of both longwave and shortwave heat exchange
+    sky_adjusted_mrt = longwave_mrt + short_mrt_delta
+    heat_exch_result = {
+        'erf': short_erf,
+        'dmrt': short_mrt_delta,
+        'mrt': sky_adjusted_mrt
     }
     return heat_exch_result
 
@@ -164,14 +343,16 @@ def longwave_mrt_delta_from_sky_temp(sky_temp, srfs_temp, sky_view=1):
     return 0.5 * sky_view * (sky_temp - srfs_temp)
 
 
-def erf_from_solar_flux(solar_flux, body_absortivity=0.7, body_emissivity=0.95):
+def erf_from_body_solar_flux(solar_flux, body_absortivity=0.7, body_emissivity=0.95):
     """Calculate effective radiant field (ERF) from incident solar flux on body in W/m2.
 
     Args:
         solar_flux: A number for the average solar flux over the human body in W/m2.
         body_absortivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
-            Default is 0.7 for average (brown) skin and medium-bright clothing.
+            Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
+            Typical skin values - white: 0.57, brown: 0.65, black: 0.84
+            Default is 0.7 for average (brown) skin and medium clothing.
         body_emissivity: A number between 0 and 1 representing the average
             longwave emissivity of the body.  Default is 0.95, which is almost
             always the case except in rare situations of wearing metalic clothing.
@@ -314,7 +495,10 @@ def body_dir_from_dir_horiz(dir_horiz_solar, altitude, sharp=135,
             the body’s self-shading; only the shading from surroundings.
             Default is 1 for a person in an open area.
     """
-    proj_fac = get_projection_factor(altitude, sharp, posture)
+    try:
+        proj_fac = get_projection_factor(altitude, sharp, posture)
+    except KeyError:
+        proj_fac = get_projection_factor_simple(altitude, sharp, posture)
     dir_normal_solar = dir_horiz_solar / math.sin(math.radians(altitude))
     return proj_fac * fract_exposed * dir_normal_solar
 
@@ -340,7 +524,10 @@ def body_dir_from_dir_normal(dir_normal_solar, altitude, sharp=135,
             the body’s self-shading; only the shading from surroundings.
             Default is 1 for a person in an open area.
     """
-    proj_fac = get_projection_factor(altitude, sharp, posture)
+    try:
+        proj_fac = get_projection_factor(altitude, sharp, posture)
+    except KeyError:
+        proj_fac = get_projection_factor_simple(altitude, sharp, posture)
     return proj_fac * fract_exposed * dir_normal_solar
 
 
@@ -383,7 +570,7 @@ def get_projection_factor(altitude, sharp=135, posture='standing'):
     return projection_splines[posture][sharp][altitude]
 
 
-def get_projection_area_simple(altitude, sharp=135, posture='standing'):
+def get_projection_factor_simple(altitude, sharp=135, posture='standing'):
     """Get the fraction of body surface area exposed to direct sun using a simpler method.
 
     This is effectively Ap / Ad in the original Solarcal equations.
