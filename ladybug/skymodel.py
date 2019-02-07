@@ -267,7 +267,7 @@ def horizontal_infrared(sky_cover, dry_bulb, dew_point):
     return horiz_ir
 
 
-def sky_temperature(horiz_ir, source_emissivity=1):
+def calc_sky_temperature(horiz_ir, source_emissivity=1):
     """Calculate sky temperature in Celcius.
 
     See EnergyPlus Enrineering Reference for more information:

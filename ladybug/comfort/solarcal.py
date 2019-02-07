@@ -12,7 +12,7 @@ https://escholarship.org/uc/item/89m1h2dg
 """
 from __future__ import division
 
-from ..skymodel import sky_temperature
+from ..skymodel import calc_sky_temperature
 from .__init__ import SOLARCALSPLINES
 
 import math
@@ -310,7 +310,7 @@ def longwave_mrt_delta_from_horiz_ir(horiz_ir, srfs_temp, sky_view=1,
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
     """
-    sky_temp = sky_temperature(horiz_ir, body_emissivity)
+    sky_temp = calc_sky_temperature(horiz_ir, body_emissivity)
     return longwave_mrt_delta_from_sky_temp(sky_temp, srfs_temp, sky_view)
 
 
@@ -558,7 +558,7 @@ def get_projection_factor(altitude, sharp=135, posture='standing'):
         altitude, sharp = transpose_altitude_azimuth(altitude, sharp)
         altitude = 1 if altitude == 0 else altitude
         posture = 'standing'
-    return SOLARCALSPLINES[posture][int(sharp)][math.ceil(altitude) - 1]
+    return SOLARCALSPLINES[posture][int(sharp)][int(math.ceil(altitude) - 1)]
 
 
 def get_projection_factor_simple(altitude, sharp=135, posture='standing'):
