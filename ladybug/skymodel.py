@@ -267,30 +267,25 @@ def calc_horizontal_infrared(sky_cover, dry_bulb, dew_point):
     return horiz_ir
 
 
-def calc_sky_temperature(horiz_ir, dry_bulb):
+def calc_sky_temperature(horiz_ir, source_emissivity=1):
     """Calculate sky temperature in Celcius.
 
     See EnergyPlus Enrineering Reference for more information:
-    https://bigladdersoftware.com/epx/docs/8-9/engineering-reference/climate-calculations.html#energyplus-sky-temperature-calculation
+    https://bigladdersoftware.com/epx/docs/8-9/engineering-reference/
+    climate-calculations.html#energyplus-sky-temperature-calculation
 
     Args:
         horiz_ir: A float value that represents horizontal infrared radiation
             intensity in W/m2.
-        dry_bulb: A float value that represents the dry bulb temperature
-            in degrees C.
+        source_emissivity: A float value between 0 and 1 indicating the emissivity
+             of the heat source that is radiating to the sky. Default is 1 for
+             most outdoor surfaces.
 
     Returns:
         sky_temp: A sky temperature value in C.
     """
-    # stefan-boltzmann constant
-    SIGMA = 5.6697e-8
-
-    # convert to kelvin
-    db_k = dry_bulb + 273.15
-
-    # calculate sky temperature
-    sky_temp = ((horiz_ir / SIGMA) ** 0.25) - db_k
-    return sky_temp
+    sigma = 5.6697e-8  # stefan-boltzmann constant
+    return ((horiz_ir / (source_emissivity * sigma)) ** 0.25) - 273.15
 
 
 """DIRECT AND DIFFUSE SPLITTING FROM GLOBAL HORIZONTAL"""

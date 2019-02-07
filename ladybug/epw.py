@@ -1288,10 +1288,7 @@ class EPW(object):
 
         # calculate sy temperature for each hour
         horiz_ir = self._get_data_by_field(12).values
-        db_temp = self._get_data_by_field(6).values
-        sky_temp_data = []
-        for hir, dbt in zip(horiz_ir, db_temp):
-            sky_temp_data.append(calc_sky_temperature(hir, dbt))
+        sky_temp_data = [calc_sky_temperature(hir) for hir in horiz_ir]
         return HourlyContinuousCollection(sky_temp_header, sky_temp_data)
 
     def _get_wea_header(self):
