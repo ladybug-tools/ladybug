@@ -11,21 +11,11 @@ https://escholarship.org/uc/item/89m1h2dg
 [2] ASHRAE Standard 55 (2017). "Thermal Environmental Conditions for Human Occupancy".
 """
 from __future__ import division
-from os.path import dirname, abspath
-import inspect
-import math
 
 from ..skymodel import sky_temperature
-from ..futil import csv_to_num_matrix
-try:
-    cur_dir = dirname(abspath(inspect.getfile(inspect.currentframe())))
-    projection_splines = {
-        'seated': csv_to_num_matrix(cur_dir + '/mannequindata/seatedspline.csv'),
-        'standing': csv_to_num_matrix(cur_dir + '/mannequindata/standingspline.csv')}
-except IOError:
-    projection_splines = {}
-    print ('Failed to import projection factor splines from CSV.'
-           '\nA simpler interoplation method will be used')
+from .__init__ import SOLARCALSPLINES
+
+import math
 
 
 def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_solar,
@@ -405,8 +395,8 @@ def body_solar_flux_from_horiz_parts(diff_horiz_solar, dir_horiz_solar, altitude
     """Estimate total solar flux on human geometry from horizontal solar components.
 
     This method is useful for cases when one wants to take the hourly results
-    of a radiation study and use them to estimate an ERF or MRT delta on a
-    person at each location of the study.
+    of a spatial radiation study with Radiance and use them to build a map
+    of ERF or MRT delta on a person.
 
     Args:
         diff_horiz_solar: Diffuse horizontal solar irradiance in W/m2.
@@ -429,9 +419,9 @@ def body_solar_flux_from_horiz_parts(diff_horiz_solar, dir_horiz_solar, altitude
             Default is "standing".
     """
     fract_eff = 0.696 if posture == 'seated' else 0.725
-    glob_horiz = diff_horiz_solar + diff_horiz_solar
+    glob_horiz = diff_horiz_solar + dir_horiz_solar
 
-    dir_solar = body_dir_from_dir_horiz(diff_horiz_solar, altitude, sharp,
+    dir_solar = body_dir_from_dir_horiz(dir_horiz_solar, altitude, sharp,
                                         posture, fract_exposed)
     diff_solar = body_diff_from_diff_horiz(diff_horiz_solar, 1, fract_eff)
     ref_solar = body_ref_from_glob_horiz(glob_horiz, floor_reflectance, 1, fract_eff)
@@ -541,10 +531,10 @@ def sharp_from_solar_and_body_azimuth(solar_azimuth, body_azimuth=0):
             the human is facing in degrees (0=North, 90=East, 180=South, 270=West).
     """
     angle_diff = abs(solar_azimuth - body_azimuth)
-    if angle_diff < 180:
+    if angle_diff <= 180:
         return angle_diff
     else:
-        return 180 - angle_diff
+        return angle_diff - 180
 
 
 def get_projection_factor(altitude, sharp=135, posture='standing'):
@@ -566,8 +556,9 @@ def get_projection_factor(altitude, sharp=135, posture='standing'):
     """
     if posture == 'supine':
         altitude, sharp = transpose_altitude_azimuth(altitude, sharp)
+        altitude = 1 if altitude == 0 else altitude
         posture = 'standing'
-    return projection_splines[posture][sharp][altitude]
+    return SOLARCALSPLINES[posture][int(sharp)][math.ceil(altitude) - 1]
 
 
 def get_projection_factor_simple(altitude, sharp=135, posture='standing'):
@@ -596,32 +587,32 @@ def get_projection_factor_simple(altitude, sharp=135, posture='standing'):
         posture = 'standing'
 
     if posture == 'standing':
-        ap_table = ((0.254, 0.254, 0.228, 0.187, 0.149, 0.104, 0.059)
-                    (0.248, 0.248, 0.225, 0.183, 0.145, 0.102, 0.059)
-                    (0.239, 0.239, 0.218, 0.177, 0.138, 0.096, 0.059)
-                    (0.225, 0.225, 0.199, 0.165, 0.127, 0.09, 0.059)
-                    (0.205, 0.205, 0.182, 0.151, 0.116, 0.083, 0.059)
-                    (0.183, 0.183, 0.165, 0.136, 0.109, 0.078, 0.059)
-                    (0.167, 0.167, 0.155, 0.131, 0.107, 0.078, 0.059)
-                    (0.175, 0.175, 0.161, 0.131, 0.111, 0.081, 0.059)
-                    (0.199, 0.199, 0.178, 0.147, 0.12, 0.084, 0.059)
-                    (0.22, 0.22, 0.196, 0.16, 0.126, 0.088, 0.059)
-                    (0.238, 0.238, 0.21, 0.17, 0.133, 0.091, 0.059)
-                    (0.249, 0.249, 0.22, 0.177, 0.138, 0.093, 0.059)
+        ap_table = ((0.254, 0.254, 0.228, 0.187, 0.149, 0.104, 0.059),
+                    (0.248, 0.248, 0.225, 0.183, 0.145, 0.102, 0.059),
+                    (0.239, 0.239, 0.218, 0.177, 0.138, 0.096, 0.059),
+                    (0.225, 0.225, 0.199, 0.165, 0.127, 0.09, 0.059),
+                    (0.205, 0.205, 0.182, 0.151, 0.116, 0.083, 0.059),
+                    (0.183, 0.183, 0.165, 0.136, 0.109, 0.078, 0.059),
+                    (0.167, 0.167, 0.155, 0.131, 0.107, 0.078, 0.059),
+                    (0.175, 0.175, 0.161, 0.131, 0.111, 0.081, 0.059),
+                    (0.199, 0.199, 0.178, 0.147, 0.12, 0.084, 0.059),
+                    (0.22, 0.22, 0.196, 0.16, 0.126, 0.088, 0.059),
+                    (0.238, 0.238, 0.21, 0.17, 0.133, 0.091, 0.059),
+                    (0.249, 0.249, 0.22, 0.177, 0.138, 0.093, 0.059),
                     (0.252, 0.252, 0.223, 0.178, 0.138, 0.093, 0.059))
     elif posture == 'seated':
-        ap_table = ((0.202, 0.226, 0.212, 0.211, 0.182, 0.156, 0.123)
-                    (0.203, 0.228, 0.205, 0.2, 0.187, 0.158, 0.123)
-                    (0.2, 0.231, 0.207, 0.202, 0.184, 0.155, 0.123)
-                    (0.191, 0.227, 0.205, 0.201, 0.175, 0.149, 0.123)
-                    (0.177, 0.214, 0.195, 0.192, 0.168, 0.141, 0.123)
-                    (0.16, 0.196, 0.182, 0.181, 0.162, 0.134, 0.123)
-                    (0.15, 0.181, 0.173, 0.17, 0.153, 0.129, 0.123)
-                    (0.163, 0.18, 0.164, 0.158, 0.145, 0.125, 0.123)
-                    (0.182, 0.181, 0.156, 0.145, 0.136, 0.122, 0.123)
-                    (0.195, 0.181, 0.146, 0.134, 0.128, 0.118, 0.123)
-                    (0.207, 0.178, 0.135, 0.121, 0.117, 0.117, 0.123)
-                    (0.213, 0.174, 0.125, 0.109, 0.109, 0.116, 0.123)
+        ap_table = ((0.202, 0.226, 0.212, 0.211, 0.182, 0.156, 0.123),
+                    (0.203, 0.228, 0.205, 0.2, 0.187, 0.158, 0.123),
+                    (0.2, 0.231, 0.207, 0.202, 0.184, 0.155, 0.123),
+                    (0.191, 0.227, 0.205, 0.201, 0.175, 0.149, 0.123),
+                    (0.177, 0.214, 0.195, 0.192, 0.168, 0.141, 0.123),
+                    (0.16, 0.196, 0.182, 0.181, 0.162, 0.134, 0.123),
+                    (0.15, 0.181, 0.173, 0.17, 0.153, 0.129, 0.123),
+                    (0.163, 0.18, 0.164, 0.158, 0.145, 0.125, 0.123),
+                    (0.182, 0.181, 0.156, 0.145, 0.136, 0.122, 0.123),
+                    (0.195, 0.181, 0.146, 0.134, 0.128, 0.118, 0.123),
+                    (0.207, 0.178, 0.135, 0.121, 0.117, 0.117, 0.123),
+                    (0.213, 0.174, 0.125, 0.109, 0.109, 0.116, 0.123),
                     (0.209, 0.167, 0.117, 0.106, 0.106, 0.114, 0.123))
     else:
         raise TypeError('Posture type {} is not recognized.'.format(posture))
