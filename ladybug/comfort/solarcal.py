@@ -20,7 +20,7 @@ import math
 
 def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_solar,
                           solar_altitude, solar_azimuth,
-                          sky_view=1, fract_exposed=1, floor_reflectance=0.25,
+                          sky_exposure=1, fract_exposed=1, floor_reflectance=0.25,
                           posture='standing', body_azimuth=None,
                           body_absortivity=0.7, body_emissivity=0.95):
     """Perform a full outdoor sky radiant heat exchange.
@@ -35,7 +35,7 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
         dir_normal_solar: Direct normal solar irradiance in W/m2.
         solar_altitude: The altitude of the sun in degrees [0-90].
         solar_azimuth: The azimuth of the sun in degrees [0-360].
-        sky_view: A number between 0 and 1 representing the fraction of the
+        sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
         fract_exposed: A number between 0 and 1 representing the fraction of
@@ -80,7 +80,7 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
     # calculate the influence of shorwave irradiance
     if solar_altitude > 0:
         s_flux = body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar,
-                                            solar_altitude, sharp, sky_view,
+                                            solar_altitude, sharp, sky_exposure,
                                             fract_exposed, floor_reflectance, posture)
         short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
         short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
@@ -90,7 +90,7 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
 
     # calculate the influence of longwave heat exchange with the sky
     long_mrt_delta = longwave_mrt_delta_from_horiz_ir(horiz_ir, srfs_temp,
-                                                      sky_view, body_emissivity)
+                                                      sky_exposure, body_emissivity)
     long_erf = erf_from_mrt_delta(long_mrt_delta, fract_efficiency)
 
     # calculate final MRT as a result of both longwave and shortwave heat exchange
@@ -107,7 +107,8 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
 
 def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
                          solar_altitude, solar_azimuth,
-                         sky_view=1, fract_exposed=1, floor_reflectance=0.25,
+                         sky_exposure=1, fract_exposed=1, floor_reflectance=0.25,
+                         window_transmittance=1,
                          posture='seated', body_azimuth=None,
                          body_absortivity=0.7, body_emissivity=0.95):
     """Perform a full indoor sky radiant heat exchange.
@@ -119,7 +120,7 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
         dir_normal_solar: Direct normal solar irradiance in W/m2.
         solar_altitude: The altitude of the sun in degrees [0-90].
         solar_azimuth: The azimuth of the sun in degrees [0-360].
-        sky_view: A number between 0 and 1 representing the fraction of the
+        sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
         fract_exposed: A number between 0 and 1 representing the fraction of
@@ -129,6 +130,10 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
         floor_reflectance: A number between 0 and 1 the represents the
             reflectance of the floor. Default is for 0.25 which is characteristic
             of outdoor grass or dry bare soil.
+        window_transmittance: A number between 0 and 1 that represents the
+            transmittance of the window through which shortwave solar is coming.
+            Default is 1 assuming that window transmittance is accounted for
+            outside of this function.
         posture: A text string indicating the posture of the body. Letters must
             be lowercase.  Choose from the following: "standing", "seated", "supine".
             Default is "standing".
@@ -162,8 +167,9 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
     # calculate the influence of shorwave irradiance
     if solar_altitude > 0:
         s_flux = body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar,
-                                            solar_altitude, sharp, sky_view,
+                                            solar_altitude, sharp, sky_exposure,
                                             fract_exposed, floor_reflectance, posture)
+        s_flux = s_flux * window_transmittance
         short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
         short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
     else:
@@ -200,7 +206,7 @@ def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar,
         dir_horiz_solar: Direct horizontal solar irradiance in W/m2.
         solar_altitude: The altitude of the sun in degrees [0-90].
         solar_azimuth: The azimuth of the sun in degrees [0-360].
-        sky_view: A number between 0 and 1 representing the fraction of the
+        sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
         fract_exposed: A number between 0 and 1 representing the fraction of
@@ -292,7 +298,7 @@ def erf_from_mrt_delta(mrt_delta, fract_efficiency=0.725, rad_trans_coeff=6.012)
     return mrt_delta * fract_efficiency * rad_trans_coeff
 
 
-def longwave_mrt_delta_from_horiz_ir(horiz_ir, srfs_temp, sky_view=1,
+def longwave_mrt_delta_from_horiz_ir(horiz_ir, srfs_temp, sky_exposure=1,
                                      body_emissivity=0.95):
     """Calculate the MRT delta as a result of longwave radiant exchange with the sky.
 
@@ -306,15 +312,15 @@ def longwave_mrt_delta_from_horiz_ir(horiz_ir, srfs_temp, sky_view=1,
             Celcius. This includes the ground and any other surfaces
             blocking the view to the sky. Typically, the dry bulb temperature
             is used when such surface temperatures are unknown.
-        sky_view: A number between 0 and 1 representing the fraction of the
+        sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
     """
     sky_temp = calc_sky_temperature(horiz_ir, body_emissivity)
-    return longwave_mrt_delta_from_sky_temp(sky_temp, srfs_temp, sky_view)
+    return longwave_mrt_delta_from_sky_temp(sky_temp, srfs_temp, sky_exposure)
 
 
-def longwave_mrt_delta_from_sky_temp(sky_temp, srfs_temp, sky_view=1):
+def longwave_mrt_delta_from_sky_temp(sky_temp, srfs_temp, sky_exposure=1):
     """Calculate the MRT delta as a result of longwave radiant exchange with the sky.
 
     Note that this value is typically negative since the earth (and humans)
@@ -326,11 +332,11 @@ def longwave_mrt_delta_from_sky_temp(sky_temp, srfs_temp, sky_view=1):
             Celcius. This includes the ground and any other surfaces
             blocking the view to the sky. Typically, the dry bulb temperature
             is used when such surface temperatures are unknown.
-        sky_view: A number between 0 and 1 representing the fraction of the
+        sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
     """
-    return 0.5 * sky_view * (sky_temp - srfs_temp)
+    return 0.5 * sky_exposure * (sky_temp - srfs_temp)
 
 
 def erf_from_body_solar_flux(solar_flux, body_absortivity=0.7, body_emissivity=0.95):
@@ -351,7 +357,7 @@ def erf_from_body_solar_flux(solar_flux, body_absortivity=0.7, body_emissivity=0
 
 
 def body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar, altitude,
-                               sharp=135, sky_view=1, fract_exposed=1,
+                               sharp=135, sky_exposure=1, fract_exposed=1,
                                floor_reflectance=0.25, posture='standing'):
     """Estimate the total solar flux on human geometry from solar components.
 
@@ -364,7 +370,7 @@ def body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar, altitude,
             shining directly into the person's face and 180 signifies sun that
             is shining at the person's back. Default is 135, asuming that a person
             typically faces their side or back to the sun to avoid glare.
-        sky_view: A number between 0 and 1 representing the fraction of the
+        sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
         fract_exposed: A number between 0 and 1 representing the fraction of
@@ -383,9 +389,9 @@ def body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar, altitude,
 
     dir_solar = body_dir_from_dir_normal(dir_normal_solar, altitude, sharp,
                                          posture, fract_exposed)
-    diff_solar = body_diff_from_diff_horiz(diff_horiz_solar, sky_view, fract_eff)
+    diff_solar = body_diff_from_diff_horiz(diff_horiz_solar, sky_exposure, fract_eff)
     ref_solar = body_ref_from_glob_horiz(glob_horiz, floor_reflectance,
-                                         sky_view, fract_eff)
+                                         sky_exposure, fract_eff)
     return dir_solar + diff_solar + ref_solar
 
 
@@ -428,12 +434,12 @@ def body_solar_flux_from_horiz_parts(diff_horiz_solar, dir_horiz_solar, altitude
     return dir_solar + diff_solar + ref_solar
 
 
-def body_diff_from_diff_horiz(diff_horiz_solar, sky_view=1, fract_efficiency=0.725):
+def body_diff_from_diff_horiz(diff_horiz_solar, sky_exposure=1, fract_efficiency=0.725):
     """Estimate the diffuse solar flux on human geometry from diffuse horizontal solar.
 
     Args:
         diff_horiz_solar: Diffuse horizontal solar irradiance in W/m2.
-        sky_view: A number between 0 and 1 representing the fraction of the
+        sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
         fract_efficiency: A number representing the fraction of the body
@@ -441,11 +447,11 @@ def body_diff_from_diff_horiz(diff_horiz_solar, sky_view=1, fract_efficiency=0.7
             either 0.725 for a standing or supine person or 0.696 for a seated
             person. Default is 0.725 for a standing person.
     """
-    return 0.5 * sky_view * fract_efficiency * diff_horiz_solar
+    return 0.5 * sky_exposure * fract_efficiency * diff_horiz_solar
 
 
 def body_ref_from_glob_horiz(glob_horiz_solar, floor_reflectance=0.25,
-                             sky_view=1, fract_efficiency=0.725):
+                             sky_exposure=1, fract_efficiency=0.725):
     """Estimate floor-reflected solar flux on human geometry from global horizontal solar.
 
     Args:
@@ -453,7 +459,7 @@ def body_ref_from_glob_horiz(glob_horiz_solar, floor_reflectance=0.25,
         floor_reflectance: A number between 0 and 1 the represents the
             reflectance of the floor. Default is for 0.25 which is characteristic
             of outdoor grass or dry bare soil.
-        sky_view: A number between 0 and 1 representing the fraction of the
+        sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
         fract_efficiency: A number representing the fraction of the body
@@ -461,7 +467,7 @@ def body_ref_from_glob_horiz(glob_horiz_solar, floor_reflectance=0.25,
             either 0.725 for a standing or supine person or 0.696 for a seated
             person. Default is 0.725 for a standing person.
     """
-    return 0.5 * sky_view * fract_efficiency * glob_horiz_solar * floor_reflectance
+    return 0.5 * sky_exposure * fract_efficiency * glob_horiz_solar * floor_reflectance
 
 
 def body_dir_from_dir_horiz(dir_horiz_solar, altitude, sharp=135,
@@ -558,7 +564,11 @@ def get_projection_factor(altitude, sharp=135, posture='standing'):
         altitude, sharp = transpose_altitude_azimuth(altitude, sharp)
         altitude = 1 if altitude == 0 else altitude
         posture = 'standing'
-    return SOLARCALSPLINES[posture][int(sharp)][int(math.ceil(altitude) - 1)]
+    try:
+        return SOLARCALSPLINES[posture][int(sharp)][int(math.ceil(altitude) - 1)]
+    except IndexError:
+        raise ValueError('altitude|azimuth {}|{} is outside of acceptable ranges'.format(
+            altitude, sharp))
 
 
 def get_projection_factor_simple(altitude, sharp=135, posture='standing'):
@@ -622,7 +632,7 @@ def get_projection_factor_simple(altitude, sharp=135, posture='standing'):
         for i in range(len(arr) - 1):
             if x <= arr[i+1] and x >= arr[i]:
                 return i
-        return -1
+        raise ValueError('altitude/azimuth {} is outside of acceptable ranges'.format(x))
 
     alt_range = (0, 15, 30, 45, 60, 75, 90)
     az_range = (0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180)

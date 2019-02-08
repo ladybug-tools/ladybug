@@ -36,6 +36,14 @@ class SolarcalTestCase(unittest.TestCase):
         assert sky_exch['l_dmrt'] == pytest.approx(-5.688, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(12.3120, rel=1e-2)
 
+        # Test with a body azimuth
+        sky_exch = outdoor_sky_heat_exch(22, 380, 200, 380, 45, 135, body_azimuth=180)
+        assert sky_exch['s_erf'] == pytest.approx(131.4791, rel=1e-2)
+        assert sky_exch['s_dmrt'] == pytest.approx(30.16476, rel=1e-2)
+        assert sky_exch['l_erf'] == pytest.approx(-11.6208, rel=1e-2)
+        assert sky_exch['l_dmrt'] == pytest.approx(-2.6661, rel=1e-2)
+        assert sky_exch['mrt'] == pytest.approx(49.49863, rel=1e-2)
+
     def test_indoor_sky_heat_exch(self):
         """Test the indoor_sky_heat_exch function"""
         # Test typical daytime condition
@@ -50,6 +58,13 @@ class SolarcalTestCase(unittest.TestCase):
         assert sky_exch['dmrt'] == pytest.approx(0, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(22, rel=1e-2)
 
+        # Test with a body azimuth
+        sky_exch = indoor_sky_heat_exch(
+            22, 200, 380, 45, 135, 0.5, 0.5, body_azimuth=180)
+        assert sky_exch['erf'] == pytest.approx(68.805, rel=1e-2)
+        assert sky_exch['dmrt'] == pytest.approx(16.44345, rel=1e-2)
+        assert sky_exch['mrt'] == pytest.approx(38.44345, rel=1e-2)
+
     def test_shortwave_from_horiz_solar(self):
         """Test the shortwave_from_horiz_solar function."""
         # Test typical daytime noon condition
@@ -63,6 +78,12 @@ class SolarcalTestCase(unittest.TestCase):
         assert sky_exch['erf'] == pytest.approx(157.33914, rel=1e-2)
         assert sky_exch['dmrt'] == pytest.approx(36.09772, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(58.09772, rel=1e-2)
+
+        # Test with a body azimuth
+        sky_exch = shortwave_from_horiz_solar(22, 120, 500, 45, 135, body_azimuth=180)
+        assert sky_exch['erf'] == pytest.approx(160.46529, rel=1e-2)
+        assert sky_exch['dmrt'] == pytest.approx(36.8149, rel=1e-2)
+        assert sky_exch['mrt'] == pytest.approx(58.81494, rel=1e-2)
 
         # Test typical daytime low angle condition
         sky_exch = shortwave_from_horiz_solar(22, 10, 55, 15, 290)
@@ -131,6 +152,17 @@ class SolarcalTestCase(unittest.TestCase):
                     pf1 = get_projection_factor(alt, sharp, posture)
                     pf2 = get_projection_factor_simple(alt, sharp, posture)
                     assert pf1 == pytest.approx(pf2, rel=0.1)
+
+    def test_projection_factors_incorrect(self):
+        """Test the projection factor functions with incorrect inputs."""
+        with pytest.raises(Exception):
+            get_projection_factor(25, 0, 'Standing')  # incorrect capitalization
+        with pytest.raises(Exception):
+            get_projection_factor(100, 0, 'standing')  # incorrect altitude
+        with pytest.raises(Exception):
+            get_projection_factor_simple(25, 0, 'Standing')  # incorrect capitalization
+        with pytest.raises(Exception):
+            get_projection_factor_simple(100, 0, 'standing')  # incorrect altitude
 
 
 if __name__ == "__main__":
