@@ -16,7 +16,7 @@ if (sys.version_info >= (3, 0)):
 class BaseCollection(object):
     """Base class for all Data Collections."""
 
-    __slots__ = ('_header', '_values', '_datetimes')
+    __slots__ = ('_header', '_values', '_datetimes', '_validated_a_period')
 
     def __init__(self, header, values, datetimes):
         """Initialize base collection.
@@ -37,6 +37,7 @@ class BaseCollection(object):
         self._header = header
         self._datetimes = datetimes
         self.values = values
+        self._validated_a_period = False
 
     @classmethod
     def from_json(cls, data):
@@ -46,13 +47,17 @@ class BaseCollection(object):
             {
                 "header": A Ladybug Header,
                 "values": An array of values,
-                "datetimes": An array of datetimes
+                "datetimes": An array of datetimes,
+                "validated_a_period": Boolean for whether header analysis_period is valid
             }
         """
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
         assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
-        return cls(Header.from_json(data['header']), data['values'], data['datetimes'])
+        coll = cls(Header.from_json(data['header']), data['values'], data['datetimes'])
+        if 'validated_a_period' in data:
+            coll._validated_a_period = data['validated_a_period']
+        return coll
 
     @property
     def header(self):
@@ -77,7 +82,16 @@ class BaseCollection(object):
         assert len(values) == len(self.datetimes), \
             'Length of values list must match length of datetimes list. {} != {}'.format(
                 len(values), len(self.datetimes))
+        assert len(values) > 0, 'DataCollection must include at least one value'
         self._values = values
+
+    @property
+    def validated_a_period(self):
+        """Boolean for whether the header analysis_period is validated against datetimes.
+
+        This will always be True when a collection is derived from a continuous one.
+        """
+        return self._validated_a_period
 
     @property
     def bounds(self):
@@ -224,7 +238,10 @@ class BaseCollection(object):
             A new Data Collection containing only the filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_statement(statement)
-        return self.__class__(self.header.duplicate(), _filt_values, _filt_datetimes)
+        collection = self.__class__(
+            self.header.duplicate(), _filt_values, _filt_datetimes)
+        collection._validated_a_period = self._validated_a_period
+        return collection
 
     def filter_by_pattern(self, pattern):
         """Filter the Data Collection based on a list of booleans.
@@ -238,7 +255,10 @@ class BaseCollection(object):
             A new Data Collection with filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_pattern(pattern)
-        return self.__class__(self.header.duplicate(), _filt_values, _filt_datetimes)
+        collection = self.__class__(
+            self.header.duplicate(), _filt_values, _filt_datetimes)
+        collection._validated_a_period = self._validated_a_period
+        return collection
 
     def is_collection_aligned(self, data_collection):
         """Check if this Data Collection is aligned with another.
@@ -288,19 +308,23 @@ class BaseCollection(object):
         values = [value] * len(self._values)
         header = Header(data_type, unit, self.header.analysis_period,
                         self.header.metadata)
-        return self.__class__(header, values, self.datetimes)
+        collection = self.__class__(header, values, self.datetimes)
+        collection._validated_a_period = self._validated_a_period
+        return collection
 
     def duplicate(self):
         """Return a copy of the current Data Collection."""
-        return self.__class__(
-            self.header.duplicate(), self.values, self.datetimes)
+        collection = self.__class__(self.header.duplicate(), self.values, self.datetimes)
+        collection._validated_a_period = self._validated_a_period
+        return collection
 
     def to_json(self):
         """Convert Data Collection to a dictionary."""
         return {
             'header': self.header.to_json(),
             'values': self._values,
-            'datetimes': self.datetimes
+            'datetimes': self.datetimes,
+            'validated_a_period': self._validated_a_period
         }
 
     @staticmethod

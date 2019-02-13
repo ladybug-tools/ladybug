@@ -200,8 +200,8 @@ class Wea(object):
                    "are suitable for thermal models but are not recommended \n" +
                    "for daylight models.")
             # interpolate the data
-            direct_normal = direct_normal.interpolate_data(timestep)
-            diffuse_horizontal = diffuse_horizontal.interpolate_data(timestep)
+            direct_normal = direct_normal.interpolate_to_timestep(timestep)
+            diffuse_horizontal = diffuse_horizontal.interpolate_to_timestep(timestep)
             # create sunpath to check if the sun is up at a given timestep
             sp = Sunpath.from_location(epw.location)
             # add correct values to the emply data collection

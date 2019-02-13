@@ -68,6 +68,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         self._header = header
         self._datetimes = datetimes
         self.values = values
+        self._validated_a_period = False
 
     @classmethod
     def from_json(cls, data):
@@ -77,15 +78,18 @@ class HourlyDiscontinuousCollection(BaseCollection):
             {
                 "header": A Ladybug Header,
                 "values": An array of values,
-                "datetimes": An array of datetimes
+                "datetimes": An array of datetimes,
+                "validated_a_period": Boolean for whether header analysis_period is valid
             }
         """
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
         assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
-        return cls(Header.from_json(data['header']),
-                   data['values'],
-                   [DateTime.from_json(dat) for dat in data['datetimes']])
+        collection = cls(Header.from_json(data['header']), data['values'],
+                         [DateTime.from_json(dat) for dat in data['datetimes']])
+        if 'validated_a_period' in data:
+            collection._validated_a_period = data['validated_a_period']
+        return collection
 
     @property
     def timestep_text(self):
@@ -116,6 +120,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
         Return:
             A new Data Collection with filtered data
         """
+        if self.validated_a_period is False:
+            self.validate_analysis_period(True)
         self._check_analysis_period(analysis_period)
         _filtered_data = self.filter_by_moys(analysis_period.moys)
         _filtered_data.header._analysis_period = analysis_period
@@ -143,8 +149,10 @@ class HourlyDiscontinuousCollection(BaseCollection):
             A new Data Collection with filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_moys_slow(moys)
-        return HourlyDiscontinuousCollection(
+        collection = HourlyDiscontinuousCollection(
             self.header.duplicate(), _filt_values, _filt_datetimes)
+        collection._validated_a_period = self._validated_a_period
+        return collection
 
     def group_by_day(self):
         """Return a dictionary of this collection's values grouped by each day of year.
@@ -169,7 +177,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = 'average'
-        return DailyCollection(new_header, avg_data, d_times)
+        collection = DailyCollection(new_header, avg_data, d_times)
+        collection._validated_a_period = True
+        return collection
 
     def total_daily(self):
         """Return a daily collection of values totaled over each day."""
@@ -182,7 +192,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = 'total'
-        return DailyCollection(new_header, total_data, d_times)
+        collection = DailyCollection(new_header, total_data, d_times)
+        collection._validated_a_period = True
+        return collection
 
     def percentile_daily(self, percentile):
         """Return a daily collection of values at the input percentile of each day.
@@ -202,7 +214,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = '{} percentile'.format(percentile)
-        return DailyCollection(new_header, per_data, d_times)
+        collection = DailyCollection(new_header, per_data, d_times)
+        collection._validated_a_period = True
+        return collection
 
     def group_by_month(self):
         """Return a dictionary of this collection's values grouped by each month.
@@ -227,7 +241,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = 'average'
-        return MonthlyCollection(new_header, avg_data, d_times)
+        collection = MonthlyCollection(new_header, avg_data, d_times)
+        collection._validated_a_period = True
+        return collection
 
     def total_monthly(self):
         """Return a monthly collection of values totaled over each month."""
@@ -240,7 +256,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = 'total'
-        return MonthlyCollection(new_header, total_data, d_times)
+        collection = MonthlyCollection(new_header, total_data, d_times)
+        collection._validated_a_period = True
+        return collection
 
     def percentile_monthly(self, percentile):
         """Return a monthly collection of values at the input percentile of each month.
@@ -260,7 +278,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = '{} percentile'.format(percentile)
-        return MonthlyCollection(new_header, per_data, d_times)
+        collection = MonthlyCollection(new_header, per_data, d_times)
+        collection._validated_a_period = True
+        return collection
 
     def group_by_month_per_hour(self):
         """Return a dictionary of this collection's values grouped by each month per hour.
@@ -289,7 +309,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = 'average'
-        return MonthlyPerHourCollection(new_header, avg_data, d_times)
+        collection = MonthlyPerHourCollection(new_header, avg_data, d_times)
+        collection._validated_a_period = True
+        return collection
 
     def total_monthly_per_hour(self):
         """Return a monthly per hour collection of totaled values."""
@@ -302,7 +324,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = 'total'
-        return MonthlyPerHourCollection(new_header, total_data, d_times)
+        collection = MonthlyPerHourCollection(new_header, total_data, d_times)
+        collection._validated_a_period = True
+        return collection
 
     def percentile_monthly_per_hour(self, percentile):
         """Return a monthly per hour collection of values at the input percentile.
@@ -322,22 +346,57 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 d_times.append(i)
         new_header = self.header.duplicate()
         new_header.metadata['operation'] = '{} percentile'.format(percentile)
-        return MonthlyPerHourCollection(new_header, total_data, d_times)
+        collection = MonthlyPerHourCollection(new_header, total_data, d_times)
+        collection._validated_a_period = True
+        return collection
 
     def interpolate_holes(self):
         """Linearly interpolate over holes in this collection to make it continuous.
 
         Returns:
             continuous_collection: A HourlyContinuousCollection with the same data
-                as this collection but with continuous holes filled by means of a
+                as this collection but with missing data filled by means of a
                 linear interpolation.
         """
-        raise NotImplementedError('interpolate_holes has not yet been implemented.')
+        # validate analysis_period and use the resulting period to generate datetimes
+        if self.validated_a_period is False:
+            self.validate_analysis_period(True)
+        mins_per_step = int(60 / self.header.analysis_period.timestep)
+        new_datetimes = self.header.analysis_period.datetimes
+        new_values = []
+
+        # if the first steps are a hole, duplicate the first value.
+        i = 0
+        if new_datetimes[0] != self.datetimes[0]:
+            n_steps = int((self.datetimes[0].moy - new_datetimes[0].moy) / mins_per_step)
+            new_values.extend([self._values[0]] * n_steps)
+            i = n_steps - 1
+
+        # go through the values interpolating any holes.
+        for j in xrange(len(self._values)):
+            if new_datetimes[i] == self.datetimes[j]:  # there is no hole.
+                new_values.append(self._values[j])
+                i += 1
+            else:  # there is a hole between this step and the previous step.
+                print(self.datetimes[j].moy, new_datetimes[i].moy)
+                n_steps = int((self.datetimes[j].moy - new_datetimes[i].moy)
+                              / mins_per_step)
+                intp_vals = self._xxrange(self._values[j - 1], self._values[j], n_steps)
+                new_values.extend(list(intp_vals)[1:] + [self._values[j]])
+                i += n_steps
+
+        # if the last steps are a hole duplicate the last value.
+        if len(new_values) != len(new_datetimes):
+            n_steps = len(new_datetimes) - len(new_values)
+            new_values.extend([self._values[-1]] * n_steps)
+
+        # build the new continuous data collection.
+        return HourlyContinuousCollection(self.header.duplicate(), new_values)
 
     def cull_to_timestep(self, timestep=1):
         """Cull out datetimes from the data collection that do not fit a timestep.
 
-        This is useful for cleaning out random data points at unwanted timesteps.
+        Note that running this method will also overwrite the timestep in the header.
         """
         valid_s = self.header.analysis_period.VALIDTIMESTEPS.keys()
         assert timestep in valid_s, \
@@ -351,7 +410,11 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 new_datetimes.append(date_t)
                 new_values.append(self.values[i])
 
-        self.header.analysis_period._timestep = timestep
+        a_per = self.header.analysis_period
+        new_ap = AnalysisPeriod(a_per.st_month, a_per.st_day, a_per.st_hour,
+                                a_per.end_month, a_per.end_day, a_per.end_hour,
+                                timestep, a_per.is_leap_year)
+        self.header._analysis_period = new_ap
         self._datetimes = new_datetimes
         self._values = new_values
 
@@ -365,10 +428,11 @@ class HourlyDiscontinuousCollection(BaseCollection):
         4) Datetimes for February 29th are excluded if is_leap_year is False on
             the analysis_period.
 
-        Note that there is no need to run this check any time that the discontinous
-        data collection has been derived from a continuous one.  It is only intended
-        to assist in workflows where the collection is derived from a messy or
-        unknown data set.
+        Note that there is no need to run this check any time that a discontinous
+        data collection has been derived from a continuous one.  Furthermore, all
+        methods on this data collection will still run without running this method.
+        This method is only intended to help organize data in workflows where the
+        collection is derived from a messy or unknown discontinuous data set.
 
         Args:
             overwrite_period: A boolean to note whether the analysis_period on the
@@ -425,6 +489,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         if overwrite_period is True:
             new_ap = AnalysisPeriod(*n_ap)
             self.header._analysis_period = new_ap
+            self._validated_a_period = True
         else:
             msg = 'datetimes {0} [{1}] is not aligned with analysis_period {0} [{2}].'
             assert n_ap[0] == a_per.st_month, msg.format(
@@ -449,8 +514,14 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return {
             'header': self.header.to_json(),
             'values': self._values,
-            'datetimes': [dat.to_json() for dat in self.datetimes]
+            'datetimes': [dat.to_json() for dat in self.datetimes],
+            'validated_a_period': self._validated_a_period
         }
+
+    def _xxrange(self, start, end, step_count):
+        """Generate n values between start and end."""
+        _step = (end - start) / float(step_count)
+        return (start + (i * _step) for i in xrange(int(step_count)))
 
     def _filter_by_moys_slow(self, moys):
         """Filter the Data Collection with a slow method that always works."""
@@ -510,6 +581,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         self._header = header
         self.values = values
         self._datetimes = None
+        self._validated_a_period = True
 
     @classmethod
     def from_json(cls, data):
@@ -554,7 +626,14 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             self._datetimes = self.header.analysis_period.datetimes
         return tuple(self._datetimes)
 
-    def interpolate_data(self, timestep, cumulative=None):
+    def interpolate_holes(self):
+        """All continuous collections do not have holes in the data set.
+
+        Therefore, there is no need to run this method on a continuous collection.
+        """
+        pass
+
+    def interpolate_to_timestep(self, timestep, cumulative=None):
         """Interpolate data for a finer timestep using a linear interpolation.
 
         Args:
@@ -603,7 +682,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
                                     timestep, a_per.is_leap_year)
         _new_header = self.header.duplicate()
         _new_header._analysis_period = _new_a_per
-        return self.__class__(_new_header, _new_values)
+        return HourlyContinuousCollection(_new_header, _new_values)
 
     def filter_by_conditional_statement(self, statement):
         """Filter the Data Collection based on a conditional statement.
@@ -616,8 +695,10 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             A new Data Collection containing only the filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_statement(statement)
-        return HourlyDiscontinuousCollection(
+        collection = HourlyDiscontinuousCollection(
             self.header.duplicate(), _filt_values, _filt_datetimes)
+        collection._validated_a_period = True
+        return collection
 
     def filter_by_pattern(self, pattern):
         """Filter the Data Collection based on a list of booleans.
@@ -631,8 +712,10 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             A new Data Collection with filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_pattern(pattern)
-        return HourlyDiscontinuousCollection(
+        collection = HourlyDiscontinuousCollection(
             self.header.duplicate(), _filt_values, _filt_datetimes)
+        collection._validated_a_period = True
+        return collection
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -709,7 +792,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         _filt_values = [self._values[i] for i in _filt_indices]
         _filt_datetimes = [self.datetimes[i] for i in _filt_indices]
         _filt_header = self.header.duplicate()
-        return HourlyDiscontinuousCollection(_filt_header, _filt_values, _filt_datetimes)
+        coll = HourlyDiscontinuousCollection(_filt_header, _filt_values, _filt_datetimes)
+        coll._validated_a_period = True
+        return coll
 
     def group_by_day(self):
         """Return a dictionary of this collection's values grouped by each day of year.
@@ -819,10 +904,16 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
     def to_discontinuous(self):
         """Return a discontinuous version of the current collection."""
-        return HourlyDiscontinuousCollection(self.header.duplicate(),
-                                             self.values, self.datetimes)
+        collection = HourlyDiscontinuousCollection(self.header.duplicate(),
+                                                   self.values, self.datetimes)
+        collection._validated_a_period = True
+        return collection
 
     def validate_analysis_period(self, overwrite_period=False):
+        """All continuous collections already have a valid analysis_period.
+
+        Therefore, there is no need to run this method on a continuous collection.
+        """
         pass
 
     def to_json(self):
@@ -831,11 +922,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             'header': self.header.to_json(),
             'values': self._values
         }
-
-    def _xxrange(self, start, end, step_count):
-        """Generate n values between start and end."""
-        _step = (end - start) / float(step_count)
-        return (start + (i * _step) for i in xrange(int(step_count)))
 
     def _get_analysis_period_subset(self, a_per):
         """Return an analysis_period is always a subset of the Data Collection"""
@@ -905,6 +991,7 @@ class DailyCollection(BaseCollection):
         self._header = header
         self._datetimes = datetimes
         self.values = values
+        self._validated_a_period = False
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -975,6 +1062,7 @@ class MonthlyCollection(BaseCollection):
         self._header = header
         self._datetimes = datetimes
         self.values = values
+        self._validated_a_period = False
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -1045,6 +1133,7 @@ class MonthlyPerHourCollection(BaseCollection):
         self._header = header
         self._datetimes = datetimes
         self.values = values
+        self._validated_a_period = False
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
