@@ -383,6 +383,19 @@ class BaseCollection(object):
                     return False
         return True
 
+    def is_in_data_type_range(self, raise_exception=True):
+        """Check if the Data Collection values are in permissable ranges for the data_type.
+
+        If this method returns False, the Data Collection's data is
+        physically or mathematically impossible for the data_type."""
+        return self._header.data_type.is_in_range(
+            self._values, self._header.unit, raise_exception)
+
+    def is_in_epw_range(self, raise_exception=True):
+        """Check if Data Collection values are in permissable ranges for EPW files."""
+        return self._header.data_type.is_in_range_epw(
+            self._values, self._header.unit, raise_exception)
+
     @staticmethod
     def _check_conditional_statement(statement, num_collections):
         """Method to check conditional statements to be sure that they are valid.
@@ -453,19 +466,6 @@ class BaseCollection(object):
         _filt_values = [d for i, d in enumerate(self._values) if pattern[i % _len]]
         _filt_datetimes = [d for i, d in enumerate(self.datetimes) if pattern[i % _len]]
         return _filt_values, _filt_datetimes
-
-    def _is_in_data_type_range(self, raise_exception=True):
-        """Check if the Data Collection values are in permissable ranges for the data_type.
-
-        If this method returns False, the Data Collection's data is
-        physically or mathematically impossible for the data_type."""
-        return self._header.data_type.is_in_range(
-            self._values, self._header.unit, raise_exception)
-
-    def _is_in_epw_range(self, raise_exception=True):
-        """Check if Data Collection values are in permissable ranges for EPW files."""
-        return self._header.data_type.is_in_range_epw(
-            self._values, self._header.unit, raise_exception)
 
     def _percentile(self, values, percent, key=lambda x: x):
         """Find the percentile of a list of values.
