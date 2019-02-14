@@ -7,9 +7,9 @@ from .base import DataTypeBase
 
 class Percentage(DataTypeBase):
     """Percentage"""
-    _units = ('%', 'fraction', 'tenths', 'thousandths')
-    _si_units = ('%', 'fraction', 'tenths', 'thousandths')
-    _ip_units = ('%', 'fraction', 'tenths', 'thousandths')
+    _units = ('%', 'fraction', 'tenths', 'thousandths', 'okta')
+    _si_units = ('%', 'fraction', 'tenths', 'thousandths', 'okta')
+    _ip_units = ('%', 'fraction', 'tenths', 'thousandths', 'okta')
     _abbreviation = 'Pct'
 
     def _pct_to_fraction(self, value):
@@ -21,6 +21,9 @@ class Percentage(DataTypeBase):
     def _pct_to_thousandths(self, value):
         return value * 10.
 
+    def _pct_to_okta(self, value):
+        return value / 12.5
+
     def _fraction_to_pct(self, value):
         return value * 100.
 
@@ -29,6 +32,9 @@ class Percentage(DataTypeBase):
 
     def _thousandths_to_pct(self, value):
         return value / 10.
+
+    def _okta_to_pct(self, value):
+        return value * 12.5
 
     def to_unit(self, values, unit, from_unit):
         """Return values converted to the unit given the input from_unit."""

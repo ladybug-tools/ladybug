@@ -120,8 +120,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
         Return:
             A new Data Collection with filtered data
         """
-        if self.validated_a_period is False:
-            self.validate_analysis_period(True)
+        assert self.validated_a_period is True, 'validated_a_period property must be' \
+            'True to use filter_by_analysis_period(). Run validate_analysis_period().'
         self._check_analysis_period(analysis_period)
         _filtered_data = self.filter_by_moys(analysis_period.moys)
         _filtered_data.header._analysis_period = analysis_period
@@ -359,8 +359,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 linear interpolation.
         """
         # validate analysis_period and use the resulting period to generate datetimes
-        if self.validated_a_period is False:
-            self.validate_analysis_period(True)
+        assert self.validated_a_period is True, 'validated_a_period property must be' \
+            'True to use interpolate_holes(). Run validate_analysis_period().'
         mins_per_step = int(60 / self.header.analysis_period.timestep)
         new_datetimes = self.header.analysis_period.datetimes
         new_values = []
@@ -394,83 +394,78 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return HourlyContinuousCollection(self.header.duplicate(), new_values)
 
     def cull_to_timestep(self, timestep=1):
-        """Cull out datetimes from the data collection that do not fit a timestep.
-
-        Note that running this method will also overwrite the timestep in the header.
-        """
+        """Get a DataCollection without datetimes that do not fit a timestep."""
         valid_s = self.header.analysis_period.VALIDTIMESTEPS.keys()
         assert timestep in valid_s, \
             'timestep {} is not valid. Choose from: {}'.format(timestep, valid_s)
 
-        new_values = []
-        new_datetimes = []
-        mins_per_step = int(60 / timestep)
-        for i, date_t in enumerate(self.datetimes):
-            if date_t.moy % mins_per_step == 0:
-                new_datetimes.append(date_t)
-                new_values.append(self.values[i])
+        new_ap, new_values, new_datetimes = self._timestep_cull(timestep)
+        new_header = self.header.duplicate()
+        new_header._analysis_period = new_ap
+        new_coll = HourlyDiscontinuousCollection(
+            new_header, new_values, new_datetimes)
+        new_coll._validated_a_period = True
+        return new_coll
 
-        a_per = self.header.analysis_period
-        new_ap = AnalysisPeriod(a_per.st_month, a_per.st_day, a_per.st_hour,
-                                a_per.end_month, a_per.end_day, a_per.end_hour,
-                                timestep, a_per.is_leap_year)
+    def convert_to_culled_timestep(self, timestep=1):
+        """Convert this DataCollection to only have datetimes that fit a timestep."""
+        valid_s = self.header.analysis_period.VALIDTIMESTEPS.keys()
+        assert timestep in valid_s, \
+            'timestep {} is not valid. Choose from: {}'.format(timestep, valid_s)
+
+        new_ap, new_values, new_datetimes = self._timestep_cull(timestep)
         self.header._analysis_period = new_ap
-        self._datetimes = new_datetimes
         self._values = new_values
+        self._datetimes = new_datetimes
 
-    def validate_analysis_period(self, overwrite_period=False):
-        """Check that the analysis_period in the header correctly corresponds to values.
+    def validate_analysis_period(self):
+        """Get a collection where the header analysis_period aligns with datetimes.
 
         This means that checks for four criteria will be performed:
-        1) All datetimes in the data collection are chronological.
+        1) All datetimes in the data collection are chronological starting from the
+            analysis_period start hour to the end hour.
         2) There are no datetimes that lie outside of the analysis_period time range.
         3) There are no datetimes that do not align with the analysis_period timestep.
         4) Datetimes for February 29th are excluded if is_leap_year is False on
             the analysis_period.
 
         Note that there is no need to run this check any time that a discontinous
-        data collection has been derived from a continuous one.  Furthermore, all
-        methods on this data collection will still run without running this method.
-        This method is only intended to help organize data in workflows where the
-        collection is derived from a messy or unknown discontinuous data set.
-
-        Args:
-            overwrite_period: A boolean to note whether the analysis_period on the
-                header of the DataCollection should be overwritten to align with the
-                data (True) or an exception should be thrown if values do
-                not align (False). Default is False to throw an exception.
+        data collection has been derived from a continuous one or when the
+        validated_a_period attribute of the collection is True.  Furthermore, most
+        methods on this data collection will still run without a validated
+        analysis_period.
         """
         a_per = self.header.analysis_period
         n_ap = [a_per.st_month, a_per.st_day, a_per.st_hour, a_per.end_month,
                 a_per.end_day, a_per.end_hour, a_per.timestep, a_per.is_leap_year]
 
         # make sure that datetimes are all in chronological order.
-        self._datetimes, self._values = zip(*sorted(zip(self.datetimes, self.values)))
+        sort_datetimes, sort_values = zip(*sorted(zip(self.datetimes, self.values)))
         if a_per.is_reversed:
             last_ind = 0
-            for i, date_t in enumerate(self.datetimes):
+            for i, date_t in enumerate(sort_datetimes):
                 last_ind = i if date_t.moy <= a_per.end_time.moy else last_ind
-            self._datetimes = self._datetimes[last_ind:] + self._datetimes[:last_ind + 1]
-            self._values = self._values[last_ind:] + self._values[:last_ind + 1]
+            sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
+            sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
 
         # check that no datetimes lie outside of the analysis_period
         if not a_per.is_annual:
-            if self._datetimes[0].doy < a_per.st_time.doy:
-                n_ap[0] = self._datetimes[0].month
-                n_ap[1] = self._datetimes[0].day
-            if self._datetimes[-1].doy > a_per.end_time.doy:
-                n_ap[3] = self._datetimes[-1].month
-                n_ap[4] = self._datetimes[-1].day
+            if sort_datetimes[0].doy < a_per.st_time.doy:
+                n_ap[0] = sort_datetimes[0].month
+                n_ap[1] = sort_datetimes[0].day
+            if sort_datetimes[-1].doy > a_per.end_time.doy:
+                n_ap[3] = sort_datetimes[-1].month
+                n_ap[4] = sort_datetimes[-1].day
             if a_per.st_hour != 0:
-                for date_t in self._datetimes:
+                for date_t in sort_datetimes:
                     n_ap[2] = date_t.hour if date_t.hour < a_per.st_hour else n_ap[2]
             if a_per.end_hour != 23:
-                for date_t in self._datetimes:
+                for date_t in sort_datetimes:
                     n_ap[5] = date_t.hour if date_t.hour > a_per.end_hour else n_ap[5]
 
         # check that the analysis_period timestep is correct.
         mins_per_step = int(60 / n_ap[6])
-        for date_t in self._datetimes:
+        for date_t in sort_datetimes:
             if date_t.moy % mins_per_step != 0:
                 i = 0
                 valid_steps = sorted(a_per.VALIDTIMESTEPS.keys())
@@ -481,33 +476,17 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
         # check that the analysis_period leap_year is correct.
         if a_per.is_leap_year is False:
-            for date_t in self._datetimes:
+            for date_t in sort_datetimes:
                 if date_t.month == 2 and date_t.day == 29:
                     n_ap[7] = True
 
-        # update analysis_period or raise an exception.
-        if overwrite_period is True:
-            new_ap = AnalysisPeriod(*n_ap)
-            self.header._analysis_period = new_ap
-            self._validated_a_period = True
-        else:
-            msg = 'datetimes {0} [{1}] is not aligned with analysis_period {0} [{2}].'
-            assert n_ap[0] == a_per.st_month, msg.format(
-                'st_month', n_ap[0], a_per.st_month)
-            assert n_ap[1] == a_per.st_day, msg.format(
-                'st_day', n_ap[1], a_per.st_day)
-            assert n_ap[2] == a_per.st_hour, msg.format(
-                'st_hour', n_ap[2], a_per.st_hour)
-            assert n_ap[3] == a_per.end_month, msg.format(
-                'end_month', n_ap[3], a_per.end_month)
-            assert n_ap[4] == a_per.end_day, msg.format(
-                'end_day', n_ap[4], a_per.end_day)
-            assert n_ap[5] == a_per.end_hour, msg.format(
-                'end_hour', n_ap[5], a_per.end_hour)
-            assert n_ap[6] == a_per.timestep, msg.format(
-                'timestep', n_ap[6], a_per.timestep)
-            assert n_ap[7] == a_per.is_leap_year, msg.format(
-                'is_leap_year', n_ap[7], a_per.is_leap_year)
+        # build a validated collection.
+        new_ap = AnalysisPeriod(*n_ap)
+        new_header = self.header.duplicate()
+        new_header._analysis_period = new_ap
+        new_coll = HourlyDiscontinuousCollection(new_header, sort_values, sort_datetimes)
+        new_coll._validated_a_period = True
+        return new_coll
 
     def to_json(self):
         """Convert Data Collection to a dictionary."""
@@ -532,6 +511,21 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 _filt_datetimes.append(d)
                 _filt_values.append(self._values[i])
         return _filt_values, _filt_datetimes
+
+    def _timestep_cull(self, timestep):
+        """Cull out values that do not fit a timestep."""
+        new_values = []
+        new_datetimes = []
+        mins_per_step = int(60 / timestep)
+        for i, date_t in enumerate(self.datetimes):
+            if date_t.moy % mins_per_step == 0:
+                new_datetimes.append(date_t)
+                new_values.append(self.values[i])
+        a_per = self.header.analysis_period
+        new_ap = AnalysisPeriod(a_per.st_month, a_per.st_day, a_per.st_hour,
+                                a_per.end_month, a_per.end_day, a_per.end_hour,
+                                timestep, a_per.is_leap_year)
+        return new_ap, new_values, new_datetimes
 
     def _check_analysis_period(self, analysis_period):
         assert self.header.analysis_period.timestep == analysis_period.timestep,\
@@ -910,11 +904,11 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         return collection
 
     def validate_analysis_period(self, overwrite_period=False):
-        """All continuous collections already have a valid analysis_period.
+        """All continuous collections already have valid header analysis_periods.
 
-        Therefore, there is no need to run this method on a continuous collection.
+        Therefore, this method just returns a copy of the current collection.
         """
-        pass
+        return self.duplicate()
 
     def to_json(self):
         """Convert Data Collection to a dictionary."""
@@ -1002,6 +996,9 @@ class DailyCollection(BaseCollection):
         Return:
             A new Data Collection with filtered data
         """
+        assert self.validated_a_period is True, 'validated_a_period property must be' \
+            'True to use filter_by_analysis_period(). Run validate_analysis_period().'
+        self._check_analysis_period(analysis_period)
         _filtered_data = self.filter_by_doys(analysis_period.doys_int)
         _filtered_data.header._analysis_period = analysis_period
         return _filtered_data
@@ -1023,6 +1020,63 @@ class DailyCollection(BaseCollection):
                 _filt_values.append(self._values[i])
         _filt_header = self.header.duplicate()
         return DailyCollection(_filt_header, _filt_values, _filt_datetimes)
+
+    def validate_analysis_period(self):
+        """Get a collection where the header analysis_period aligns with datetimes.
+
+        This means that checks for three criteria will be performed:
+        1) All days in the data collection are chronological starting from the
+            analysis_period start hour to the end hour.
+        2) There are no days that lie outside of the analysis_period time range.
+        3) February 29th is excluded if is_leap_year is False on the analysis_period.
+
+        Note that there is no need to run this check any time that a discontinous
+        data collection has been derived from a continuous one or when the
+        validated_a_period attribute of the collection is True.
+        """
+        a_per = self.header.analysis_period
+        n_ap = [a_per.st_month, a_per.st_day, a_per.st_hour, a_per.end_month,
+                a_per.end_day, a_per.end_hour, a_per.timestep, a_per.is_leap_year]
+
+        # make sure that datetimes are all in chronological order.
+        sort_datetimes, sort_values = zip(*sorted(zip(self.datetimes, self.values)))
+        if a_per.is_reversed:
+            last_ind = 0
+            for i, date_t in enumerate(sort_datetimes):
+                last_ind = i if date_t <= a_per.end_time.doy else last_ind
+            sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
+            sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+
+        # check that the analysis_period leap_year is correct.
+        if a_per.is_leap_year is False:
+            for date_t in sort_datetimes:
+                if date_t == 366:
+                    n_ap[7] = True
+
+        # check that no datetimes lie outside of the analysis_period
+        if not a_per.is_annual:
+            if sort_datetimes[0] < a_per.st_time.doy:
+                new_start = DateTime.from_hoy(sort_datetimes[0] * 24, n_ap[7])
+                n_ap[0] = new_start.month
+                n_ap[1] = new_start.day
+            if sort_datetimes[-1] > a_per.end_time.doy:
+                new_end = DateTime.from_hoy(sort_datetimes[-1] * 24, n_ap[7])
+                n_ap[3] = new_end.month
+                n_ap[4] = new_end.day
+
+        # build a validated collection.
+        new_ap = AnalysisPeriod(*n_ap)
+        new_header = self.header.duplicate()
+        new_header._analysis_period = new_ap
+        new_coll = DailyCollection(new_header, sort_values, sort_datetimes)
+        new_coll._validated_a_period = True
+        return new_coll
+
+    def _check_analysis_period(self, analysis_period):
+        assert self.header.analysis_period.is_leap_year is analysis_period.is_leap_year,\
+            'analysis_period is_leap_year must match that on the'\
+            'Collection header. {} != {}'.format(
+                analysis_period.is_leap_year, self.header.analysis_period.is_leap_year)
 
     @property
     def isDaily(self):
@@ -1094,6 +1148,45 @@ class MonthlyCollection(BaseCollection):
                 _filt_values.append(self._values[i])
         _filt_header = self.header.duplicate()
         return MonthlyCollection(_filt_header, _filt_values, _filt_datetimes)
+
+    def validate_analysis_period(self):
+        """Get a collection where the header analysis_period aligns with datetimes.
+
+        This means that checks for two criteria will be performed:
+        1) All months in the data collection are chronological starting from the
+            analysis_period start month to the end month.
+        2) There are no datetimes that lie outside of the analysis_period range.
+
+        Note that there is no need to run this check any time that a
+        data collection has been derived from a continuous one or when the
+        validated_a_period attribute of the collection is True.
+        """
+        a_per = self.header.analysis_period
+        n_ap = [a_per.st_month, a_per.end_month]
+
+        # make sure that months are in chronological order.
+        sort_datetimes, sort_values = zip(*sorted(zip(self.datetimes, self.values)))
+        if a_per.is_reversed:
+            last_ind = 0
+            for i, date_t in enumerate(sort_datetimes):
+                last_ind = i if date_t <= a_per.end_time.month else last_ind
+            sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
+            sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+
+        # check that no datetimes lie outside of the analysis_period
+        if not a_per.is_annual:
+            if sort_datetimes[0] < a_per.st_month:
+                n_ap[0] = sort_datetimes[0]
+            if sort_datetimes[-1] > a_per.end_month:
+                n_ap[1] = sort_datetimes[-1]
+
+        # build a validated collection.
+        new_ap = AnalysisPeriod(st_month=n_ap[0], end_month=n_ap[1])
+        new_header = self.header.duplicate()
+        new_header._analysis_period = new_ap
+        new_coll = MonthlyCollection(new_header, sort_values, sort_datetimes)
+        new_coll._validated_a_period = True
+        return new_coll
 
     @property
     def isMonthly(self):
@@ -1168,6 +1261,54 @@ class MonthlyPerHourCollection(BaseCollection):
                 _filt_values.append(self._values[i])
         return MonthlyPerHourCollection(
             self.header.duplicate(), _filt_values, _filt_datetimes)
+
+    def validate_analysis_period(self):
+        """Get a collection where the header analysis_period aligns with datetimes.
+
+        This means that checks for two criteria will be performed:
+        1) All datetimes in the data collection are chronological starting from the
+            analysis_period start datetime to the end datetime.
+        2) There are no datetimes that lie outside of the analysis_period range.
+
+        Note that there is no need to run this check any time that a
+        data collection has been derived from a continuous one or when the
+        validated_a_period attribute of the collection is True.
+        """
+        a_per = self.header.analysis_period
+        n_ap = [a_per.st_month, a_per.st_hour, a_per.end_month, a_per.end_hour]
+
+        # make sure that months are in chronological order.
+        sort_datetimes, sort_values = zip(*sorted(zip(self.datetimes, self.values),
+                                                  key=lambda x: (x[0][0], x[0][1])))
+        if a_per.is_reversed:
+            last_ind = 0
+            for i, date_t in enumerate(sort_datetimes):
+                last_ind = i if date_t[0] <= a_per.end_time.month \
+                    and date_t[1] <= a_per.end_time.hour else last_ind
+            sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
+            sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+
+        # check that no datetimes lie outside of the analysis_period
+        if not a_per.is_annual:
+            if sort_datetimes[0][0] < a_per.st_month:
+                n_ap[0] = sort_datetimes[0][0]
+            if sort_datetimes[-1][0] > a_per.end_month:
+                n_ap[2] = sort_datetimes[-1][0]
+            if a_per.st_hour != 0:
+                for date_t in sort_datetimes:
+                    n_ap[1] = date_t[1] if date_t[1] < a_per.st_hour else n_ap[1]
+            if a_per.end_hour != 23:
+                for date_t in sort_datetimes:
+                    n_ap[3] = date_t[1] if date_t[1] > a_per.end_hour else n_ap[3]
+
+        # build a validated collection.
+        new_ap = AnalysisPeriod(st_month=n_ap[0], st_hour=n_ap[1],
+                                end_month=n_ap[2], end_hour=n_ap[3])
+        new_header = self.header.duplicate()
+        new_header._analysis_period = new_ap
+        new_coll = MonthlyPerHourCollection(new_header, sort_values, sort_datetimes)
+        new_coll._validated_a_period = True
+        return new_coll
 
     @property
     def isMonthlyPerHour(self):
