@@ -394,7 +394,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return HourlyContinuousCollection(self.header.duplicate(), new_values)
 
     def cull_to_timestep(self, timestep=1):
-        """Get a DataCollection without datetimes that do not fit a timestep."""
+        """Get a collection with only datetimes that fit a timestep."""
         valid_s = self.header.analysis_period.VALIDTIMESTEPS.keys()
         assert timestep in valid_s, \
             'timestep {} is not valid. Choose from: {}'.format(timestep, valid_s)
@@ -408,7 +408,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return new_coll
 
     def convert_to_culled_timestep(self, timestep=1):
-        """Convert this DataCollection to only have datetimes that fit a timestep."""
+        """Convert this collection to one that only has datetimes that fit a timestep."""
         valid_s = self.header.analysis_period.VALIDTIMESTEPS.keys()
         assert timestep in valid_s, \
             'timestep {} is not valid. Choose from: {}'.format(timestep, valid_s)
@@ -421,12 +421,13 @@ class HourlyDiscontinuousCollection(BaseCollection):
     def validate_analysis_period(self):
         """Get a collection where the header analysis_period aligns with datetimes.
 
-        This means that checks for four criteria will be performed:
-        1) All datetimes in the data collection are chronological starting from the
-            analysis_period start hour to the end hour.
-        2) There are no datetimes that lie outside of the analysis_period time range.
-        3) There are no datetimes that do not align with the analysis_period timestep.
-        4) Datetimes for February 29th are excluded if is_leap_year is False on
+        This means that checks for five criteria will be performed:
+        1) All datetimes in the data collection are in chronological orderstarting
+            from the analysis_period start hour to the end hour.
+        2) No duplicate datetimes exist in the data collection.
+        3) There are no datetimes that lie outside of the analysis_period time range.
+        4) There are no datetimes that do not align with the analysis_period timestep.
+        5) Datetimes for February 29th are excluded if is_leap_year is False on
             the analysis_period.
 
         Note that there is no need to run this check any time that a discontinous
@@ -447,6 +448,11 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 last_ind = i if date_t.moy <= a_per.end_time.moy else last_ind
             sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
             sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+
+        # check that there are no duplicate datetimes.
+        for i in xrange(len(sort_datetimes)):
+            assert sort_datetimes[i] != sort_datetimes[i - 1], 'Duplicate datetime ' \
+                'was found in the collection: {}'.format(sort_datetimes[i])
 
         # check that no datetimes lie outside of the analysis_period
         if not a_per.is_annual:
@@ -1024,11 +1030,12 @@ class DailyCollection(BaseCollection):
     def validate_analysis_period(self):
         """Get a collection where the header analysis_period aligns with datetimes.
 
-        This means that checks for three criteria will be performed:
+        This means that checks for four criteria will be performed:
         1) All days in the data collection are chronological starting from the
-            analysis_period start hour to the end hour.
-        2) There are no days that lie outside of the analysis_period time range.
-        3) February 29th is excluded if is_leap_year is False on the analysis_period.
+            analysis_period start day to the end day.
+        2) No duplicate days exist in the data collection.
+        3) There are no days that lie outside of the analysis_period time range.
+        4) February 29th is excluded if is_leap_year is False on the analysis_period.
 
         Note that there is no need to run this check any time that a discontinous
         data collection has been derived from a continuous one or when the
@@ -1046,6 +1053,11 @@ class DailyCollection(BaseCollection):
                 last_ind = i if date_t <= a_per.end_time.doy else last_ind
             sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
             sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+
+        # check that there are no duplicate days.
+        for i in xrange(len(sort_datetimes)):
+            assert sort_datetimes[i] != sort_datetimes[i - 1], 'Duplicate day of year ' \
+                'was found in the collection: {}'.format(sort_datetimes[i])
 
         # check that the analysis_period leap_year is correct.
         if a_per.is_leap_year is False:
@@ -1152,10 +1164,11 @@ class MonthlyCollection(BaseCollection):
     def validate_analysis_period(self):
         """Get a collection where the header analysis_period aligns with datetimes.
 
-        This means that checks for two criteria will be performed:
+        This means that checks for three criteria will be performed:
         1) All months in the data collection are chronological starting from the
             analysis_period start month to the end month.
-        2) There are no datetimes that lie outside of the analysis_period range.
+        2) No duplicate months exist in the data collection.
+        3) There are no months that lie outside of the analysis_period range.
 
         Note that there is no need to run this check any time that a
         data collection has been derived from a continuous one or when the
@@ -1172,6 +1185,11 @@ class MonthlyCollection(BaseCollection):
                 last_ind = i if date_t <= a_per.end_time.month else last_ind
             sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
             sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+
+        # check that there are no duplicate months.
+        for i in xrange(len(sort_datetimes)):
+            assert sort_datetimes[i] != sort_datetimes[i - 1], 'Duplicate month ' \
+                'was found in the collection: {}'.format(sort_datetimes[i])
 
         # check that no datetimes lie outside of the analysis_period
         if not a_per.is_annual:
@@ -1265,10 +1283,11 @@ class MonthlyPerHourCollection(BaseCollection):
     def validate_analysis_period(self):
         """Get a collection where the header analysis_period aligns with datetimes.
 
-        This means that checks for two criteria will be performed:
+        This means that checks for three criteria will be performed:
         1) All datetimes in the data collection are chronological starting from the
             analysis_period start datetime to the end datetime.
-        2) There are no datetimes that lie outside of the analysis_period range.
+        2) No duplicate datetimes exist in the data collection.
+        3) There are no datetimes that lie outside of the analysis_period range.
 
         Note that there is no need to run this check any time that a
         data collection has been derived from a continuous one or when the
@@ -1287,6 +1306,11 @@ class MonthlyPerHourCollection(BaseCollection):
                     and date_t[1] <= a_per.end_time.hour else last_ind
             sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
             sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+
+        # check that there are no duplicate months.
+        for i in xrange(len(sort_datetimes)):
+            assert sort_datetimes[i] != sort_datetimes[i - 1], 'Duplicate ' \
+                '(month, hour) was found in the collection: {}'.format(sort_datetimes[i])
 
         # check that no datetimes lie outside of the analysis_period
         if not a_per.is_annual:
