@@ -232,6 +232,111 @@ class DataCollectionTestCase(unittest.TestCase):
         with pytest.raises(Exception):
             dc1_new = dc1.validate_analysis_period()
 
+    def test_validate_a_period_daily(self):
+        """Test the validate_a_period methods for daily collections."""
+        a_per = AnalysisPeriod(6, 21, 0, 6, 22, 23)
+        v1, v2 = 20, 25
+        dt1, dt2 = 172, 173
+
+        # Test that the validate method correctly sorts reversed datetimes.
+        dc1 = DailyCollection(Header(Temperature(), 'C', a_per),
+                              [v1, v2], [dt2, dt1])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.validated_a_period is False
+        assert dc1_new.validated_a_period is True
+        assert dc1.datetimes == (dt2, dt1)
+        assert dc1_new.datetimes == (dt1, dt2)
+
+        # Test that the validate method correctly updates analysis_period range.
+        a_per_2 = AnalysisPeriod(6, 20, 0, 6, 20, 23)
+        dc1 = DailyCollection(Header(Temperature(), 'C', a_per_2),
+                              [v1, v2], [dt1, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.validated_a_period is False
+        assert dc1_new.validated_a_period is True
+        assert dc1.header.analysis_period == a_per_2
+        assert dc1_new.header.analysis_period == AnalysisPeriod(
+            6, 20, 0, 6, 22, 23)
+
+        # Test that the validate method correctly identifies leap years.
+        dc1 = DailyCollection(Header(Temperature(), 'C', a_per),
+                              [v1, v2, v2], [dt1, dt2, 366])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.validated_a_period is False
+        assert dc1_new.validated_a_period is True
+        assert dc1.header.analysis_period.is_leap_year is False
+        assert dc1_new.header.analysis_period.is_leap_year is True
+
+        # Test that duplicated datetimes are caught
+        dc1 = DailyCollection(Header(Temperature(), 'C', a_per),
+                              [v1, v2], [dt1, dt1])
+        with pytest.raises(Exception):
+            dc1_new = dc1.validate_analysis_period()
+
+    def test_validate_a_period_monthly(self):
+        """Test the validate_a_period methods for monthly collections."""
+        a_per = AnalysisPeriod(6, 1, 0, 7, 1, 23)
+        v1, v2 = 20, 25
+        dt1, dt2 = 6, 7
+
+        # Test that the validate method correctly sorts reversed datetimes.
+        dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per),
+                                [v1, v2], [dt2, dt1])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.validated_a_period is False
+        assert dc1_new.validated_a_period is True
+        assert dc1.datetimes == (dt2, dt1)
+        assert dc1_new.datetimes == (dt1, dt2)
+
+        # Test that the validate method correctly updates analysis_period range.
+        a_per_2 = AnalysisPeriod(6, 1, 0, 6, 1, 23)
+        dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per_2),
+                                [v1, v2], [dt1, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.validated_a_period is False
+        assert dc1_new.validated_a_period is True
+        assert dc1.header.analysis_period == a_per_2
+        assert dc1_new.header.analysis_period == AnalysisPeriod(
+            6, 1, 0, 7, 31, 23)
+
+        # Test that duplicated datetimes are caught
+        dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per),
+                                [v1, v2], [dt1, dt1])
+        with pytest.raises(Exception):
+            dc1_new = dc1.validate_analysis_period()
+
+    def test_validate_a_period_monthly_per_hour(self):
+        """Test validate_a_period for monthly_per_hour collections."""
+        a_per = AnalysisPeriod(6, 1, 0, 7, 1, 23)
+        v1, v2 = 20, 25
+        dt1, dt2 = (6, 12), (7, 13)
+
+        # Test that the validate method correctly sorts reversed datetimes.
+        dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per),
+                                       [v1, v2], [dt2, dt1])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.validated_a_period is False
+        assert dc1_new.validated_a_period is True
+        assert dc1.datetimes == (dt2, dt1)
+        assert dc1_new.datetimes == (dt1, dt2)
+
+        # Test that the validate method correctly updates analysis_period range.
+        a_per_2 = AnalysisPeriod(6, 1, 15, 6, 1, 23)
+        dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per_2),
+                                       [v1, v2], [dt1, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.validated_a_period is False
+        assert dc1_new.validated_a_period is True
+        assert dc1.header.analysis_period == a_per_2
+        assert dc1_new.header.analysis_period == AnalysisPeriod(
+            6, 1, 12, 7, 31, 23)
+
+        # Test that duplicated datetimes are caught
+        dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per),
+                                       [v1, v2], [dt1, dt1])
+        with pytest.raises(Exception):
+            dc1_new = dc1.validate_analysis_period()
+
     def test_bounds(self):
         """Test the bounds method."""
         header1 = Header(Temperature(), 'C', AnalysisPeriod())

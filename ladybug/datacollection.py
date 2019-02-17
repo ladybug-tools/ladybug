@@ -1068,11 +1068,11 @@ class DailyCollection(BaseCollection):
         # check that no datetimes lie outside of the analysis_period
         if not a_per.is_annual:
             if sort_datetimes[0] < a_per.st_time.doy:
-                new_start = DateTime.from_hoy(sort_datetimes[0] * 24, n_ap[7])
+                new_start = DateTime.from_hoy((sort_datetimes[0] - 1) * 24, n_ap[7])
                 n_ap[0] = new_start.month
                 n_ap[1] = new_start.day
             if sort_datetimes[-1] > a_per.end_time.doy:
-                new_end = DateTime.from_hoy(sort_datetimes[-1] * 24, n_ap[7])
+                new_end = DateTime.from_hoy((sort_datetimes[-1] - 1) * 24, n_ap[7])
                 n_ap[3] = new_end.month
                 n_ap[4] = new_end.day
 
