@@ -206,7 +206,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1_new.header.analysis_period == AnalysisPeriod(
             6, 20, 12, 6, 21, 23)
 
-        # Test that the validate method with a reversed analysis_period.
+        # Test that the validate method with reversed analysis_periods.
         a_per_3 = AnalysisPeriod(6, 20, 15, 2, 20, 23)
         dt5 = DateTime(1, 21, 12)
         dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per_3),

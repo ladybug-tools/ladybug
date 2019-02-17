@@ -120,8 +120,6 @@ class HourlyDiscontinuousCollection(BaseCollection):
         Return:
             A new Data Collection with filtered data
         """
-        assert self.validated_a_period is True, 'validated_a_period property must be' \
-            'True to use filter_by_analysis_period(). Run validate_analysis_period().'
         self._check_analysis_period(analysis_period)
         _filtered_data = self.filter_by_moys(analysis_period.moys)
         _filtered_data.header._analysis_period = analysis_period
@@ -459,14 +457,13 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
         # check that no datetimes lie outside of the analysis_period
         if not a_per.is_annual:
-            if last_ind < len(sort_datetimes) and \
+            if last_ind is not None and last_ind < len(sort_datetimes) and \
                     sort_datetimes[0].doy < a_per.st_time.doy:
-                        n_ap[0] = sort_datetimes[0].month
-                        n_ap[1] = sort_datetimes[0].day
-            if last_ind is not None and \
-                    sort_datetimes[-1].doy > a_per.end_time.doy:
-                        n_ap[3] = sort_datetimes[-1].month
-                        n_ap[4] = sort_datetimes[-1].day
+                n_ap[0] = sort_datetimes[0].month
+                n_ap[1] = sort_datetimes[0].day
+            if last_ind is not None and sort_datetimes[-1].doy > a_per.end_time.doy:
+                n_ap[3] = sort_datetimes[-1].month
+                n_ap[4] = sort_datetimes[-1].day
             if a_per.st_hour != 0:
                 for date_t in sort_datetimes:
                     n_ap[2] = date_t.hour if date_t.hour < n_ap[2] else n_ap[2]
@@ -1007,8 +1004,6 @@ class DailyCollection(BaseCollection):
         Return:
             A new Data Collection with filtered data
         """
-        assert self.validated_a_period is True, 'validated_a_period property must be' \
-            'True to use filter_by_analysis_period(). Run validate_analysis_period().'
         self._check_analysis_period(analysis_period)
         _filtered_data = self.filter_by_doys(analysis_period.doys_int)
         _filtered_data.header._analysis_period = analysis_period
@@ -1052,12 +1047,15 @@ class DailyCollection(BaseCollection):
 
         # make sure that datetimes are all in chronological order.
         sort_datetimes, sort_values = zip(*sorted(zip(self.datetimes, self.values)))
+        last_ind = 0
         if a_per.is_reversed:
-            last_ind = 0
+            last_ind = None
             for i, date_t in enumerate(sort_datetimes):
                 last_ind = i if date_t <= a_per.end_time.doy else last_ind
-            sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
-            sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+            if last_ind is not None and last_ind < len(sort_datetimes):
+                last_ind = last_ind + 1
+                sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind]
+                sort_values = sort_values[last_ind:] + sort_values[:last_ind]
 
         # check that there are no duplicate days.
         for i in xrange(len(sort_datetimes)):
@@ -1072,11 +1070,12 @@ class DailyCollection(BaseCollection):
 
         # check that no datetimes lie outside of the analysis_period
         if not a_per.is_annual:
-            if sort_datetimes[0] < a_per.st_time.doy:
+            if last_ind is not None and last_ind < len(sort_datetimes) and \
+                    sort_datetimes[0] < a_per.st_time.doy:
                 new_start = DateTime.from_hoy((sort_datetimes[0] - 1) * 24, n_ap[7])
                 n_ap[0] = new_start.month
                 n_ap[1] = new_start.day
-            if sort_datetimes[-1] > a_per.end_time.doy:
+            if last_ind is not None and sort_datetimes[-1] > a_per.end_time.doy:
                 new_end = DateTime.from_hoy((sort_datetimes[-1] - 1) * 24, n_ap[7])
                 n_ap[3] = new_end.month
                 n_ap[4] = new_end.day
