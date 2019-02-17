@@ -330,6 +330,7 @@ class DataCollectionTestCase(unittest.TestCase):
         values = list(xrange(8760))
         dc = HourlyDiscontinuousCollection(header, values,
                                            header.analysis_period.datetimes)
+        dc = dc.validate_analysis_period()
         a_per = AnalysisPeriod(st_month=3, end_month=3)
         filt_dc = dc.filter_by_analysis_period(a_per)
         assert len(filt_dc) == 31 * 24
@@ -342,6 +343,7 @@ class DataCollectionTestCase(unittest.TestCase):
         header = Header(Temperature(), 'C', AnalysisPeriod())
         values = list(xrange(365))
         dc = DailyCollection(header, values, AnalysisPeriod().doys_int)
+        dc = dc.validate_analysis_period()
         a_per = AnalysisPeriod(st_month=3, end_month=4, end_day=30)
         filt_dc = dc.filter_by_analysis_period(a_per)
         assert len(filt_dc) == 31 + 30
@@ -596,8 +598,8 @@ class DataCollectionTestCase(unittest.TestCase):
         dc2 = HourlyContinuousCollection(test_header, values)
 
         # check the interpolate data functions
-        interp_coll1 = dc2.interpolate_data(2)
-        interp_coll2 = dc2.interpolate_data(2, True)
+        interp_coll1 = dc2.interpolate_to_timestep(2)
+        interp_coll2 = dc2.interpolate_to_timestep(2, True)
         assert interp_coll1[1] == 0.5
         assert interp_coll2[1] == 0.25
         assert 'Minute' in interp_coll1.timestep_text
@@ -769,10 +771,10 @@ class DataCollectionTestCase(unittest.TestCase):
         dc2 = HourlyContinuousCollection(header1, val2)
         dc3 = HourlyContinuousCollection(header2, val3)
         dc4 = HourlyContinuousCollection(header2, val4)
-        assert dc1._is_in_data_type_range(raise_exception=False) is True
-        assert dc2._is_in_data_type_range(raise_exception=False) is False
-        assert dc3._is_in_data_type_range(raise_exception=False) is True
-        assert dc4._is_in_data_type_range(raise_exception=False) is False
+        assert dc1.is_in_data_type_range(raise_exception=False) is True
+        assert dc2.is_in_data_type_range(raise_exception=False) is False
+        assert dc3.is_in_data_type_range(raise_exception=False) is True
+        assert dc4.is_in_data_type_range(raise_exception=False) is False
 
     def test_is_in_range_epw(self):
         """Test the function to check whether values are in range for an EPW."""
@@ -786,10 +788,10 @@ class DataCollectionTestCase(unittest.TestCase):
         dc2 = HourlyContinuousCollection(header1, val2)
         dc3 = HourlyContinuousCollection(header2, val3)
         dc4 = HourlyContinuousCollection(header2, val4)
-        assert dc1._is_in_epw_range(raise_exception=False) is True
-        assert dc2._is_in_epw_range(raise_exception=False) is False
-        assert dc3._is_in_epw_range(raise_exception=False) is True
-        assert dc4._is_in_epw_range(raise_exception=False) is False
+        assert dc1.is_in_epw_range(raise_exception=False) is True
+        assert dc2.is_in_epw_range(raise_exception=False) is False
+        assert dc3.is_in_epw_range(raise_exception=False) is True
+        assert dc4.is_in_epw_range(raise_exception=False) is False
 
 
 if __name__ == "__main__":
