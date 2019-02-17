@@ -206,6 +206,28 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1_new.header.analysis_period == AnalysisPeriod(
             6, 20, 12, 6, 21, 23)
 
+        # Test that the validate method with a reversed analysis_period.
+        a_per_3 = AnalysisPeriod(6, 20, 15, 2, 20, 23)
+        dt5 = DateTime(1, 21, 12)
+        dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per_3),
+                                            [v1, v2, v2], [dt1, dt2, dt5])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.header.analysis_period == a_per_3
+        assert dc1_new.header.analysis_period == AnalysisPeriod(
+            6, 20, 12, 2, 20, 23)
+        dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per_3),
+                                            [v1, v2], [dt1, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.header.analysis_period == a_per_3
+        assert dc1_new.header.analysis_period == AnalysisPeriod(
+            6, 20, 12, 2, 20, 23)
+        dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per_3),
+                                            [v1, v2], [dt5, DateTime(1, 21, 15)])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1.header.analysis_period == a_per_3
+        assert dc1_new.header.analysis_period == AnalysisPeriod(
+            6, 20, 12, 2, 20, 23)
+
         # Test that the validate method correctly updates timestep.
         dt3 = DateTime(6, 21, 12, 30)
         dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
