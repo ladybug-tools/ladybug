@@ -464,10 +464,10 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 n_ap[4] = sort_datetimes[-1].day
             if a_per.st_hour != 0:
                 for date_t in sort_datetimes:
-                    n_ap[2] = date_t.hour if date_t.hour < a_per.st_hour else n_ap[2]
+                    n_ap[2] = date_t.hour if date_t.hour < n_ap[2] else n_ap[2]
             if a_per.end_hour != 23:
                 for date_t in sort_datetimes:
-                    n_ap[5] = date_t.hour if date_t.hour > a_per.end_hour else n_ap[5]
+                    n_ap[5] = date_t.hour if date_t.hour > n_ap[5] else n_ap[5]
 
         # check that the analysis_period timestep is correct.
         mins_per_step = int(60 / n_ap[6])
@@ -1320,10 +1320,10 @@ class MonthlyPerHourCollection(BaseCollection):
                 n_ap[2] = sort_datetimes[-1][0]
             if a_per.st_hour != 0:
                 for date_t in sort_datetimes:
-                    n_ap[1] = date_t[1] if date_t[1] < a_per.st_hour else n_ap[1]
+                    n_ap[1] = date_t[1] if date_t[1] < n_ap[1] else n_ap[1]
             if a_per.end_hour != 23:
                 for date_t in sort_datetimes:
-                    n_ap[3] = date_t[1] if date_t[1] > a_per.end_hour else n_ap[3]
+                    n_ap[3] = date_t[1] if date_t[1] > n_ap[3] else n_ap[3]
 
         # build a validated collection.
         new_ap = AnalysisPeriod(st_month=n_ap[0], st_hour=n_ap[1],
