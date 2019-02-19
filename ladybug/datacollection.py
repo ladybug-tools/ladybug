@@ -358,7 +358,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         """
         # validate analysis_period and use the resulting period to generate datetimes
         assert self.validated_a_period is True, 'validated_a_period property must be' \
-            'True to use interpolate_holes(). Run validate_analysis_period().'
+            ' True to use interpolate_holes(). Run validate_analysis_period().'
         mins_per_step = int(60 / self.header.analysis_period.timestep)
         new_datetimes = self.header.analysis_period.datetimes
         new_values = []
@@ -376,7 +376,6 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 new_values.append(self._values[j])
                 i += 1
             else:  # there is a hole between this step and the previous step.
-                print(self.datetimes[j].moy, new_datetimes[i].moy)
                 n_steps = int((self.datetimes[j].moy - new_datetimes[i].moy)
                               / mins_per_step)
                 intp_vals = self._xxrange(self._values[j - 1], self._values[j], n_steps)
@@ -440,36 +439,42 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
         # make sure that datetimes are all in chronological order.
         sort_datetimes, sort_values = zip(*sorted(zip(self.datetimes, self.values)))
-        last_ind = 0
-        if a_per.is_reversed:
+        if not a_per.is_reversed and not a_per.is_annual:
+            if sort_datetimes[0].doy < a_per.st_time.doy:
+                n_ap[0] = sort_datetimes[0].month
+                n_ap[1] = sort_datetimes[0].day
+            if sort_datetimes[-1].doy > a_per.end_time.doy:
+                n_ap[3] = sort_datetimes[-1].month
+                n_ap[4] = sort_datetimes[-1].day
+        elif a_per.is_reversed:
             last_ind = None
             for i, date_t in enumerate(sort_datetimes):
                 last_ind = i if date_t.moy <= a_per.end_time.moy else last_ind
-            if last_ind is not None and last_ind < len(sort_datetimes):
+            if last_ind is not None:
                 last_ind = last_ind + 1
                 sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind]
                 sort_values = sort_values[last_ind:] + sort_values[:last_ind]
-
-        # check that there are no duplicate datetimes.
-        for i in xrange(len(sort_datetimes)):
-            assert sort_datetimes[i] != sort_datetimes[i - 1], 'Duplicate datetime ' \
-                'was found in the collection: {}'.format(sort_datetimes[i])
-
-        # check that no datetimes lie outside of the analysis_period
-        if not a_per.is_annual:
-            if last_ind is not None and last_ind < len(sort_datetimes) and \
+            # If datetimes are outside the a_period range, just make it annual.
+            # There's no way to know what side of the analysis_period should be etended.
+            if sort_datetimes[0].doy > a_per.end_time.doy and \
                     sort_datetimes[0].doy < a_per.st_time.doy:
-                n_ap[0] = sort_datetimes[0].month
-                n_ap[1] = sort_datetimes[0].day
-            if last_ind is not None and sort_datetimes[-1].doy > a_per.end_time.doy:
-                n_ap[3] = sort_datetimes[-1].month
-                n_ap[4] = sort_datetimes[-1].day
+                n_ap[0], n_ap[1], n_ap[3], n_ap[4] = 1, 1, 12, 31
+                sort_datetimes, sort_values = zip(*sorted(zip(
+                    self.datetimes, self.values)))
+
+        # check that no hours lie outside of the analysis_period
+        if not a_per.is_annual:
             if a_per.st_hour != 0:
                 for date_t in sort_datetimes:
                     n_ap[2] = date_t.hour if date_t.hour < n_ap[2] else n_ap[2]
             if a_per.end_hour != 23:
                 for date_t in sort_datetimes:
                     n_ap[5] = date_t.hour if date_t.hour > n_ap[5] else n_ap[5]
+
+        # check that there are no duplicate datetimes.
+        for i in xrange(len(sort_datetimes)):
+            assert sort_datetimes[i] != sort_datetimes[i - 1], 'Duplicate datetime ' \
+                'was found in the collection: {}'.format(sort_datetimes[i])
 
         # check that the analysis_period timestep is correct.
         mins_per_step = int(60 / n_ap[6])
@@ -633,7 +638,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
         Therefore, there is no need to run this method on a continuous collection.
         """
-        pass
+        return self.duplicate()
 
     def interpolate_to_timestep(self, timestep, cumulative=None):
         """Interpolate data for a finer timestep using a linear interpolation.
@@ -1045,40 +1050,43 @@ class DailyCollection(BaseCollection):
         n_ap = [a_per.st_month, a_per.st_day, a_per.st_hour, a_per.end_month,
                 a_per.end_day, a_per.end_hour, a_per.timestep, a_per.is_leap_year]
 
+        # check that the analysis_period leap_year is correct.
+        if a_per.is_leap_year is False:
+            for date_t in self.datetimes:
+                if date_t == 366:
+                    n_ap[7] = True
+
         # make sure that datetimes are all in chronological order.
         sort_datetimes, sort_values = zip(*sorted(zip(self.datetimes, self.values)))
-        last_ind = 0
-        if a_per.is_reversed:
+        if not a_per.is_reversed and not a_per.is_annual:
+            if sort_datetimes[0] < a_per.st_time.doy:
+                new_start = DateTime.from_hoy((sort_datetimes[0] - 1) * 24, n_ap[7])
+                n_ap[0] = new_start.month
+                n_ap[1] = new_start.day
+            if sort_datetimes[-1] > a_per.end_time.doy:
+                new_end = DateTime.from_hoy((sort_datetimes[-1] - 1) * 24, n_ap[7])
+                n_ap[3] = new_end.month
+                n_ap[4] = new_end.day
+        elif a_per.is_reversed:
             last_ind = None
             for i, date_t in enumerate(sort_datetimes):
                 last_ind = i if date_t <= a_per.end_time.doy else last_ind
-            if last_ind is not None and last_ind < len(sort_datetimes):
+            if last_ind is not None:
                 last_ind = last_ind + 1
                 sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind]
                 sort_values = sort_values[last_ind:] + sort_values[:last_ind]
+            # If datetimes are outside the a_period range, just make it annual.
+            # There's no way to know what side of the analysis_period should be etended.
+            if sort_datetimes[0] > a_per.end_time.doy and \
+                    sort_datetimes[0] < a_per.st_time.doy:
+                n_ap[0], n_ap[1], n_ap[3], n_ap[4] = 1, 1, 12, 31
+                sort_datetimes, sort_values = zip(*sorted(zip(
+                    self.datetimes, self.values)))
 
         # check that there are no duplicate days.
         for i in xrange(len(sort_datetimes)):
             assert sort_datetimes[i] != sort_datetimes[i - 1], 'Duplicate day of year ' \
                 'was found in the collection: {}'.format(sort_datetimes[i])
-
-        # check that the analysis_period leap_year is correct.
-        if a_per.is_leap_year is False:
-            for date_t in sort_datetimes:
-                if date_t == 366:
-                    n_ap[7] = True
-
-        # check that no datetimes lie outside of the analysis_period
-        if not a_per.is_annual:
-            if last_ind is not None and last_ind < len(sort_datetimes) and \
-                    sort_datetimes[0] < a_per.st_time.doy:
-                new_start = DateTime.from_hoy((sort_datetimes[0] - 1) * 24, n_ap[7])
-                n_ap[0] = new_start.month
-                n_ap[1] = new_start.day
-            if last_ind is not None and sort_datetimes[-1] > a_per.end_time.doy:
-                new_end = DateTime.from_hoy((sort_datetimes[-1] - 1) * 24, n_ap[7])
-                n_ap[3] = new_end.month
-                n_ap[4] = new_end.day
 
         # build a validated collection.
         new_ap = AnalysisPeriod(*n_ap)
@@ -1183,24 +1191,30 @@ class MonthlyCollection(BaseCollection):
 
         # make sure that months are in chronological order.
         sort_datetimes, sort_values = zip(*sorted(zip(self.datetimes, self.values)))
-        if a_per.is_reversed:
-            last_ind = 0
+        # check that no datetimes lie outside of the analysis_period
+        if not a_per.is_reversed and not a_per.is_annual:
+            if sort_datetimes[0] < a_per.st_month:
+                n_ap[0] = sort_datetimes[0]
+            if sort_datetimes[-1] > a_per.end_month:
+                n_ap[1] = sort_datetimes[-1]
+        elif a_per.is_reversed:
+            last_ind = None
             for i, date_t in enumerate(sort_datetimes):
                 last_ind = i if date_t <= a_per.end_time.month else last_ind
-            sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
-            sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+            if last_ind is not None:
+                last_ind = last_ind + 1
+                sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind]
+                sort_values = sort_values[last_ind:] + sort_values[:last_ind]
+            if sort_datetimes[0] > a_per.end_time.month and \
+                    sort_datetimes[0] < a_per.st_time.month:
+                n_ap = [1, 12]
+                sort_datetimes, sort_values = zip(*sorted(zip(
+                    self.datetimes, self.values)))
 
         # check that there are no duplicate months.
         for i in xrange(len(sort_datetimes)):
             assert sort_datetimes[i] != sort_datetimes[i - 1], 'Duplicate month ' \
                 'was found in the collection: {}'.format(sort_datetimes[i])
-
-        # check that no datetimes lie outside of the analysis_period
-        if not a_per.is_annual:
-            if sort_datetimes[0] < a_per.st_month:
-                n_ap[0] = sort_datetimes[0]
-            if sort_datetimes[-1] > a_per.end_month:
-                n_ap[1] = sort_datetimes[-1]
 
         # build a validated collection.
         new_ap = AnalysisPeriod(st_month=n_ap[0], end_month=n_ap[1])
@@ -1303,25 +1317,33 @@ class MonthlyPerHourCollection(BaseCollection):
         # make sure that months are in chronological order.
         sort_datetimes, sort_values = zip(*sorted(zip(self.datetimes, self.values),
                                                   key=lambda x: (x[0][0], x[0][1])))
-        if a_per.is_reversed:
-            last_ind = 0
+        if not a_per.is_reversed and not a_per.is_annual:
+            if sort_datetimes[0][0] < a_per.st_month:
+                n_ap[0] = sort_datetimes[0][0]
+            if sort_datetimes[-1][0] > a_per.end_month:
+                n_ap[2] = sort_datetimes[-1][0]
+        elif a_per.is_reversed:
+            last_ind = None
             for i, date_t in enumerate(sort_datetimes):
                 last_ind = i if date_t[0] <= a_per.end_time.month \
                     and date_t[1] <= a_per.end_time.hour else last_ind
-            sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind + 1]
-            sort_values = sort_values[last_ind:] + sort_values[:last_ind + 1]
+            if last_ind is not None:
+                last_ind = last_ind + 1
+                sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind]
+                sort_values = sort_values[last_ind:] + sort_values[:last_ind]
+            if sort_datetimes[0][0] > a_per.end_time.month and \
+                    sort_datetimes[0][0] < a_per.st_time.month:
+                n_ap[0], n_ap[2] = 1, 12
+                sort_datetimes, sort_values = zip(*sorted(zip(
+                    self.datetimes, self.values), key=lambda x: (x[0][0], x[0][1])))
 
         # check that there are no duplicate months.
         for i in xrange(len(sort_datetimes)):
             assert sort_datetimes[i] != sort_datetimes[i - 1], 'Duplicate ' \
                 '(month, hour) was found in the collection: {}'.format(sort_datetimes[i])
 
-        # check that no datetimes lie outside of the analysis_period
+        # check that no hours lie outside of the analysis_period
         if not a_per.is_annual:
-            if sort_datetimes[0][0] < a_per.st_month:
-                n_ap[0] = sort_datetimes[0][0]
-            if sort_datetimes[-1][0] > a_per.end_month:
-                n_ap[2] = sort_datetimes[-1][0]
             if a_per.st_hour != 0:
                 for date_t in sort_datetimes:
                     n_ap[1] = date_t[1] if date_t[1] < n_ap[1] else n_ap[1]

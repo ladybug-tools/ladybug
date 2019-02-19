@@ -212,19 +212,16 @@ class DataCollectionTestCase(unittest.TestCase):
         dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per_3),
                                             [v1, v2, v2], [dt1, dt2, dt5])
         dc1_new = dc1.validate_analysis_period()
-        assert dc1.header.analysis_period == a_per_3
         assert dc1_new.header.analysis_period == AnalysisPeriod(
             6, 20, 12, 2, 20, 23)
         dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per_3),
                                             [v1, v2], [dt1, dt2])
         dc1_new = dc1.validate_analysis_period()
-        assert dc1.header.analysis_period == a_per_3
         assert dc1_new.header.analysis_period == AnalysisPeriod(
             6, 20, 12, 2, 20, 23)
         dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per_3),
                                             [v1, v2], [dt5, DateTime(1, 21, 15)])
         dc1_new = dc1.validate_analysis_period()
-        assert dc1.header.analysis_period == a_per_3
         assert dc1_new.header.analysis_period == AnalysisPeriod(
             6, 20, 12, 2, 20, 23)
 
@@ -280,6 +277,26 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1_new.header.analysis_period == AnalysisPeriod(
             6, 20, 0, 6, 22, 23)
 
+        # Test that the validate method with reversed analysis_periods.
+        a_per_3 = AnalysisPeriod(6, 20, 0, 2, 20, 23)
+        dt5 = 21
+        dc1 = DailyCollection(Header(Temperature(), 'C', a_per_3),
+                              [v1, v2, v2], [dt1, dt2, dt5])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == a_per_3
+        dc1 = DailyCollection(Header(Temperature(), 'C', a_per_3),
+                              [v1, v2], [dt1, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == a_per_3
+        dc1 = DailyCollection(Header(Temperature(), 'C', a_per_3),
+                              [v1, v2], [dt5, 22])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == a_per_3
+        dc1 = DailyCollection(Header(Temperature(), 'C', a_per_3),
+                              [v1, v2], [dt5, 60])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == AnalysisPeriod()
+
         # Test that the validate method correctly identifies leap years.
         dc1 = DailyCollection(Header(Temperature(), 'C', a_per),
                               [v1, v2, v2], [dt1, dt2, 366])
@@ -321,6 +338,30 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1_new.header.analysis_period == AnalysisPeriod(
             6, 1, 0, 7, 31, 23)
 
+        # Test that the validate method with reversed analysis_periods.
+        a_per_3 = AnalysisPeriod(6, 1, 0, 2, 28, 23)
+        dt5 = 1
+        dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per_3),
+                                [v1, v2, v2], [dt5, dt1, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == a_per_3
+        assert dc1_new.datetimes == (dt1, dt2, dt5)
+        dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per_3),
+                                [v1, v2], [dt1, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == a_per_3
+        assert dc1_new.datetimes == (dt1, dt2)
+        dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per_3),
+                                [v1, v2], [dt5, 2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.datetimes == (dt5, 2)
+        assert dc1_new.header.analysis_period == a_per_3
+        dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per_3),
+                                [v1, v2], [dt5, 4])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == AnalysisPeriod()
+        assert dc1_new.datetimes == (dt5, 4)
+
         # Test that duplicated datetimes are caught
         dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per),
                                 [v1, v2], [dt1, dt1])
@@ -352,6 +393,30 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.header.analysis_period == a_per_2
         assert dc1_new.header.analysis_period == AnalysisPeriod(
             6, 1, 12, 7, 31, 23)
+
+        # Test that the validate method with reversed analysis_periods.
+        a_per_3 = AnalysisPeriod(6, 1, 0, 2, 28, 23)
+        dt5 = (1, 15)
+        dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per_3),
+                                       [v1, v2, v2], [dt5, dt1, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == a_per_3
+        assert dc1_new.datetimes == (dt1, dt2, dt5)
+        dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per_3),
+                                       [v1, v2], [dt1, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == a_per_3
+        assert dc1_new.datetimes == (dt1, dt2)
+        dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per_3),
+                                       [v1, v2], [dt5, (2, 12)])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.datetimes == (dt5, (2, 12))
+        assert dc1_new.header.analysis_period == a_per_3
+        dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per_3),
+                                       [v1, v2], [dt5, (4, 12)])
+        dc1_new = dc1.validate_analysis_period()
+        assert dc1_new.header.analysis_period == AnalysisPeriod()
+        assert dc1_new.datetimes == (dt5, (4, 12))
 
         # Test that duplicated datetimes are caught
         dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per),
@@ -769,7 +834,52 @@ class DataCollectionTestCase(unittest.TestCase):
         for i, val in enumerate(day_dict.values()):
             assert len(val) == 24 * days_per_month[i]
 
-    def test_interpolation(self):
+    def test_interpolate_holes(self):
+        """Test the interoplate holes method on the discontinuous collection."""
+        a_per = AnalysisPeriod(6, 21, 0, 6, 21, 23)
+        dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 14)
+        v1, v2 = 20, 25
+        dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
+                                            [v1, v2], [dt1, dt2])
+        with pytest.raises(Exception):
+            interp_coll1 = dc1.interpolate_holes()
+        dc2 = dc1.validate_analysis_period()
+        interp_coll1 = dc2.interpolate_holes()
+        assert isinstance(interp_coll1, HourlyContinuousCollection)
+        assert len(interp_coll1.values) == 24
+        assert interp_coll1[0] == 20
+        assert interp_coll1[12] == 20
+        assert interp_coll1[13] == 22.5
+        assert interp_coll1[14] == 25
+        assert interp_coll1[23] == 25
+
+        values = list(xrange(24))
+        test_header = Header(GenericType('Test Type', 'test'), 'test',
+                             AnalysisPeriod(end_month=1, end_day=1))
+        dc3 = HourlyContinuousCollection(test_header, values)
+        interp_coll2 = dc3.interpolate_holes()
+        assert isinstance(interp_coll2, HourlyContinuousCollection)
+        assert len(interp_coll2.values) == 24
+
+    def test_cull_to_timestep(self):
+        """Test the test_cull_to_timestep method on the discontinuous collection."""
+        a_per = AnalysisPeriod(6, 21, 0, 6, 21, 23)
+        dt1, dt2, dt3 = DateTime(6, 21, 12), DateTime(6, 21, 13), DateTime(6, 21, 12, 30)
+        v1, v2 = 20, 25
+        dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
+                                            [v1, v2, v2], [dt1, dt3, dt2])
+        dc1_new = dc1.validate_analysis_period()
+        dc2_new = dc1.cull_to_timestep()
+        assert dc1_new.header.analysis_period.timestep == 2
+        assert dc2_new.header.analysis_period.timestep == 1
+        assert len(dc1_new.values) == 3
+        assert len(dc2_new.values) == 2
+
+        dc1_new.convert_to_culled_timestep()
+        assert dc1_new.header.analysis_period.timestep == 1
+        assert len(dc1_new.values) == 2
+
+    def test_interpolate_to_timestep(self):
         """Test the interoplation method on the continuous collection."""
         values = list(xrange(24))
         test_header = Header(GenericType('Test Type', 'test'), 'test',
