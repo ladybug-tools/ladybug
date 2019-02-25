@@ -21,7 +21,7 @@ class SolarcalTestCase(unittest.TestCase):
     def test_outdoor_sky_heat_exch(self):
         """Test the outdoor_sky_heat_exch function"""
         # Test typical daytime condition
-        sky_exch = outdoor_sky_heat_exch(22, 380, 200, 380, 45, 135)
+        sky_exch = outdoor_sky_heat_exch(22, 380, 200, 380, 45)
         assert sky_exch['s_erf'] == pytest.approx(129.239, rel=1e-2)
         assert sky_exch['s_dmrt'] == pytest.approx(29.6508, rel=1e-2)
         assert sky_exch['l_erf'] == pytest.approx(-11.6208, rel=1e-2)
@@ -29,70 +29,49 @@ class SolarcalTestCase(unittest.TestCase):
         assert sky_exch['mrt'] == pytest.approx(48.9847, rel=1e-2)
 
         # Test typical nighttime condition
-        sky_exch = outdoor_sky_heat_exch(18, 330, 0, 0, 0, 0)
+        sky_exch = outdoor_sky_heat_exch(18, 330, 0, 0, 0)
         assert sky_exch['s_erf'] == pytest.approx(0, rel=1e-2)
         assert sky_exch['s_dmrt'] == pytest.approx(0, rel=1e-2)
         assert sky_exch['l_erf'] == pytest.approx(-24.792, rel=1e-2)
         assert sky_exch['l_dmrt'] == pytest.approx(-5.688, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(12.3120, rel=1e-2)
 
-        # Test with a body azimuth
-        sky_exch = outdoor_sky_heat_exch(22, 380, 200, 380, 45, 135, body_azimuth=180)
-        assert sky_exch['s_erf'] == pytest.approx(131.4791, rel=1e-2)
-        assert sky_exch['s_dmrt'] == pytest.approx(30.16476, rel=1e-2)
-        assert sky_exch['l_erf'] == pytest.approx(-11.6208, rel=1e-2)
-        assert sky_exch['l_dmrt'] == pytest.approx(-2.6661, rel=1e-2)
-        assert sky_exch['mrt'] == pytest.approx(49.49863, rel=1e-2)
-
     def test_indoor_sky_heat_exch(self):
         """Test the indoor_sky_heat_exch function"""
         # Test typical daytime condition
-        sky_exch = indoor_sky_heat_exch(22, 200, 380, 45, 135, 0.5, 0.5)
+        sky_exch = indoor_sky_heat_exch(22, 200, 380, 45, 0.5, 0.5)
         assert sky_exch['erf'] == pytest.approx(59.2852, rel=1e-2)
         assert sky_exch['dmrt'] == pytest.approx(14.168, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(36.168, rel=1e-2)
 
         # Test typical nighttime condition
-        sky_exch = indoor_sky_heat_exch(22, 0, 0, 0, 0, 0.5, 0.5)
+        sky_exch = indoor_sky_heat_exch(22, 0, 0, 0, 0.5, 0.5)
         assert sky_exch['erf'] == pytest.approx(0, rel=1e-2)
         assert sky_exch['dmrt'] == pytest.approx(0, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(22, rel=1e-2)
 
-        # Test with a body azimuth
-        sky_exch = indoor_sky_heat_exch(
-            22, 200, 380, 45, 135, 0.5, 0.5, body_azimuth=180)
-        assert sky_exch['erf'] == pytest.approx(68.805, rel=1e-2)
-        assert sky_exch['dmrt'] == pytest.approx(16.44345, rel=1e-2)
-        assert sky_exch['mrt'] == pytest.approx(38.44345, rel=1e-2)
-
     def test_shortwave_from_horiz_solar(self):
         """Test the shortwave_from_horiz_solar function."""
         # Test typical daytime noon condition
-        sky_exch = shortwave_from_horiz_solar(22, 144, 850, 72, 180)
+        sky_exch = shortwave_from_horiz_solar(22, 144, 850, 72)
         assert sky_exch['erf'] == pytest.approx(168.7179, rel=1e-2)
         assert sky_exch['dmrt'] == pytest.approx(38.7083, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(60.7083, rel=1e-2)
 
         # Test typical daytime condition
-        sky_exch = shortwave_from_horiz_solar(22, 120, 500, 45, 135)
+        sky_exch = shortwave_from_horiz_solar(22, 120, 500, 45)
         assert sky_exch['erf'] == pytest.approx(157.33914, rel=1e-2)
         assert sky_exch['dmrt'] == pytest.approx(36.09772, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(58.09772, rel=1e-2)
 
-        # Test with a body azimuth
-        sky_exch = shortwave_from_horiz_solar(22, 120, 500, 45, 135, body_azimuth=180)
-        assert sky_exch['erf'] == pytest.approx(160.46529, rel=1e-2)
-        assert sky_exch['dmrt'] == pytest.approx(36.8149, rel=1e-2)
-        assert sky_exch['mrt'] == pytest.approx(58.81494, rel=1e-2)
-
         # Test typical daytime low angle condition
-        sky_exch = shortwave_from_horiz_solar(22, 10, 55, 15, 290)
+        sky_exch = shortwave_from_horiz_solar(22, 10, 55, 15)
         assert sky_exch['erf'] == pytest.approx(41.61606, rel=1e-2)
         assert sky_exch['dmrt'] == pytest.approx(9.547814, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(31.547814, rel=1e-2)
 
         # Test typical nighttime condition
-        sky_exch = shortwave_from_horiz_solar(18, 0, 0, 0, 0, 0.5)
+        sky_exch = shortwave_from_horiz_solar(18, 0, 0, 0, 0.5)
         assert sky_exch['erf'] == pytest.approx(0, rel=1e-2)
         assert sky_exch['dmrt'] == pytest.approx(0, rel=1e-2)
         assert sky_exch['mrt'] == pytest.approx(18, rel=1e-2)

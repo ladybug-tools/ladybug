@@ -18,10 +18,9 @@ from .__init__ import SOLARCALSPLINES
 import math
 
 
-def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_solar,
-                          solar_altitude, solar_azimuth,
+def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_solar, alt,
                           sky_exposure=1, fract_exposed=1, floor_reflectance=0.25,
-                          posture='standing', body_azimuth=None,
+                          posture='standing', sharp=135,
                           body_absortivity=0.7, body_emissivity=0.95):
     """Perform a full outdoor sky radiant heat exchange.
 
@@ -33,8 +32,7 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
         horiz_ir: The horizontal infrared radiation intensity from the sky in W/m2.
         diff_horiz_solar: Diffuse horizontal solar irradiance in W/m2.
         dir_normal_solar: Direct normal solar irradiance in W/m2.
-        solar_altitude: The altitude of the sun in degrees [0-90].
-        solar_azimuth: The azimuth of the sun in degrees [0-360].
+        alt: The altitude of the sun in degrees [0-90].
         sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
@@ -48,11 +46,11 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
         posture: A text string indicating the posture of the body. Letters must
             be lowercase.  Choose from the following: "standing", "seated", "supine".
             Default is "standing".
-        body_azimuth: A number between 0 and 360 representing the direction that
-            the human is facing in degrees (0=North, 90=East, 180=South, 270=West).
-            Default is None, which will assume that the person is always facing 135
-            degrees from the sun, meaning that the person faces their side or
-            back to the sun at all times in order to avoid glare.
+        sharp: A number between 0 and 180 representing the solar horizontal
+            angle relative to front of person (SHARP). 0 signifies sun that is
+            shining directly into the person's face and 180 signifies sun that
+            is shining at the person's back. Default is 135, asuming that a person
+            typically faces their side or back to the sun to avoid glare.
         body_absortivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
             Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
@@ -72,15 +70,11 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
     """
     # set defaults using the input parameters
     fract_efficiency = 0.696 if posture == 'seated' else 0.725
-    if body_azimuth is not None:
-        sharp = sharp_from_solar_and_body_azimuth(solar_azimuth, body_azimuth)
-    else:
-        sharp = 135
 
     # calculate the influence of shorwave irradiance
-    if solar_altitude > 0:
+    if alt > 0:
         s_flux = body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar,
-                                            solar_altitude, sharp, sky_exposure,
+                                            alt, sharp, sky_exposure,
                                             fract_exposed, floor_reflectance, posture)
         short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
         short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
@@ -105,11 +99,9 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
     return heat_exch_result
 
 
-def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
-                         solar_altitude, solar_azimuth,
+def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar, alt,
                          sky_exposure=1, fract_exposed=1, floor_reflectance=0.25,
-                         window_transmittance=1,
-                         posture='seated', body_azimuth=None,
+                         window_transmittance=1, posture='seated', sharp=135,
                          body_absortivity=0.7, body_emissivity=0.95):
     """Perform a full indoor sky radiant heat exchange.
 
@@ -118,11 +110,9 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
             as a result of indoor surface temperatures in C.
         diff_horiz_solar: Diffuse horizontal solar irradiance in W/m2.
         dir_normal_solar: Direct normal solar irradiance in W/m2.
-        solar_altitude: The altitude of the sun in degrees [0-90].
-        solar_azimuth: The azimuth of the sun in degrees [0-360].
+        alt: The altitude of the sun in degrees [0-90].
         sky_exposure: A number between 0 and 1 representing the fraction of the
-            sky vault in occupant’s view. Default is 1 for outdoors in an
-            open field.
+            sky vault in occupant’s view. Default is 1 for a completely glass box.
         fract_exposed: A number between 0 and 1 representing the fraction of
             the body exposed to direct sunlight. Note that this does not include the
             body’s self-shading; only the shading from surroundings.
@@ -137,11 +127,11 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
         posture: A text string indicating the posture of the body. Letters must
             be lowercase.  Choose from the following: "standing", "seated", "supine".
             Default is "standing".
-        body_azimuth: A number between 0 and 360 representing the direction that
-            the human is facing in degrees (0=North, 90=East, 180=South, 270=West).
-            Default is None, which will assume that the person is always facing 135
-            degrees from the sun, meaning that the person faces their side or
-            back to the sun at all times in order to avoid glare.
+        sharp: A number between 0 and 180 representing the solar horizontal
+            angle relative to front of person (SHARP). 0 signifies sun that is
+            shining directly into the person's face and 180 signifies sun that
+            is shining at the person's back. Default is 135, asuming that a person
+            typically faces their side or back to the sun to avoid glare.
         body_absortivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
             Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
@@ -159,15 +149,11 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
     """
     # set defaults using the input parameters
     fract_efficiency = 0.696 if posture == 'seated' else 0.725
-    if body_azimuth is not None:
-        sharp = sharp_from_solar_and_body_azimuth(solar_azimuth, body_azimuth)
-    else:
-        sharp = 135
 
     # calculate the influence of shorwave irradiance
-    if solar_altitude > 0:
+    if alt > 0:
         s_flux = body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar,
-                                            solar_altitude, sharp, sky_exposure,
+                                            alt, sharp, sky_exposure,
                                             fract_exposed, floor_reflectance, posture)
         s_flux = s_flux * window_transmittance
         short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
@@ -186,10 +172,9 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar,
     return heat_exch_result
 
 
-def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar,
-                               solar_altitude, solar_azimuth,
+def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar, alt,
                                fract_exposed=1, floor_reflectance=0.25,
-                               posture='standing', body_azimuth=None,
+                               posture='standing', sharp=135,
                                body_absortivity=0.7, body_emissivity=0.95):
     """Perform a shortwave radiant heat exchange using horizontal solar components.
 
@@ -204,8 +189,7 @@ def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar,
         horiz_ir: The horizontal infrared radiation intensity from the sky in W/m2.
         diff_horiz_solar: Diffuse horizontal solar irradiance in W/m2.
         dir_horiz_solar: Direct horizontal solar irradiance in W/m2.
-        solar_altitude: The altitude of the sun in degrees [0-90].
-        solar_azimuth: The azimuth of the sun in degrees [0-360].
+        alt: The altitude of the sun in degrees [0-90].
         sky_exposure: A number between 0 and 1 representing the fraction of the
             sky vault in occupant’s view. Default is 1 for outdoors in an
             open field.
@@ -219,11 +203,11 @@ def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar,
         posture: A text string indicating the posture of the body. Letters must
             be lowercase.  Choose from the following: "standing", "seated", "supine".
             Default is "standing".
-        body_azimuth: A number between 0 and 360 representing the direction that
-            the human is facing in degrees (0=North, 90=East, 180=South, 270=West).
-            Default is None, which will assume that the person is always facing 135
-            degrees from the sun, meaning that the person faces their side or
-            back to the sun at all times in order to avoid glare.
+        sharp: A number between 0 and 180 representing the solar horizontal
+            angle relative to front of person (SHARP). 0 signifies sun that is
+            shining directly into the person's face and 180 signifies sun that
+            is shining at the person's back. Default is 135, asuming that a person
+            typically faces their side or back to the sun to avoid glare.
         body_absortivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
             Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
@@ -241,15 +225,11 @@ def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar,
     """
     # set defaults using the input parameters
     fract_efficiency = 0.696 if posture == 'seated' else 0.725
-    if body_azimuth is not None:
-        sharp = sharp_from_solar_and_body_azimuth(solar_azimuth, body_azimuth)
-    else:
-        sharp = 135
 
     # calculate the influence of shorwave irradiance
-    if solar_altitude > 0:
+    if alt > 0:
         s_flux = body_solar_flux_from_horiz_parts(diff_horiz_solar, dir_horiz_solar,
-                                                  solar_altitude, sharp, fract_exposed,
+                                                  alt, sharp, fract_exposed,
                                                   floor_reflectance, posture)
         short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
         short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
@@ -364,7 +344,7 @@ def body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar, altitude,
     Args:
         diff_horiz_solar: Diffuse horizontal solar irradiance in W/m2.
         dir_normal_solar: Direct normal solar irradiance in W/m2.
-        solar_altitude: The altitude of the sun in degrees [0-90].
+        alt: The altitude of the sun in degrees [0-90].
         sharp: A number between 0 and 180 representing the solar horizontal
             angle relative to front of person (SHARP). 0 signifies sun that is
             shining directly into the person's face and 180 signifies sun that
@@ -407,7 +387,7 @@ def body_solar_flux_from_horiz_parts(diff_horiz_solar, dir_horiz_solar, altitude
     Args:
         diff_horiz_solar: Diffuse horizontal solar irradiance in W/m2.
         dir_horiz_solar: Direct horizontal solar irradiance in W/m2.
-        solar_altitude: The altitude of the sun in degrees [0-90].
+        alt: The altitude of the sun in degrees [0-90].
         sharp: A number between 0 and 180 representing the solar horizontal
             angle relative to front of person (SHARP). 0 signifies sun that is
             shining directly into the person's face and 180 signifies sun that

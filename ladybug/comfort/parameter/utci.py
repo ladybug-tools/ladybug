@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Object for calculating PMV comfort from DataCollections."""
+"""Parameters for specifying acceptable thermal conditions using the UTCI model."""
 from __future__ import division
 
 from ._base import ComfortParameter

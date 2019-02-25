@@ -60,7 +60,6 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
                     'rad': heat loss by radiation [W]
                     'conv' heat loss by convection [W]
     """
-    result = {}
     se_temp = pierce_set(ta, tr, vel, rh, met, clo, wme)
 
     if vel <= still_air_threshold:
@@ -84,6 +83,7 @@ def pmv(ta, tr, vel, rh, met, clo, wme=0,
             ta - ce, tr - ce, still_air_threshold, rh, met, clo, wme)
         ta_adj = ta - ce
 
+    result = {}
     result['pmv'] = pmv
     result['ppd'] = ppd
     result['set'] = se_temp
