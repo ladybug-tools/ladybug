@@ -351,7 +351,7 @@ def weighted_running_mean_hourly(outdoor_temperatures, alpha=0.8):
 
     # run through each day of data and compute the running mean using the previous day's
     start_hour = 24
-    for i in xrange(math.floor(len(outdoor_temperatures) / 24) - 1):
+    for i in xrange(int(math.floor(len(outdoor_temperatures) / 24) - 1)):
         daily_mean = sum(outdoor_temperatures[start_hour: start_hour + 24]) / 24
         daily_run_mean = ((1 - alpha) * daily_means[-1]) + alpha * daily_run_means[-1]
         daily_run_means.append(daily_run_mean)

@@ -30,7 +30,8 @@ class PMVParameter(ComfortParameter):
                 cooling effect of elevated air speeds.
         """
 
-        self.ppd_thresh = ppd_comfort_thresh if ppd_comfort_thresh is not None else 10
+        self.ppd_comfort_thresh = \
+            ppd_comfort_thresh if ppd_comfort_thresh is not None else 10
         self._hr_upper = humid_ratio_upper if humid_ratio_upper is not None else 1
         self._hr_lower = humid_ratio_lower if humid_ratio_lower is not None else 0
         self._still_thresh = \
@@ -42,12 +43,13 @@ class PMVParameter(ComfortParameter):
         assert 0 <= self._hr_lower <= 1, \
             'humid_ratio_lower must be between 0 and 1. Got {}'.format(
                 self._hr_lower)
-        assert 0 <= self._still_thresh, \
-            'still_air_threshold must be greater than 0. Got {}'.format(
-                self._still_thresh)
         assert self._hr_lower <= self._hr_upper, \
             'humid_ratio_lower must be less than humid_ratio_upper. {} > {}'.format(
                 self._hr_lower, self._hr_upper)
+
+        assert 0 <= self._still_thresh, \
+            'still_air_threshold must be greater than 0. Got {}'.format(
+                self._still_thresh)
 
     @property
     def ppd_comfort_thresh(self):
