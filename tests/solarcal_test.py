@@ -5,6 +5,7 @@ from ladybug.comfort.solarcal import outdoor_sky_heat_exch, indoor_sky_heat_exch
     get_projection_factor, get_projection_factor_simple, \
     sharp_from_solar_and_body_azimuth, body_solar_flux_from_parts, \
     body_solar_flux_from_horiz_parts
+from ladybug.comfort.parameter.solarcal import SolarCalParameter
 from ladybug.wea import Wea
 from ladybug.sunpath import Sunpath
 
@@ -142,6 +143,52 @@ class SolarcalTestCase(unittest.TestCase):
             get_projection_factor_simple(25, 0, 'Standing')  # incorrect capitalization
         with pytest.raises(Exception):
             get_projection_factor_simple(100, 0, 'standing')  # incorrect altitude
+
+    def test_solarcal_parameter_init(self):
+        """Test the initialization of the SolarCalParameter object."""
+        posture = 'seated'
+        sharp = 180
+        absorptivity = 0.8
+        emissivity = 0.97
+        solarcal_par = SolarCalParameter(posture=posture,
+                                         sharp=sharp,
+                                         body_absorptivity=absorptivity,
+                                         body_emissivity=emissivity)
+        assert solarcal_par.posture == posture
+        assert solarcal_par.sharp == sharp
+        assert solarcal_par.body_azimuth is None
+        assert solarcal_par.body_absorptivity == absorptivity
+        assert solarcal_par.body_emissivity == emissivity
+
+    def test_solarcal_parameter_default(self):
+        """Test the default SolarCalParameter properties."""
+        solarcal_par = SolarCalParameter()
+        str(solarcal_par)  # test casting the parameters to a string
+        assert solarcal_par.posture == 'standing'
+        assert solarcal_par.sharp == 135
+        assert solarcal_par.body_azimuth is None
+        assert solarcal_par.body_absorptivity == 0.7
+        assert solarcal_par.body_emissivity == 0.95
+        solarcal_par.acceptable_postures  # test that the acceptable postures are there
+
+    def test_solarcal_parameter_incorrect(self):
+        """Test incorrect SolarCalParameter properties."""
+        with pytest.raises(Exception):
+            SolarCalParameter(posture='seated',
+                              sharp=180,
+                              body_azimuth=135,  # both sharp and azimuth
+                              body_absorptivity=0.8,
+                              body_emissivity=0.97)
+        with pytest.raises(Exception):
+            SolarCalParameter(posture='disco pose')  # incorrect posture
+        with pytest.raises(Exception):
+            SolarCalParameter(sharp=270)  # incorrect sharp
+        with pytest.raises(Exception):
+            SolarCalParameter(body_azimuth=-45)  # incorrect body_azimuth
+        with pytest.raises(Exception):
+            SolarCalParameter(body_absorptivity=60)  # incorrect body_absorptivity
+        with pytest.raises(Exception):
+            SolarCalParameter(body_emissivity=97)  # incorrect body_emissivity
 
 
 if __name__ == "__main__":

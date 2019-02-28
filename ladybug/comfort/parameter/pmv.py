@@ -3,18 +3,17 @@
 from __future__ import division
 
 from ._base import ComfortParameter
+from ..pmv import ppd_threshold_from_comfort_class
 
 
 class PMVParameter(ComfortParameter):
     """Parameters of PMV comfort.
 
     Properties:
-        ppd_comfort_thresh:  Upper threshold of PPD that is considered acceptable
-        humid_ratio_upper:  Upper limit of humidity ratio considered acceptable.
-        humid_ratio_low: Lower limit of humidity ratioc onsidered acceptable.
-        still_air_threshold: The threshold at which the standard effective
-            temperature (SET) model will be used to correct for the
-            cooling effect of elevated air speeds.
+        ppd_comfort_thresh
+        humid_ratio_upper
+        humid_ratio_low
+        still_air_threshold
     """
     _model = 'Predicted Mean Vote'
 
@@ -31,15 +30,12 @@ class PMVParameter(ComfortParameter):
                 cooling effect of elevated air speeds.
         """
 
-        self._ppd_thresh = ppd_comfort_thresh if ppd_comfort_thresh is not None else 10
+        self.ppd_thresh = ppd_comfort_thresh if ppd_comfort_thresh is not None else 10
         self._hr_upper = humid_ratio_upper if humid_ratio_upper is not None else 1
         self._hr_lower = humid_ratio_lower if humid_ratio_lower is not None else 0
         self._still_thresh = \
             still_air_threshold if still_air_threshold is not None else 0.1
 
-        assert 5 <= self._ppd_thresh <= 100, \
-            'ppd_comfort_thresh must be between 5 and 100. Got {}'.format(
-                self._ppd_thresh)
         assert 0 <= self._hr_upper <= 1, \
             'humid_ratio_upper must be between 0 and 1. Got {}'.format(
                 self._hr_upper)
@@ -59,6 +55,12 @@ class PMVParameter(ComfortParameter):
         the conditions are not acceptable.  The default is 10%.
         """
         return self._ppd_thresh
+
+    @ppd_comfort_thresh.setter
+    def ppd_comfort_thresh(self, ppd):
+        assert 5 <= ppd <= 100, \
+            'ppd_comfort_thresh must be between 5 and 100. Got {}'.format(ppd)
+        self._ppd_thresh = ppd
 
     @property
     def humid_ratio_upper(self):
@@ -83,6 +85,10 @@ class PMVParameter(ComfortParameter):
         original equation). The default is set to 0.1 m/s.
         """
         return self._still_thresh
+
+    def set_ppd_comfort_thresh_from_comfort_class(self, comfort_class):
+        """Set the PPD threshold given the EN-15251 comfort class."""
+        self.ppd_comfort_thresh = ppd_threshold_from_comfort_class(comfort_class)
 
     def is_comfortable(self, ppd, humidity_ratio):
         """Determine if conditions are comfortable or not.
@@ -133,6 +139,6 @@ class PMVParameter(ComfortParameter):
 
     def __repr__(self):
         """PMV comfort parameters representation."""
-        return "PMV Comfort Parameters\n PPD Threshold: {}\nHR Upper: {}"\
-            "\nHR Lower: {}\nStill Air Threshold: {}".format(
+        return "PMV Comfort Parameters\n PPD Threshold: {}\n HR Upper: {}"\
+            "\n HR Lower: {}\n Still Air Threshold: {}".format(
                 self._ppd_thresh, self._hr_upper, self._hr_lower, self._still_thresh)

@@ -14,8 +14,8 @@ def load_solarcal_splines():
     try:
         cur_dir = dirname(abspath(inspect.getfile(inspect.currentframe())))
         solarcal_splines = {
-            'seated': csv_to_num_matrix(cur_dir + '/mannequindata/seatedspline.csv'),
-            'standing': csv_to_num_matrix(cur_dir + '/mannequindata/standingspline.csv')}
+            'seated': csv_to_num_matrix(cur_dir + '/_mannequin/seatedspline.csv'),
+            'standing': csv_to_num_matrix(cur_dir + '/_mannequin/standingspline.csv')}
     except IOError:
         solarcal_splines = {}
         print ('Failed to import projection factor splines from CSV.'

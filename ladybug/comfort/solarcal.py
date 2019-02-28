@@ -21,7 +21,7 @@ import math
 def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_solar, alt,
                           sky_exposure=1, fract_exposed=1, floor_reflectance=0.25,
                           posture='standing', sharp=135,
-                          body_absortivity=0.7, body_emissivity=0.95):
+                          body_absorptivity=0.7, body_emissivity=0.95):
     """Perform a full outdoor sky radiant heat exchange.
 
     Args:
@@ -51,7 +51,7 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
             shining directly into the person's face and 180 signifies sun that
             is shining at the person's back. Default is 135, asuming that a person
             typically faces their side or back to the sun to avoid glare.
-        body_absortivity: A number between 0 and 1 representing the average
+        body_absorptivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
             Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
             Typical skin values - white: 0.57, brown: 0.65, black: 0.84
@@ -76,7 +76,7 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
         s_flux = body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar,
                                             alt, sharp, sky_exposure,
                                             fract_exposed, floor_reflectance, posture)
-        short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
+        short_erf = erf_from_body_solar_flux(s_flux, body_absorptivity, body_emissivity)
         short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
     else:
         short_erf = 0
@@ -102,7 +102,7 @@ def outdoor_sky_heat_exch(srfs_temp, horiz_ir, diff_horiz_solar, dir_normal_sola
 def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar, alt,
                          sky_exposure=1, fract_exposed=1, floor_reflectance=0.25,
                          window_transmittance=1, posture='seated', sharp=135,
-                         body_absortivity=0.7, body_emissivity=0.95):
+                         body_absorptivity=0.7, body_emissivity=0.95):
     """Perform a full indoor sky radiant heat exchange.
 
     Args:
@@ -132,7 +132,7 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar, alt,
             shining directly into the person's face and 180 signifies sun that
             is shining at the person's back. Default is 135, asuming that a person
             typically faces their side or back to the sun to avoid glare.
-        body_absortivity: A number between 0 and 1 representing the average
+        body_absorptivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
             Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
             Typical skin values - white: 0.57, brown: 0.65, black: 0.84
@@ -156,7 +156,7 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar, alt,
                                             alt, sharp, sky_exposure,
                                             fract_exposed, floor_reflectance, posture)
         s_flux = s_flux * window_transmittance
-        short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
+        short_erf = erf_from_body_solar_flux(s_flux, body_absorptivity, body_emissivity)
         short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
     else:
         short_erf = 0
@@ -175,7 +175,7 @@ def indoor_sky_heat_exch(longwave_mrt, diff_horiz_solar, dir_normal_solar, alt,
 def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar, alt,
                                fract_exposed=1, floor_reflectance=0.25,
                                posture='standing', sharp=135,
-                               body_absortivity=0.7, body_emissivity=0.95):
+                               body_absorptivity=0.7, body_emissivity=0.95):
     """Perform a shortwave radiant heat exchange using horizontal solar components.
 
     This is useful when building a map of MRT using the direct and diffuse
@@ -208,7 +208,7 @@ def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar, 
             shining directly into the person's face and 180 signifies sun that
             is shining at the person's back. Default is 135, asuming that a person
             typically faces their side or back to the sun to avoid glare.
-        body_absortivity: A number between 0 and 1 representing the average
+        body_absorptivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
             Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
             Typical skin values - white: 0.57, brown: 0.65, black: 0.84
@@ -231,7 +231,7 @@ def shortwave_from_horiz_solar(longwave_mrt, diff_horiz_solar, dir_horiz_solar, 
         s_flux = body_solar_flux_from_horiz_parts(diff_horiz_solar, dir_horiz_solar,
                                                   alt, sharp, fract_exposed,
                                                   floor_reflectance, posture)
-        short_erf = erf_from_body_solar_flux(s_flux, body_absortivity, body_emissivity)
+        short_erf = erf_from_body_solar_flux(s_flux, body_absorptivity, body_emissivity)
         short_mrt_delta = mrt_delta_from_erf(short_erf, fract_efficiency)
     else:
         short_erf = 0
@@ -319,12 +319,12 @@ def longwave_mrt_delta_from_sky_temp(sky_temp, srfs_temp, sky_exposure=1):
     return 0.5 * sky_exposure * (sky_temp - srfs_temp)
 
 
-def erf_from_body_solar_flux(solar_flux, body_absortivity=0.7, body_emissivity=0.95):
+def erf_from_body_solar_flux(solar_flux, body_absorptivity=0.7, body_emissivity=0.95):
     """Calculate effective radiant field (ERF) from incident solar flux on body in W/m2.
 
     Args:
         solar_flux: A number for the average solar flux over the human body in W/m2.
-        body_absortivity: A number between 0 and 1 representing the average
+        body_absorptivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
             Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
             Typical skin values - white: 0.57, brown: 0.65, black: 0.84
@@ -333,7 +333,7 @@ def erf_from_body_solar_flux(solar_flux, body_absortivity=0.7, body_emissivity=0
             longwave emissivity of the body.  Default is 0.95, which is almost
             always the case except in rare situations of wearing metalic clothing.
     """
-    return solar_flux * (body_absortivity / body_emissivity)
+    return solar_flux * (body_absorptivity / body_emissivity)
 
 
 def body_solar_flux_from_parts(diff_horiz_solar, dir_normal_solar, altitude,

@@ -463,6 +463,28 @@ def pmv_from_ppd(ppd, pmv_up_bound=3, ppd_tolerance=0.001):
     return pmv_lower, pmv_upper
 
 
+def ppd_threshold_from_comfort_class(comf_class):
+    """Get acceptable PPD comfort threshold given the EN-15251 comfort class.
+
+    Args:
+        comf_class: An integer representing the EN-15251 comfort class.
+            Choose from: 1, 2, 3 (the higher the class, the greater the PPD threshold)
+
+    Returns:
+        ppd_thresh : Acceptable PPD threshold.
+    """
+    if comf_class == 1:
+        ppd_thresh = 6
+    elif comf_class == 2:
+        ppd_thresh = 10
+    elif comf_class == 3:
+        ppd_thresh = 15
+    else:
+        raise ValueError('Comfort class {} is not an acceptable value. '
+                         'Choose from: 1, 2, 3'.format(comf_class))
+    return ppd_thresh
+
+
 def calc_missing_pmv_input(target_pmv, pmv_inputs,
                            low_bound=0., up_bound=100., tolerance=0.001,
                            still_air_threshold=0.1):

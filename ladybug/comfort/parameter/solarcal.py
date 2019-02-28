@@ -2,7 +2,7 @@
 """Parameters for specifying body characteristics for the SolarCal model."""
 from __future__ import division
 
-from .solarcal import sharp_from_solar_and_body_azimuth
+from ..solarcal import sharp_from_solar_and_body_azimuth
 
 
 class SolarCalParameter(object):
@@ -16,7 +16,7 @@ class SolarCalParameter(object):
             is shining at the person's back.
         body_azimuth: A number between 0 and 360 representing the direction that
             the human is facing in degrees (0=North, 90=East, 180=South, 270=West).
-        body_absortivity: A number between 0 and 1 representing the average
+        body_absorptivity: A number between 0 and 1 representing the average
             shortwave absorptivity of the body (including clothing and skin color).
         body_emissivity: A number between 0 and 1 representing the average
             longwave emissivity of the body.
@@ -25,7 +25,7 @@ class SolarCalParameter(object):
     _acceptable_postures = ('standing', 'seated', 'supine')
 
     def __init__(self, posture=None, sharp=None, body_azimuth=None,
-                 body_absortivity=None, body_emissivity=None):
+                 body_absorptivity=None, body_emissivity=None):
         """Initalize SolarCal Body Parameters.
 
         Args:
@@ -42,7 +42,7 @@ class SolarCalParameter(object):
                 Default is None, which will assume that the person is always facing 135
                 degrees from the sun, meaning that the person faces their side or
                 back to the sun at all times in order to avoid glare.
-            body_absortivity: A number between 0 and 1 representing the average
+            body_absorptivity: A number between 0 and 1 representing the average
                 shortwave absorptivity of the body (including clothing and skin color).
                 Typical clothing values - white: 0.2, khaki: 0.57, black: 0.88
                 Typical skin values - white: 0.57, brown: 0.65, black: 0.84
@@ -73,17 +73,17 @@ class SolarCalParameter(object):
             assert 0 <= sharp <= 180, 'sharp must be between 0 and 180.'\
                 ' Got {}'.format(sharp)
             self._sharp = sharp
-            self.body_azimuth = None
+            self._body_azimuth = None
         else:
-            self.sharp = 135
-            self.body_azimuth = None
+            self._sharp = 135
+            self._body_azimuth = None
 
-        if body_absortivity is not None:
-            assert 0 <= body_absortivity <= 1, 'body_absortivity must be between'\
-                ' 0 and 1. Got {}'.format(body_absortivity)
-            self._body_absortivity = body_absortivity
+        if body_absorptivity is not None:
+            assert 0 <= body_absorptivity <= 1, 'body_absorptivity must be between'\
+                ' 0 and 1. Got {}'.format(body_absorptivity)
+            self._body_absorptivity = body_absorptivity
         else:
-            self._body_absortivity = 0.7
+            self._body_absorptivity = 0.7
 
         if body_emissivity is not None:
             assert 0 <= body_emissivity <= 1, 'body_emissivity must be between'\
@@ -113,11 +113,11 @@ class SolarCalParameter(object):
         return self._body_azimuth
 
     @property
-    def body_absortivity(self):
+    def body_absorptivity(self):
         """Number representing the average shortwave absorptivity of the body.
 
         Between 0 and 1. Includes clothing and skin color."""
-        return self._body_absortivity
+        return self._body_absorptivity
 
     @property
     def body_emissivity(self):
@@ -135,3 +135,20 @@ class SolarCalParameter(object):
         if self.sharp is not None:
             return self.sharp
         return sharp_from_solar_and_body_azimuth(solar_azimuth, self.body_azimuth)
+
+    def ToString(self):
+        """Overwrite .NET ToString."""
+        return self.__repr__()
+
+    def __repr__(self):
+        """SolarCal body parameters representation."""
+        if self.sharp is not None:
+            return "SolarCal Body Parameters\nPosture: {}\nSHARP: {}"\
+                "\nBody Absortivity: {}\nBody Emissivity: {}".format(
+                    self.posture, self.sharp, self.body_absorptivity,
+                    self.body_emissivity)
+        else:
+            return "SolarCal Body Parameters\nPosture: {}\nBody Azimuth: {}"\
+                "\nBody Absortivity: {}\nBody Emissivity: {}".format(
+                    self.posture, self.body_azimuth, self.body_absorptivity,
+                    self.body_emissivity)

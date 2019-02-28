@@ -8,7 +8,7 @@ if (sys.version_info > (3, 0)):
     xrange = range
 
 
-def adaptive_comfort_ashrae55(t_out, ta, tr, vel, conditioning=0):
+def adaptive_comfort_ashrae55(t_prevail, ta, tr, vel, conditioning=0):
     """Get adaptive comfort criteria according to ASHRAE-55.
 
     Note:
@@ -17,7 +17,7 @@ def adaptive_comfort_ashrae55(t_out, ta, tr, vel, conditioning=0):
         Refrigerating and Air Conditioning Engineers.
 
     Args:
-        t_out: The prevailing outdoor temperature [C].  For the ASHRAE-55 adaptive
+        t_prevail: The prevailing outdoor temperature [C].  For the ASHRAE-55 adaptive
             comfort model, this is typically the average monthly outdoor temperature.
         ta: Air temperature [C]
         tr: Mean radiant temperature [C]
@@ -25,7 +25,7 @@ def adaptive_comfort_ashrae55(t_out, ta, tr, vel, conditioning=0):
         conditioning: A number between 0 and 1 that represents how "conditioned" vs.
             "free-running" the building is.
                 0 = free-running (completely passive with no installed air conditioning)
-                1 = conditioned (no operable windows and fully air conditioning)
+                1 = conditioned (no operable windows and fully air conditioned)
             Note that this parameter is not an official part of the ASHRAE-55 standard.
             For more information on how adaptive comfort methods can be applied
             to conditioned buildings, see the neutral_temperature_conditioned function.
@@ -43,16 +43,16 @@ def adaptive_comfort_ashrae55(t_out, ta, tr, vel, conditioning=0):
     to = (ta + tr) / 2  # operative temperature
 
     # fix upper and lower outdoor temperatures if outside the range of the model
-    if t_out < 10.0:
-        t_out = 10.0
-    elif t_out > 33.5:
-        t_out = 33.5
+    if t_prevail < 10.0:
+        t_prevail = 10.0
+    elif t_prevail > 33.5:
+        t_prevail = 33.5
 
     # get the neutral temperature
     if conditioning == 0:
-        t_comf = neutral_temperature_ashrae55(t_out)
+        t_comf = neutral_temperature_ashrae55(t_prevail)
     else:
-        t_comf = neutral_temperature_conditioned(t_out, conditioning, 'ashrae55')
+        t_comf = neutral_temperature_conditioned(t_prevail, conditioning, 'ASHRAE-55')
 
     # get the cooling effect as a result of elevated air speed
     ce = cooling_effect_ashrae55(vel, to)
@@ -66,7 +66,7 @@ def adaptive_comfort_ashrae55(t_out, ta, tr, vel, conditioning=0):
     return result
 
 
-def adaptive_comfort_en15251(t_out, ta, tr, vel, conditioning=0):
+def adaptive_comfort_en15251(t_prevail, ta, tr, vel, conditioning=0):
     """Get adaptive comfort criteria according to EN-15251.
 
     Note:
@@ -76,7 +76,7 @@ def adaptive_comfort_en15251(t_out, ta, tr, vel, conditioning=0):
         Europeen de Normalisation.
 
     Args:
-        t_out: The prevailing outdoor temperature [C].  For the EN-15251 adaptive
+        t_prevail: The prevailing outdoor temperature [C].  For the EN-15251 adaptive
             comfort model, this is typically the exponentially weighted running mean
             of the outdoor temperature over the past week.  Use the weighted_running_mean
             functions to compute this value.
@@ -85,8 +85,8 @@ def adaptive_comfort_en15251(t_out, ta, tr, vel, conditioning=0):
         vel: Relative air velocity [m/s]
         conditioning: A number between 0 and 1 that represents how "conditioned" vs.
             "free-running" the building is.
-                0 = free-running (completely passive with no installed air conditioning)
-                1 = conditioned (no operable windows and fully air conditioning)
+                0 = free-running (completely passive with no running air conditioning)
+                1 = conditioned (no operable windows and fully air conditioned)
             Note that this parameter is not an official part of the EN-15251 standard.
             For more information on how adaptive comfort methods can be applied
             to conditioned buildings, see the neutral_temperature_conditioned function.
@@ -104,16 +104,16 @@ def adaptive_comfort_en15251(t_out, ta, tr, vel, conditioning=0):
     to = (ta + tr) / 2  # operative temperature
 
     # fix upper and lower outdoor temperatures if outside the range of the model
-    if t_out < 10.0:
-        t_out = 10.0
-    elif t_out > 30:
-        t_out = 30
+    if t_prevail < 10.0:
+        t_prevail = 10.0
+    elif t_prevail > 30:
+        t_prevail = 30
 
     # get the neutral temperature
     if conditioning == 0:
-        t_comf = neutral_temperature_en15251(t_out)
+        t_comf = neutral_temperature_en15251(t_prevail)
     else:
-        t_comf = neutral_temperature_conditioned(t_out, conditioning, 'en15251')
+        t_comf = neutral_temperature_conditioned(t_prevail, conditioning, 'EN-15251')
 
     # get the cooling effect as a result of elevated air speed
     ce = cooling_effect_en15251(vel, to)
@@ -127,7 +127,7 @@ def adaptive_comfort_en15251(t_out, ta, tr, vel, conditioning=0):
     return result
 
 
-def neutral_temperature_ashrae55(t_out):
+def neutral_temperature_ashrae55(t_prevail):
     """Get the neutral temperature (desired by occupants) according to ASHRAE-55.
 
     Note:
@@ -139,16 +139,16 @@ def neutral_temperature_ashrae55(t_out):
         ASHRAE Technical data bulletin 14(1), 15-26.
 
     Args:
-        t_out: The prevailing outdoor temperature [C].  For the ASHRAE-55 adaptive
+        t_prevail: The prevailing outdoor temperature [C].  For the ASHRAE-55 adaptive
             comfort model, this is typically the average monthly outdoor temperature.
 
     Return:
         The desired neutral temperature for the input previaling outdoor temperature.
     """
-    return 0.31 * t_out + 17.8
+    return 0.31 * t_prevail + 17.8
 
 
-def neutral_temperature_en15251(t_out):
+def neutral_temperature_en15251(t_prevail):
     """Get the neutral temperature (desired by occupants) according to EN-15251.
 
     Note:
@@ -161,7 +161,7 @@ def neutral_temperature_en15251(t_out):
         Controls and Thermal Comfort project. Oxford: Oxford Brokes University.
 
     Args:
-        t_out: The prevailing outdoor temperature [C].  For the EN-15251 adaptive
+        t_prevail: The prevailing outdoor temperature [C].  For the EN-15251 adaptive
             comfort model, this is typically the exponentially weighted running mean
             of the outdoor temperature over the past week.  Use the weighted_running_mean
             functions to compute this value.
@@ -169,10 +169,10 @@ def neutral_temperature_en15251(t_out):
     Return:
         The desired neutral temperature for the input previaling outdoor temperature.
     """
-    return 0.33 * t_out + 18.8
+    return 0.33 * t_prevail + 18.8
 
 
-def neutral_temperature_conditioned(t_out, conditioning, model='en15251'):
+def neutral_temperature_conditioned(t_prevail, conditioning, model='EN-15251'):
     """Get the neutral temperature for a conditioned or partly conditioned building.
 
     Note that the use of adative comfort methods in conditioned buildings is not an
@@ -210,31 +210,31 @@ def neutral_temperature_conditioned(t_out, conditioning, model='en15251'):
         Services Engineers.
 
     Args:
-        t_out: The prevailing outdoor temperature [C].
+        t_prevail: The prevailing outdoor temperature [C].
         conditioning: A number between 0 and 1 that represents how "conditioned" vs.
             "free-running" the building is.
-                0 = free-running (completely passive with no installed air conditioning)
-                1 = conditioned (no operable windows and fully air conditioning)
+                0 = free-running (completely passive with no air conditioning)
+                1 = conditioned (no operable windows and fully air conditioned)
         model: The comfort standard, which will be used to represent the "free-running"
-            function.  Chose from: 'en15251', 'ashrae55'.
+            function.  Chose from: 'EN-15251', 'ASHRAE-55'.
 
     Return:
         The desired neutral temperature for the input previaling outdoor temperature.
 
     """
     if conditioning == 1:
-        t_comf = 0.09 * t_out + 22.6
-    elif model == 'ashrae55':
+        t_comf = 0.09 * t_prevail + 22.6
+    elif model == 'ASHRAE-55':
         inv_conditioning = 1 - conditioning
-        t_comf = ((0.09 * conditioning) + (0.31 * inv_conditioning)) * t_out + \
+        t_comf = ((0.09 * conditioning) + (0.31 * inv_conditioning)) * t_prevail + \
             ((22.6 * conditioning) + (17.8 * inv_conditioning))
-    elif model == 'en15251':
+    elif model == 'EN-15251':
         inv_conditioning = 1 - conditioning
-        t_comf = ((0.09 * conditioning) + (0.33 * inv_conditioning)) * t_out + \
+        t_comf = ((0.09 * conditioning) + (0.33 * inv_conditioning)) * t_prevail + \
             ((22.6 * conditioning) + (18.8 * inv_conditioning))
     else:
         raise ValueError('Adpative comfort model type {} not recongized. '
-                         'Choose: en15251 or ashrae55'.format(model))
+                         'Choose: EN-15251 or ASHRAE-55'.format(model))
     return t_comf
 
 
@@ -275,7 +275,7 @@ def cooling_effect_en15251(vel, to):
     return ce
 
 
-def ashrae55_temp_offset_from_ppd(ppd=90):
+def ashrae55_neutral_offset_from_ppd(ppd=90):
     """Get acceptable offset from neutral temperature given the ASHRAE-55 PPD limit.
 
     Args:
@@ -289,7 +289,7 @@ def ashrae55_temp_offset_from_ppd(ppd=90):
     return -0.1 * ppd + 11.5
 
 
-def en15251_temp_offset_from_comfort_class(comf_class):
+def en15251_neutral_offset_from_comfort_class(comf_class):
     """Get acceptable offset from neutral temperature given the EN-15251 comfort class.
 
     Args:
@@ -333,8 +333,8 @@ def weighted_running_mean_hourly(outdoor_temperatures, alpha=0.8):
             matches the input outdoor_temperatures.
     """
     # ensure that there are at least a day's worth of values
-    assert len(outdoor_temperatures) >= 24, 'outdoor_temperatures must be for '\
-        'at least a day (24 values). Got {} values.'.format(len(outdoor_temperatures))
+    assert len(outdoor_temperatures) >= 168, 'outdoor_temperatures must be for '\
+        'at least a week (168 values). Got {} values.'.format(len(outdoor_temperatures))
 
     # compute the initial prevailing outdoor temperature by looking over the past week
     divisor = 1 + alpha + alpha ** 2 + alpha ** 3 + alpha ** 4 + alpha ** 5
@@ -389,8 +389,8 @@ def weighted_running_mean_daily(outdoor_temperatures, alpha=0.8):
             matches the input outdoor_temperatures.
     """
     # ensure that there are at least one value
-    assert len(outdoor_temperatures) >= 1, 'outdoor_temperatures must have '\
-        'at least one value.'
+    assert len(outdoor_temperatures) >= 7, 'outdoor_temperatures must have '\
+        'at least 7 values to be meaningful.'
 
     # compute the initial prevailing outdoor temperature by looking over the past week
     divisor = 1 + alpha + alpha ** 2 + alpha ** 3 + alpha ** 4 + alpha ** 5
