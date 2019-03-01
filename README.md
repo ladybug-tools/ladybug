@@ -51,6 +51,7 @@ print('altitude: {}, azimuth: {}'.format(sun.altitude, sun.azimuth))
 Ladybug is a derivative work of the following software projects:
 
 [pyeuclid](https://code.google.com/p/pyeuclid/) for vector math calculation. Available under LGPL.
+
 [PVLib-python](https://github.com/pvlib/pvlib-python) for solar irradiance calculations. Available under BSD 3-clause.
 
 Applicable copyright notices for theses works can be found within the relevant .py files.

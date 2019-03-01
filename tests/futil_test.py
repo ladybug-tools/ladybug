@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import unittest
+import pytest
 import os
 
 import ladybug.futil as futil
@@ -46,6 +47,15 @@ class DataCollectionTestCase(unittest.TestCase):
         assert os.path.isfile(final_file)
         assert 20000 < os.stat(final_file).st_size < 30000
         os.remove(final_file)
+
+    def test_csv_to_matrix(self):
+        """Test the csv_to_matrix functions."""
+        path = './tests/epw/tokyo.epw'
+        epw_mtx = futil.csv_to_matrix(path)
+        assert len(epw_mtx) == 8768
+
+        with pytest.raises(Exception):
+            epw_mtx = futil.csv_to_num_matrix(path)
 
 
 if __name__ == "__main__":
