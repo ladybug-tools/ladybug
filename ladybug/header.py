@@ -1,47 +1,58 @@
 # coding=utf-8
-"""Ladybug Header.
+"""Ladybug Header"""
+from __future__ import division
 
-Header is useful for creating list of ladybug data.
-"""
-from .location import Location
+from copy import deepcopy
+
 from .analysisperiod import AnalysisPeriod
+from .datatype.base import DataTypeBase
 
 
 class Header(object):
-    """data collection header.
+    """DataCollection header.
 
-    Header carries data for location, data type, unit and analysis period
+    Header carries meatdata for DataCollections including data type, unit
+    and analysis period.
 
     Attributes:
-        location: location data as a ladybug Location or location string
-            (Default: None).
-        data_type: Type of data (e.g. Temperature) (Default: None).
+        data_type: A DataType object. (e.g. Temperature)
         unit: data_type unit (Default: None).
         analysis_period: A Ladybug analysis period (Defualt: None)
-        middle_hour: A boolean to set whether the values are interpreted
-            as falling on the middle of the hour (True) or the start of
-            the hour (False). (Default: False)
+        metadata: Optional dictionary of additional metadata,
+            containing information such as 'source', 'city', or 'zone'.
     """
 
-    def __init__(self, location=None, data_type=None, unit=None,
-                 analysis_period=None, middle_hour=None):
+    __slots__ = ('_data_type', '_unit', '_analysis_period', '_metadata')
+
+    def __init__(self, data_type, unit=None,
+                 analysis_period=None, metadata=None):
         """Initiate Ladybug header for lists.
 
         Args:
-            location: location data as a ladybug Location or location string
-                (Default: None).
-            data_type: Type of data (e.g. Temperature) (Default: None).
-            unit: data_type unit (Default: None).
+            data_type: A DataType object. (e.g. Temperature)
+            unit: data_type unit (Default: None)
             analysis_period: A Ladybug analysis period (Defualt: None)
-            middle_hour: A boolean to set whether the values are interpreted
-                as falling on the middle of the hour (True) or the start of
-                the hour (False). (Default: False)
+            metadata: Optional dictionary of additional metadata,
+                containing information such as 'source', 'city', or 'zone'.
         """
-        self.location = Location.from_location(location)
-        self.data_type = data_type if data_type else None
-        self.unit = unit if unit else None
-        self.analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
-        self.middle_hour = middle_hour if middle_hour else False
+        assert hasattr(data_type, 'isDataType'), \
+            'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
+        if unit is None:
+            unit = data_type.units[0]
+        else:
+            data_type.is_unit_acceptable(unit)
+        if analysis_period is not None:
+            assert hasattr(analysis_period, 'isAnalysisPeriod'), \
+                'analysis_period must be a Ladybug AnalysisPeriod. Got {}'.format(
+                    type(analysis_period))
+        if metadata is not None:
+            assert isinstance(metadata, dict), \
+                'metadata must be a dictionary. Got {}'.format(type(metadata))
+
+        self._data_type = data_type
+        self._unit = unit
+        self._analysis_period = analysis_period
+        self._metadata = metadata or {}
 
     @classmethod
     def from_json(cls, data):
@@ -49,36 +60,42 @@ class Header(object):
 
         Args:
             data: {
-                "location": {}, // A Ladybug location
-                "data_type": string, //Type of data (e.g. Temperature) (Default: None).
+                "data_type": {}, //Type of data (e.g. Temperature)
                 "unit": string,
-                "analysis_period": {}, // A Ladybug AnalysisPeriod,
-                "middle_hour": {} // Whether values fall in the middle of the hour
+                "analysis_period": {} // A Ladybug AnalysisPeriod
+                "metadata": {}, // A dictionary of metadata
             }
         """
         # assign default values
-        keys = ('location', 'data_type', 'unit', 'analysis_period', 'middle_hour')
+        assert 'data_type' in data, 'Required keyword "data_type" is missing!'
+        keys = ('data_type', 'unit', 'analysis_period', 'metadata')
         for key in keys:
             if key not in data:
                 data[key] = None
 
-        location = Location.from_json(data['location'])
+        data_type = DataTypeBase.from_json(data['data_type'])
         ap = AnalysisPeriod.from_json(data['analysis_period'])
-        return cls(location, data['data_type'], data['unit'], ap, data['middle_hour'])
+        return cls(data_type, data['unit'], ap, data['metadata'])
 
-    @classmethod
-    def from_header(cls, header):
-        """Try to generate a header from a header or a header string."""
-        if hasattr(header, 'isHeader'):
-            return header
+    @property
+    def data_type(self):
+        """A DataType object."""
+        return self._data_type
 
-        # "%s|%s(%s)|%s"
-        try:
-            _h = header.replace("|", "**").replace("(", "**").replace(")", "")
-            return cls(*_h.split("**"))
-        except Exception as e:
-            raise ValueError(
-                "Failed to create a Header from %s!\n%s" % (header, e))
+    @property
+    def unit(self):
+        """A text string representing an abbreviated unit."""
+        return self._unit
+
+    @property
+    def analysis_period(self):
+        """A AnalysisPeriod object."""
+        return self._analysis_period
+
+    @property
+    def metadata(self):
+        """Metadata associated with the Header."""
+        return self._metadata
 
     @property
     def isHeader(self):
@@ -86,18 +103,18 @@ class Header(object):
         return True
 
     def duplicate(self):
-        """Duplicate header."""
-        return self.__class__(self.location, self.data_type, self.unit,
-                              self.analysis_period, self.middle_hour)
+        """Return a copy of the header."""
+        a_per = self.analysis_period.duplicate() if self.analysis_period else None
+        return self.__class__(self.data_type, self.unit,
+                              a_per, deepcopy(self.metadata))
 
     def to_tuple(self):
         """Return Ladybug header as a list."""
         return (
-            self.location,
             self.data_type,
             self.unit,
             self.analysis_period,
-            self.middle_hour
+            self.metadata
         )
 
     def __iter__(self):
@@ -106,11 +123,11 @@ class Header(object):
 
     def to_json(self):
         """Return a header as a dictionary."""
-        return {'location': self.location.to_json(),
-                'data_type': self.data_type,
+        a_per = self.analysis_period.to_json() if self.analysis_period else None
+        return {'data_type': self.data_type.to_json(),
                 'unit': self.unit,
-                'analysis_period': self.analysis_period.to_json(),
-                'middle_hour': self.middle_hour}
+                'analysis_period': a_per,
+                'metadata': self.metadata}
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -118,6 +135,12 @@ class Header(object):
 
     def __repr__(self):
         """Return Ladybug header as a string."""
-        return "%s|%s(%s)|%s|%s" % (
-            repr(self.location), self.data_type, self.unit,
-            self.analysis_period, self.middle_hour)
+        a_per = self.analysis_period if self.analysis_period else ''
+        if self.metadata != {}:
+            meta_str = '\n'.join(['{}: {}'.format(key, val)
+                                  for key, val in self.metadata.items()])
+            return "{} ({})\n{}\n{}".format(
+                self.data_type, self.unit, a_per, meta_str)
+        else:
+            return "{} ({})\n{}".format(
+                self.data_type, self.unit, a_per)

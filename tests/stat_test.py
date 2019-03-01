@@ -11,15 +11,6 @@ from ladybug.designday import DDY
 class StatTestCase(unittest.TestCase):
     """Test for (ladybug/stat.py)"""
 
-    # preparing to test.
-    def setUp(self):
-        """set up."""
-        pass
-
-    def tearDown(self):
-        """Nothing to tear down as nothing gets written to file."""
-        pass
-
     def test_import_STAT(self):
         """Test import standard stat."""
         relative_path = './tests/stat/chicago.stat'
@@ -31,14 +22,14 @@ class StatTestCase(unittest.TestCase):
         # Test imports don't break
         assert stat.file_path == abs_path
         assert stat_rel.file_path == os.path.normpath(relative_path)
-        assert hasattr(stat, 'isStat')
+        assert isinstance(stat, STAT)
 
     def test_stat_location(self):
         relative_path = './tests/stat/tokyo.stat'
         stat = STAT(relative_path)
 
         # Test accuracy of import
-        assert len(stat.header) == 10
+        assert len(stat._header) == 10
         assert stat.location.city == 'TOKYO HYAKURI'
         assert stat.location.country == 'JPN'
         assert stat.location.source == 'IWEC Data'
@@ -138,12 +129,21 @@ class StatTestCase(unittest.TestCase):
         typical_summer = stat.typical_summer_week
         typical_autumn = stat.typical_autumn_week
 
-        assert str(extreme_cold) == '1/27 to 2/2 between 0 to 23 @1'
-        assert str(extreme_hot) == '7/13 to 7/19 between 0 to 23 @1'
-        assert str(typical_winter) == '12/22 to 12/28 between 0 to 23 @1'
-        assert str(typical_spring) == '4/26 to 5/2 between 0 to 23 @1'
-        assert str(typical_summer) == '8/24 to 8/30 between 0 to 23 @1'
-        assert str(typical_autumn) == '10/27 to 11/2 between 0 to 23 @1'
+        assert str(extreme_cold) == '1/27 to 2/2 between 0 and 23 @1'
+        assert str(extreme_hot) == '7/13 to 7/19 between 0 and 23 @1'
+        assert str(typical_winter) == '12/22 to 12/28 between 0 and 23 @1'
+        assert str(typical_spring) == '4/26 to 5/2 between 0 and 23 @1'
+        assert str(typical_summer) == '8/24 to 8/30 between 0 and 23 @1'
+        assert str(typical_autumn) == '10/27 to 11/2 between 0 and 23 @1'
+
+    def test_json_methods(self):
+        """Test JSON serialization methods"""
+        relative_path = './tests/stat/chicago.stat'
+        stat_obj = STAT(relative_path)
+
+        stat_json = stat_obj.to_json()
+        rebuilt_stat = STAT.from_json(stat_json)
+        assert stat_json == rebuilt_stat.to_json()
 
 
 if __name__ == "__main__":
