@@ -35,16 +35,23 @@ class Header(object):
             metadata: Optional dictionary of additional metadata,
                 containing information such as 'source', 'city', or 'zone'.
         """
-        assert isinstance(data_type, DataTypeBase), \
+        assert hasattr(data_type, 'isDataType'), \
             'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
         if unit is None:
             unit = data_type.units[0]
         else:
-            assert data_type.is_unit_acceptable(unit)
+            data_type.is_unit_acceptable(unit)
+        if analysis_period is not None:
+            assert hasattr(analysis_period, 'isAnalysisPeriod'), \
+                'analysis_period must be a Ladybug AnalysisPeriod. Got {}'.format(
+                    type(analysis_period))
+        if metadata is not None:
+            assert isinstance(metadata, dict), \
+                'metadata must be a dictionary. Got {}'.format(type(metadata))
 
         self._data_type = data_type
         self._unit = unit
-        self._analysis_period = AnalysisPeriod.from_analysis_period(analysis_period)
+        self._analysis_period = analysis_period
         self._metadata = metadata or {}
 
     @classmethod
@@ -97,9 +104,9 @@ class Header(object):
 
     def duplicate(self):
         """Return a copy of the header."""
-        return self.__class__(deepcopy(self.data_type), self.unit,
-                              AnalysisPeriod.from_string(str(self.analysis_period)),
-                              deepcopy(self.metadata))
+        a_per = self.analysis_period.duplicate() if self.analysis_period else None
+        return self.__class__(self.data_type, self.unit,
+                              a_per, deepcopy(self.metadata))
 
     def to_tuple(self):
         """Return Ladybug header as a list."""
@@ -116,9 +123,10 @@ class Header(object):
 
     def to_json(self):
         """Return a header as a dictionary."""
+        a_per = self.analysis_period.to_json() if self.analysis_period else None
         return {'data_type': self.data_type.to_json(),
                 'unit': self.unit,
-                'analysis_period': self.analysis_period.to_json(),
+                'analysis_period': a_per,
                 'metadata': self.metadata}
 
     def ToString(self):
@@ -127,6 +135,12 @@ class Header(object):
 
     def __repr__(self):
         """Return Ladybug header as a string."""
-        return "{}({})\n{}\n{}".format(
-            repr(self.data_type), self.unit,
-            self.analysis_period, repr(self.metadata))
+        a_per = self.analysis_period if self.analysis_period else ''
+        if self.metadata != {}:
+            meta_str = '\n'.join(['{}: {}'.format(key, val)
+                                  for key, val in self.metadata.items()])
+            return "{} ({})\n{}\n{}".format(
+                self.data_type, self.unit, a_per, meta_str)
+        else:
+            return "{} ({})\n{}".format(
+                self.data_type, self.unit, a_per)

@@ -67,6 +67,10 @@ class SkyTemperature(Temperature):
     _abbreviation = 'Tsky'
 
 
+class GroundTemperature(Temperature):
+    _abbreviation = 'Tground'
+
+
 class AirTemperature(Temperature):
     _abbreviation = 'Tair'
 

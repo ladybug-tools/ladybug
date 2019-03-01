@@ -5,22 +5,11 @@ from pytest import approx
 import os
 from ladybug.location import Location
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.designday import \
-    DDY, \
-    DesignDay
+from ladybug.designday import DDY, DesignDay
 
 
 class DdyTestCase(unittest.TestCase):
     """Test for (ladybug/designday.py)"""
-
-    # preparing to test.
-    def setUp(self):
-        """set up."""
-        pass
-
-    def tearDown(self):
-        """Nothing to tear down as nothing gets written to file."""
-        pass
 
     def test_import_ddy(self):
         """Test import standard ddy."""
@@ -33,6 +22,15 @@ class DdyTestCase(unittest.TestCase):
         # Test imports don't break
         assert ddy.file_path == abs_path
         assert ddy_rel.file_path == os.path.normpath(relative_path)
+
+    def test_json_methods(self):
+        """Test json methods for the DDY object."""
+        relative_path = './tests/ddy/chicago.ddy'
+        ddy = DDY.from_ddy_file(relative_path)
+
+        ddy_json = ddy.to_json()
+        reconstructed_ddy = DDY.from_json(ddy_json)
+        assert ddy_json == reconstructed_ddy.to_json()
 
     def test_ddy_from_design_day(self):
         """Test ddy from design day method."""
@@ -87,7 +85,7 @@ class DdyTestCase(unittest.TestCase):
 
     def test_design_day_from_properties(self):
         """Test hourly data properties of a standard ddy."""
-        location = Location('Test City', 'USA', 34.20, -118.35, -8, 226)
+        location = Location('Test City', '-', 'USA', 34.20, -118.35, -8, 226)
         a_period = AnalysisPeriod(12, 21, 0, 12, 21, 23)
         des_day = DesignDay.from_design_day_properties('Test Day', 'WinterDesignDay',
                                                        location, a_period, 3.9, 0,
@@ -104,51 +102,51 @@ class DdyTestCase(unittest.TestCase):
 
     def test_design_day_hourly_data(self):
         """Test hourly data properties of a standard ddy."""
-        location = Location('Test City', 'USA', 34.20, -118.35, -8, 226)
+        location = Location('Test City', '-', 'USA', 34.20, -118.35, -8, 226)
         a_period = AnalysisPeriod(8, 21, 0, 8, 21, 23)
         des_day = DesignDay.from_design_day_properties('Test Day', 'SummerDesignDay',
                                                        location, a_period, 36.8, 13.2,
                                                        'Wetbulb', 20.5, 98639, 3.9, 170,
                                                        'ASHRAETau', [0.436, 2.106])
         # dry bulb values
-        db_data_collect = des_day.hourly_dry_bulb.values
+        db_data_collect = des_day.hourly_dry_bulb
         assert db_data_collect[5] == approx(23.6, rel=1e-1)
         assert db_data_collect[14] == approx(36.8, rel=1e-1)
 
         # dew point values
-        dpt_data_collect = des_day.hourly_dew_point.values
+        dpt_data_collect = des_day.hourly_dew_point
         assert dpt_data_collect[0] == approx(11.296, rel=1e-1)
         assert dpt_data_collect[-1] == approx(11.296, rel=1e-1)
 
         # relative humidity values
-        rh_data_collect = des_day.hourly_relative_humidity.values
+        rh_data_collect = des_day.hourly_relative_humidity
         assert rh_data_collect[5] == approx(45.896, rel=1e-1)
         assert rh_data_collect[14] == approx(21.508, rel=1e-1)
 
         # barometric pressure values
-        bp_data_collect = des_day.hourly_barometric_pressure.values
+        bp_data_collect = des_day.hourly_barometric_pressure
         assert bp_data_collect[0] == approx(98639, rel=1e-1)
         assert bp_data_collect[-1] == approx(98639, rel=1e-1)
 
         # wind speed values
-        ws_data_collect = des_day.hourly_wind_speed.values
+        ws_data_collect = des_day.hourly_wind_speed
         assert -0.1 < ws_data_collect[0] - 3.9 < 0.1
         assert -0.1 < ws_data_collect[-1] - 3.9 < 0.1
 
         # wind direction values
-        wd_data_collect = des_day.hourly_wind_direction.values
+        wd_data_collect = des_day.hourly_wind_direction
         assert wd_data_collect[0] == approx(170, rel=1e-1)
         assert wd_data_collect[-1] == approx(170, rel=1e-1)
 
         # radiation values
         direct_normal_rad, diffuse_horizontal_rad, global_horizontal_rad = \
             des_day.hourly_solar_radiation
-        assert direct_normal_rad.values[0] == 0
-        assert direct_normal_rad.values[11] == approx(891.46, rel=1e-1)
-        assert diffuse_horizontal_rad.values[0] == 0
-        assert diffuse_horizontal_rad.values[11] == approx(165.32, rel=1e-1)
-        assert global_horizontal_rad.values[0] == 0
-        assert global_horizontal_rad.values[11] == approx(985.05, rel=1e-1)
+        assert direct_normal_rad[0] == 0
+        assert direct_normal_rad[11] == approx(891.46, rel=1e-1)
+        assert diffuse_horizontal_rad[0] == 0
+        assert diffuse_horizontal_rad[11] == approx(165.32, rel=1e-1)
+        assert global_horizontal_rad[0] == 0
+        assert global_horizontal_rad[11] == approx(985.05, rel=1e-1)
 
 
 if __name__ == "__main__":

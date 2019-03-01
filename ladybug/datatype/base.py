@@ -223,6 +223,10 @@ class DataTypeBase(object):
                     )
         return True
 
+    def duplicate(self):
+        """Return a copy of the data type."""
+        return self.__class__(self.name)
+
     def to_json(self):
         """Get data type as a json object"""
         return {
@@ -236,12 +240,9 @@ class DataTypeBase(object):
     def _is_numeric(self, values):
         """Check to be sure values are numbers before doing numerical operations."""
         if len(values) > 0:
-            pass
-            """
             assert isinstance(values[0], (float, int)), \
                 "values must be numbers to perform math operations. Got {}".format(
                     type(values[0]))
-            """
         return True
 
     def _to_unit_base(self, base_unit, values, unit, from_unit):
