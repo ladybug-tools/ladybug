@@ -290,7 +290,7 @@ class EPWTestCase(unittest.TestCase):
             line1, line2 = epw.header[i], epw._header[i]
             if i in (0, 1, 4, 5, 6, 7):
                 # These lines should match exactly
-                assert line1 == line2
+                assert line1.rstrip() == line2.rstrip()
             elif i in (2, 3):
                 # The order of data in these lines can change and  spaces can get deleted
                 assert len(line1.split(',')) == len(line2.split(','))
