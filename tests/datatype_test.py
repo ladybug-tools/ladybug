@@ -5,8 +5,8 @@ from ladybug import datatype
 from ladybug.datatype import base
 from ladybug.datatype import angle, area, distance, energy, energyflux, \
     energyintensity, generic, illuminance, luminance, mass, massflowrate, \
-    percentage, power, pressure, rvalue, speed, temperature, thermalcondition, \
-    uvalue, volume, volumeflowrate
+    percentage, power, pressure, rvalue, speed, temperature, temperaturedelta, \
+    thermalcondition, uvalue, volume, volumeflowrate
 
 import unittest
 import pytest
@@ -77,6 +77,22 @@ class DataTypesTestCase(unittest.TestCase):
         assert temp_type.to_unit([1], 'K', 'C')[0] == pytest.approx(274.15, rel=1e-1)
         assert temp_type.to_unit([1], 'C', 'F')[0] == pytest.approx(-17.2222, rel=1e-1)
         assert temp_type.to_unit([1], 'C', 'K')[0] == pytest.approx(-272.15, rel=1e-1)
+
+    def test_temperaturedelta(self):
+        """Test TemperatureDelta type."""
+        temp_type = temperaturedelta.TemperatureDelta()
+        for unit in temp_type.units:
+            assert temp_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = temp_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = temp_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in temp_type.units:
+                assert len(temp_type.to_unit([1], other_unit, unit)) == 1
+        assert temp_type.to_unit([1], 'F', 'C')[0] == pytest.approx(1.8, rel=1e-1)
+        assert temp_type.to_unit([1], 'K', 'C')[0] == pytest.approx(1, rel=1e-1)
+        assert temp_type.to_unit([1], 'C', 'F')[0] == pytest.approx(0.5555, rel=1e-1)
+        assert temp_type.to_unit([1], 'C', 'K')[0] == pytest.approx(1, rel=1e-1)
 
     def test_percentage(self):
         """Test Percentage type."""

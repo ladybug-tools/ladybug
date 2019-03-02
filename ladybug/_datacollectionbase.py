@@ -433,7 +433,7 @@ class BaseCollection(object):
             data_collections are individual values, only a single value will be returned.
 
         Usage:
-
+            from ladybug.datacollection import HourlyContinuousCollection
             from ladybug.epw import EPW
             from ladybug.psychrometrics import humid_ratio_from_db_rh
             from ladybug.datatype.percentage import HumidityRatio
@@ -444,8 +444,8 @@ class BaseCollection(object):
             hr_inputs = [denver_epw.dry_bulb_temperature,
                          denver_epw.relative_humidity,
                          pressure_at_denver]
-            humid_ratio = compute_function_aligned(humid_ratio_from_db_rh, hr_inputs,
-                                                   HumidityRatio(), 'fraction')
+            humid_ratio = HourlyContinuousCollection.compute_function_aligned(
+                humid_ratio_from_db_rh, hr_inputs, HumidityRatio(), 'fraction')
             # humid_ratio will be a Data Colleciton of humidity ratios at Denver
         """
         # first check the input collections or individual values
