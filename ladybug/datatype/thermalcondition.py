@@ -44,6 +44,13 @@ class PredictedMeanVote(ThermalCondition):
         '+1 = Slightly Warm, +2 = Warm, +3 = Hot'
 
 
+class DiscomfortReason(ThermalCondition):
+    _abbreviation = 'RDiscomf'
+    _unit_descr = '-2 = Too Dry, -1 = Too Cold, \n' \
+        '0 = Comfortable, \n' \
+        '+1 = Too Hot, +2 = Too Humid'
+
+
 class UTCICondition(ThermalCondition):
     _abbreviation = 'UTCIcond'
     _unit_descr = '-4 = Extreme Cold, -3 = Very Strong Cold, '\

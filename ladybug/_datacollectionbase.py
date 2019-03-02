@@ -289,7 +289,8 @@ class BaseCollection(object):
         number of values and have matching datetimes.
 
         Args:
-            value: The value to be repeated in the aliged collection values.
+            value: A value to be repeated in the aliged collection values or
+                A list of values that has the same length as this collection.
                 Default: 0.
             data_type: The data type of the aligned collection. Default is to
                 use the data type of this collection.
@@ -305,7 +306,13 @@ class BaseCollection(object):
         else:
             data_type = self.header.data_type
             unit = unit or self.header.unit
-        values = [value] * len(self._values)
+        if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
+            assert len(value) == len(self._values), "Length of value ({}) must match "\
+                "the length of this collection's values ({})".format(
+                    len(value), len(self._values))
+            values = value
+        else:
+            values = [value] * len(self._values)
         header = Header(data_type, unit, self.header.analysis_period,
                         self.header.metadata)
         collection = self.__class__(header, values, self.datetimes)
