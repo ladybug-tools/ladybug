@@ -93,3 +93,7 @@ class StandardEffectiveTemperature(Temperature):
 
 class UniversalThermalClimateIndex(Temperature):
     _abbreviation = 'UTCI'
+
+
+class PrevailingOutdoorTemperature(Temperature):
+    _abbreviation = 'Tprevail'
