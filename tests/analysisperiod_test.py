@@ -25,7 +25,6 @@ class AnalysisPeriodTestCase(unittest.TestCase):
         assert ap.timestep == 1
         assert ap.is_leap_year is False
         assert len(ap.datetimes) == 8760
-        str(ap)  # test the string representation
 
     def test_from_string(self):
         """Test creating analysis priod from a string."""
@@ -163,6 +162,12 @@ class AnalysisPeriodTestCase(unittest.TestCase):
         ap_2 = ap.duplicate()
         assert ap_2 == ap
 
+    def test_0_end_hour(self):
+        """Test hour 0 for end hour."""
+        params = [1, 1, 1, 1, 2, 0]
+        ap = AnalysisPeriod(*params)
+        assert ap.end_hour == 0
+        assert len(ap) == 24
 
 if __name__ == "__main__":
     unittest.main()

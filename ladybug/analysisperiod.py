@@ -89,7 +89,7 @@ class AnalysisPeriod(object):
         st_hour = st_hour or 0
         end_month = end_month or 12
         end_day = end_day or 31
-        end_hour = end_hour or 23
+        end_hour = 23 if end_hour is None else end_hour
         timestep = timestep or 1
         self._is_leap_year = is_leap_year or False
 
