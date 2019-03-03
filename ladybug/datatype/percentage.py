@@ -75,6 +75,12 @@ class RelativeHumidity(Percentage):
     _missing_epw = 999
 
 
+class HumidityRatio(Percentage):
+    _min = 0
+    _max = 100
+    _abbreviation = 'HR'
+
+
 class TotalSkyCover(Percentage):
     # (used if Horizontal IR Intensity missing)
     _min = 0

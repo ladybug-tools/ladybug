@@ -30,7 +30,7 @@ class BaseCollection(object):
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(datetimes, Iterable) \
-            and not isinstance(datetimes, (str, dict)), \
+            and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
         datetimes = list(datetimes)
 
@@ -76,7 +76,8 @@ class BaseCollection(object):
 
     @values.setter
     def values(self, values):
-        assert isinstance(values, Iterable) and not isinstance(values, (str, dict)), \
+        assert isinstance(values, Iterable) and not \
+            isinstance(values, (str, dict, bytes, bytearray)), \
             'values should be a list or tuple. Got {}'.format(type(values))
         values = list(values)
         assert len(values) == len(self.datetimes), \
@@ -289,7 +290,8 @@ class BaseCollection(object):
         number of values and have matching datetimes.
 
         Args:
-            value: The value to be repeated in the aliged collection values.
+            value: A value to be repeated in the aliged collection values or
+                A list of values that has the same length as this collection.
                 Default: 0.
             data_type: The data type of the aligned collection. Default is to
                 use the data type of this collection.
@@ -305,7 +307,14 @@ class BaseCollection(object):
         else:
             data_type = self.header.data_type
             unit = unit or self.header.unit
-        values = [value] * len(self._values)
+        if isinstance(value, Iterable) and not isinstance(
+                value, (str, dict, bytes, bytearray)):
+            assert len(value) == len(self._values), "Length of value ({}) must match "\
+                "the length of this collection's values ({})".format(
+                    len(value), len(self._values))
+            values = value
+        else:
+            values = [value] * len(self._values)
         header = Header(data_type, unit, self.header.analysis_period,
                         self.header.metadata)
         collection = self.__class__(header, values, self.datetimes)
@@ -406,6 +415,65 @@ class BaseCollection(object):
                         raise ValueError(error_msg)
                     return False
         return True
+
+    @staticmethod
+    def compute_function_aligned(funct, data_collections, data_type, unit):
+        """Compute a function with a list of aligned data collections or individual values.
+
+        Args:
+            funct: A function with a single numerical value as output and one or
+                more numerical values as input.
+            data_collections: A list with a length equal to the number of arguments
+                for the function. Items of the list can be either Data Collections
+                or individual values to be used at each datetime of other collections.
+            data_type: An instance of a Ladybug data type that describes the results
+                of the funct.
+            unit: The units of the funct results.
+
+        Return:
+            A Data Collection with the results function. If all items in this list of
+            data_collections are individual values, only a single value will be returned.
+
+        Usage:
+            from ladybug.datacollection import HourlyContinuousCollection
+            from ladybug.epw import EPW
+            from ladybug.psychrometrics import humid_ratio_from_db_rh
+            from ladybug.datatype.percentage import HumidityRatio
+
+            epw_file_path = './epws/denver.epw'
+            denver_epw = EPW(epw_file_path)
+            pressure_at_denver = 85000
+            hr_inputs = [denver_epw.dry_bulb_temperature,
+                         denver_epw.relative_humidity,
+                         pressure_at_denver]
+            humid_ratio = HourlyContinuousCollection.compute_function_aligned(
+                humid_ratio_from_db_rh, hr_inputs, HumidityRatio(), 'fraction')
+            # humid_ratio will be a Data Colleciton of humidity ratios at Denver
+        """
+        # check that all inputs are either data collections or floats
+        data_colls = []
+        for i, func_input in enumerate(data_collections):
+            if isinstance(func_input, BaseCollection):
+                data_colls.append(func_input)
+            else:
+                try:
+                    data_collections[i] = float(func_input)
+                except ValueError:
+                    raise TypeError('Expected a number or a Data Colleciton. '
+                                    'Got {}'.format(type(func_input)))
+
+        # run the function and return the result
+        if len(data_colls) == 0:
+            return funct(*data_collections)
+        else:
+            BaseCollection.are_collections_aligned(data_colls)
+            val_len = len(data_colls[0].values)
+            for i, col in enumerate(data_collections):
+                data_collections[i] = [col] * val_len if isinstance(col, float) else col
+            result = data_colls[0].get_aligned_collection(data_type=data_type, unit=unit)
+            for i in xrange(val_len):
+                result[i] = funct(*[col[i] for col in data_collections])
+            return result
 
     def is_in_data_type_range(self, raise_exception=True):
         """Check if the Data Collection values are in permissable ranges for the data_type.

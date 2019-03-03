@@ -61,7 +61,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
         assert isinstance(datetimes, Iterable) \
-            and not isinstance(datetimes, (str, dict)), \
+            and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
         datetimes = list(datetimes)
 
@@ -611,7 +611,8 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
     @values.setter
     def values(self, values):
-        assert isinstance(values, Iterable) and not isinstance(values, (str, dict)), \
+        assert isinstance(values, Iterable) and not isinstance(
+            values, (str, dict, bytes, bytearray)), \
             'values should be a list or tuple. Got {}'.format(type(values))
         values = list(values)
         if self.header.analysis_period.is_annual:
@@ -867,7 +868,8 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         have the same number of values and have matching datetimes.
 
         Args:
-            value: The value to be repeated in the aliged collection values.
+            value: A value to be repeated in the aliged collection values or
+                A list of values that has the same length as this collection.
                 Default: 0.
             data_type: The data type of the aligned collection. Default is to
                 use the data type of this collection.
@@ -883,7 +885,14 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         else:
             data_type = self.header.data_type
             unit = unit or self.header.unit
-        values = [value] * len(self._values)
+        if isinstance(value, Iterable) and not isinstance(
+                value, (str, dict, bytes, bytearray)):
+            assert len(value) == len(self._values), "Length of value ({}) must match "\
+                "the length of this collection's values ({})".format(
+                    len(value), len(self._values))
+            values = value
+        else:
+            values = [value] * len(self._values)
         header = Header(data_type, unit, self.header.analysis_period,
                         self.header.metadata)
         return self.__class__(header, values)
@@ -991,7 +1000,7 @@ class DailyCollection(BaseCollection):
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
         assert isinstance(datetimes, Iterable) \
-            and not isinstance(datetimes, (str, dict)), \
+            and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
         datetimes = list(datetimes)
 
@@ -1133,7 +1142,7 @@ class MonthlyCollection(BaseCollection):
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
         assert isinstance(datetimes, Iterable) \
-            and not isinstance(datetimes, (str, dict)), \
+            and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
         datetimes = list(datetimes)
 
@@ -1255,7 +1264,7 @@ class MonthlyPerHourCollection(BaseCollection):
         assert isinstance(header.analysis_period, AnalysisPeriod), \
             'header of {} must have an analysis_period.'.format(self.__class__.__name__)
         assert isinstance(datetimes, Iterable) \
-            and not isinstance(datetimes, (str, dict)), \
+            and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
         datetimes = list(datetimes)
 
