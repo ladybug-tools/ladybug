@@ -71,6 +71,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == (dt1, dt2)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
+        assert dc1.is_continuous is False
         str(dc1)  # Test the string representation of the collection
         str(dc1.header)  # Test the string representation of the header
 
@@ -86,6 +87,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == tuple(a_per.doys_int)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
+        assert dc1.is_continuous is False
         str(dc1)  # Test the string representation of the collection
         str(dc1.header)  # Test the string representation of the header
 
@@ -101,6 +103,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == tuple(a_per.months_int)
         assert dc1.values == (v1, v2)
         assert dc1.average == avg
+        assert dc1.is_continuous is False
         str(dc1)  # Test the string representation of the collection
         str(dc1.header)  # Test the string representation of the header
 
@@ -116,6 +119,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.datetimes == tuple(a_per.months_per_hour)
         assert dc1.values == tuple(vals)
         assert dc1.average == avg
+        assert dc1.is_continuous is False
         str(dc1)  # Test the string representation of the collection
         str(dc1.header)  # Test the string representation of the header
 
@@ -129,6 +133,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(dc1.datetimes) == 8760
         assert list(dc1.values) == list(xrange(8760))
         assert dc1.average == 4379.5
+        assert dc1.is_continuous is True
         str(dc1)  # Test the string representation of the collection
         str(dc1.header)  # Test the string representation of the header
 
@@ -708,6 +713,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(new_dc) == 365
         assert new_dc.datetimes[0] == 1
         assert new_dc.datetimes[-1] == 365
+        assert new_dc.is_continuous is True
         for i, val in dc.group_by_day().items():
             assert new_dc[i - 1] == sum(val) / len(val)
 
@@ -721,6 +727,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(new_dc) == 365
         assert new_dc.datetimes[0] == 1
         assert new_dc.datetimes[-1] == 365
+        assert new_dc.is_continuous is True
         for i, val in dc.group_by_day().items():
             assert new_dc[i - 1] == sum(val)
 
@@ -734,6 +741,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(new_dc) == 365
         assert new_dc.datetimes[0] == 1
         assert new_dc.datetimes[-1] == 365
+        assert new_dc.is_continuous is True
         for i, val in dc.group_by_day().items():
             assert new_dc[i - 1] == 5.75
 
@@ -747,6 +755,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(new_dc) == 12
         assert new_dc.datetimes[0] == 1
         assert new_dc.datetimes[-1] == 12
+        assert new_dc.is_continuous is True
         for i, val in dc.group_by_month().items():
             assert new_dc[i - 1] == sum(val) / len(val)
 
@@ -760,6 +769,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(new_dc) == 12
         assert new_dc.datetimes[0] == 1
         assert new_dc.datetimes[-1] == 12
+        assert new_dc.is_continuous is True
         for i, val in dc.group_by_month().items():
             assert new_dc[i - 1] == sum(val)
 
@@ -773,8 +783,46 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(new_dc) == 12
         assert new_dc.datetimes[0] == 1
         assert new_dc.datetimes[-1] == 12
+        assert new_dc.is_continuous is True
         for i, val in dc.group_by_month().items():
             assert new_dc[i - 1] == 50
+
+    def test_average_monthly_on_daily_collection(self):
+        """Test the average monthly method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(365))
+        dc = DailyCollection(header, values, values)
+        new_dc = dc.average_monthly()
+        assert isinstance(new_dc, MonthlyCollection)
+        assert len(new_dc) == 12
+        assert new_dc.datetimes[0] == 1
+        assert new_dc.datetimes[-1] == 12
+        for i, val in dc.group_by_month().items():
+            assert new_dc[i - 1] == sum(val) / len(val)
+
+    def test_total_monthly_on_daily_collection(self):
+        """Test the total monthly method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(365))
+        dc = DailyCollection(header, values, values)
+        new_dc = dc.total_monthly()
+        assert isinstance(new_dc, MonthlyCollection)
+        assert len(new_dc) == 12
+        assert new_dc.datetimes[0] == 1
+        assert new_dc.datetimes[-1] == 12
+        for i, val in dc.group_by_month().items():
+            assert new_dc[i - 1] == sum(val)
+
+    def test_percentile_monthly_on_daily_collection(self):
+        """Test the percentile monthly method."""
+        header = Header(Temperature(), 'C', AnalysisPeriod())
+        values = list(xrange(365))
+        dc = DailyCollection(header, values, values)
+        new_dc = dc.percentile_monthly(25)
+        assert isinstance(new_dc, MonthlyCollection)
+        assert len(new_dc) == 12
+        assert new_dc.datetimes[0] == 1
+        assert new_dc.datetimes[-1] == 12
 
     def test_average_monthly_per_hour(self):
         """Test the average monthly per hour method."""
@@ -786,6 +834,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(new_dc) == 12 * 24
         assert new_dc.datetimes[0] == (1, 0)
         assert new_dc.datetimes[-1] == (12, 23)
+        assert new_dc.is_continuous is True
         for i, val in enumerate(dc.group_by_month_per_hour().values()):
             assert new_dc[i] == sum(val) / len(val)
 
@@ -799,6 +848,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(new_dc) == 12 * 24
         assert new_dc.datetimes[0] == (1, 0)
         assert new_dc.datetimes[-1] == (12, 23)
+        assert new_dc.is_continuous is True
         for i, val in enumerate(dc.group_by_month_per_hour().values()):
             assert new_dc[i] == sum(val)
 
@@ -812,6 +862,7 @@ class DataCollectionTestCase(unittest.TestCase):
         assert len(new_dc) == 12 * 24
         assert new_dc.datetimes[0] == (1, 0)
         assert new_dc.datetimes[-1] == (12, 23)
+        assert new_dc.is_continuous is True
         pct_vals = list(xrange(24)) * 12
         for i, val in enumerate(pct_vals):
             assert new_dc[i] == val

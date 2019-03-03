@@ -580,6 +580,17 @@ class BaseCollection(object):
         d1 = key(vals[int(c)]) * (k - f)
         return d0 + d1
 
+    def _average(self, vals):
+        return sum(vals)/len(vals)
+
+    def _total(self, vals):
+        return sum(vals)
+
+    def _get_percentile_function(self, percentile):
+        def percentile_function(vals):
+            return self._percentile(vals, percentile)
+        return percentile_function
+
     def __len__(self):
         return len(self._values)
 
@@ -598,6 +609,11 @@ class BaseCollection(object):
 
     def __contains__(self, item):
         return item in self._values
+
+    @property
+    def is_continuous(self):
+        """Return False."""
+        return False
 
     @property
     def isDataCollection(self):
