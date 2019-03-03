@@ -30,7 +30,7 @@ class BaseCollection(object):
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
         assert isinstance(datetimes, Iterable) \
-            and not isinstance(datetimes, (str, dict)), \
+            and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
         datetimes = list(datetimes)
 
@@ -76,7 +76,8 @@ class BaseCollection(object):
 
     @values.setter
     def values(self, values):
-        assert isinstance(values, Iterable) and not isinstance(values, (str, dict)), \
+        assert isinstance(values, Iterable) and not \
+            isinstance(values, (str, dict, bytes, bytearray)), \
             'values should be a list or tuple. Got {}'.format(type(values))
         values = list(values)
         assert len(values) == len(self.datetimes), \
@@ -306,7 +307,8 @@ class BaseCollection(object):
         else:
             data_type = self.header.data_type
             unit = unit or self.header.unit
-        if isinstance(value, Iterable) and not isinstance(value, (str, dict)):
+        if isinstance(value, Iterable) and not isinstance(
+                value, (str, dict, bytes, bytearray)):
             assert len(value) == len(self._values), "Length of value ({}) must match "\
                 "the length of this collection's values ({})".format(
                     len(value), len(self._values))
@@ -415,7 +417,7 @@ class BaseCollection(object):
         return True
 
     @staticmethod
-    def compute_function_aligned(funct, data_collections, result_type, result_unit):
+    def compute_function_aligned(funct, data_collections, data_type, unit):
         """Compute a function with a list of aligned data collections or individual values.
 
         Args:
@@ -424,9 +426,9 @@ class BaseCollection(object):
             data_collections: A list with a length equal to the number of arguments
                 for the function. Items of the list can be either Data Collections
                 or individual values to be used at each datetime of other collections.
-            result_type: An instance of a Ladybug data type that describes the resulting
-                numerical values.
-            result_unit: The units of the resulting numerical values.
+            data_type: An instance of a Ladybug data type that describes the results
+                of the funct.
+            unit: The units of the funct results.
 
         Return:
             A Data Collection with the results function. If all items in this list of
@@ -448,39 +450,30 @@ class BaseCollection(object):
                 humid_ratio_from_db_rh, hr_inputs, HumidityRatio(), 'fraction')
             # humid_ratio will be a Data Colleciton of humidity ratios at Denver
         """
-        # first check the input collections or individual values
-        data_c = []
-        numerical_vals = []
-        for func_input in data_collections:
+        # check that all inputs are either data collections or floats
+        data_colls = []
+        for i, func_input in enumerate(data_collections):
             if isinstance(func_input, BaseCollection):
-                data_c.append(func_input)
+                data_colls.append(func_input)
             else:
                 try:
-                    numerical_vals.append(float(func_input))
+                    data_collections[i] = float(func_input)
                 except ValueError:
                     raise TypeError('Expected a number or a Data Colleciton. '
                                     'Got {}'.format(type(func_input)))
 
         # run the function and return the result
-        if len(data_c) == 0:
-            # just inidivdual numerical values
-            return funct(*numerical_vals)
+        if len(data_colls) == 0:
+            return funct(*data_collections)
         else:
-            # data collections
-            aligned_collections = []
-            for func_input in data_collections:
-                if isinstance(func_input, BaseCollection):
-                    aligned_collections.append(func_input)
-                else:
-                    aligned_collections.append(
-                        data_c[0].get_aligned_collection(float(func_input)))
-            BaseCollection.are_collections_aligned(aligned_collections)
-            result_values = []
-            for i in xrange(len(data_c[0].values)):
-                input_list = [coll[i] for coll in aligned_collections]
-                result_values.append(funct(*input_list))
-            return data_c[0].get_aligned_collection(
-                result_values, result_type, result_unit)
+            BaseCollection.are_collections_aligned(data_colls)
+            val_len = len(data_colls[0].values)
+            for i, col in enumerate(data_collections):
+                data_collections[i] = [col] * val_len if isinstance(col, float) else col
+            result = data_colls[0].get_aligned_collection(data_type=data_type, unit=unit)
+            for i in xrange(val_len):
+                result[i] = funct(*[col[i] for col in data_collections])
+            return result
 
     def is_in_data_type_range(self, raise_exception=True):
         """Check if the Data Collection values are in permissable ranges for the data_type.
