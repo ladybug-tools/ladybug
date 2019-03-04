@@ -72,7 +72,12 @@ class EnergyFlux(DataTypeBase):
 
 
 class MetabolicRate(EnergyFlux):
+    _min = 0
     _abbreviation = 'MetR'
+
+
+class EffectiveRadiantField(EnergyFlux):
+    _abbreviation = 'ERF'
 
 
 class Irradiance(EnergyFlux):
