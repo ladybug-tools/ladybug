@@ -467,8 +467,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
         elif interval == 'monthlyperhour':
             data_dict = self.group_by_month_per_hour()
             dates = self.header.analysis_period.months_per_hour
-            else:
-                raise ValueError('Invalid input value for interval: {}'.format(interval))
+        else:
+            raise ValueError('Invalid input value for interval: {}'.format(interval))
         # get the data and header for the new collection
         new_data, d_times = [], []
         for i in dates:
