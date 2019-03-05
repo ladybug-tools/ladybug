@@ -60,19 +60,18 @@ class PercentagePeopleDissatisfied(Percentage):
     _abbreviation = 'PPD'
 
 
-class ThermalComfort(Percentage):
-    _min = 0
-    _max = 100
-    _abbreviation = 'TC'
-    _unit_descr = '1 = comfortable, 0 = uncomfortable'
-
-
 class RelativeHumidity(Percentage):
     _min = 0
     _abbreviation = 'RH'
     _min_epw = 0
     _max_epw = 110
     _missing_epw = 999
+
+
+class HumidityRatio(Percentage):
+    _min = 0
+    _max = 100
+    _abbreviation = 'HR'
 
 
 class TotalSkyCover(Percentage):

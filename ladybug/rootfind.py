@@ -7,8 +7,8 @@ def secant(a, b, fn, epsilon):
     """
      One of the fasest root-finding algorithms.
      The method calculates the slope of the function fn and this enables it to converge
-     to a solution quickly. However, if started too far away from a root, the method
-     may not converge (returning a 'NaN'). For this reason, it is recommended that this
+     to a solution very fast. However, if started too far away from a root, the method
+     may not converge (returning a None). For this reason, it is recommended that this
      function be used first in any guess-and-check workflow and, if it fails to find a
      root, the bisect() method should be used.
 
@@ -17,13 +17,15 @@ def secant(a, b, fn, epsilon):
         b: The highest possible boundary of the value you are tying to find.
         fn: A function representing the relationship between the value you are
             trying to find and the target condition you are trying to satisfy.
-            It should be structured in the following way:
-            def fn(valueTryingToFind):
-                functWResult(valueTryingToFind) - targetDesiredFromfunctWResult
-        epsilon: The acceptable error in the targetDesiredFromfunctWResult.
+            It should typically be structured in the following way:
+            `def fn(value_trying_to_find):
+                funct(value_trying_to_find) - target_desired_from_funct`
+            ...but the subtraction should be swtiched if value_trying_to_find
+            has a negative relationship with the funct.
+        epsilon: The acceptable error in the target_desired_from_funct.
 
     Returns:
-        root: The value that gives the targetDesiredFromfunctWResult.
+        root: The value that gives the target_desired_from_funct.
 
     References
     ----------
@@ -48,28 +50,32 @@ def secant(a, b, fn, epsilon):
         f1 = f2
         f2 = f3
 
-    return 'NaN'
+    return None
 
 
 def bisect(a, b, fn, epsilon, target):
     """
-    One of the simplest root-finding algorithms.
-    It is extremely reliable and is gauranteed to converge to a solution as long as a
-    solution exists. However, it converges slowly and, for this reason, it is recommended
-    that this only be used after the secant() method has returned a 'NaN'.
+    The simplest root-finding algorithm.
+
+    It is extremely reliable. However, it converges slowly for this reason,
+    it is recommended that this only be used after the secant() method has
+    returned None.
 
     Args:
-       a: A lower guess of the value you are tying to find.
-       b: A higher guess of the value you are tying to find.
-       fn: A function representing the relationship between the value you are
-           trying to find and the target condition you are trying to satisfy.
-           It should be structured in the following way:
-           def fn(valueTryingToFind):
-               functWResult(valueTryingToFind) - targetDesiredFromfunctWResult
-       epsilon: The acceptable error in the targetDesiredFromfunctWResult.
+        a: A lower guess of the value you are tying to find.
+        b: A higher guess of the value you are tying to find.
+        fn: A function representing the relationship between the value you are
+            trying to find and the target condition you are trying to satisfy.
+            It should typically be structured in the following way:
+            `def fn(value_trying_to_find):
+                funct(value_trying_to_find) - target_desired_from_funct`
+            ...but the subtraction should be swtiched if value_trying_to_find
+            has a negative relationship with the funct.
+        epsilon: The acceptable error in the target_desired_from_funct.
+        target: The target slope (typically 0 for a local minima or maxima).
 
-   Returns:
-       root: The value that gives the targetDesiredFromfunctWResult.
+    Returns:
+        root: The value that gives the target_desired_from_funct.
 
     References
     ----------

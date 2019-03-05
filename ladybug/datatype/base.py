@@ -28,9 +28,10 @@ class DataTypeBase(object):
             (eg. 'UTCI' for Universal Thermal Climate Index).
             This can also be a letter that represents the data type in a formula.
             (eg. 'A' for Area; 'P' for Pressure)
-        unit_descr: An optional description of the units if numerical values
-            of these units relate to specific categories.
-            (eg. -1 = Cold, 0 = Neutral, +1 = Hot) (eg. 0 = False, 1 = True)
+        unit_descr: An optional dictionary describing categories that the numerical
+            values of the units relate to. For example:
+            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
+            {0: 'False', 1: 'True'}
         point_in_time: Boolean to note whether the data type represents conditions
             at a single instant in time (True) as opposed to being an average or
             accumulation over time (False) when it is found in hourly lists of data.
@@ -57,7 +58,7 @@ class DataTypeBase(object):
     _max = float('+inf')
 
     _abbreviation = ''
-    _unit_descr = ''
+    _unit_descr = None
     _point_in_time = True
     _cumulative = False
 
