@@ -166,33 +166,11 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
     def average_daily(self):
         """Return a daily collection of values averaged for each day."""
-        data_dict = self.group_by_day()
-        avg_data, d_times = [], []
-        for i in self.header.analysis_period.doys_int:
-            vals = data_dict[i]
-            if vals != []:
-                avg_data.append(sum(vals) / len(vals))
-                d_times.append(i)
-        new_header = self.header.duplicate()
-        new_header.metadata['operation'] = 'average'
-        collection = DailyCollection(new_header, avg_data, d_times)
-        collection._validated_a_period = True
-        return collection
+        return self._time_interval_operation('daily', 'average')
 
     def total_daily(self):
         """Return a daily collection of values totaled over each day."""
-        data_dict = self.group_by_day()
-        total_data, d_times = [], []
-        for i in self.header.analysis_period.doys_int:
-            vals = data_dict[i]
-            if vals != []:
-                total_data.append(sum(vals))
-                d_times.append(i)
-        new_header = self.header.duplicate()
-        new_header.metadata['operation'] = 'total'
-        collection = DailyCollection(new_header, total_data, d_times)
-        collection._validated_a_period = True
-        return collection
+        return self._time_interval_operation('daily', 'total')
 
     def percentile_daily(self, percentile):
         """Return a daily collection of values at the input percentile of each day.
@@ -201,20 +179,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
             percentile: A float value from 0 to 100 representing the
                 requested percentile.
         """
-        assert 0 <= percentile <= 100, \
-            'percentile must be between 0 and 100. Got {}'.format(percentile)
-        data_dict = self.group_by_day()
-        per_data, d_times = [], []
-        for i in self.header.analysis_period.doys_int:
-            vals = data_dict[i]
-            if vals != []:
-                per_data.append(self._percentile(vals, percentile))
-                d_times.append(i)
-        new_header = self.header.duplicate()
-        new_header.metadata['operation'] = '{} percentile'.format(percentile)
-        collection = DailyCollection(new_header, per_data, d_times)
-        collection._validated_a_period = True
-        return collection
+        return self._time_interval_operation('daily', 'percentile', percentile)
 
     def group_by_month(self):
         """Return a dictionary of this collection's values grouped by each month.
@@ -230,33 +195,11 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
     def average_monthly(self):
         """Return a monthly collection of values averaged for each month."""
-        data_dict = self.group_by_month()
-        avg_data, d_times = [], []
-        for i in self.header.analysis_period.months_int:
-            vals = data_dict[i]
-            if vals != []:
-                avg_data.append(sum(vals)/len(vals))
-                d_times.append(i)
-        new_header = self.header.duplicate()
-        new_header.metadata['operation'] = 'average'
-        collection = MonthlyCollection(new_header, avg_data, d_times)
-        collection._validated_a_period = True
-        return collection
+        return self._time_interval_operation('monthly', 'average')
 
     def total_monthly(self):
         """Return a monthly collection of values totaled over each month."""
-        data_dict = self.group_by_month()
-        total_data, d_times = [], []
-        for i in self.header.analysis_period.months_int:
-            vals = data_dict[i]
-            if vals != []:
-                total_data.append(sum(vals))
-                d_times.append(i)
-        new_header = self.header.duplicate()
-        new_header.metadata['operation'] = 'total'
-        collection = MonthlyCollection(new_header, total_data, d_times)
-        collection._validated_a_period = True
-        return collection
+        return self._time_interval_operation('monthly', 'total')
 
     def percentile_monthly(self, percentile):
         """Return a monthly collection of values at the input percentile of each month.
@@ -265,20 +208,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
             percentile: A float value from 0 to 100 representing the
                 requested percentile.
         """
-        assert 0 <= percentile <= 100, \
-            'percentile must be between 0 and 100. Got {}'.format(percentile)
-        data_dict = self.group_by_month()
-        per_data, d_times = [], []
-        for i in self.header.analysis_period.months_int:
-            vals = data_dict[i]
-            if vals != []:
-                per_data.append(self._percentile(vals, percentile))
-                d_times.append(i)
-        new_header = self.header.duplicate()
-        new_header.metadata['operation'] = '{} percentile'.format(percentile)
-        collection = MonthlyCollection(new_header, per_data, d_times)
-        collection._validated_a_period = True
-        return collection
+        return self._time_interval_operation('monthly', 'percentile', percentile)
 
     def group_by_month_per_hour(self):
         """Return a dictionary of this collection's values grouped by each month per hour.
@@ -298,33 +228,11 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
     def average_monthly_per_hour(self):
         """Return a monthly per hour data collection of average values."""
-        data_dict = self.group_by_month_per_hour()
-        avg_data, d_times = [], []
-        for i in self.header.analysis_period.months_per_hour:
-            vals = data_dict[i]
-            if vals != []:
-                avg_data.append(sum(vals)/len(vals))
-                d_times.append(i)
-        new_header = self.header.duplicate()
-        new_header.metadata['operation'] = 'average'
-        collection = MonthlyPerHourCollection(new_header, avg_data, d_times)
-        collection._validated_a_period = True
-        return collection
+        return self._time_interval_operation('monthlyperhour', 'average')
 
     def total_monthly_per_hour(self):
         """Return a monthly per hour collection of totaled values."""
-        data_dict = self.group_by_month_per_hour()
-        total_data, d_times = [], []
-        for i in self.header.analysis_period.months_per_hour:
-            vals = data_dict[i]
-            if vals != []:
-                total_data.append(sum(vals))
-                d_times.append(i)
-        new_header = self.header.duplicate()
-        new_header.metadata['operation'] = 'total'
-        collection = MonthlyPerHourCollection(new_header, total_data, d_times)
-        collection._validated_a_period = True
-        return collection
+        return self._time_interval_operation('monthlyperhour', 'total')
 
     def percentile_monthly_per_hour(self, percentile):
         """Return a monthly per hour collection of values at the input percentile.
@@ -333,20 +241,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
             percentile: A float value from 0 to 100 representing the
                 requested percentile.
         """
-        assert 0 <= percentile <= 100, \
-            'percentile must be between 0 and 100. Got {}'.format(percentile)
-        data_dict = self.group_by_month_per_hour()
-        total_data, d_times = [], []
-        for i in self.header.analysis_period.months_per_hour:
-            vals = data_dict[i]
-            if vals != []:
-                total_data.append(self._percentile(vals, percentile))
-                d_times.append(i)
-        new_header = self.header.duplicate()
-        new_header.metadata['operation'] = '{} percentile'.format(percentile)
-        collection = MonthlyPerHourCollection(new_header, total_data, d_times)
-        collection._validated_a_period = True
-        return collection
+        return self._time_interval_operation('monthlyperhour', 'percentile', percentile)
 
     def interpolate_holes(self):
         """Linearly interpolate over holes in this collection to make it continuous.
@@ -549,6 +444,54 @@ class HourlyDiscontinuousCollection(BaseCollection):
             'analysis_period is_leap_year must match that on the'\
             'Collection header. {} != {}'.format(
                 analysis_period.is_leap_year, self.header.analysis_period.is_leap_year)
+
+    def _time_interval_operation(self, interval, operation, percentile=0):
+        """Get a collection of a certain time interval with a given math operation."""
+        # retrive the function that correctly describes the operation
+        if operation == 'average':
+            funct = self._average
+        elif operation == 'total':
+            funct = self._total
+        else:
+            assert 0 <= percentile <= 100, \
+                'percentile must be between 0 and 100. Got {}'.format(percentile)
+            funct = self._get_percentile_function(percentile)
+
+        # retrive the data that correctly describes the time interval
+        if interval == 'monthly':
+            data_dict = self.group_by_month()
+            dates = self.header.analysis_period.months_int
+        elif interval == 'daily':
+            data_dict = self.group_by_day()
+            dates = self.header.analysis_period.doys_int
+        elif interval == 'monthlyperhour':
+            data_dict = self.group_by_month_per_hour()
+            dates = self.header.analysis_period.months_per_hour
+        else:
+            raise ValueError('Invalid input value for interval: {}'.format(interval))
+        # get the data and header for the new collection
+        new_data, d_times = [], []
+        for i in dates:
+            vals = data_dict[i]
+            if vals != []:
+                new_data.append(funct(vals))
+                d_times.append(i)
+        new_header = self.header.duplicate()
+        if operation == 'percentile':
+            new_header.metadata['operation'] = '{} percentile'.format(percentile)
+        else:
+            new_header.metadata['operation'] = operation
+
+        # build the final data collection
+        if interval == 'monthly':
+            collection = MonthlyCollection(new_header, new_data, d_times)
+        elif interval == 'daily':
+            collection = DailyCollection(new_header, new_data, d_times)
+        elif interval == 'monthlyperhour':
+            collection = MonthlyPerHourCollection(new_header, new_data, d_times)
+
+        collection._validated_a_period = True
+        return collection
 
     @property
     def isHourly(self):
@@ -968,6 +911,11 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             return AnalysisPeriod(*n_ap)
 
     @property
+    def is_continuous(self):
+        """Boolean denoting whether the data collection is continuous."""
+        return True
+
+    @property
     def isContinuous(self):
         return True
 
@@ -1041,6 +989,36 @@ class DailyCollection(BaseCollection):
         _filt_header = self.header.duplicate()
         return DailyCollection(_filt_header, _filt_values, _filt_datetimes)
 
+    def group_by_month(self):
+        """Return a dictionary of this collection's values grouped by each month.
+
+        Key values are between 1-12.
+        """
+        data_by_month = OrderedDict()
+        for d in xrange(1, 13):
+            data_by_month[d] = []
+        for v, doy in zip(self._values, self.datetimes):
+            dt = DateTime.from_hoy(doy * 24)
+            data_by_month[dt.month].append(v)
+        return data_by_month
+
+    def average_monthly(self):
+        """Return a monthly collection of values averaged for each month."""
+        return self._monthly_operation('average')
+
+    def total_monthly(self):
+        """Return a monthly collection of values totaled over each month."""
+        return self._monthly_operation('total')
+
+    def percentile_monthly(self, percentile):
+        """Return a monthly collection of values at the input percentile of each month.
+
+        Args:
+            percentile: A float value from 0 to 100 representing the
+                requested percentile.
+        """
+        return self._monthly_operation('percentile', percentile)
+
     def validate_analysis_period(self):
         """Get a collection where the header analysis_period aligns with datetimes.
 
@@ -1110,6 +1088,46 @@ class DailyCollection(BaseCollection):
             'analysis_period is_leap_year must match that on the'\
             'Collection header. {} != {}'.format(
                 analysis_period.is_leap_year, self.header.analysis_period.is_leap_year)
+
+    def _monthly_operation(self, operation, percentile=0):
+        """Get a MonthlyCollection given a certain operation."""
+        # Retrive the correct operation.
+        if operation == 'average':
+            funct = self._average
+        elif operation == 'total':
+            funct = self._total
+        else:
+            assert 0 <= percentile <= 100, \
+                'percentile must be between 0 and 100. Got {}'.format(percentile)
+            funct = self._get_percentile_function(percentile)
+
+        # Get the data for the new collection
+        data_dict = self.group_by_month()
+        new_data, d_times = [], []
+        for i in self.header.analysis_period.months_int:
+            vals = data_dict[i]
+            if vals != []:
+                new_data.append(funct(vals))
+                d_times.append(i)
+
+        # build the new monthly collection
+        new_header = self.header.duplicate()
+        if operation == 'percentile':
+            new_header.metadata['operation'] = '{} percentile'.format(percentile)
+        else:
+            new_header.metadata['operation'] = operation
+        collection = MonthlyCollection(new_header, new_data, d_times)
+        collection._validated_a_period = True
+        return collection
+
+    @property
+    def is_continuous(self):
+        """Boolean denoting whether the data collection is continuous."""
+        if self._validated_a_period is True and \
+                len(self.values) == len(self.header.analysis_period.doys_int):
+            return True
+        else:
+            return False
 
     @property
     def isDaily(self):
@@ -1232,6 +1250,15 @@ class MonthlyCollection(BaseCollection):
         new_coll = MonthlyCollection(new_header, sort_values, sort_datetimes)
         new_coll._validated_a_period = True
         return new_coll
+
+    @property
+    def is_continuous(self):
+        """Boolean denoting whether the data collection is continuous."""
+        if self._validated_a_period is True and \
+                len(self.values) == len(self.header.analysis_period.months_int):
+            return True
+        else:
+            return False
 
     @property
     def isMonthly(self):
@@ -1368,6 +1395,16 @@ class MonthlyPerHourCollection(BaseCollection):
         new_coll = MonthlyPerHourCollection(new_header, sort_values, sort_datetimes)
         new_coll._validated_a_period = True
         return new_coll
+
+    @property
+    def is_continuous(self):
+        """Boolean denoting whether the data collection is continuous."""
+        a_per = self.header.analysis_period
+        if self._validated_a_period is True and a_per.st_hour == 0 and a_per.end_hour \
+                == 23 and len(self.values) == len(a_per.months_per_hour):
+            return True
+        else:
+            return False
 
     @property
     def isMonthlyPerHour(self):

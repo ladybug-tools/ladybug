@@ -72,8 +72,12 @@ class EnergyFlux(DataTypeBase):
 
 
 class MetabolicRate(EnergyFlux):
+    _min = 0
     _abbreviation = 'MetR'
-    _unit_descr = '1 = Seated, \n1.2 = Standing, \n2 = Walking'
+
+
+class EffectiveRadiantField(EnergyFlux):
+    _abbreviation = 'ERF'
 
 
 class Irradiance(EnergyFlux):

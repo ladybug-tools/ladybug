@@ -60,13 +60,6 @@ class PercentagePeopleDissatisfied(Percentage):
     _abbreviation = 'PPD'
 
 
-class ThermalComfort(Percentage):
-    _min = 0
-    _max = 100
-    _abbreviation = 'TC'
-    _unit_descr = '1 = comfortable, 0 = uncomfortable'
-
-
 class RelativeHumidity(Percentage):
     _min = 0
     _abbreviation = 'RH'
