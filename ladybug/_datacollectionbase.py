@@ -581,7 +581,7 @@ class BaseCollection(object):
         return d0 + d1
 
     def _average(self, vals):
-        return sum(vals)/len(vals)
+        return sum(vals) / len(vals)
 
     def _total(self, vals):
         return sum(vals)
@@ -612,7 +612,7 @@ class BaseCollection(object):
 
     @property
     def is_continuous(self):
-        """Return False."""
+        """Boolean denoting whether the data collection is continuous."""
         return False
 
     @property
