@@ -63,6 +63,10 @@ class DewPointTemperature(Temperature):
     _missing_epw = 99.9
 
 
+class WetBulbTemperature(Temperature):
+    _abbreviation = 'WBT'
+
+
 class SkyTemperature(Temperature):
     _abbreviation = 'Tsky'
 
