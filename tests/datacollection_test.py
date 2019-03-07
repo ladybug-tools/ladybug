@@ -10,7 +10,7 @@ from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.dt import DateTime
 from ladybug.datatype.generic import GenericType
 from ladybug.datatype.temperature import Temperature
-from ladybug.datatype.percentage import RelativeHumidity, HumidityRatio
+from ladybug.datatype.fraction import RelativeHumidity, HumidityRatio
 
 from ladybug.epw import EPW
 from ladybug.psychrometrics import humid_ratio_from_db_rh
