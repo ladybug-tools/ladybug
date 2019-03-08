@@ -8,7 +8,7 @@ from .datacollection import MonthlyCollection
 from .header import Header
 from .analysisperiod import AnalysisPeriod
 from .datatype import angle, distance, energyflux, energyintensity, generic, \
-    illuminance, luminance, percentage, pressure, speed, temperature
+    illuminance, luminance, fraction, pressure, speed, temperature
 from .skymodel import calc_sky_temperature
 from .futil import write_to_file
 
@@ -1433,7 +1433,7 @@ class EPWFields(object):
             'unit': 'C'
             },
 
-        8: {'name': percentage.RelativeHumidity(),
+        8: {'name': fraction.RelativeHumidity(),
             'type': int,
             'unit': '%'
             },
@@ -1503,12 +1503,12 @@ class EPWFields(object):
              'unit': 'm/s'
              },
 
-        22: {'name': percentage.TotalSkyCover(),  # used if Horizontal IR is missing
+        22: {'name': fraction.TotalSkyCover(),  # used if Horizontal IR is missing
              'type': int,
              'unit': 'tenths'
              },
 
-        23: {'name': percentage.OpaqueSkyCover(),  # used if Horizontal IR is missing
+        23: {'name': fraction.OpaqueSkyCover(),  # used if Horizontal IR is missing
              'type': int,
              'unit': 'tenths'
              },
@@ -1540,7 +1540,7 @@ class EPWFields(object):
              'unit': 'mm'
              },
 
-        29: {'name': percentage.AerosolOpticalDepth(),
+        29: {'name': fraction.AerosolOpticalDepth(),
              'type': float,
              'unit': 'fraction'
              },
@@ -1556,7 +1556,7 @@ class EPWFields(object):
              'unit': 'day'
              },
 
-        32: {'name': percentage.Albedo(),
+        32: {'name': fraction.Albedo(),
              'type': float,
              'unit': 'fraction'
              },
@@ -1566,7 +1566,7 @@ class EPWFields(object):
              'unit': 'mm'
              },
 
-        34: {'name': percentage.LiquidPrecipitationQuantity(),
+        34: {'name': fraction.LiquidPrecipitationQuantity(),
              'type': float,
              'unit': 'fraction'
              }

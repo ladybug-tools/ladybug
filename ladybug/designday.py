@@ -10,7 +10,7 @@ from .datacollection import HourlyContinuousCollection
 from .sunpath import Sunpath
 
 from .datatype import angle, energyflux, energyintensity, \
-    percentage, pressure, speed, temperature
+    fraction, pressure, speed, temperature
 
 from .skymodel import ashrae_revised_clear_sky, \
     ashrae_clear_sky, calc_horizontal_infrared
@@ -663,7 +663,7 @@ class DesignDay(object):
         rh_data = [rel_humid_from_db_dpt(x, y) for x, y in zip(
             self._dry_bulb_condition.hourly_values, dpt_data)]
         return self._get_daily_data_collections(
-            percentage.RelativeHumidity(), '%', rh_data)
+            fraction.RelativeHumidity(), '%', rh_data)
 
     @property
     def hourly_barometric_pressure(self):
@@ -705,7 +705,7 @@ class DesignDay(object):
     def hourly_sky_cover(self):
         """A data collection containing hourly sky cover values in tenths."""
         return self._get_daily_data_collections(
-            percentage.TotalSkyCover(), 'tenths', self._sky_condition.hourly_sky_cover)
+            fraction.TotalSkyCover(), 'tenths', self._sky_condition.hourly_sky_cover)
 
     @property
     def hourly_horizontal_infrared(self):
