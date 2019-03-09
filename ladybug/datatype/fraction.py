@@ -63,9 +63,6 @@ class PercentagePeopleDissatisfied(Fraction):
 class RelativeHumidity(Fraction):
     _min = 0
     _abbreviation = 'RH'
-    _min_epw = 0
-    _max_epw = 1.1
-    _missing_epw = 999
 
 
 class HumidityRatio(Fraction):
@@ -79,9 +76,6 @@ class TotalSkyCover(Fraction):
     _min = 0
     _max = 1
     _abbreviation = 'CC'
-    _min_epw = 0
-    _max_epw = 1
-    _missing_epw = 99
 
 
 class OpaqueSkyCover(Fraction):
@@ -89,32 +83,20 @@ class OpaqueSkyCover(Fraction):
     _min = 0
     _max = 1
     _abbreviation = 'OSC'
-    _min_epw = 0
-    _max_epw = 1
-    _missing_epw = 99
 
 
 class AerosolOpticalDepth(Fraction):
     _min = 0
     _max = 1
     _abbreviation = 'AOD'
-    _min_epw = 0
-    _max_epw = 1
-    _missing_epw = 0.999
 
 
 class Albedo(Fraction):
     _min = 0
     _max = 1
     _abbreviation = 'a'
-    _min_epw = 0
-    _max_epw = 1
-    _missing_epw = 0.999
 
 
 class LiquidPrecipitationQuantity(Fraction):
     _min = 0
     _abbreviation = 'LPQ'
-    _min_epw = 0
-    _max_epw = 1
-    _missing_epw = 99

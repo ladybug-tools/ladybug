@@ -476,16 +476,11 @@ class BaseCollection(object):
             return result
 
     def is_in_data_type_range(self, raise_exception=True):
-        """Check if the Data Collection values are in permissable ranges for the data_type.
+        """Check if collection values are in physically possible ranges for the data_type.
 
         If this method returns False, the Data Collection's data is
         physically or mathematically impossible for the data_type."""
         return self._header.data_type.is_in_range(
-            self._values, self._header.unit, raise_exception)
-
-    def is_in_epw_range(self, raise_exception=True):
-        """Check if Data Collection values are in permissable ranges for EPW files."""
-        return self._header.data_type.is_in_range_epw(
             self._values, self._header.unit, raise_exception)
 
     @staticmethod

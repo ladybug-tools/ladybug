@@ -76,6 +76,3 @@ class Pressure(DataTypeBase):
 class AtmosphericStationPressure(Pressure):
     _min = 0
     _abbreviation = 'Patm'
-    _min_epw = 31000
-    _max_epw = 120000
-    _missing_epw = 999999

@@ -63,9 +63,6 @@ class Speed(DataTypeBase):
 
 class WindSpeed(Speed):
     _abbreviation = 'WS'
-    _min_epw = 0
-    _max_epw = 40
-    _missing_epw = 999
 
 
 class AirSpeed(Speed):
