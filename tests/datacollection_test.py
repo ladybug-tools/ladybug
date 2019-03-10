@@ -791,7 +791,7 @@ class DataCollectionTestCase(unittest.TestCase):
         """Test the average monthly method."""
         header = Header(Temperature(), 'C', AnalysisPeriod())
         values = list(xrange(365))
-        dc = DailyCollection(header, values, values)
+        dc = DailyCollection(header, values, AnalysisPeriod().doys_int)
         new_dc = dc.average_monthly()
         assert isinstance(new_dc, MonthlyCollection)
         assert len(new_dc) == 12
@@ -804,7 +804,7 @@ class DataCollectionTestCase(unittest.TestCase):
         """Test the total monthly method."""
         header = Header(Temperature(), 'C', AnalysisPeriod())
         values = list(xrange(365))
-        dc = DailyCollection(header, values, values)
+        dc = DailyCollection(header, values, AnalysisPeriod().doys_int)
         new_dc = dc.total_monthly()
         assert isinstance(new_dc, MonthlyCollection)
         assert len(new_dc) == 12
@@ -817,7 +817,7 @@ class DataCollectionTestCase(unittest.TestCase):
         """Test the percentile monthly method."""
         header = Header(Temperature(), 'C', AnalysisPeriod())
         values = list(xrange(365))
-        dc = DailyCollection(header, values, values)
+        dc = DailyCollection(header, values, AnalysisPeriod().doys_int)
         new_dc = dc.percentile_monthly(25)
         assert isinstance(new_dc, MonthlyCollection)
         assert len(new_dc) == 12
