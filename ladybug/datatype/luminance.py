@@ -13,8 +13,6 @@ class Luminance(DataTypeBase):
     _min = 0
     _abbreviation = 'Lv'
     _point_in_time = False
-    _min_epw = 0
-    _missing_epw = 9999  # note will be missing if >= 999900
 
     def _cd_m2_to_cd_ft2(self, value):
         return value / 10.7639

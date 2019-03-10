@@ -791,7 +791,7 @@ class DataCollectionTestCase(unittest.TestCase):
         """Test the average monthly method."""
         header = Header(Temperature(), 'C', AnalysisPeriod())
         values = list(xrange(365))
-        dc = DailyCollection(header, values, values)
+        dc = DailyCollection(header, values, AnalysisPeriod().doys_int)
         new_dc = dc.average_monthly()
         assert isinstance(new_dc, MonthlyCollection)
         assert len(new_dc) == 12
@@ -804,7 +804,7 @@ class DataCollectionTestCase(unittest.TestCase):
         """Test the total monthly method."""
         header = Header(Temperature(), 'C', AnalysisPeriod())
         values = list(xrange(365))
-        dc = DailyCollection(header, values, values)
+        dc = DailyCollection(header, values, AnalysisPeriod().doys_int)
         new_dc = dc.total_monthly()
         assert isinstance(new_dc, MonthlyCollection)
         assert len(new_dc) == 12
@@ -817,7 +817,7 @@ class DataCollectionTestCase(unittest.TestCase):
         """Test the percentile monthly method."""
         header = Header(Temperature(), 'C', AnalysisPeriod())
         values = list(xrange(365))
-        dc = DailyCollection(header, values, values)
+        dc = DailyCollection(header, values, AnalysisPeriod().doys_int)
         new_dc = dc.percentile_monthly(25)
         assert isinstance(new_dc, MonthlyCollection)
         assert len(new_dc) == 12
@@ -1141,23 +1141,6 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc2.is_in_data_type_range(raise_exception=False) is False
         assert dc3.is_in_data_type_range(raise_exception=False) is True
         assert dc4.is_in_data_type_range(raise_exception=False) is False
-
-    def test_is_in_range_epw(self):
-        """Test the function to check whether values are in range for an EPW."""
-        header1 = Header(RelativeHumidity(), '%', AnalysisPeriod())
-        header2 = Header(RelativeHumidity(), 'fraction', AnalysisPeriod())
-        val1 = [50] * 8760
-        val2 = [150] * 8760
-        val3 = [0.5] * 8760
-        val4 = [1.5] * 8760
-        dc1 = HourlyContinuousCollection(header1, val1)
-        dc2 = HourlyContinuousCollection(header1, val2)
-        dc3 = HourlyContinuousCollection(header2, val3)
-        dc4 = HourlyContinuousCollection(header2, val4)
-        assert dc1.is_in_epw_range(raise_exception=False) is True
-        assert dc2.is_in_epw_range(raise_exception=False) is False
-        assert dc3.is_in_epw_range(raise_exception=False) is True
-        assert dc4.is_in_epw_range(raise_exception=False) is False
 
 
 if __name__ == "__main__":

@@ -998,7 +998,7 @@ class DailyCollection(BaseCollection):
         for d in xrange(1, 13):
             data_by_month[d] = []
         for v, doy in zip(self._values, self.datetimes):
-            dt = DateTime.from_hoy(doy * 24)
+            dt = DateTime.from_hoy(((doy - 1) * 24) + 1)
             data_by_month[dt.month].append(v)
         return data_by_month
 
