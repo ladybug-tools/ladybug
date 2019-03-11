@@ -121,6 +121,27 @@ class LocationTestCase(unittest.TestCase):
         assert loc_from_json.elevation == elevation
         assert loc_from_json.country == country
 
+    def test_duplicate(self):
+        """Test the duplicate method."""
+        city = 'Tehran'
+        country = 'Iran'
+        latitude = 36
+        longitude = 34
+        time_zone = 3.5
+        elevation = 54
+
+        loc = Location(city=city, country=country, latitude=latitude,
+                       longitude=longitude, time_zone=time_zone,
+                       elevation=elevation)
+        loc_dup = loc.duplicate()
+
+        assert loc.city == loc_dup.city == city
+        assert loc.country == loc_dup.country == country
+        assert loc.latitude == loc_dup.latitude == latitude
+        assert loc.longitude == loc_dup.longitude == longitude
+        assert loc.time_zone == loc_dup.time_zone == time_zone
+        assert loc.elevation == loc_dup.elevation == elevation
+
 
 if __name__ == "__main__":
     unittest.main()
