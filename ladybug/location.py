@@ -157,8 +157,9 @@ class Location(object):
 
     def duplicate(self):
         """Duplicate location."""
-        return self(self.city, self.country, self.latitude, self.longitude,
-                    self.time_zone, self.elevation, self.station_id, self.source)
+        return Location(self.city, self.state, self.country,
+                        self.latitude, self.longitude, self.time_zone, self.elevation,
+                        self.station_id, self.source)
 
     @property
     def ep_style_location_string(self):
