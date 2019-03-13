@@ -34,6 +34,7 @@ from ._datacollectionbase import BaseCollection
 from .header import Header
 from .analysisperiod import AnalysisPeriod
 from .dt import DateTime
+from .datatype.base import DataTypeBase
 
 from collections import OrderedDict
 from collections import Iterable
@@ -45,6 +46,8 @@ except ImportError:
 
 class HourlyDiscontinuousCollection(BaseCollection):
     """Discontinous Data Collection at hourly or sub-hourly intervals."""
+
+    _collection_type = 'HourlyDiscontinuous'
 
     def __init__(self, header, values, datetimes):
         """Initialize hourly discontinuous collection.
@@ -63,10 +66,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
-        datetimes = list(datetimes)
 
         self._header = header
-        self._datetimes = datetimes
+        self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
 
@@ -507,6 +509,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
 class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     """Class for Continouus Data Collections at hourly or sub-hourly intervals."""
 
+    _collection_type = 'HourlyContinuous'
+
     def __init__(self, header, values):
         """Initialize hourly discontinuous collection.
 
@@ -547,17 +551,11 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         assert 'values' in data, 'Required keyword "values" is missing!'
         return cls(Header.from_json(data['header']), data['values'])
 
-    @property
-    def values(self):
-        """Return the Data Collection's list of numerical values."""
-        return tuple(self._values)
-
-    @values.setter
+    @HourlyDiscontinuousCollection.values.setter
     def values(self, values):
         assert isinstance(values, Iterable) and not isinstance(
             values, (str, dict, bytes, bytearray)), \
             'values should be a list or tuple. Got {}'.format(type(values))
-        values = list(values)
         if self.header.analysis_period.is_annual:
             a_period_len = 8760 * self.header.analysis_period.timestep
             if self.header.analysis_period.is_leap_year is True:
@@ -568,14 +566,14 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             'Length of values does not match that expected by the '\
             'header analysis_period. {} != {}'.format(
                 len(values), a_period_len)
-        self._values = values
+        self._values = list(values)
 
     @property
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
         if self._datetimes is None:
-            self._datetimes = self.header.analysis_period.datetimes
-        return tuple(self._datetimes)
+            self._datetimes = tuple(self.header.analysis_period.datetimes)
+        return self._datetimes
 
     def interpolate_holes(self):
         """All continuous collections do not have holes in the data set.
@@ -799,9 +797,16 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
                 indx += interval
         return hourly_data_by_month
 
+    def to_immutable(self):
+        """Get an immutable version of this collection."""
+        if self._enumeration is None:
+            self._get_mutable_enumeration()
+        col_obj = self._enumeration._immutable_collections[self._collection_type]
+        return col_obj(self.header, self.values)
+
     def duplicate(self):
         """Return a copy of the current Data Collection."""
-        return HourlyContinuousCollection(
+        return self.__class__(
             self.header.duplicate(), self._values)
 
     def get_aligned_collection(self, value=0, data_type=None, unit=None):
@@ -821,7 +826,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
                 input data_type (if it exists).
         """
         if data_type is not None:
-            assert hasattr(data_type, 'isDataType'), \
+            assert isinstance(data_type, DataTypeBase), \
                 'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
             if unit is None:
                 unit = data_type.units[0]
@@ -853,7 +858,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         Return:
             True if collections are aligned, Fale if not aligned
         """
-        if type(self) != type(data_collection):
+        if self._collection_type != data_collection._collection_type:
             return False
         elif len(self.values) != len(data_collection.values):
             return False
@@ -919,9 +924,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     def isContinuous(self):
         return True
 
-    def __delitem__(self, key):
-        raise TypeError('Convert this Collection to Discontinuous to use del().')
-
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""
         return "{} Continuous Data Collection\n{}\n{} ({})\n...{} values...".format(
@@ -931,6 +933,8 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
 class DailyCollection(BaseCollection):
     """Class for Daily Data Collections."""
+
+    _collection_type = 'Daily'
 
     def __init__(self, header, values, datetimes):
         """Initialize daily collection.
@@ -950,10 +954,9 @@ class DailyCollection(BaseCollection):
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
-        datetimes = list(datetimes)
 
         self._header = header
-        self._datetimes = datetimes
+        self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
 
@@ -1144,6 +1147,8 @@ class DailyCollection(BaseCollection):
 class MonthlyCollection(BaseCollection):
     """Class for Monthly Data Collections."""
 
+    _collection_type = 'Monthly'
+
     def __init__(self, header, values, datetimes):
         """Initialize monthly collection.
 
@@ -1162,10 +1167,9 @@ class MonthlyCollection(BaseCollection):
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
-        datetimes = list(datetimes)
 
         self._header = header
-        self._datetimes = datetimes
+        self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
 
@@ -1275,6 +1279,8 @@ class MonthlyCollection(BaseCollection):
 class MonthlyPerHourCollection(BaseCollection):
     """Class for Monthly Per Hour Collections."""
 
+    _collection_type = 'MonthlyPerHour'
+
     def __init__(self, header, values, datetimes):
         """Initialize monthly per hour collection.
 
@@ -1293,10 +1299,9 @@ class MonthlyPerHourCollection(BaseCollection):
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
-        datetimes = list(datetimes)
 
         self._header = header
-        self._datetimes = datetimes
+        self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
 

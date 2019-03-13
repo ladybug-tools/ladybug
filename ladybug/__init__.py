@@ -1,3 +1,5 @@
+from ._datacollectionbase import _DataCollectionEnumeration
+
 import sys
 import importlib
 import pkgutil
@@ -18,3 +20,8 @@ for key in lb_plugins:
 
 # This is a variable to check if the library is a [+] library.
 setattr(sys.modules[__name__], 'isplus', False)
+
+# This ensurse that the conversion between mutable and immutable collections can happen.
+_data_collections = _DataCollectionEnumeration(import_modules=True)
+MUTABLECOLLECTIONS = _data_collections.mutable_collections
+IMMUTABLECOLLECTIONS = _data_collections.immutable_collections
