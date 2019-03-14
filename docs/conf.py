@@ -23,7 +23,9 @@ copyright = '2019, Ladybug Tools'
 author = 'Ladybug Tools'
 
 # The short X.Y version
-version = '0.2.0'
+import ladybug
+version = ladybug.__version__
+
 # The full version, including alpha/beta/rc tags
 release = ''
 
