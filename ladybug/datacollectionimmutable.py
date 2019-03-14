@@ -45,7 +45,8 @@ class HourlyDiscontinuousCollectionImmutable(HourlyDiscontinuousCollection):
         else:
             raise AttributeError(self._mutable_message())
 
-    def convert_to_culled_timestep(self):
+    def convert_to_culled_timestep(self, timestep=1):
+        """This method is not available for immutable collections."""
         raise AttributeError(self._mutable_message())
 
     def to_mutable(self):
@@ -96,7 +97,8 @@ class HourlyContinuousCollectionImmutable(HourlyContinuousCollection):
         else:
             raise AttributeError(self._mutable_message())
 
-    def convert_to_culled_timestep(self):
+    def convert_to_culled_timestep(self, timestep=1):
+        """This method is not available for immutable collections."""
         raise AttributeError(self._mutable_message())
 
     def to_mutable(self):

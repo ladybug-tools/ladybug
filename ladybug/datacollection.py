@@ -809,7 +809,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         return self.__class__(
             self.header.duplicate(), self._values)
 
-    def get_aligned_collection(self, value=0, data_type=None, unit=None):
+    def get_aligned_collection(self, value=0, data_type=None, unit=None, mutable=None):
         """Return a Collection aligned with this one composed of one repeated value.
 
         Aligned Data Collections are of the same Data Collection class,
@@ -824,26 +824,29 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             unit: The unit of the aligned collection. Default is to
                 use the unit of this collection or the base unit of the
                 input data_type (if it exists).
+            mutable: An optional Boolean to set whether the returned aligned
+                collection is mutable (True) or immutable (False). The default is
+                None, which will simply set the aligned collection to have the
+                same mutability as the starting collection.
         """
-        if data_type is not None:
-            assert isinstance(data_type, DataTypeBase), \
-                'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
-            if unit is None:
-                unit = data_type.units[0]
+        # set up the header of the new collection
+        header = self._check_aligned_header(data_type, unit)
+
+        # set up the values of the new collection
+        values = self._check_aligned_value(value)
+
+        # get the correct base class for the aligned collection (mutable or immutable)
+        if mutable is None:
+            collection = self.__class__(header, values)
         else:
-            data_type = self.header.data_type
-            unit = unit or self.header.unit
-        if isinstance(value, Iterable) and not isinstance(
-                value, (str, dict, bytes, bytearray)):
-            assert len(value) == len(self._values), "Length of value ({}) must match "\
-                "the length of this collection's values ({})".format(
-                    len(value), len(self._values))
-            values = value
-        else:
-            values = [value] * len(self._values)
-        header = Header(data_type, unit, self.header.analysis_period,
-                        self.header.metadata)
-        return self.__class__(header, values)
+            if self._enumeration is None:
+                self._get_mutable_enumeration()
+            if mutable is False:
+                col_obj = self._enumeration._immutable_collections[self._collection_type]
+            else:
+                col_obj = self._enumeration._mutable_collections[self._collection_type]
+            collection = col_obj(header, values)
+        return collection
 
     def is_collection_aligned(self, data_collection):
         """Check if this Data Collection is aligned with another.

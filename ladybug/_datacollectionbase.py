@@ -320,32 +320,16 @@ class BaseCollection(object):
             unit: The unit of the aligned collection. Default is to
                 use the unit of this collection or the base unit of the
                 input data_type (if it exists).
-            immutable: An optional Boolean to set whether the returned aligned
+            mutable: An optional Boolean to set whether the returned aligned
                 collection is mutable (True) or immutable (False). The default is
                 None, which will simply set the aligned collection to have the
                 same mutability as the starting collection.
         """
         # set up the header of the new collection
-        if data_type is not None:
-            assert isinstance(data_type, DataTypeBase), \
-                'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
-            if unit is None:
-                unit = data_type.units[0]
-        else:
-            data_type = self.header.data_type
-            unit = unit or self.header.unit
-        header = Header(data_type, unit, self.header.analysis_period,
-                        self.header.metadata)
+        header = self._check_aligned_header(data_type, unit)
 
         # set up the values of the new collection
-        if isinstance(value, Iterable) and not isinstance(
-                value, (str, dict, bytes, bytearray)):
-            assert len(value) == len(self._values), "Length of value ({}) must match "\
-                "the length of this collection's values ({})".format(
-                    len(value), len(self._values))
-            values = value
-        else:
-            values = [value] * len(self._values)
+        values = self._check_aligned_value(value)
 
         # get the correct base class for the aligned collection (mutable or immutable)
         if mutable is None:
@@ -358,8 +342,6 @@ class BaseCollection(object):
             else:
                 col_obj = self._enumeration._mutable_collections[self._collection_type]
             collection = col_obj(header, values, self.datetimes)
-
-        # return the colection
         collection._validated_a_period = self._validated_a_period
         return collection
 
@@ -517,15 +499,7 @@ class BaseCollection(object):
                 result[i] = funct(*[col[i] for col in data_collections])
             return result
 
-    def _check_values(self, values):
-        assert isinstance(values, Iterable) and not \
-            isinstance(values, (str, dict, bytes, bytearray)), \
-            'values should be a list or tuple. Got {}'.format(type(values))
-        assert len(values) == len(self.datetimes), \
-            'Length of values list must match length of datetimes list. {} != {}'.format(
-                len(values), len(self.datetimes))
-        assert len(values) > 0, 'Data Collection must include at least one value'
-
+    @staticmethod
     def _check_conditional_statement(statement, num_collections):
         """Method to check conditional statements to be sure that they are valid.
 
@@ -557,16 +531,19 @@ class BaseCollection(object):
                     )
         return correct_var
 
+    @staticmethod
     def _remove_operators(statement):
         """Remove logical operators from a statement."""
         return statement.lower().replace("and", "").replace("or", "") \
             .replace("not", "").replace("in", "").replace("is", "")
 
+    @staticmethod
     def _replace_operators(statement):
         """Replace logical operators of a statement with non-alphanumeric characters."""
         return statement.lower().replace("and", "&&").replace("or", "||") \
             .replace("not", "~").replace("in", "<<").replace("is", "$")
 
+    @staticmethod
     def _restore_operators(statement):
         """Restore python logical operators from previusly replaced ones."""
         return statement.replace("&&", "and").replace("||", "or") \
@@ -592,6 +569,40 @@ class BaseCollection(object):
         _filt_values = [d for i, d in enumerate(self._values) if pattern[i % _len]]
         _filt_datetimes = [d for i, d in enumerate(self.datetimes) if pattern[i % _len]]
         return _filt_values, _filt_datetimes
+
+    def _check_values(self, values):
+        """Check values whenever they come through the values setter."""
+        assert isinstance(values, Iterable) and not \
+            isinstance(values, (str, dict, bytes, bytearray)), \
+            'values should be a list or tuple. Got {}'.format(type(values))
+        assert len(values) == len(self.datetimes), \
+            'Length of values list must match length of datetimes list. {} != {}'.format(
+                len(values), len(self.datetimes))
+        assert len(values) > 0, 'Data Collection must include at least one value'
+
+    def _check_aligned_header(self, data_type, unit):
+        """Check the header inputs whenever get_aligned_collection is called."""
+        if data_type is not None:
+            assert isinstance(data_type, DataTypeBase), \
+                'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
+            if unit is None:
+                unit = data_type.units[0]
+        else:
+            data_type = self.header.data_type
+            unit = unit or self.header.unit
+        return Header(data_type, unit, self.header.analysis_period, self.header.metadata)
+
+    def _check_aligned_value(self, value):
+        """Check the value input whenever get_aligned_collection is called."""
+        if isinstance(value, Iterable) and not isinstance(
+                value, (str, dict, bytes, bytearray)):
+            assert len(value) == len(self._values), "Length of value ({}) must match "\
+                "the length of this collection's values ({})".format(
+                    len(value), len(self._values))
+            values = value
+        else:
+            values = [value] * len(self._values)
+        return values
 
     def _percentile(self, values, percent, key=lambda x: x):
         """Find the percentile of a list of values.
