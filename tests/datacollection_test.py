@@ -167,8 +167,6 @@ class DataCollectionTestCase(unittest.TestCase):
         # make sure that people can't change the values without changing datetimes
         with pytest.raises(Exception):
             dc.values.append(10)
-        del dc[10]
-        assert len(dc.values) == len(dc.datetimes) == 8759
 
     def test_setting_values_continuous(self):
         """Test the methods for setting values on the continuous data collection"""
@@ -185,8 +183,6 @@ class DataCollectionTestCase(unittest.TestCase):
         # make sure that people can't change the number of values
         with pytest.raises(Exception):
             dc.values.append(10)
-        with pytest.raises(Exception):
-            del dc[10]
 
     def test_validate_a_period_hourly(self):
         """Test the validate_analysis_period method for dicontinuous collections."""

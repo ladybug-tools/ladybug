@@ -4,10 +4,14 @@
 from __future__ import division
 
 from .header import Header
+from .datatype.base import DataTypeBase
 
 from collections import Iterable
 from string import ascii_lowercase
 import math
+from os.path import dirname, basename, join
+from importlib import import_module
+
 import sys
 if (sys.version_info >= (3, 0)):
     xrange = range
@@ -17,6 +21,9 @@ class BaseCollection(object):
     """Base class for all Data Collections."""
 
     __slots__ = ('_header', '_values', '_datetimes', '_validated_a_period')
+    _collection_type = None
+    _mutable = True
+    _enumeration = None
 
     def __init__(self, header, values, datetimes):
         """Initialize base collection.
@@ -32,10 +39,9 @@ class BaseCollection(object):
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
-        datetimes = list(datetimes)
 
         self._header = header
-        self._datetimes = datetimes
+        self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
 
@@ -67,24 +73,17 @@ class BaseCollection(object):
     @property
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
-        return tuple(self._datetimes)
+        return self._datetimes
 
     @property
     def values(self):
-        """Return the Data Collection's list of numerical values."""
+        """The Data Collection's list of numerical values."""
         return tuple(self._values)
 
     @values.setter
     def values(self, values):
-        assert isinstance(values, Iterable) and not \
-            isinstance(values, (str, dict, bytes, bytearray)), \
-            'values should be a list or tuple. Got {}'.format(type(values))
-        values = list(values)
-        assert len(values) == len(self.datetimes), \
-            'Length of values list must match length of datetimes list. {} != {}'.format(
-                len(values), len(self.datetimes))
-        assert len(values) > 0, 'DataCollection must include at least one value'
-        self._values = values
+        self._check_values(values)
+        self._values = list(values)
 
     @property
     def validated_a_period(self):
@@ -157,6 +156,25 @@ class BaseCollection(object):
         new_data_c = self.duplicate()
         new_data_c.convert_to_si()
         return new_data_c
+
+    def is_in_data_type_range(self, raise_exception=True):
+        """Check if collection values are in physically possible ranges for the data_type.
+
+        If this method returns False, the Data Collection's data is
+        physically or mathematically impossible for the data_type."""
+        return self._header.data_type.is_in_range(
+            self._values, self._header.unit, raise_exception)
+
+    def to_mutable(self):
+        """Get a mutable version of this collection."""
+        return self.duplicate()
+
+    def to_immutable(self):
+        """Get an immutable version of this collection."""
+        if self._enumeration is None:
+            self._get_mutable_enumeration()
+        col_obj = self._enumeration['immutable'][self._collection_type]
+        return col_obj(self.header, self.values, self.datetimes)
 
     def get_highest_values(self, count):
         """Get a list of the the x highest values of the Data Collection and their indices.
@@ -239,8 +257,10 @@ class BaseCollection(object):
             A new Data Collection containing only the filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_statement(statement)
-        collection = self.__class__(
-            self.header.duplicate(), _filt_values, _filt_datetimes)
+        if self._enumeration is None:
+            self._get_mutable_enumeration()
+        col_obj = self._enumeration['mutable'][self._collection_type]
+        collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
 
@@ -256,8 +276,10 @@ class BaseCollection(object):
             A new Data Collection with filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_pattern(pattern)
-        collection = self.__class__(
-            self.header.duplicate(), _filt_values, _filt_datetimes)
+        if self._enumeration is None:
+            self._get_mutable_enumeration()
+        col_obj = self._enumeration['mutable'][self._collection_type]
+        collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
 
@@ -274,7 +296,7 @@ class BaseCollection(object):
         Return:
             True if collections are aligned, False if not aligned
         """
-        if type(self) != type(data_collection):
+        if self._collection_type != data_collection._collection_type:
             return False
         elif len(self.values) != len(data_collection.values):
             return False
@@ -283,7 +305,7 @@ class BaseCollection(object):
         else:
             return True
 
-    def get_aligned_collection(self, value=0, data_type=None, unit=None):
+    def get_aligned_collection(self, value=0, data_type=None, unit=None, mutable=None):
         """Return a Collection aligned with this one composed of one repeated value.
 
         Aligned Data Collections are of the same Data Collection class, have the same
@@ -298,26 +320,28 @@ class BaseCollection(object):
             unit: The unit of the aligned collection. Default is to
                 use the unit of this collection or the base unit of the
                 input data_type (if it exists).
+            mutable: An optional Boolean to set whether the returned aligned
+                collection is mutable (True) or immutable (False). The default is
+                None, which will simply set the aligned collection to have the
+                same mutability as the starting collection.
         """
-        if data_type is not None:
-            assert hasattr(data_type, 'isDataType'), \
-                'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
-            if unit is None:
-                unit = data_type.units[0]
+        # set up the header of the new collection
+        header = self._check_aligned_header(data_type, unit)
+
+        # set up the values of the new collection
+        values = self._check_aligned_value(value)
+
+        # get the correct base class for the aligned collection (mutable or immutable)
+        if mutable is None:
+            collection = self.__class__(header, values, self.datetimes)
         else:
-            data_type = self.header.data_type
-            unit = unit or self.header.unit
-        if isinstance(value, Iterable) and not isinstance(
-                value, (str, dict, bytes, bytearray)):
-            assert len(value) == len(self._values), "Length of value ({}) must match "\
-                "the length of this collection's values ({})".format(
-                    len(value), len(self._values))
-            values = value
-        else:
-            values = [value] * len(self._values)
-        header = Header(data_type, unit, self.header.analysis_period,
-                        self.header.metadata)
-        collection = self.__class__(header, values, self.datetimes)
+            if self._enumeration is None:
+                self._get_mutable_enumeration()
+            if mutable is False:
+                col_obj = self._enumeration['immutable'][self._collection_type]
+            else:
+                col_obj = self._enumeration['mutable'][self._collection_type]
+            collection = col_obj(header, values, self.datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
 
@@ -475,14 +499,6 @@ class BaseCollection(object):
                 result[i] = funct(*[col[i] for col in data_collections])
             return result
 
-    def is_in_data_type_range(self, raise_exception=True):
-        """Check if collection values are in physically possible ranges for the data_type.
-
-        If this method returns False, the Data Collection's data is
-        physically or mathematically impossible for the data_type."""
-        return self._header.data_type.is_in_range(
-            self._values, self._header.unit, raise_exception)
-
     @staticmethod
     def _check_conditional_statement(statement, num_collections):
         """Method to check conditional statements to be sure that they are valid.
@@ -554,6 +570,40 @@ class BaseCollection(object):
         _filt_datetimes = [d for i, d in enumerate(self.datetimes) if pattern[i % _len]]
         return _filt_values, _filt_datetimes
 
+    def _check_values(self, values):
+        """Check values whenever they come through the values setter."""
+        assert isinstance(values, Iterable) and not \
+            isinstance(values, (str, dict, bytes, bytearray)), \
+            'values should be a list or tuple. Got {}'.format(type(values))
+        assert len(values) == len(self.datetimes), \
+            'Length of values list must match length of datetimes list. {} != {}'.format(
+                len(values), len(self.datetimes))
+        assert len(values) > 0, 'Data Collection must include at least one value'
+
+    def _check_aligned_header(self, data_type, unit):
+        """Check the header inputs whenever get_aligned_collection is called."""
+        if data_type is not None:
+            assert isinstance(data_type, DataTypeBase), \
+                'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
+            if unit is None:
+                unit = data_type.units[0]
+        else:
+            data_type = self.header.data_type
+            unit = unit or self.header.unit
+        return Header(data_type, unit, self.header.analysis_period, self.header.metadata)
+
+    def _check_aligned_value(self, value):
+        """Check the value input whenever get_aligned_collection is called."""
+        if isinstance(value, Iterable) and not isinstance(
+                value, (str, dict, bytes, bytearray)):
+            assert len(value) == len(self._values), "Length of value ({}) must match "\
+                "the length of this collection's values ({})".format(
+                    len(value), len(self._values))
+            values = value
+        else:
+            values = [value] * len(self._values)
+        return values
+
     def _percentile(self, values, percent, key=lambda x: x):
         """Find the percentile of a list of values.
 
@@ -586,6 +636,18 @@ class BaseCollection(object):
             return self._percentile(vals, percentile)
         return percentile_function
 
+    def _get_mutable_enumeration(self):
+        self._enumeration = {'mutable': {}, 'immutable': {}}
+        for clss in self._all_subclasses(BaseCollection):
+            if clss._mutable is True:
+                self._enumeration['mutable'][clss._collection_type] = clss
+            else:
+                self._enumeration['immutable'][clss._collection_type] = clss
+
+    def _all_subclasses(self, clss):
+        return set(clss.__subclasses__()).union(
+            [s for c in clss.__subclasses__() for s in self._all_subclasses(c)])
+
     def __len__(self):
         return len(self._values)
 
@@ -594,10 +656,6 @@ class BaseCollection(object):
 
     def __setitem__(self, key, value):
         self._values[key] = value
-
-    def __delitem__(self, key):
-        del self._values[key]
-        del self._datetimes[key]
 
     def __iter__(self):
         return iter(self._values)
@@ -609,6 +667,11 @@ class BaseCollection(object):
     def is_continuous(self):
         """Boolean denoting whether the data collection is continuous."""
         return False
+
+    @property
+    def is_mutable(self):
+        """Boolean denoting whether the data collection is mutable."""
+        return self._mutable
 
     @property
     def isDataCollection(self):
