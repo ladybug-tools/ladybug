@@ -19,25 +19,39 @@ from __future__ import division
 from .datacollection import HourlyDiscontinuousCollection, HourlyContinuousCollection, \
     DailyCollection, MonthlyCollection, MonthlyPerHourCollection
 
-from collections import Iterable
 
-
-class HourlyDiscontinuousCollectionImmutable(HourlyDiscontinuousCollection):
-    """Immutable Discontinous Data Collection at hourly or sub-hourly intervals."""
+class _ImmutableCollectionBase(object):
+    """Base class for all immutable Data Collections."""
     _mutable = False
 
     @property
     def values(self):
         """The Data Collection's list of numerical values."""
-        return tuple(self._values)
+        return self._values
 
     @values.setter
     def values(self, values):
         if hasattr(self, '_values'):
             raise AttributeError(self._mutable_message)
-
         self._check_values(values)
         self._values = tuple(values)
+
+    @property
+    def _mutable_message(self):
+        return 'values are immutable for {}.\nUse to_mutable() method to get a ' \
+            'mutable version of this collection.'.format(self.__class__.__name__)
+
+    def to_immutable(self):
+        """Get an immutable version of this collection."""
+        return self.duplicate()
+
+    def __setitem__(self, key, value):
+        raise AttributeError(self._mutable_message)
+
+
+class HourlyDiscontinuousCollectionImmutable(
+        _ImmutableCollectionBase, HourlyDiscontinuousCollection):
+    """Immutable Discontinous Data Collection at hourly or sub-hourly intervals."""
 
     def convert_to_culled_timestep(self, timestep=1):
         """This method is not available for immutable collections."""
@@ -47,43 +61,10 @@ class HourlyDiscontinuousCollectionImmutable(HourlyDiscontinuousCollection):
         """Get a mutable version of this collection."""
         return HourlyDiscontinuousCollection(self.header, self.values, self.datetimes)
 
-    def to_immutable(self):
-        """Get an immutable version of this collection."""
-        return self.duplicate()
 
-    def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message)
-
-
-class HourlyContinuousCollectionImmutable(HourlyContinuousCollection):
+class HourlyContinuousCollectionImmutable(
+        _ImmutableCollectionBase, HourlyContinuousCollection):
     """Immutable Continous Data Collection at hourly or sub-hourly intervals."""
-    _mutable = False
-
-    @property
-    def values(self):
-        """The Data Collection's list of numerical values."""
-        return tuple(self._values)
-
-    @values.setter
-    def values(self, values):
-        if hasattr(self, '_values'):
-            raise AttributeError(self._mutable_message)
-
-        assert isinstance(values, Iterable) and not isinstance(
-            values, (str, dict, bytes, bytearray)), \
-            'values should be a list or tuple. Got {}'.format(type(values))
-        if self.header.analysis_period.is_annual:
-            a_period_len = 8760 * self.header.analysis_period.timestep
-            if self.header.analysis_period.is_leap_year is True:
-                a_period_len = a_period_len + 24 * \
-                    self.header.analysis_period.timestep
-        else:
-            a_period_len = len(self.header.analysis_period.moys)
-        assert len(values) == a_period_len, \
-            'Length of values does not match that expected by the '\
-            'header analysis_period. {} != {}'.format(
-                len(values), a_period_len)
-        self._values = tuple(values)
 
     def convert_to_culled_timestep(self, timestep=1):
         """This method is not available for immutable collections."""
@@ -93,81 +74,29 @@ class HourlyContinuousCollectionImmutable(HourlyContinuousCollection):
         """Get a mutable version of this collection."""
         return HourlyContinuousCollection(self.header, self.values)
 
-    def to_immutable(self):
-        """Get an immutable version of this collection."""
-        return self.duplicate()
 
-    def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message)
-
-
-class DailyCollectionImmutable(DailyCollection):
+class DailyCollectionImmutable(
+        _ImmutableCollectionBase, DailyCollection):
     """Immutable Daily Data Collection."""
-    _mutable = False
-
-    @DailyCollection.values.setter
-    def values(self, values):
-        if hasattr(self, '_values'):
-            raise AttributeError(self._mutable_message)
-
-        self._check_values(values)
-        self._values = tuple(values)
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
         return DailyCollection(self.header, self.values, self.datetimes)
 
-    def to_immutable(self):
-        """Get an immutable version of this collection."""
-        return self.duplicate()
 
-    def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message)
-
-
-class MonthlyCollectionImmutable(MonthlyCollection):
+class MonthlyCollectionImmutable(
+        _ImmutableCollectionBase, MonthlyCollection):
     """Immutable Monthly Data Collection."""
-    _mutable = False
-
-    @MonthlyCollection.values.setter
-    def values(self, values):
-        if hasattr(self, '_values'):
-            raise AttributeError(self._mutable_message)
-
-        self._check_values(values)
-        self._values = tuple(values)
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
         return MonthlyCollection(self.header, self.values, self.datetimes)
 
-    def to_immutable(self):
-        """Get an immutable version of this collection."""
-        return self.duplicate()
 
-    def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message)
-
-
-class MonthlyPerHourCollectionImmutable(MonthlyPerHourCollection):
+class MonthlyPerHourCollectionImmutable(
+        _ImmutableCollectionBase, MonthlyPerHourCollection):
     """Immutable Monthly Per Hour Data Collection."""
-    _mutable = False
-
-    @MonthlyPerHourCollection.values.setter
-    def values(self, values):
-        if hasattr(self, '_values'):
-            raise AttributeError(self._mutable_message)
-
-        self._check_values(values)
-        self._values = tuple(values)
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
         return MonthlyPerHourCollection(self.header, self.values, self.datetimes)
-
-    def to_immutable(self):
-        """Get an immutable version of this collection."""
-        return self.duplicate()
-
-    def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message)

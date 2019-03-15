@@ -665,11 +665,6 @@ class BaseCollection(object):
         return self._mutable
 
     @property
-    def _mutable_message(self):
-        return 'values are immutable for {}.\nUse to_mutable() method to get a ' \
-            'mutable version of this collection.'.format(self.__class__.__name__)
-
-    @property
     def isDataCollection(self):
         """Return True."""
         return True

@@ -34,7 +34,6 @@ from ._datacollectionbase import BaseCollection
 from .header import Header
 from .analysisperiod import AnalysisPeriod
 from .dt import DateTime
-from .datatype.base import DataTypeBase
 
 from collections import OrderedDict
 from collections import Iterable
@@ -551,23 +550,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         assert 'values' in data, 'Required keyword "values" is missing!'
         return cls(Header.from_json(data['header']), data['values'])
 
-    @HourlyDiscontinuousCollection.values.setter
-    def values(self, values):
-        assert isinstance(values, Iterable) and not isinstance(
-            values, (str, dict, bytes, bytearray)), \
-            'values should be a list or tuple. Got {}'.format(type(values))
-        if self.header.analysis_period.is_annual:
-            a_period_len = 8760 * self.header.analysis_period.timestep
-            if self.header.analysis_period.is_leap_year is True:
-                a_period_len = a_period_len + 24 * self.header.analysis_period.timestep
-        else:
-            a_period_len = len(self.header.analysis_period.moys)
-        assert len(values) == a_period_len, \
-            'Length of values does not match that expected by the '\
-            'header analysis_period. {} != {}'.format(
-                len(values), a_period_len)
-        self._values = list(values)
-
     @property
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
@@ -917,6 +899,21 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             return a_per
         else:
             return AnalysisPeriod(*n_ap)
+
+    def _check_values(self, values):
+        """Check values whenever they come through the values setter."""
+        assert isinstance(values, Iterable) and not isinstance(
+            values, (str, dict, bytes, bytearray)), \
+            'values should be a list or tuple. Got {}'.format(type(values))
+        if self.header.analysis_period.is_annual:
+            a_period_len = 8760 * self.header.analysis_period.timestep
+            if self.header.analysis_period.is_leap_year is True:
+                a_period_len = a_period_len + 24 * self.header.analysis_period.timestep
+        else:
+            a_period_len = len(self.header.analysis_period.moys)
+        assert len(values) == a_period_len, \
+            'Length of values does not match that expected by the '\
+            'header analysis_period. {} != {}'.format(len(values), a_period_len)
 
     @property
     def is_continuous(self):
