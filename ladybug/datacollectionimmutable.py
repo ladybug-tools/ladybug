@@ -33,21 +33,15 @@ class HourlyDiscontinuousCollectionImmutable(HourlyDiscontinuousCollection):
 
     @values.setter
     def values(self, values):
-        try:
-            self._values
-            _values_set = True
-        except AttributeError:
-            _values_set = False
+        if hasattr(self, '_values'):
+            raise AttributeError(self._mutable_message)
 
-        if _values_set is False:
-            self._check_values(values)
-            self._values = tuple(values)
-        else:
-            raise AttributeError(self._mutable_message())
+        self._check_values(values)
+        self._values = tuple(values)
 
     def convert_to_culled_timestep(self, timestep=1):
         """This method is not available for immutable collections."""
-        raise AttributeError(self._mutable_message())
+        raise AttributeError(self._mutable_message)
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
@@ -58,7 +52,7 @@ class HourlyDiscontinuousCollectionImmutable(HourlyDiscontinuousCollection):
         return self.duplicate()
 
     def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message())
+        raise AttributeError(self._mutable_message)
 
 
 class HourlyContinuousCollectionImmutable(HourlyContinuousCollection):
@@ -72,34 +66,28 @@ class HourlyContinuousCollectionImmutable(HourlyContinuousCollection):
 
     @values.setter
     def values(self, values):
-        try:
-            self._values
-            _values_set = True
-        except AttributeError:
-            _values_set = False
+        if hasattr(self, '_values'):
+            raise AttributeError(self._mutable_message)
 
-        if _values_set is False:
-            assert isinstance(values, Iterable) and not isinstance(
-                values, (str, dict, bytes, bytearray)), \
-                'values should be a list or tuple. Got {}'.format(type(values))
-            if self.header.analysis_period.is_annual:
-                a_period_len = 8760 * self.header.analysis_period.timestep
-                if self.header.analysis_period.is_leap_year is True:
-                    a_period_len = a_period_len + 24 * \
-                        self.header.analysis_period.timestep
-            else:
-                a_period_len = len(self.header.analysis_period.moys)
-            assert len(values) == a_period_len, \
-                'Length of values does not match that expected by the '\
-                'header analysis_period. {} != {}'.format(
-                    len(values), a_period_len)
-            self._values = tuple(values)
+        assert isinstance(values, Iterable) and not isinstance(
+            values, (str, dict, bytes, bytearray)), \
+            'values should be a list or tuple. Got {}'.format(type(values))
+        if self.header.analysis_period.is_annual:
+            a_period_len = 8760 * self.header.analysis_period.timestep
+            if self.header.analysis_period.is_leap_year is True:
+                a_period_len = a_period_len + 24 * \
+                    self.header.analysis_period.timestep
         else:
-            raise AttributeError(self._mutable_message())
+            a_period_len = len(self.header.analysis_period.moys)
+        assert len(values) == a_period_len, \
+            'Length of values does not match that expected by the '\
+            'header analysis_period. {} != {}'.format(
+                len(values), a_period_len)
+        self._values = tuple(values)
 
     def convert_to_culled_timestep(self, timestep=1):
         """This method is not available for immutable collections."""
-        raise AttributeError(self._mutable_message())
+        raise AttributeError(self._mutable_message)
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
@@ -110,7 +98,7 @@ class HourlyContinuousCollectionImmutable(HourlyContinuousCollection):
         return self.duplicate()
 
     def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message())
+        raise AttributeError(self._mutable_message)
 
 
 class DailyCollectionImmutable(DailyCollection):
@@ -119,17 +107,11 @@ class DailyCollectionImmutable(DailyCollection):
 
     @DailyCollection.values.setter
     def values(self, values):
-        try:
-            self._values
-            _values_set = True
-        except AttributeError:
-            _values_set = False
+        if hasattr(self, '_values'):
+            raise AttributeError(self._mutable_message)
 
-        if _values_set is False:
-            self._check_values(values)
-            self._values = tuple(values)
-        else:
-            raise AttributeError(self._mutable_message())
+        self._check_values(values)
+        self._values = tuple(values)
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
@@ -140,7 +122,7 @@ class DailyCollectionImmutable(DailyCollection):
         return self.duplicate()
 
     def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message())
+        raise AttributeError(self._mutable_message)
 
 
 class MonthlyCollectionImmutable(MonthlyCollection):
@@ -149,17 +131,11 @@ class MonthlyCollectionImmutable(MonthlyCollection):
 
     @MonthlyCollection.values.setter
     def values(self, values):
-        try:
-            self._values
-            _values_set = True
-        except AttributeError:
-            _values_set = False
+        if hasattr(self, '_values'):
+            raise AttributeError(self._mutable_message)
 
-        if _values_set is False:
-            self._check_values(values)
-            self._values = tuple(values)
-        else:
-            raise AttributeError(self._mutable_message())
+        self._check_values(values)
+        self._values = tuple(values)
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
@@ -170,7 +146,7 @@ class MonthlyCollectionImmutable(MonthlyCollection):
         return self.duplicate()
 
     def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message())
+        raise AttributeError(self._mutable_message)
 
 
 class MonthlyPerHourCollectionImmutable(MonthlyPerHourCollection):
@@ -179,17 +155,11 @@ class MonthlyPerHourCollectionImmutable(MonthlyPerHourCollection):
 
     @MonthlyPerHourCollection.values.setter
     def values(self, values):
-        try:
-            self._values
-            _values_set = True
-        except AttributeError:
-            _values_set = False
+        if hasattr(self, '_values'):
+            raise AttributeError(self._mutable_message)
 
-        if _values_set is False:
-            self._check_values(values)
-            self._values = tuple(values)
-        else:
-            raise AttributeError(self._mutable_message())
+        self._check_values(values)
+        self._values = tuple(values)
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
@@ -200,4 +170,4 @@ class MonthlyPerHourCollectionImmutable(MonthlyPerHourCollection):
         return self.duplicate()
 
     def __setitem__(self, key, value):
-        raise AttributeError(self._mutable_message())
+        raise AttributeError(self._mutable_message)

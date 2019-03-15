@@ -639,10 +639,6 @@ class BaseCollection(object):
     def _get_mutable_enumeration(self):
         self._enumeration = _DataCollectionEnumeration(import_modules=False)
 
-    def _mutable_message(self):
-        return 'values are immutable for {}.\nUse to_mutable() method to get a ' \
-            'mutable version of this collection.'.format(self.__class__.__name__)
-
     def __len__(self):
         return len(self._values)
 
@@ -667,6 +663,11 @@ class BaseCollection(object):
     def is_mutable(self):
         """Boolean denoting whether the data collection is mutable."""
         return self._mutable
+
+    @property
+    def _mutable_message(self):
+        return 'values are immutable for {}.\nUse to_mutable() method to get a ' \
+            'mutable version of this collection.'.format(self.__class__.__name__)
 
     @property
     def isDataCollection(self):
