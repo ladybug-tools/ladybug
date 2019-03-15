@@ -783,7 +783,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """Get an immutable version of this collection."""
         if self._enumeration is None:
             self._get_mutable_enumeration()
-        col_obj = self._enumeration._immutable_collections[self._collection_type]
+        col_obj = self._enumeration['immutable'][self._collection_type]
         return col_obj(self.header, self.values)
 
     def duplicate(self):
@@ -824,9 +824,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             if self._enumeration is None:
                 self._get_mutable_enumeration()
             if mutable is False:
-                col_obj = self._enumeration._immutable_collections[self._collection_type]
+                col_obj = self._enumeration['immutable'][self._collection_type]
             else:
-                col_obj = self._enumeration._mutable_collections[self._collection_type]
+                col_obj = self._enumeration['mutable'][self._collection_type]
             collection = col_obj(header, values)
         return collection
 

@@ -1,4 +1,7 @@
-from ._datacollectionbase import _DataCollectionEnumeration
+# These must be imported here in this order because of how they reference eachother.
+import ladybug._datacollectionbase
+import ladybug.datacollection
+import ladybug.datacollectionimmutable
 
 import sys
 import importlib
@@ -20,8 +23,3 @@ for key in lb_plugins:
 
 # This is a variable to check if the library is a [+] library.
 setattr(sys.modules[__name__], 'isplus', False)
-
-# This ensurse that the conversion between mutable and immutable collections can happen.
-_data_collections = _DataCollectionEnumeration(import_modules=True)
-MUTABLECOLLECTIONS = _data_collections.mutable_collections
-IMMUTABLECOLLECTIONS = _data_collections.immutable_collections

@@ -173,7 +173,7 @@ class BaseCollection(object):
         """Get an immutable version of this collection."""
         if self._enumeration is None:
             self._get_mutable_enumeration()
-        col_obj = self._enumeration._immutable_collections[self._collection_type]
+        col_obj = self._enumeration['immutable'][self._collection_type]
         return col_obj(self.header, self.values, self.datetimes)
 
     def get_highest_values(self, count):
@@ -259,7 +259,7 @@ class BaseCollection(object):
         _filt_values, _filt_datetimes = self._filter_by_statement(statement)
         if self._enumeration is None:
             self._get_mutable_enumeration()
-        col_obj = self._enumeration._mutable_collections[self._collection_type]
+        col_obj = self._enumeration['mutable'][self._collection_type]
         collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
@@ -278,7 +278,7 @@ class BaseCollection(object):
         _filt_values, _filt_datetimes = self._filter_by_pattern(pattern)
         if self._enumeration is None:
             self._get_mutable_enumeration()
-        col_obj = self._enumeration._mutable_collections[self._collection_type]
+        col_obj = self._enumeration['mutable'][self._collection_type]
         collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
@@ -338,9 +338,9 @@ class BaseCollection(object):
             if self._enumeration is None:
                 self._get_mutable_enumeration()
             if mutable is False:
-                col_obj = self._enumeration._immutable_collections[self._collection_type]
+                col_obj = self._enumeration['immutable'][self._collection_type]
             else:
-                col_obj = self._enumeration._mutable_collections[self._collection_type]
+                col_obj = self._enumeration['mutable'][self._collection_type]
             collection = col_obj(header, values, self.datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
@@ -637,7 +637,16 @@ class BaseCollection(object):
         return percentile_function
 
     def _get_mutable_enumeration(self):
-        self._enumeration = _DataCollectionEnumeration(import_modules=False)
+        self._enumeration = {'mutable': {}, 'immutable': {}}
+        for clss in self._all_subclasses(BaseCollection):
+            if clss._mutable is True:
+                self._enumeration['mutable'][clss._collection_type] = clss
+            else:
+                self._enumeration['immutable'][clss._collection_type] = clss
+
+    def _all_subclasses(self, clss):
+        return set(clss.__subclasses__()).union(
+            [s for c in clss.__subclasses__() for s in self._all_subclasses(c)])
 
     def __len__(self):
         return len(self._values)
@@ -677,42 +686,3 @@ class BaseCollection(object):
         """Discontinuous Collection representation."""
         return "Discontinuous Data Collection\n{} ({})\n...{} values...".format(
             self.header.data_type, self.header.unit, len(self._values))
-
-
-class _DataCollectionEnumeration(object):
-    """Enumerates all data collections and organizes them by mutability."""
-    _mutable_collections = {}
-    _immutable_collections = {}
-
-    def __init__(self, import_modules=False):
-        if import_modules is True:
-            self._import_modules()
-
-        for clss in self._all_subclasses(BaseCollection):
-            if clss._collection_type is not None:
-                if clss._mutable is True:
-                    self._mutable_collections[clss._collection_type] = clss
-                else:
-                    self._immutable_collections[clss._collection_type] = clss
-
-    @property
-    def mutable_collections(self):
-        """A tuple of mutable collection classes."""
-        return tuple(self._mutable_collections.values())
-
-    @property
-    def immutable_collections(self):
-        """A tuple of mutable collection classes."""
-        return tuple(self._immutable_collections.values())
-
-    def _import_modules(self):
-        root_dir = dirname(__file__)
-        modules = ('datacollection.py', 'datacollectionimmutable.py')
-        modules = [join(root_dir, mod) for mod in modules]
-        importable = ['.{}'.format(basename(f)[:-3]) for f in modules]
-        for mod in importable:
-            import_module(mod, 'ladybug')
-
-    def _all_subclasses(self, clss):
-        return set(clss.__subclasses__()).union(
-            [s for c in clss.__subclasses__() for s in self._all_subclasses(c)])
