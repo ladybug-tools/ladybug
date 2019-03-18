@@ -1,3 +1,8 @@
+# These must be imported here in this order because of how they reference eachother.
+import ladybug._datacollectionbase
+import ladybug.datacollection
+import ladybug.datacollectionimmutable
+
 import sys
 import importlib
 import pkgutil

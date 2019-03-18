@@ -4,9 +4,9 @@ from __future__ import division
 from ladybug import datatype
 from ladybug.datatype import base
 from ladybug.datatype import angle, area, distance, energy, energyflux, \
-    energyintensity, generic, illuminance, luminance, mass, massflowrate, \
-    percentage, power, pressure, rvalue, speed, temperature, temperaturedelta, \
-    thermalcondition, uvalue, volume, volumeflowrate
+    energyintensity, fraction, generic, illuminance, luminance, mass, massflowrate, \
+    power, pressure, rvalue, speed, temperature, temperaturedelta, temperaturetime, \
+    thermalcondition, specificenergy, uvalue, volume, volumeflowrate
 
 import unittest
 import pytest
@@ -94,9 +94,27 @@ class DataTypesTestCase(unittest.TestCase):
         assert temp_type.to_unit([1], 'C', 'F')[0] == pytest.approx(0.5555, rel=1e-1)
         assert temp_type.to_unit([1], 'C', 'K')[0] == pytest.approx(1, rel=1e-1)
 
-    def test_percentage(self):
-        """Test Percentage type."""
-        pct_type = percentage.Percentage()
+    def test_temperaturetime(self):
+        """Test TemperatureTime type."""
+        temp_type = temperaturetime.TemperatureTime()
+        for unit in temp_type.units:
+            assert temp_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = temp_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = temp_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in temp_type.units:
+                assert len(temp_type.to_unit([1], other_unit, unit)) == 1
+        assert temp_type.to_unit([1], 'degF-days', 'degC-days')[0] == pytest.approx(1.8, rel=1e-1)
+        assert temp_type.to_unit([1], 'degC-hours', 'degC-days')[0] == pytest.approx(24, rel=1e-3)
+        assert temp_type.to_unit([1], 'degF-hours', 'degC-days')[0] == pytest.approx(43.2, rel=1e-1)
+        assert temp_type.to_unit([1], 'degC-days', 'degF-days')[0] == pytest.approx(0.5555, rel=1e-1)
+        assert temp_type.to_unit([1], 'degC-days', 'degC-hours')[0] == pytest.approx(1 / 24, rel=1e-1)
+        assert temp_type.to_unit([1], 'degC-days', 'degF-hours')[0] == pytest.approx(0.023148, rel=1e-1)
+
+    def test_fraction(self):
+        """Test Fraction type."""
+        pct_type = fraction.Fraction()
         for unit in pct_type.units:
             assert pct_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
             ip_vals, ip_u = pct_type.to_ip([1], unit)
@@ -483,6 +501,28 @@ class DataTypesTestCase(unittest.TestCase):
                 assert len(tc_type.to_unit([1], other_unit, unit)) == 1
         assert tc_type.to_unit([1], 'PMV', 'condition')[0] == 1
         assert tc_type.to_unit([1], 'condition', 'PMV')[0] == 1
+
+    def test_specific_energy(self):
+        """Test ThermalCondition type."""
+        tc_type = specificenergy.SpecificEnergy()
+        for unit in tc_type.units:
+            assert tc_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+            ip_vals, ip_u = tc_type.to_ip([1], unit)
+            assert len(ip_vals) == 1
+            si_vals, si_u = tc_type.to_si([1], unit)
+            assert len(si_vals) == 1
+            for other_unit in tc_type.units:
+                assert len(tc_type.to_unit([1], other_unit, unit)) == 1
+        assert tc_type.to_unit([1], 'kBtu/lb', 'kWh/kg')[0] == pytest.approx(1.54772, rel=1e-4)
+        assert tc_type.to_unit([1], 'Btu/lb', 'kWh/kg')[0] == pytest.approx(1547.72, rel=1e-2)
+        assert tc_type.to_unit([1], 'Wh/kg', 'kWh/kg')[0] == pytest.approx(1000, rel=1e-1)
+        assert tc_type.to_unit([1], 'J/kg', 'kWh/kg')[0] == pytest.approx(3600000, rel=1e-1)
+        assert tc_type.to_unit([1], 'kJ/kg', 'kWh/kg')[0] == pytest.approx(3600, rel=1e-1)
+        assert tc_type.to_unit([1], 'kWh/kg', 'kBtu/lb')[0] == pytest.approx(0.646111699, rel=1e-5)
+        assert tc_type.to_unit([1], 'kWh/kg', 'Btu/lb')[0] == pytest.approx(0.00064611169979, rel=1e-7)
+        assert tc_type.to_unit([1], 'kWh/kg', 'Wh/kg')[0] == pytest.approx(0.001, rel=1e-3)
+        assert tc_type.to_unit([1], 'kWh/kg', 'J/kg')[0] == pytest.approx(2.7777777777777776e-07, rel=1e-9)
+        assert tc_type.to_unit([1], 'kWh/kg', 'kJ/kg')[0] == pytest.approx(0.0002777777777777778, rel=1e-7)
 
 
 if __name__ == "__main__":

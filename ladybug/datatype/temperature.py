@@ -51,16 +51,14 @@ class Temperature(DataTypeBase):
 
 class DryBulbTemperature(Temperature):
     _abbreviation = 'DBT'
-    _min_epw = -70
-    _max_epw = 70
-    _missing_epw = 99.9
 
 
 class DewPointTemperature(Temperature):
     _abbreviation = 'DPT'
-    _min_epw = -70
-    _max_epw = 70
-    _missing_epw = 99.9
+
+
+class WetBulbTemperature(Temperature):
+    _abbreviation = 'WBT'
 
 
 class SkyTemperature(Temperature):

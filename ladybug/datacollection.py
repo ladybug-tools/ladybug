@@ -46,6 +46,8 @@ except ImportError:
 class HourlyDiscontinuousCollection(BaseCollection):
     """Discontinous Data Collection at hourly or sub-hourly intervals."""
 
+    _collection_type = 'HourlyDiscontinuous'
+
     def __init__(self, header, values, datetimes):
         """Initialize hourly discontinuous collection.
 
@@ -63,10 +65,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
-        datetimes = list(datetimes)
 
         self._header = header
-        self._datetimes = datetimes
+        self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
 
@@ -507,6 +508,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
 class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     """Class for Continouus Data Collections at hourly or sub-hourly intervals."""
 
+    _collection_type = 'HourlyContinuous'
+
     def __init__(self, header, values):
         """Initialize hourly discontinuous collection.
 
@@ -548,34 +551,11 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         return cls(Header.from_json(data['header']), data['values'])
 
     @property
-    def values(self):
-        """Return the Data Collection's list of numerical values."""
-        return tuple(self._values)
-
-    @values.setter
-    def values(self, values):
-        assert isinstance(values, Iterable) and not isinstance(
-            values, (str, dict, bytes, bytearray)), \
-            'values should be a list or tuple. Got {}'.format(type(values))
-        values = list(values)
-        if self.header.analysis_period.is_annual:
-            a_period_len = 8760 * self.header.analysis_period.timestep
-            if self.header.analysis_period.is_leap_year is True:
-                a_period_len = a_period_len + 24 * self.header.analysis_period.timestep
-        else:
-            a_period_len = len(self.header.analysis_period.moys)
-        assert len(values) == a_period_len, \
-            'Length of values does not match that expected by the '\
-            'header analysis_period. {} != {}'.format(
-                len(values), a_period_len)
-        self._values = values
-
-    @property
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
         if self._datetimes is None:
-            self._datetimes = self.header.analysis_period.datetimes
-        return tuple(self._datetimes)
+            self._datetimes = tuple(self.header.analysis_period.datetimes)
+        return self._datetimes
 
     def interpolate_holes(self):
         """All continuous collections do not have holes in the data set.
@@ -799,12 +779,19 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
                 indx += interval
         return hourly_data_by_month
 
+    def to_immutable(self):
+        """Get an immutable version of this collection."""
+        if self._enumeration is None:
+            self._get_mutable_enumeration()
+        col_obj = self._enumeration['immutable'][self._collection_type]
+        return col_obj(self.header, self.values)
+
     def duplicate(self):
         """Return a copy of the current Data Collection."""
-        return HourlyContinuousCollection(
+        return self.__class__(
             self.header.duplicate(), self._values)
 
-    def get_aligned_collection(self, value=0, data_type=None, unit=None):
+    def get_aligned_collection(self, value=0, data_type=None, unit=None, mutable=None):
         """Return a Collection aligned with this one composed of one repeated value.
 
         Aligned Data Collections are of the same Data Collection class,
@@ -819,26 +806,29 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             unit: The unit of the aligned collection. Default is to
                 use the unit of this collection or the base unit of the
                 input data_type (if it exists).
+            mutable: An optional Boolean to set whether the returned aligned
+                collection is mutable (True) or immutable (False). The default is
+                None, which will simply set the aligned collection to have the
+                same mutability as the starting collection.
         """
-        if data_type is not None:
-            assert hasattr(data_type, 'isDataType'), \
-                'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
-            if unit is None:
-                unit = data_type.units[0]
+        # set up the header of the new collection
+        header = self._check_aligned_header(data_type, unit)
+
+        # set up the values of the new collection
+        values = self._check_aligned_value(value)
+
+        # get the correct base class for the aligned collection (mutable or immutable)
+        if mutable is None:
+            collection = self.__class__(header, values)
         else:
-            data_type = self.header.data_type
-            unit = unit or self.header.unit
-        if isinstance(value, Iterable) and not isinstance(
-                value, (str, dict, bytes, bytearray)):
-            assert len(value) == len(self._values), "Length of value ({}) must match "\
-                "the length of this collection's values ({})".format(
-                    len(value), len(self._values))
-            values = value
-        else:
-            values = [value] * len(self._values)
-        header = Header(data_type, unit, self.header.analysis_period,
-                        self.header.metadata)
-        return self.__class__(header, values)
+            if self._enumeration is None:
+                self._get_mutable_enumeration()
+            if mutable is False:
+                col_obj = self._enumeration['immutable'][self._collection_type]
+            else:
+                col_obj = self._enumeration['mutable'][self._collection_type]
+            collection = col_obj(header, values)
+        return collection
 
     def is_collection_aligned(self, data_collection):
         """Check if this Data Collection is aligned with another.
@@ -853,7 +843,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         Return:
             True if collections are aligned, Fale if not aligned
         """
-        if type(self) != type(data_collection):
+        if self._collection_type != data_collection._collection_type:
             return False
         elif len(self.values) != len(data_collection.values):
             return False
@@ -910,6 +900,21 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         else:
             return AnalysisPeriod(*n_ap)
 
+    def _check_values(self, values):
+        """Check values whenever they come through the values setter."""
+        assert isinstance(values, Iterable) and not isinstance(
+            values, (str, dict, bytes, bytearray)), \
+            'values should be a list or tuple. Got {}'.format(type(values))
+        if self.header.analysis_period.is_annual:
+            a_period_len = 8760 * self.header.analysis_period.timestep
+            if self.header.analysis_period.is_leap_year is True:
+                a_period_len = a_period_len + 24 * self.header.analysis_period.timestep
+        else:
+            a_period_len = len(self.header.analysis_period.moys)
+        assert len(values) == a_period_len, \
+            'Length of values does not match that expected by the '\
+            'header analysis_period. {} != {}'.format(len(values), a_period_len)
+
     @property
     def is_continuous(self):
         """Boolean denoting whether the data collection is continuous."""
@@ -918,9 +923,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     @property
     def isContinuous(self):
         return True
-
-    def __delitem__(self, key):
-        raise TypeError('Convert this Collection to Discontinuous to use del().')
 
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""
@@ -931,6 +933,8 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
 class DailyCollection(BaseCollection):
     """Class for Daily Data Collections."""
+
+    _collection_type = 'Daily'
 
     def __init__(self, header, values, datetimes):
         """Initialize daily collection.
@@ -950,10 +954,9 @@ class DailyCollection(BaseCollection):
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
-        datetimes = list(datetimes)
 
         self._header = header
-        self._datetimes = datetimes
+        self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
 
@@ -998,7 +1001,7 @@ class DailyCollection(BaseCollection):
         for d in xrange(1, 13):
             data_by_month[d] = []
         for v, doy in zip(self._values, self.datetimes):
-            dt = DateTime.from_hoy(doy * 24)
+            dt = DateTime.from_hoy(((doy - 1) * 24) + 1)
             data_by_month[dt.month].append(v)
         return data_by_month
 
@@ -1144,6 +1147,8 @@ class DailyCollection(BaseCollection):
 class MonthlyCollection(BaseCollection):
     """Class for Monthly Data Collections."""
 
+    _collection_type = 'Monthly'
+
     def __init__(self, header, values, datetimes):
         """Initialize monthly collection.
 
@@ -1162,10 +1167,9 @@ class MonthlyCollection(BaseCollection):
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
-        datetimes = list(datetimes)
 
         self._header = header
-        self._datetimes = datetimes
+        self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
 
@@ -1275,6 +1279,8 @@ class MonthlyCollection(BaseCollection):
 class MonthlyPerHourCollection(BaseCollection):
     """Class for Monthly Per Hour Collections."""
 
+    _collection_type = 'MonthlyPerHour'
+
     def __init__(self, header, values, datetimes):
         """Initialize monthly per hour collection.
 
@@ -1293,10 +1299,9 @@ class MonthlyPerHourCollection(BaseCollection):
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
-        datetimes = list(datetimes)
 
         self._header = header
-        self._datetimes = datetimes
+        self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
 

@@ -63,8 +63,6 @@ class EnergyIntensity(DataTypeBase):
 class Radiation(EnergyIntensity):
     _min = 0
     _abbreviation = 'Esolar'
-    _min_epw = 0
-    _missing_epw = 9999
 
     @property
     def isRadiation(self):

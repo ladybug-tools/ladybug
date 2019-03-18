@@ -42,6 +42,3 @@ class Angle(DataTypeBase):
 class WindDirection(Angle):
     _name = 'Wind Direction'
     _abbreviation = 'WD'
-    _min_epw = 0
-    _max_epw = 360
-    _missing_epw = 999

@@ -8,7 +8,7 @@ from .datacollection import MonthlyCollection
 from .header import Header
 from .analysisperiod import AnalysisPeriod
 from .datatype import angle, distance, energyflux, energyintensity, generic, \
-    illuminance, luminance, percentage, pressure, speed, temperature
+    illuminance, luminance, fraction, pressure, speed, temperature
 from .skymodel import calc_sky_temperature
 from .futil import write_to_file
 
@@ -164,8 +164,8 @@ class EPW(object):
         # generate missing hourly data
         calc_length = len(analysis_period.datetimes)
         for field_number in xrange(6, epw_obj._num_of_fields):
-            data_type = EPWFields.field_by_number(field_number).name
-            mis_val = data_type.missing_epw if data_type.missing_epw is not None else 0
+            field = EPWFields.field_by_number(field_number)
+            mis_val = field.missing if field.missing is not None else 0
             for dt in xrange(calc_length):
                 epw_obj._data[field_number].append(mis_val)
 
@@ -1425,150 +1425,201 @@ class EPWFields(object):
 
         6: {'name': temperature.DryBulbTemperature(),
             'type': float,
-            'unit': 'C'
+            'unit': 'C',
+            'min': -70,
+            'max': 70,
+            'missing': 99.9
             },
 
         7: {'name': temperature.DewPointTemperature(),
             'type': float,
-            'unit': 'C'
+            'unit': 'C',
+            'min': -70,
+            'max': 70,
+            'missing': 99.9
             },
 
-        8: {'name': percentage.RelativeHumidity(),
+        8: {'name': fraction.RelativeHumidity(),
             'type': int,
-            'unit': '%'
+            'unit': '%',
+            'missing': 999,
+            'min': 0,
+            'max': 110
             },
 
         9: {'name': pressure.AtmosphericStationPressure(),
             'type': int,
-            'unit': 'Pa'
+            'unit': 'Pa',
+            'missing': 999999,
+            'min': 31000,
+            'max': 120000
             },
 
         10: {'name': energyintensity.ExtraterrestrialHorizontalRadiation(),
              'type': int,
-             'unit': 'Wh/m2'
+             'unit': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
              },
 
         11: {'name': energyintensity.ExtraterrestrialDirectNormalRadiation(),
              'type': int,
-             'unit': 'Wh/m2'
+             'unit': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
              },
 
         12: {'name': energyflux.HorizontalInfraredRadiationIntensity(),
              'type': int,
-             'unit': 'W/m2'
+             'unit': 'W/m2',
+             'missing': 9999,
+             'min': 0
              },
 
         13: {'name': energyintensity.GlobalHorizontalRadiation(),
              'type': int,
-             'unit': 'Wh/m2'
+             'unit': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
              },
 
         14: {'name': energyintensity.DirectNormalRadiation(),
              'type': int,
-             'unit': 'Wh/m2'
+             'unit': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
              },
 
         15: {'name': energyintensity.DiffuseHorizontalRadiation(),
              'type': int,
-             'unit': 'Wh/m2'
+             'unit': 'Wh/m2',
+             'missing': 9999,
+             'min': 0
              },
 
         16: {'name': illuminance.GlobalHorizontalIlluminance(),
              'type': int,
-             'unit': 'lux'
+             'unit': 'lux',
+             'missing': 999999,  # will be missing if >= 999900
+             'min': 0
              },
 
         17: {'name': illuminance.DirectNormalIlluminance(),
              'type': int,
-             'unit': 'lux'
+             'unit': 'lux',
+             'missing': 999999,  # will be missing if >= 999900
+             'min': 0
              },
 
         18: {'name': illuminance.DiffuseHorizontalIlluminance(),
              'type': int,
-             'unit': 'lux'
+             'unit': 'lux',
+             'missing': 999999,  # will be missing if >= 999900
+             'min': 0
              },
 
         19: {'name': luminance.ZenithLuminance(),
              'type': int,
-             'unit': 'cd/m2'
+             'unit': 'cd/m2',
+             'missing': 9999,  # will be missing if >= 9999
+             'min': 0
              },
 
         20: {'name': angle.WindDirection(),
              'type': int,
-             'unit': 'degrees'
+             'unit': 'degrees',
+             'missing': 999,
+             'min': 0,
+             'max': 360
              },
 
         21: {'name': speed.WindSpeed(),
              'type': float,
-             'unit': 'm/s'
+             'unit': 'm/s',
+             'missing': 999,
+             'min': 0,
+             'max': 40
              },
 
-        22: {'name': percentage.TotalSkyCover(),  # used if Horizontal IR is missing
+        22: {'name': fraction.TotalSkyCover(),  # used if Horizontal IR is missing
              'type': int,
-             'unit': 'tenths'
+             'unit': 'tenths',
+             'missing': 99,
+             'min': 0,
+             'max': 10
              },
 
-        23: {'name': percentage.OpaqueSkyCover(),  # used if Horizontal IR is missing
+        23: {'name': fraction.OpaqueSkyCover(),  # used if Horizontal IR is missing
              'type': int,
-             'unit': 'tenths'
+             'unit': 'tenths',
+             'missing': 99
              },
 
         24: {'name': distance.Visibility(),
              'type': float,
-             'unit': 'km'
+             'unit': 'km',
+             'missing': 9999
              },
 
         25: {'name': distance.CeilingHeight(),
              'type': int,
-             'unit': 'm'
+             'unit': 'm',
+             'missing': 99999
              },
 
         26: {'name': generic.GenericType(name='Present Weather Observation',
-                                         unit='observation', missing_epw=9),
+                                         unit='observation'),
              'type': int,
-             'unit': 'observation'
+             'unit': 'observation',
+             'missing': 9
              },
 
-        27: {'name': generic.GenericType(name='Present Weather Codes',
-                                         unit='codes', missing_epw=999999999),
+        27: {'name': generic.GenericType(name='Present Weather Codes', unit='codes'),
              'type': int,
-             'unit': 'codes'
+             'unit': 'codes',
+             'missing': 999999999
              },
 
         28: {'name': distance.PrecipitableWater(),
              'type': int,
-             'unit': 'mm'
+             'unit': 'mm',
+             'missing': 999
              },
 
-        29: {'name': percentage.AerosolOpticalDepth(),
+        29: {'name': fraction.AerosolOpticalDepth(),
              'type': float,
-             'unit': 'fraction'
+             'unit': 'fraction',
+             'missing': 999
              },
 
         30: {'name': distance.SnowDepth(),
              'type': int,
-             'unit': 'cm'
+             'unit': 'cm',
+             'missing': 999
              },
 
-        31: {'name': generic.GenericType(name='Days Since Last Snowfall',
-                                         unit='day', missing_epw=99),
+        31: {'name': generic.GenericType(name='Days Since Last Snowfall', unit='day'),
              'type': int,
-             'unit': 'day'
+             'unit': 'day',
+             'missing': 99
              },
 
-        32: {'name': percentage.Albedo(),
+        32: {'name': fraction.Albedo(),
              'type': float,
-             'unit': 'fraction'
+             'unit': 'fraction',
+             'missing': 999
              },
 
         33: {'name': distance.LiquidPrecipitationDepth(),
              'type': float,
-             'unit': 'mm'
+             'unit': 'mm',
+             'missing': 999
              },
 
-        34: {'name': percentage.LiquidPrecipitationQuantity(),
+        34: {'name': fraction.LiquidPrecipitationQuantity(),
              'type': float,
-             'unit': 'fraction'
+             'unit': 'fraction',
+             'missing': 99
              }
     }
 
@@ -1631,6 +1682,7 @@ class EPWField(object):
         name: Name of the field.
         type: field value type (e.g. int, float, str)
         unit: Field unit.
+        missing: Missing value for the data type in EPW files.
     """
 
     def __init__(self, field_dict):
@@ -1640,3 +1692,7 @@ class EPWField(object):
             self.unit = field_dict['unit']
         else:
             self.unit = None
+        if 'missing' in field_dict:
+            self.missing = field_dict['missing']
+        else:
+            self.missing = None

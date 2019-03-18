@@ -83,8 +83,6 @@ class EffectiveRadiantField(EnergyFlux):
 class Irradiance(EnergyFlux):
     _min = 0
     _abbreviation = 'Qsolar'
-    _min_epw = 0
-    _missing_epw = 9999
 
     @property
     def isIrradiance(self):

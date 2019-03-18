@@ -43,12 +43,6 @@ class DataTypeBase(object):
             when point_in_time is also True.
             (False Examples: Temperature, Irradiance, Illuminance)
             (True Examples: Energy, Radiation)
-        min_epw: Lower limit for the data type when it occurs in EPW files.
-            (Default: -inf)
-        max_epw: Upper limit for the data type when it occurs in EPW files.
-            (Default: +inf)
-        missing_epw: Missing value for the data type when it occurs in EPW files.
-            (Default: None)
     """
     _name = None
     _units = [None]
@@ -61,10 +55,6 @@ class DataTypeBase(object):
     _unit_descr = None
     _point_in_time = True
     _cumulative = False
-
-    _min_epw = float('-inf')
-    _max_epw = float('+inf')
-    _missing_epw = None
 
     _type_enumeration = None
 
@@ -146,14 +136,8 @@ class DataTypeBase(object):
             'to_si is not implemented on %s' % self.__class__.__name__
         )
 
-    def is_missing(self, value):
-        """Check if a value contains missing data when in an EPW."""
-        if value == self.missing_epw:
-            return True
-        return False
-
     def is_in_range(self, values, unit=None, raise_exception=True):
-        """Check if a list of values is within acceptable ranges.
+        """Check if a list of values is within physically/mathematically possible range.
 
         Args:
             values: A list of values.
@@ -176,43 +160,6 @@ class DataTypeBase(object):
             maximum = eval(max_statement, namespace)
 
         for value in values:
-            if value < minimum or value > maximum:
-                if not raise_exception:
-                    return False
-                else:
-                    raise ValueError(
-                        '{0} should be between {1} and {2}. Got {3}'.format(
-                            self.__class__.__name__, self.min, self.max, value
-                        )
-                    )
-        return True
-
-    def is_in_range_epw(self, values, unit=None, raise_exception=True):
-        """Check if a list of values is within acceptable ranges for an EPW file.
-
-        Args:
-            values: A list of values.
-            unit: The unit of the values.  If not specified, the default metric
-                unit will be assumed.
-            raise_exception: Set to True to raise an exception if not in range.
-        """
-        self._is_numeric(values)
-        if unit is None or unit == self.units[0]:
-            minimum = self.min_epw
-            maximum = self.max_epw
-        else:
-            namespace = {'self': self}
-            self.is_unit_acceptable(unit, True)
-            min_statement = "self._{}_to_{}(self.min_epw)".format(
-                self._clean(self.units[0]), self._clean(unit))
-            max_statement = "self._{}_to_{}(self.max_epw)".format(
-                self._clean(self.units[0]), self._clean(unit))
-            minimum = eval(min_statement, namespace)
-            maximum = eval(max_statement, namespace)
-
-        for value in values:
-            if self.is_missing(value):
-                continue
             if value < minimum or value > maximum:
                 if not raise_exception:
                     return False
@@ -327,21 +274,6 @@ class DataTypeBase(object):
     def cumulative(self):
         """Whether the data type is cumulative."""
         return self._cumulative
-
-    @property
-    def min_epw(self):
-        """Minimum acceptable value for an EPW."""
-        return self._min_epw
-
-    @property
-    def max_epw(self):
-        """Maxmimum acceptable value for an EPW."""
-        return self._max_epw
-
-    @property
-    def missing_epw(self):
-        """Missing value for an EPW."""
-        return self._missing_epw
 
     @property
     def isDataType(self):

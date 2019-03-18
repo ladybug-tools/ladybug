@@ -13,8 +13,6 @@ class Illuminance(DataTypeBase):
     _min = 0
     _abbreviation = 'Ev'
     _point_in_time = False
-    _min_epw = 0
-    _missing_epw = 999999  # note will be missing if >= 999900
 
     def _lux_to_fc(self, value):
         return value / 10.7639
