@@ -7,7 +7,6 @@ import sys
 import importlib
 import pkgutil
 
-__version__ = '0.3.0'
 
 #  find and import ladybug plugins
 #  this is a critical step to add additional functionalities to ladybug core library.
