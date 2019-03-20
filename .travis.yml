@@ -21,9 +21,8 @@ jobs:
     if: branch = master AND (NOT type IN (pull_request))
     before_install:
     - npm i -g npm@6.6.0
-    language: node_js
-    node_js:
-    - '8'
+    python:
+    - "3.6"
     install:
     - pip install -r dev-requirements.txt
     - npm install @semantic-release/exec
