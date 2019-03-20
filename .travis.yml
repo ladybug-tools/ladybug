@@ -30,10 +30,11 @@ jobs:
     - git config --global user.email "releases@ladybug.tools"
     - git config --global user.name "ladybugbot"
     - npx semantic-release
-    provider: pages
-    skip_cleanup: true
-    github-token: $GH_TOKEN
-    keep-history: false
-    on:
-      branch: master
-    local_dir: docs/_build/
+    deploy:
+      provider: pages
+      skip_cleanup: true
+      github-token: $GH_TOKEN
+      keep-history: false
+      local_dir: docs/_build/
+      on:
+        branch: master
