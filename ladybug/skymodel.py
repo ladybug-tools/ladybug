@@ -224,6 +224,128 @@ def zhang_huang_solar_split(altitudes, doys, cloud_cover, relative_humidity,
     return dir_norm_rad, dif_horiz_rad
 
 
+"""LUMINOUS EFFICACY OF THE SKY"""
+
+
+def estimate_illuminance_from_irradiance(
+        altitude, ghi, dni, dhi, dew_point, rel_airmass=None):
+    """Estimate sky illuminance components from irradiance components.
+
+    This function uses actual zenith rather than apparent zenith.
+
+    Note:
+        [1] Perez R. (1990). 'Modeling Daylight Availability and Irradiance
+        Components from Direct and Global Irradiance'. Solar Energy.
+        Vol. 44. No. 5, pp. 271-289. USA.
+
+    Args:
+        altitude: Solar altitude angle in degrees.
+        ghi: Number for Global Horizontal Irradiance in W/m2.
+        dni: Number for Direct Normal Irradiance in W/m2.
+        dhi: Number for Diffuse Horizontal Irradiance in W/m2.
+        dew_point: Surface dewpoint in degrees C.
+        rel_airmass: A number between 0 and 1 representing the airmass between
+            the sun. Default is None, which will simply use the input solar
+            altitude and the get_relative_airmass function in this module with
+            the kastenyoung1989 model to compute this number.
+
+    Returns:
+        gh_ill: Value for Global Horizontal Illuminance in lux.
+        dn_ill: Value for Direct Normal Illuminance in lux.
+        dh_ill: Value for Diffuse Horizontal Illuminance in lux.
+        z_lum: Value for Zenith Luminance in lux.
+
+    """
+    if altitude > 0:
+        if rel_airmass is None:
+            rel_airmass = get_relative_airmass(altitude)
+        zenith = math.radians(90 - altitude)
+        dhi = 0.1 if dhi == 0 else dhi
+        kai = 1.041
+        eps = ((dhi + dni) / dhi + kai * zenith ** 3) / (1 + kai * zenith ** 3)
+        delta = dhi * rel_airmass / 1360
+        w = math.exp(0.08 * dew_point - 0.075)
+
+        # Perez Table 1: Discrete Sky Clearness Categories
+        if eps >= 1 and eps < 1.065:
+            e_category = 0
+        elif eps >= 1.065 and eps < 1.23:
+            e_category = 1
+        elif eps >= 1.23 and eps < 1.5:
+            e_category = 2
+        elif eps >= 1.5 and eps < 1.95:
+            e_category = 3
+        elif eps >= 1.95 and eps < 2.8:
+            e_category = 4
+        elif eps >= 2.8 and eps < 4.5:
+            e_category = 5
+        elif eps >= 4.5 and eps < 6.2:
+            e_category = 6
+        elif eps >= 6.2:
+            e_category = 7
+        else:
+            raise ValueError('Error in sky luminous efficacy calculation\n'
+                             'eps: %f  altitude: %f' % (eps, altitude))
+
+        # Perez Table 4: Luminous Efficacy
+        glob_lum_eff_coeff = ((96.63, -0.47, 11.50, -9.16),
+                              (107.54, 0.79, 1.79, -1.19),
+                              (98.73, 0.70, 4.40, -6.95),
+                              (92.72, 0.56, 8.36, -8.31),
+                              (86.73, 0.98, 7.10, -10.94),
+                              (88.34, 1.39, 6.06, -7.60),
+                              (78.63, 1.47, 4.93, -11.37),
+                              (99.65, 1.86, -4.46, -3.15))
+
+        dir_lum_eff_coeff = ((57.20, -4.55, -2.98, 117.12),
+                             (98.99, -3.46, -1.21, 12.38),
+                             (109.83, -4.90, -1.71, -8.81),
+                             (110.34, -5.84, -1.99, -4.56),
+                             (106.36, -3.97, -1.75, -6.16),
+                             (107.19, -1.25, -1.51, -26.73),
+                             (105.75, 0.77, -1.26, -34.44),
+                             (101.18, 1.58, -1.10, -8.29))
+
+        diff_lum_eff_coeff = ((97.24, -0.46, 12.00, -8.91),
+                              (107.22, 1.15, 0.59, -3.95),
+                              (104.97, 2.96, -5.52, -8.77),
+                              (102.39, 5.59, -13.95, -13.90),
+                              (100.71, 5.94, -22.75, -23.74),
+                              (106.42, 3.83, -36.15, -28.83),
+                              (141.88, 1.90, -53.24, -14.03),
+                              (152.23, 0.35, -45.27, -7.98))
+
+        zen_lum_eff_coeff = ((40.86, 26.77, -29.59, -45.75),
+                             (26.58, 14.73, 58.46, -21.25),
+                             (19.34, 2.28, 100.00, 0.25),
+                             (13.25, -1.39, 124.79, 15.66),
+                             (14.47, -5.09, 160.09, 9.13),
+                             (19.76, -3.88, 154.61, -19.21),
+                             (28.39, -9.67, 151.58, -69.39),
+                             (42.91, -19.62, 130.80, -164.08))
+
+        # Eq 6
+        a, b, c, d = glob_lum_eff_coeff[e_category]
+        gh_ill = ghi * (a + b * w + c * math.cos(zenith) + d * math.log(delta))
+
+        # Eq 8
+        a, b, c, d = dir_lum_eff_coeff[e_category]
+        dn_ill = max(0, dni * (a + b * w + c * math.exp(5.73 * zenith - 5) + d * delta))
+
+        # Eq 7
+        a, b, c, d = diff_lum_eff_coeff[e_category]
+        dh_ill = dhi * (a + b * w + c * math.cos(zenith) + d * math.log(delta))
+
+        # Eq 9
+        a, b, c, d = zen_lum_eff_coeff[e_category]
+        z_lum = dhi * (a + b * math.cos(zenith) + c * math.exp(-3 * zenith) + d * delta)
+
+    else:  # sun is below the horizon, return 0
+        gh_ill, dn_ill, dh_ill, z_lum = 0, 0, 0, 0
+
+    return gh_ill, dn_ill, dh_ill, z_lum
+
+
 """HORIZONTAL INFRARED INTENSITY + SKY TEMPERATURE MODELS"""
 
 
@@ -782,8 +904,7 @@ def get_relative_airmass(altitude, model='kastenyoung1989'):
               requires apparent sun altitude
 
     Returns:
-        airmass_relative: numeric
-            Relative airmass at sea level. Will return None for any
+        airmass_relative: Relative airmass at sea level. Will return None for any
             altitude angle smaller than 0 degrees.
     """
     if altitude < 0:
