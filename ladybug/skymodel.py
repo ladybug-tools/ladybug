@@ -244,10 +244,11 @@ def estimate_illuminance_from_irradiance(
         dni: Number for Direct Normal Irradiance in W/m2.
         dhi: Number for Diffuse Horizontal Irradiance in W/m2.
         dew_point: Surface dewpoint in degrees C.
-        rel_airmass: A number between 0 and 1 representing the airmass between
-            the sun. Default is None, which will simply use the input solar
+        rel_airmass: A number between 1 and ~38 representing the ratio of air mass
+            between the sun and the observer and the air mass that is directly above
+            the observer. Default is None, which will simply use the input solar
             altitude and the get_relative_airmass function in this module with
-            the kastenyoung1989 model to compute this number.
+            the kastenyoung1989 model to compute this value.
 
     Returns:
         gh_ill: Value for Global Horizontal Illuminance in lux.
@@ -597,10 +598,10 @@ def disc(ghi, altitude, doy, pressure=101325,
     This implementation limits the clearness index to 1 by default.
 
     The original report describing the DISC model [1]_ uses the
-    relative airmass rather than the absolute (pressure-corrected)
-    airmass. However, the NREL implementation of the DISC model [2]_
-    uses absolute airmass. PVLib Matlab also uses the absolute airmass.
-    pvlib python defaults to absolute airmass, but the relative airmass
+    relative air mass rather than the absolute (pressure-corrected)
+    air mass. However, the NREL implementation of the DISC model [2]_
+    uses absolute air mass. PVLib Matlab also uses the absolute air mass.
+    pvlib python defaults to absolute air mass, but the relative airmass
     can be used by supplying `pressure=None`.
 
     Note:
@@ -620,8 +621,8 @@ def disc(ghi, altitude, doy, pressure=101325,
             degrees.
         doy : An integer representing the day of the year.
         pressure : None or numeric, default 101325
-            Site pressure in Pascal. If None, relative airmass is used
-            instead of absolute (pressure-corrected) airmass.
+            Site pressure in Pascal. If None, relative air mass is used
+            instead of absolute (pressure-corrected) air mass.
         min_sin_altitude : numeric, default 0.065
             Minimum value of sin(altitude) to allow when calculating global
             clearness index `kt`. Equivalent to altitude = 3.727 degrees.
@@ -629,9 +630,9 @@ def disc(ghi, altitude, doy, pressure=101325,
             Minimum value of altitude to allow in DNI calculation. DNI will be
             set to 0 for times with altitude values smaller than `min_altitude`.
         max_airmass : numeric, default 12
-            Maximum value of the airmass to allow in Kn calculation.
+            Maximum value of the air mass to allow in Kn calculation.
             Default value (12) comes from range over which Kn was fit
-            to airmass in the original paper.
+            to air mass in the original paper.
 
     Returns:
         dni: The modeled direct normal irradiance
@@ -820,15 +821,14 @@ def clearness_index_zenith_independent(clearness_index, airmass,
 def get_absolute_airmass(airmass_relative, pressure=101325.):
     """
     Determine absolute (pressure corrected) airmass from relative
-    airmass and pressure.
+    airmass and atmospheirc pressure.
 
     Gives the airmass for locations not at sea-level (i.e. not at
     standard pressure). The input argument airmass_relative is the relative
-    airmass. The input argument pressure is the pressure (in Pascals)
+    air mass. The input argument pressure is the pressure (in Pascals)
     at the location of interest and must be greater than 0. The
-    calculation for absolute airmass is
-    .. math::
-        absolute airmass = (relative airmass)*pressure/101325
+    calculation for absolute air mass is
+    `absolute airmass = (relative airmass)*pressure/101325`
 
     Note:
         [1] C. Gueymard, "Critical analysis and performance assessment of
@@ -837,13 +837,13 @@ def get_absolute_airmass(airmass_relative, pressure=101325.):
 
     Args:
         airmass_relative: numeric
-            The airmass at sea-level.
+            The air mass at sea-level.
         pressure: numeric, default 101325
             The site pressure in Pascal.
 
     Returns:
         airmass_absolute: numeric
-            Absolute (pressure corrected) airmass
+            Absolute (pressure corrected) air mass
     """
     if airmass_relative is not None:
         return airmass_relative * pressure / 101325.
@@ -856,8 +856,8 @@ def get_relative_airmass(altitude, model='kastenyoung1989'):
     Gives the relative (not pressure-corrected) airmass.
 
     Gives the airmass at sea-level when given a sun altitude angle (in
-    degrees). The ``model`` variable allows selection of different
-    airmass models (described below). If ``model`` is not included or is
+    degrees). The `model` variable allows selection of different
+    airmass models (described below). If `model` is not included or is
     not valid, the default model is 'kastenyoung1989'.
 
     Note:
