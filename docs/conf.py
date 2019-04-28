@@ -22,11 +22,13 @@ project = 'ladybug'
 copyright = '2019, Ladybug Tools'
 author = 'Ladybug Tools'
 
-# The full version, including alpha/beta/rc tags
-release = ''
+# The short X.Y version
+import ladybug
+version = ladybug.__version__
 
-# for example take major/minor
-version = ''
+# The full version, including alpha/beta/rc tags
+release = version
+
 
 # -- General configuration ---------------------------------------------------
 
