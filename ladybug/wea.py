@@ -14,10 +14,12 @@ from .futil import write_to_file
 
 from .datatype.energyflux import Irradiance, GlobalHorizontalIrradiance, \
     DirectNormalIrradiance, DiffuseHorizontalIrradiance, DirectHorizontalIrradiance
+from .datatype.illuminance import GlobalHorizontalIlluminance, \
+    DirectNormalIlluminance, DiffuseHorizontalIlluminance
+from .datatype.luminance import ZenithLuminance
 
-from .skymodel import ashrae_revised_clear_sky
-from .skymodel import ashrae_clear_sky
-from .skymodel import zhang_huang_solar_split
+from .skymodel import ashrae_revised_clear_sky, ashrae_clear_sky, \
+    zhang_huang_solar_split, estimate_illuminance_from_irradiance
 
 import math
 import os
@@ -437,9 +439,14 @@ class Wea(object):
         return cls(location, direct_norm_rad, diffuse_horiz_rad, timestep, is_leap_year)
 
     @property
-    def isWea(self):
-        """Return True."""
-        return True
+    def header(self):
+        """Wea header."""
+        return "place %s\n" % self.location.city + \
+            "latitude %.2f\n" % self.location.latitude + \
+            "longitude %.2f\n" % -self.location.longitude + \
+            "time_zone %d\n" % (-self.location.time_zone * 15) + \
+            "site_elevation %.1f\n" % self.location.elevation + \
+            "weather_data_file_units 1\n"
 
     @property
     def hoys(self):
@@ -545,38 +552,6 @@ class Wea(object):
         for a leap year
         """
         return 8760 + 24 if is_leap_year else 8760
-
-    @staticmethod
-    def _get_datetimes(timestep, is_leap_year):
-        """List of datetimes based on timestep.
-
-        This method should only be used for classmethods. For datetimes use datetiems or
-        hoys methods.
-        """
-        hour_count = 8760 + 24 if is_leap_year else 8760
-        adjust_time = 30 if timestep == 1 else 0
-        return tuple(
-            DateTime.from_moy(60.0 * count / timestep + adjust_time, is_leap_year)
-            for count in xrange(hour_count * timestep)
-        )
-
-    @staticmethod
-    def _get_data_collections(dnr_values, dhr_values, metadata, timestep, is_leap_year):
-        """Return two data collections for Direct Normal , Diffuse Horizontal
-        """
-        analysis_period = AnalysisPeriod(timestep=timestep, is_leap_year=is_leap_year)
-        dnr_header = Header(data_type=DirectNormalIrradiance(),
-                            unit='W/m2',
-                            analysis_period=analysis_period,
-                            metadata=metadata)
-        direct_norm_rad = HourlyContinuousCollection(dnr_header, dnr_values)
-        dhr_header = Header(data_type=DiffuseHorizontalIrradiance(),
-                            unit='W/m2',
-                            analysis_period=analysis_period,
-                            metadata=metadata)
-        diffuse_horiz_rad = HourlyContinuousCollection(dhr_header, dhr_values)
-
-        return direct_norm_rad, diffuse_horiz_rad
 
     def get_irradiance_value(self, month, day, hour):
         """Get direct and diffuse irradiance values for a point in time."""
@@ -691,15 +666,69 @@ class Wea(object):
         return total_irradiance, direct_irradiance, \
             diffuse_irradiance, reflected_irradiance
 
-    @property
-    def header(self):
-        """Wea header."""
-        return "place %s\n" % self.location.city + \
-            "latitude %.2f\n" % self.location.latitude + \
-            "longitude %.2f\n" % -self.location.longitude + \
-            "time_zone %d\n" % (-self.location.time_zone * 15) + \
-            "site_elevation %.1f\n" % self.location.elevation + \
-            "weather_data_file_units 1\n"
+    def estimate_illuminance_components(self, dew_point):
+        """Get estimated direct, diffuse, and global illuminance from this Wea.
+
+        Note that this method should only be used when there are no measured
+        illuminance values that correspond to this Wea's irradiance values.
+        Because the illuminance components calculated here are simply estimated
+        using a model by Perez [1], they are not as accurate as true measured values.
+
+        Note:
+            [1] Perez R. (1990). 'Modeling Daylight Availability and Irradiance
+            Components from Direct and Global Irradiance'. Solar Energy.
+            Vol. 44. No. 5, pp. 271-289. USA.
+
+        Args:
+            dew_point: An annual hourly data collection of dewpoint temperature
+                in degrees C. The timestep of this data collection and the presence
+                or lack of a leap year must align with this Wea.
+
+        Returns:
+            global_horiz_ill: Data collectin of Global Horizontal Illuminance in lux.
+            direct_normal_ill: Data collectin of Direct Normal Illuminance in lux.
+            diffuse_horizontal_ill: Data collectin of  Diffuse Horizontal Illuminance
+                in lux.
+            zenith_lum: Data collectin of Zenith Luminance in lux.
+        """
+        # check the dew_point input
+        assert len(dew_point) == self.hour_count(self.is_leap_year) * self.timestep, \
+            'Input dew_point data must be annual hourly and align with the irradiance' \
+            ' on the Wea.'
+
+        # calculate illuminance values
+        sp = Sunpath.from_location(self.location)
+        sp.is_leap_year = self.is_leap_year
+        gh_ill_values, dn_ill_values, dh_ill_values, zen_lum_values = [], [], [], []
+        for dt, dp, ghi, dni, dhi in zip(
+                self.datetimes, dew_point, self.global_horizontal_irradiance,
+                self.direct_normal_irradiance, self.diffuse_horizontal_irradiance):
+            alt = sp.calculate_sun_from_date_time(dt).altitude
+            gh, dn, dh, z = estimate_illuminance_from_irradiance(alt, ghi, dni, dhi, dp)
+            gh_ill_values.append(gh)
+            dn_ill_values.append(dn)
+            dh_ill_values.append(dh)
+            zen_lum_values.append(z)
+
+        # create data collection headers for the results
+        analysis_period = AnalysisPeriod(timestep=self.timestep,
+                                         is_leap_year=self.is_leap_year)
+        gh_ill_head = Header(data_type=GlobalHorizontalIlluminance(), unit='lux',
+                             analysis_period=analysis_period, metadata=self.metadata)
+        dn_ill_head = Header(data_type=DirectNormalIlluminance(), unit='lux',
+                             analysis_period=analysis_period, metadata=self.metadata)
+        dh_ill_head = Header(data_type=DiffuseHorizontalIlluminance(), unit='lux',
+                             analysis_period=analysis_period, metadata=self.metadata)
+        zen_lum_head = Header(data_type=ZenithLuminance(), unit='cd/m2',
+                              analysis_period=analysis_period, metadata=self.metadata)
+
+        # create data collections to hold illuminance results
+        global_horiz_ill = HourlyContinuousCollection(gh_ill_head, gh_ill_values)
+        direct_normal_ill = HourlyContinuousCollection(dn_ill_head, dn_ill_values)
+        diffuse_horizontal_ill = HourlyContinuousCollection(dh_ill_head, dh_ill_values)
+        zenith_lum = HourlyContinuousCollection(zen_lum_head, zen_lum_values)
+
+        return global_horiz_ill, direct_normal_ill, diffuse_horizontal_ill, zenith_lum
 
     def to_json(self):
         """Write Wea to json file
@@ -771,6 +800,42 @@ class Wea(object):
             write_to_file(hrs_file_path, hrs_data, True)
 
         return file_path
+
+    @staticmethod
+    def _get_datetimes(timestep, is_leap_year):
+        """List of datetimes based on timestep.
+
+        This method should only be used for classmethods. For datetimes use datetiems or
+        hoys methods.
+        """
+        hour_count = 8760 + 24 if is_leap_year else 8760
+        adjust_time = 30 if timestep == 1 else 0
+        return tuple(
+            DateTime.from_moy(60.0 * count / timestep + adjust_time, is_leap_year)
+            for count in xrange(hour_count * timestep)
+        )
+
+    @staticmethod
+    def _get_data_collections(dnr_values, dhr_values, metadata, timestep, is_leap_year):
+        """Return two data collections for Direct Normal, Diffuse Horizontal."""
+        analysis_period = AnalysisPeriod(timestep=timestep, is_leap_year=is_leap_year)
+        dnr_header = Header(data_type=DirectNormalIrradiance(),
+                            unit='W/m2',
+                            analysis_period=analysis_period,
+                            metadata=metadata)
+        direct_norm_rad = HourlyContinuousCollection(dnr_header, dnr_values)
+        dhr_header = Header(data_type=DiffuseHorizontalIrradiance(),
+                            unit='W/m2',
+                            analysis_period=analysis_period,
+                            metadata=metadata)
+        diffuse_horiz_rad = HourlyContinuousCollection(dhr_header, dhr_values)
+
+        return direct_norm_rad, diffuse_horiz_rad
+
+    @property
+    def isWea(self):
+        """Return True."""
+        return True
 
     def ToString(self):
         """Overwrite .NET ToString."""
