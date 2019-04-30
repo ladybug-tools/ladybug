@@ -23,7 +23,7 @@ copyright = '2019, Ladybug Tools'
 author = 'Ladybug Tools'
 
 # The full version, including alpha/beta/rc tags
-release = ''
+release = version
 
 # for example take major/minor
 version = ''

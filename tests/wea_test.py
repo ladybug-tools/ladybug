@@ -238,6 +238,24 @@ class WeaTestCase(unittest.TestCase):
         assert srf_diffuse.values == pytest.approx(diffuse_horiz_rad.values, rel=1e-3)
         assert srf_reflect.values == pytest.approx([0] * 8760, rel=1e-3)
 
+    def test_estimate_illuminance(self):
+        """Test the directinal irradiance method."""
+        epw_path = './tests/epw/chicago.epw'
+        epw = EPW(epw_path)
+        wea = Wea.from_epw_file(epw_path)
+
+        glob_ill, dir_ill, diff_ill, zen_lum = \
+            wea.estimate_illuminance_components(epw.dew_point_temperature)
+
+        assert glob_ill.bounds[0] == pytest.approx(0, rel=1e-3)
+        assert 100000 < glob_ill.bounds[1] < 125000
+        assert dir_ill.bounds[0] == pytest.approx(0, rel=1e-3)
+        assert 75000 < dir_ill.bounds[1] < 125000
+        assert diff_ill.bounds[0] == pytest.approx(0, rel=1e-3)
+        assert 50000 < diff_ill.bounds[1] < 100000
+        assert zen_lum.bounds[0] == pytest.approx(0, rel=1e-3)
+        assert zen_lum.bounds[1] < 35000
+
     def test_leap_year(self):
         """Test clear sky with leap year."""
         location = Location(
