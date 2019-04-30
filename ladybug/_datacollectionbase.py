@@ -9,8 +9,6 @@ from .datatype.base import DataTypeBase
 from collections import Iterable
 from string import ascii_lowercase
 import math
-from os.path import dirname, basename, join
-from importlib import import_module
 
 import sys
 if (sys.version_info >= (3, 0)):

@@ -17,25 +17,24 @@ after_success:
 
 jobs:
   include:
-    - stage: deploy
-      if: branch = master AND (NOT type IN (pull_request))
-      python: "3.6"
-      env: TRAVIS=true
-      script:
-        - git config --global user.name "ladybugbot"
-        - git config --global user.email "release@ladybug.tools"
-        - pip install python-semantic-release
-        - semantic-release publish
-        # generate updated documentation
-        - pip install Sphinx sphinxcontrib-fulltoc sphinx_bootstrap_theme
-        - sphinx-apidoc -f -e -d 4 -o ./docs ./ladybug ./ladybug/euclid.py
-        - sphinx-build -b html ./docs ./docs/_build/docs
-      # deploy to github pages
-      # https://docs.travis-ci.com/user/deployment/pages/
+  - stage: deploy
+    if: branch = master AND (NOT type IN (pull_request))
+    before_install:
+    - npm i -g npm@6.6.0
+    python:
+    - "3.6"
+    install:
+    - pip install -r dev-requirements.txt
+    - npm install @semantic-release/exec
+    script:
+    - git config --global user.email "releases@ladybug.tools"
+    - git config --global user.name "ladybugbot"
+    - npx semantic-release
+    deploy:
       provider: pages
       skip_cleanup: true
       github-token: $GH_TOKEN
       keep-history: false
+      local_dir: docs/_build/
       on:
         branch: master
-      local_dir: docs/_build/

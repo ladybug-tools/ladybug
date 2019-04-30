@@ -27,7 +27,7 @@ import ladybug
 version = ladybug.__version__
 
 # The full version, including alpha/beta/rc tags
-release = ''
+release = version
 
 
 # -- General configuration ---------------------------------------------------
