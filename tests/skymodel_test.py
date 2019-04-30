@@ -2,12 +2,32 @@
 
 import unittest
 import pytest
+import math
 
-from ladybug.skymodel import dirint, disc, _get_dirint_coeffs
+from ladybug.skymodel import estimate_illuminance_from_irradiance, \
+    dirint, disc, _get_dirint_coeffs
 
 
 class SkyModelTestCase(unittest.TestCase):
     """Test for (ladybug/skymodel.py)"""
+
+    def test_estimate_illuminance_from_irradiance(self):
+        """Test the accuracy of the estimate_illuminance_from_irradiance function."""
+        # Test a typical daytime condition
+        gh_ill, dn_ill, dh_ill, z_lum = estimate_illuminance_from_irradiance(
+            60, 200 + 800 * math.sin(math.radians(60)), 800, 200, 15)
+        assert gh_ill == pytest.approx(99415.2739, rel=1e-2)
+        assert dn_ill == pytest.approx(78879.2958, rel=1e-2)
+        assert dh_ill == pytest.approx(27609.2088, rel=1e-2)
+        assert z_lum == pytest.approx(9056.0109, rel=1e-2)
+
+        # test a typical nighttime condition
+        gh_ill, dn_ill, dh_ill, z_lum = estimate_illuminance_from_irradiance(
+            0, 0, 0, 0, 15)
+        assert gh_ill == 0
+        assert dn_ill == 0
+        assert dh_ill == 0
+        assert z_lum == 0
 
     def test_dirint(self):
         """Test the accuracy of the dirint model against pvlib results."""
