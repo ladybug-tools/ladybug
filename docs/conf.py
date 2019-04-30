@@ -22,11 +22,12 @@ project = 'ladybug'
 copyright = '2019, Ladybug Tools'
 author = 'Ladybug Tools'
 
-# The full version, including alpha/beta/rc tags
-release = version
-
-# for example take major/minor
+# The short X.Y version
 version = ''
+
+# The full version, including alpha/beta/rc tags
+release = ''
+
 
 # -- General configuration ---------------------------------------------------
 
