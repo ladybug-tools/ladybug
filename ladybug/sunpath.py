@@ -3,17 +3,13 @@ from __future__ import division
 
 from .location import Location
 from .dt import DateTime
+from ladybug_geometry.geometry3d.pointvector import Vector3D
 
 import math
 from collections import namedtuple
-
 import sys
-if (sys.version_info > (3, 0)):
-    # python 3
-    from euclid3 import Vector3
+if (sys.version_info > (3, 0)):  # python 3
     xrange = range
-else:
-    from euclid import Vector3
 
 import ladybug
 try:
@@ -797,24 +793,24 @@ class Sun(object):
 
     def _calculate_sun_vector(self):
         """Calculate sun vector for this sun."""
-        z_axis = Vector3(0., 0., -1.)
-        x_axis = Vector3(1., 0., 0.)
-        north_vector = Vector3(0., 1., 0.)
+        z_axis = Vector3D(0., 0., -1.)
+        x_axis = Vector3D(1., 0., 0.)
+        north_vector = Vector3D(0., 1., 0.)
 
         # rotate north vector based on azimuth, altitude, and north
         _sun_vector = north_vector \
-            .rotate_around(x_axis, self.altitude_in_radians) \
-            .rotate_around(z_axis, self.azimuth_in_radians) \
-            .rotate_around(z_axis, math.radians(-1 * self.north_angle))
+            .rotate(x_axis, self.altitude_in_radians) \
+            .rotate(z_axis, self.azimuth_in_radians) \
+            .rotate(z_axis, math.radians(-1 * self.north_angle))
 
         _sun_vector.normalize()
         try:
             _sun_vector.flip()
         except AttributeError:
             # euclid3
-            _sun_vector = Vector3(-1 * _sun_vector.x,
-                                  -1 * _sun_vector.y,
-                                  -1 * _sun_vector.z)
+            _sun_vector = Vector3D(-1 * _sun_vector.x,
+                                   -1 * _sun_vector.y,
+                                   -1 * _sun_vector.z)
 
         self._sun_vector = _sun_vector
 
