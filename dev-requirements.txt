@@ -1,6 +1,6 @@
+git+https://github.com/ladybug-tools/ladybug-geometry.git@development
 coverage==4.5.3
 coveralls==1.7.0
-euclid3==0.1
 pytest==4.3.1
 pytest-cov==2.6.1
 Sphinx==1.8.5

@@ -1,9 +1,15 @@
 # coding=utf-8
 from __future__ import division
 """Functions for computing radiation for different idealized skies"""
-import math
 
 from .psychrometrics import dew_point_from_db_rh
+
+import math
+try:  # python 2
+    from itertools import izip as zip
+except ImportError:  # python 3
+    xrange = range
+
 
 """ORIGINAL AHSRAE CLEAR SKY SOLAR MODEL"""
 
@@ -194,7 +200,7 @@ def zhang_huang_solar_split(altitudes, doys, cloud_cover, relative_humidity,
     """
     # Calculate global horizontal irradiance using the original zhang-huang model
     glob_ir = []
-    for i in range(len(altitudes)):
+    for i in xrange(len(altitudes)):
         ghi = zhang_huang_solar(altitudes[i], cloud_cover[i], relative_humidity[i],
                                 dry_bulb_present[i], dry_bulb_t3_hrs[i], wind_speed[i])
         glob_ir.append(ghi)
@@ -202,7 +208,7 @@ def zhang_huang_solar_split(altitudes, doys, cloud_cover, relative_humidity,
     if use_disc is False:
         # Calculate dew point temperature to improve the splitting of direct + diffuse
         temp_dew = [dew_point_from_db_rh(dry_bulb_present[i], relative_humidity[i])
-                    for i in range(len(glob_ir))]
+                    for i in xrange(len(glob_ir))]
 
         # Split global rad into direct + diffuse using dirint method (aka. Perez split)
         dir_norm_rad = dirint(glob_ir, altitudes, doys, atm_pressure,
@@ -211,11 +217,11 @@ def zhang_huang_solar_split(altitudes, doys, cloud_cover, relative_humidity,
         # Calculate diffuse horizontal from dni and ghi.
         dif_horiz_rad = [glob_ir[i] -
                          (dir_norm_rad[i] * math.sin(math.radians(altitudes[i])))
-                         for i in range(len(glob_ir))]
+                         for i in xrange(len(glob_ir))]
     else:
         dir_norm_rad = []
         dif_horiz_rad = []
-        for i in range(len(glob_ir)):
+        for i in xrange(len(glob_ir)):
             dni, kt, am = disc(glob_ir[i], altitudes[i], doys[i], atm_pressure[i])
             dhi = glob_ir[i] - (dni * math.sin(math.radians(altitudes[i])))
             dir_norm_rad.append(dni)
@@ -486,7 +492,7 @@ def dirint(ghi, altitudes, doys, pressures, use_delta_kt_prime=True,
     # calculate kt_prime values
     kt_primes = []
     disc_dni = []
-    for i in range(len(ghi)):
+    for i in xrange(len(ghi)):
         dni, kt, airmass = disc(ghi[i], altitudes[i], doys[i], pressure=pressures[i],
                                 min_sin_altitude=min_sin_altitude,
                                 min_altitude=min_altitude)
@@ -498,7 +504,7 @@ def dirint(ghi, altitudes, doys, pressures, use_delta_kt_prime=True,
     # calculate delta_kt_prime values
     if use_delta_kt_prime is True:
         delta_kt_prime = []
-        for i in range(len(kt_primes)):
+        for i in xrange(len(kt_primes)):
             try:
                 kt_prime_1 = kt_primes[i + 1]
             except IndexError:
@@ -522,7 +528,7 @@ def dirint(ghi, altitudes, doys, pressures, use_delta_kt_prime=True,
     # get the dirint coefficient by looking up values in the matrix
     coeffs = _get_dirint_coeffs()
     dirint_coeffs = [coeffs[ktp_bin[i]][alt_bin[i]][delta_ktp_bin[i]][w_bin[i]]
-                     for i in range(len(ghi))]
+                     for i in xrange(len(ghi))]
 
     # Perez eqn 5
     dni = [disc_d * coef for disc_d, coef in zip(disc_dni, dirint_coeffs)]
@@ -543,7 +549,7 @@ def _dirint_bins(ktp, alt, w, dktp):
     Returns:
         tuple of ktp_bin, alt_bin, w_bin, dktp_bin
     """
-    it = range(len(ktp))
+    it = xrange(len(ktp))
 
     # Create kt_prime bins
     ktp_bin = [-1] * len(ktp)
@@ -948,7 +954,7 @@ def _get_dirint_coeffs():
         Array with shape ``(6, 6, 7, 5)``.
         Ordering is ``[kt_prime_bin, zenith_bin, delta_kt_prime_bin, w_bin]``
     """
-    coeffs = [[0 for i in range(6)] for j in range(6)]
+    coeffs = [[0 for i in xrange(6)] for j in xrange(6)]
 
     coeffs[0][0] = [
         [0.385230, 0.385230, 0.385230, 0.462880, 0.317440],

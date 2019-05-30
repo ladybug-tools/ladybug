@@ -2,6 +2,8 @@
 """Ladybug color, colorsets and colorrange."""
 from __future__ import division
 
+from collections import Iterable
+
 
 class Color(object):
     """Ladybug RGB color.
@@ -272,43 +274,32 @@ class Colorset(object):
         return tuple(Color(*color) for color in cls._colors[21])
 
     def __len__(self):
-        """Return length of colors."""
+        """Return length of currently installed color sets."""
         return len(self._colors)
 
     def __getitem__(self, key):
-        """Return key item from the color list."""
-        return [Color(*color) for color in self._colors[key]]
-
-    def __setitem__(self, key, value):
-        """Set a color to a new color in color list."""
-        self._colors[key] = value
-
-    def __delitem__(self, key):
-        """Remove a color from the color list."""
-        del self._colors[key]
+        """Return one of the color sets."""
+        return tuple(Color(*color) for color in self._colors[key])
 
     def __iter__(self):
-        """Use colors to iterate."""
+        """Iterate through the color sets."""
         return iter(self._colors)
+
+    def ToString(self):
+        """Overwrite .NET ToString."""
+        return self.__repr__()
+
+    def __repr__(self):
+        """Colorset representation."""
+        return "{} currently installed Colorsets".format(len(self))
 
 
 class ColorRange(object):
-    """Ladybug Color-range repository.
+    """Ladybug Color Range. Used to generate colors from numerical values.
 
-    A list of default Ladybug colorRanges
-
-    Args:
-        range:
-        colors: A list of colors. Colors should be input as R, G, B values.
-            Default: Colorset[1]
-        domain: A list of numbers or strings. For numerical values it should be
-            sorted from min to max. Default: ['min', 'max']
-        chart_type: 0: continuous, 1: segmented, 2: ordinal. Default: 0
-            In segmented and ordinal mode number of values should match number of colors
-            Ordinal values can be strings and well as numericals
     Usage:
         ##
-        colorRange = ColorRange(chart_type = 1)
+        colorRange = ColorRange(continuous_colors=False)
         colorRange.domain = [100, 2000]
         colorRange.colors = [Color(75, 107, 169), Color(245, 239, 103),
             Color(234, 38, 0)]
@@ -322,132 +313,113 @@ class ColorRange(object):
         >> <R:234, G:38, B:0>
 
         ##
-        colorRange = ColorRange(chart_type = 1)
+        colorRange = ColorRange(continuous_colors=False)
         colorRange.domain = [100, 2000]
         colorRange.colors = [Color(75, 107, 169), Color(245, 239, 103),
             Color(234, 38, 0)]
         colorRange.color(300)
         >> <R:245, G:239, B:103>
-
-        ##
-        colorRange = ColorRange(chart_type = 2)
-        colorRange.domain = ["cold", "comfortable", "hot"]
-        colorRange.colors = [Color(75, 107, 169), Color(245, 239, 103),
-            Color(234, 38, 0)]
-        colorRange.color("comfortable")
-        >> <R:245, G:239, B:103>
-
     """
 
-    # TODO: write a Color object
-    def __init__(self, colors=None, domain=None, chart_type=0):
-        """Initiate Ladybug color range."""
-        self.ctype = chart_type
+    def __init__(self, colors=None, domain=None, continuous_colors=True):
+        """Initiate Ladybug color range.
+
+        Args:
+            range:
+            colors: A list of colors. Colors should be input as objects with
+                R, G, B values. Default is Ladybug's original colorset.
+            domain: A list of at least two numbers to set the lower and upper
+                boundary of the color range. This can also be a list of more than
+                two values, which can be used to approximate logartihmic or other types
+                of color scales. However, the number of values in the domain must
+                always be less than or equal to the number of colors.
+                Default: [0, 1].
+            continuous_colors: Boolean. If True, the colors generated from the
+                color range will be in a continuous gradient. If False,
+                they will be categorized in incremental groups according to the
+                number_of_segments. Default is True for continuous colors.
+        """
+        assert isinstance(continuous_colors, bool), \
+            "continuous_colors should be a Boolean.\nGot {}.".format(
+                type(continuous_colors))
+        self._continuous_colors = continuous_colors
         self._is_domain_set = False
         self.colors = colors
         self.domain = domain
 
     @property
-    def is_domain_set(self):
-        """Return if Domain is set for this color-range."""
-        return self._is_domain_set
+    def colors(self):
+        """Get or set the colors defining the color range."""
+        return self._colors
+
+    @colors.setter
+    def colors(self, cols):
+        if not cols:
+            self._colors = Colorset.original()
+        else:
+            assert isinstance(cols, Iterable) \
+                and not isinstance(cols, (str, dict, bytes, bytearray)), \
+                'Colors should be a list or tuple. Got {}'.format(type(cols))
+            try:
+                cols = tuple(col if isinstance(col, Color) else Color(
+                    col.R, col.G, col.B) for col in cols)
+            except Exception:
+                try:
+                    cols = tuple(Color(col.Red, col.Green, col.Blue)
+                                 for col in cols)
+                except Exception:
+                    raise ValueError("{} is not a valid list of colors".format(cols))
+            if self._is_domain_set:
+                self.domain = self.domain  # re-check the domain against new colors
+            self._colors = cols
 
     @property
     def domain(self):
-        """Return domain."""
+        """Get or set the domain defining the color range."""
         return self._domain
 
     @domain.setter
     def domain(self, dom):
         # check and prepare domain
         if not dom:
-            dom = [0, 1]
-
-        if 'min' in dom or 'max' in dom:
-            self._domain = dom
-            self._is_domain_set = False
+            dom = (0, 1)
         else:
-            assert hasattr(dom, "__iter__"), "Domain should be an iterable type."
-            # if domain is numerical it should be sorted
-            try:
-                dom = sorted(map(float, dom))
-            except ValueError:
-                if self._ctype != 2:
-                    print("Text domains can only be used in ordinal mode.\n" +
-                          "Type is changed to ordinal.")
-                    self.ctype == 2
+            assert isinstance(dom, Iterable) \
+                and not isinstance(dom, (str, dict, bytes, bytearray)), \
+                'Domain should be a list or tuple. Got {}'.format(type(dom))
+            for val in dom:
+                assert isinstance(val, (float, int)), 'Values of a domain must be ' \
+                    'numbers. Got {}.'.format(type(val))
+            dom = sorted(map(float, dom))
 
-            if self._ctype == 0:
-                # continuous
-                # if type is continuous domain can only be 2 values
-                # or at least 1 value less than number of colors
-                if len(dom) == 2:
-                    # remap domain based on colors
-                    _step = float(dom[1] - dom[0]) / (len(self._colors) - 1)
-                    _n = dom[0]
-                    dom = [_n + c * _step for c in range(len(self._colors))]
+        if self._continuous_colors:  # continuous
+            # if type is continuous domain can only be 2 values
+            # or at least 1 value less than number of colors
+            if len(dom) == 2:
+                # remap domain based on colors
+                _step = float(dom[1] - dom[0]) / (len(self._colors) - 1)
+                _n = dom[0]
+                dom = tuple(_n + c * _step for c in range(len(self._colors)))
 
-                assert len(self._colors) >= len(dom), \
-                    "For continuous colors length of domain should be 2 or equal" \
-                    " to number of colors"
+            assert len(self._colors) >= len(dom), \
+                "For continuous colors, length of domain should be 2 or equal" \
+                " to number of colors"
+        else:  # segmented
+            # Number of colors should be at least one more than number
+            # of domain values
+            assert len(self._colors) > len(dom), "Length of colors " + \
+                "should be more than domain values for segmented colors"
 
-            elif self._ctype == 1:
-                # segmented
-                # Number of colors should be at least one more than number
-                # of domain Values
-                assert len(self._colors) > len(dom), "Length of colors " + \
-                    "should be more than domain values for segmented colors"
-
-            self._domain = dom
-            self._is_domain_set = True
+        self._is_domain_set = True
+        self._domain = tuple(dom)
 
     @property
-    def colors(self):
-        """Return list of colors."""
-        return self._colors
-
-    @colors.setter
-    def colors(self, cols):
-        if not cols:
-            self._colors = Colorset()[1]
-        else:
-            assert hasattr(cols, "__iter__"), "Colors should be an iterable type"
-            try:
-                cols = [col if isinstance(col, Color) else Color(
-                    col.R, col.G, col.B) for col in cols]
-            except Exception:
-                try:
-                    cols = [Color(col.Red, col.Green, col.Blue) for col in cols]
-                except Exception:
-                    raise ValueError("%s is not a vlid color" % str(cols))
-            self._colors = cols
-
-    @property
-    def ctype(self):
-        """Chart type."""
-        return self._ctype
-
-    @ctype.setter
-    def ctype(self, t):
-        assert 0 <= int(t) <= 2, "Chart Type should be between 0-2\n" + \
-            "0: continuous, 1: segmented, 2: ordinal"
-        self._ctype = int(t)
+    def continuous_colors(self):
+        """Boolean noting whether colors generated are continuous or discrete."""
+        return self._continuous_colors
 
     def color(self, value):
-        """Return color for an input value."""
-        assert self._is_domain_set, \
-            "Domain is not set. Use self.domain to set the domain."
-
-        if self._ctype == 2:
-            # if ordinal map the value and color
-            try:
-                return self._colors[self._domain.index(value)]
-            except ValueError:
-                raise ValueError(
-                    "%s is not a valid input for ordinal type.\n" % str(value) +
-                    "List of valid values are %s" % ";".join(map(str, self._domain))
-                )
-
+        """Calculate a color along the range for an input value."""
         if value < self._domain[0]:
             return self._colors[0]
         if value > self._domain[-1]:
@@ -456,9 +428,9 @@ class ColorRange(object):
         # find the index of the value in domain
         for count, d in enumerate(self._domain):
             if d <= value <= self._domain[count + 1]:
-                if self._ctype == 0:
+                if self._continuous_colors:
                     return self._cal_color(value, count)
-                if self._ctype == 1:
+                else:
                     return self._colors[count + 1]
 
     def _cal_color(self, value, color_index):
@@ -488,12 +460,18 @@ class ColorRange(object):
 
     def __setitem__(self, key, value):
         """Set a color to a new color in color list."""
-        self._colors[key] = value
-
-    def __delitem__(self, key):
-        """Remove a color from the color list."""
-        del self._colors[key]
+        _new_cols = list(self._colors)
+        _new_cols[key] = value
+        self._colors = tuple(_new_cols)
 
     def __iter__(self):
         """Use colors to iterate."""
         return iter(self._colors)
+
+    def ToString(self):
+        """Overwrite .NET ToString."""
+        return self.__repr__()
+
+    def __repr__(self):
+        """Color Range representation."""
+        return "Color Range ({} colors) (domain {})".format(len(self), self.domain)
