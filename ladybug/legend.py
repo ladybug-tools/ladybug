@@ -654,8 +654,5 @@ class LegendParameters(object):
 
     def __repr__(self):
         """Legend parameter representation."""
-        return 'Legend Parameters\n min: {}\n max: {}\n # segments: {}' \
-            '\n continuous legend: {}\n vertical: {}\n base plane: {}' \
-            '\n font: {}'.format(
-                self.min, self.max, self.number_of_segments, self.continuous_legend,
-                self.vertical_or_horizontal, self.base_plane, self.font)
+        return 'Legend Parameters\n min: {}\n max: {}\n segments: {}'.format(
+                self.min, self.max, self.number_of_segments)

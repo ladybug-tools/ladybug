@@ -48,64 +48,64 @@ class ResultMesh(object):
         self._max_pt = mesh.max
 
         # set the default base point
-        if self.legend_parameters.is_base_plane_default:
-            if self.legend_parameters.vertical_or_horizontal:
+        if self._legend._legend_par.is_base_plane_default:
+            if self._legend._legend_par.vertical_or_horizontal:
                 base_pt = Point3D(
-                    self._max_pt.x + self.legend_parameters.segment_width,
+                    self._max_pt.x + self._legend._legend_par.segment_width,
                     self._min_pt.y, self._min_pt.z)
             else:
                 base_pt = Point3D(
                     self._max_pt.x, self._max_pt.y +
-                    2 * self.legend_parameters.text_height,
+                    2 * self._legend._legend_par.text_height,
                     self._min_pt.z)
-            self.legend_parameters.base_plane = Plane(o=base_pt)
+            self._legend._legend_par.base_plane = Plane(o=base_pt)
 
         # set the default segment_height
-        if self.legend_parameters.is_segment_height_default:
-            if self.legend_parameters.vertical_or_horizontal:
+        if self._legend._legend_par.is_segment_height_default:
+            if self._legend._legend_par.vertical_or_horizontal:
                 seg_height = float((self._max_pt.y - self._min_pt.y) / 20)
             else:
                 seg_height = float((self._max_pt.x - self._min_pt.x) / 20)
-            self.legend_parameters.segment_height = seg_height
+            self._legend._legend_par.segment_height = seg_height
 
-        @property
-        def values(self):
-            """The data set assigned to the mesh."""
-            return self._legend.values
+    @property
+    def values(self):
+        """The data set assigned to the mesh."""
+        return self._legend.values
 
-        @property
-        def colored_mesh(self):
-            """The input mesh colored with results."""
-            self._mesh.colors = self.value_colors
-            return self._mesh
+    @property
+    def colored_mesh(self):
+        """The input mesh colored with results."""
+        self._mesh.colors = self.value_colors
+        return self._mesh
 
-        @property
-        def legend_parameters(self):
-            """The legend parameters assigned to this mesh."""
-            return self._legend._legend_par
+    @property
+    def legend_parameters(self):
+        """The legend parameters assigned to this mesh."""
+        return self._legend._legend_par
 
-        @property
-        def legend(self):
-            """The legend assigned to this mesh."""
-            return self._legend
+    @property
+    def legend(self):
+        """The legend assigned to this mesh."""
+        return self._legend
 
-        @property
-        def value_colors(self):
-            """A List of colors associated with the assigned values."""
-            return self._legend.value_colors
+    @property
+    def value_colors(self):
+        """A List of colors associated with the assigned values."""
+        return self._legend.value_colors
 
-        @property
-        def lower_title_location(self):
-            """A Plane for the lower location of title text."""
-            return Plane(o=Point3D(
-                self._min_pt.x,
-                self._min_pt.y - 2 * self._legend.legend_parameters.text_height,
-                self._min_pt.z))
+    @property
+    def lower_title_location(self):
+        """A Plane for the lower location of title text."""
+        return Plane(o=Point3D(
+            self._min_pt.x,
+            self._min_pt.y - 2 * self._legend.legend_parameters.text_height,
+            self._min_pt.z))
 
-        @property
-        def upper_title_location(self):
-            """A Plane for the upper location of title text."""
-            return Plane(o=Point3D(
-                self._min_pt.x,
-                self._max_pt.y + self._legend.legend_parameters.text_height,
-                self._min_pt.z))
+    @property
+    def upper_title_location(self):
+        """A Plane for the upper location of title text."""
+        return Plane(o=Point3D(
+            self._min_pt.x,
+            self._max_pt.y + self._legend.legend_parameters.text_height,
+            self._min_pt.z))
