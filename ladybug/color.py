@@ -65,7 +65,7 @@ class Color(object):
 
     def __repr__(self):
         """Return RGB values."""
-        return "<R:%d, G:%d, B:%d>" % (self._r, self._g, self._b)
+        return "(R:%d, G:%d, B:%d)" % (self._r, self._g, self._b)
 
 
 # TODO: Add support for CMYK

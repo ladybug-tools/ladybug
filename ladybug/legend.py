@@ -94,8 +94,9 @@ class Legend(object):
         """A Plane for the location and orientation of the legend title."""
         _l_par = self.legend_parameters
         if _l_par.vertical_or_horizontal:
+            offset = 0.5 if self.legend_parameters.continuous_legend is True else 0.25
             _title_pt = Point2D(0, _l_par.segment_height *
-                                (self.segment_length + 0.25))
+                                (self.segment_length + offset))
         else:
             _title_pt = Point2D(-_l_par.segment_width * self.segment_length,
                                 _l_par.segment_height * 1.25)
@@ -221,6 +222,26 @@ class Legend(object):
         while start < stop:
             yield start
             start += step
+
+    def __len__(self):
+        """Return length of values on the object."""
+        return len(self._values)
+
+    def __getitem__(self, key):
+        """Return one of the values."""
+        return self._values[key]
+
+    def __iter__(self):
+        """Iterate through the values."""
+        return iter(self._values)
+
+    def ToString(self):
+        """Overwrite .NET ToString."""
+        return self.__repr__()
+
+    def __repr__(self):
+        """Legend representation."""
+        return 'Ladybug Legend ({} values)'.format(len(self))
 
 
 class LegendParameters(object):
@@ -654,5 +675,16 @@ class LegendParameters(object):
 
     def __repr__(self):
         """Legend parameter representation."""
-        return 'Legend Parameters\n min: {}\n max: {}\n segments: {}'.format(
-                self.min, self.max, self.number_of_segments)
+        return 'Legend Parameters\n minimum: {}\n maximum: {}\n segments: {}\n' \
+            ' colors:\n  {}\n continuous colors: {}\n continuous legend: {}\n' \
+            ' title: {}\n ordinal text: {}\n number decimals: {}\n' \
+            ' include < >: {}\n vertical: {}\n base point:\n  {}\n' \
+            ' segment height: {}\n segment width: {}\n' \
+            ' text height: {}\n font: {}'.format(
+                self.min, self.max, self.number_of_segments,
+                '\n  '.join([str(c) for c in self.colors]),
+                self.continuous_colors, self.continuous_legend, self.title,
+                self.ordinal_dictionary, self.number_decimal_places,
+                self.include_larger_smaller, self.vertical_or_horizontal,
+                self.base_plane.o, self.segment_height, self.segment_width,
+                self.text_height, self.font)
