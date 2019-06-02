@@ -14,6 +14,8 @@ class Color(object):
         b: blue red value 0-255, default: 0
     """
 
+    __slots__ = ("_r", "_g", "_b")
+
     def __init__(self, r, g, b):
         """Generate RGB Color.
 
@@ -25,6 +27,18 @@ class Color(object):
         self.r = r
         self.g = g
         self.b = b
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a color from a dictionary.
+
+        Args:
+            data: {
+            "r": 255,
+            "g": 0,
+            "b": 150}
+        """
+        return cls(data['r'], data['g'], data['b'])
 
     @property
     def r(self):
@@ -58,6 +72,33 @@ class Color(object):
         assert 0 <= int(value) <= 255, "%d is out of range. " % value + \
             "B value should be between 0-255"
         self._b = int(value)
+
+    def to_json(self):
+        """Get color as a dictionary."""
+        return {'r': self.r,
+                'g': self.g,
+                'b': self.b}
+
+    def __copy__(self):
+        return self.__class__(self.r, self.g, self.b)
+
+    def __eq__(self, other):
+        if isinstance(other, Color):
+            return self.r == other.r and self.g == other.g and self.b == other.b
+        else:
+            return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __len__(self):
+        return 3
+
+    def __getitem__(self, key):
+        return (self.r, self.g, self.b)[key]
+
+    def __iter__(self):
+        return iter((self.r, self.g, self.b))
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -106,6 +147,18 @@ class Colorset(object):
             <R:239, G:156, B:21>, <R:234, G:123, B:0>, <R:234, G:74, B:0>,
             <R:234, G:38, B:0>]
     """
+    # base color sets for which there are several variations
+    _multicolored = [(4, 25, 145), (7, 48, 224), (7, 88, 255), (1, 232, 255),
+                     (97, 246, 156), (166, 249, 86), (254, 244, 1), (255, 121, 0),
+                     (239, 39, 0), (138, 17, 0)]
+    _thermalcomfort = [(0, 136, 255), (200, 225, 255), (255, 255, 255),
+                       (255, 230, 230), (255, 0, 0)]
+    _benefitharm = [(0, 191, 48), (255, 238, 184), (255, 0, 0)]
+    _shadebenefitharm = [(5, 48, 97), (33, 102, 172), (67, 147, 195), (146, 197, 222),
+                         (209, 229, 240), (255, 255, 255), (253, 219, 199),
+                         (244, 165, 130), (214, 96, 77), (178, 24, 43), (103, 0, 31)]
+
+    # dictionary of all color sets together
     _colors = {
         0: [(75, 107, 169), (115, 147, 202), (170, 200, 247), (193, 213, 208),
             (245, 239, 103), (252, 230, 74), (239, 156, 21), (234, 123, 0),
@@ -113,50 +166,42 @@ class Colorset(object):
         1: [(49, 54, 149), (69, 117, 180), (116, 173, 209), (171, 217, 233),
             (224, 243, 248), (255, 255, 191), (254, 224, 144), (253, 174, 97),
             (244, 109, 67), (215, 48, 39), (165, 0, 38)],
-        2: [(4, 25, 145), (7, 48, 224), (7, 88, 255), (1, 232, 255),
-            (97, 246, 156), (166, 249, 86), (254, 244, 1), (255, 121, 0),
-            (239, 39, 0), (138, 17, 0)],
-        3: [(255, 20, 147), (240, 47, 145), (203, 117, 139), (160, 196, 133),
-            (132, 248, 129), (124, 253, 132), (96, 239, 160), (53, 217, 203),
-            (15, 198, 240), (0, 191, 255)],
-        4: [(0, 13, 255), (0, 41, 234), (0, 113, 181), (0, 194, 122),
-            (0, 248, 82), (8, 247, 75), (64, 191, 58), (150, 105, 32),
-            (225, 30, 9), (255, 0, 0)],
-        5: [(55, 55, 55), (235, 235, 235)],
-        6: [(0, 0, 255), (53, 0, 202), (107, 0, 148), (160, 0, 95), (214, 0, 41),
+        2: _multicolored,
+        3: [(0, 0, 255), (53, 0, 202), (107, 0, 148), (160, 0, 95), (214, 0, 41),
             (255, 12, 0), (255, 66, 0), (255, 119, 0), (255, 173, 0), (255, 226, 0),
             (255, 255, 0)],
+        4: [(255, 20, 147), (240, 47, 145), (203, 117, 139), (160, 196, 133),
+            (132, 248, 129), (124, 253, 132), (96, 239, 160), (53, 217, 203),
+            (15, 198, 240), (0, 191, 255)],
+        5: [(55, 55, 55), (235, 235, 235)],
+        6: [(156, 217, 255), (255, 243, 77), (255, 115, 0), (255, 0, 0), (0, 0, 0)],
         7: [(0, 0, 0), (110, 0, 153), (255, 0, 0), (255, 255, 102), (255, 255, 255)],
-        8: [(0, 136, 255), (200, 225, 255), (255, 255, 255), (255, 230, 230),
-            (255, 0, 0)],
+        8: _thermalcomfort,
         9: [(0, 136, 255), (67, 176, 255), (134, 215, 255), (174, 228, 255),
             (215, 242, 255), (255, 255, 255), (255, 243, 243), (255, 0, 0)],
-        10: [(255, 255, 255), (255, 0, 0)],
-        11: [(255, 255, 255), (0, 136, 255)],
-        12: [(5, 48, 97), (33, 102, 172), (67, 147, 195), (146, 197, 222),
-             (209, 229, 240), (255, 255, 255), (253, 219, 199), (244, 165, 130),
-             (214, 96, 77), (178, 24, 43), (103, 0, 31)],
-        13: [(5, 48, 97), (33, 102, 172), (67, 147, 195), (146, 197, 222),
-             (209, 229, 240), (255, 255, 255), (244, 165, 130), (178, 24, 43)],
-        14: [(255, 255, 255), (253, 219, 199), (244, 165, 130), (214, 96, 77),
-             (178, 24, 43), (103, 0, 31)],
-        15: [(255, 255, 255), (209, 229, 240), (146, 197, 222), (67, 147, 195),
-             (33, 102, 172), (5, 48, 97)],
-        16: [(0, 0, 0), (255, 255, 255)],
-        17: [(0, 16, 120), (38, 70, 160), (5, 180, 222), (16, 180, 109),
-             (59, 183, 35), (143, 209, 19), (228, 215, 29), (246, 147, 17),
-             (243, 74, 0), (255, 0, 0)],
-        18: [(69, 92, 166), (66, 128, 167), (62, 176, 168), (78, 181, 137),
-             (120, 188, 59), (139, 184, 46), (197, 157, 54), (220, 144, 57),
-             (228, 100, 59), (233, 68, 60)],
-        19: [(138, 17, 0), (239, 39, 0), (255, 121, 0), (254, 244, 1),
-             (166, 249, 86), (97, 246, 156), (1, 232, 255), (7, 88, 255),
-             (4, 25, 145), (128, 102, 64)],
+        10: _thermalcomfort[2:],
+        11: list(reversed(_thermalcomfort[:3])),
+        12: _benefitharm,
+        13: _benefitharm[1:],
+        14: list(reversed(_benefitharm[:2])),
+        15: _shadebenefitharm,
+        16: _shadebenefitharm[5:],
+        17: list(reversed(_shadebenefitharm[:6])),
+        18: list(reversed(_multicolored)),
+        19: list(reversed(_multicolored)) + [(128, 102, 64)],
         20: [(0, 0, 0), (137, 0, 139), (218, 0, 218), (196, 0, 255), (0, 92, 255),
              (0, 198, 252), (0, 244, 215), (0, 220, 101), (7, 193, 0), (115, 220, 0),
              (249, 251, 0), (254, 178, 0), (253, 77, 0), (255, 15, 15),
              (255, 135, 135), (255, 255, 255)],
-        21: [(0, 251, 255), (255, 255, 255), (217, 217, 217), (83, 114, 115)]
+        21: [(0, 251, 255), (255, 255, 255), (217, 217, 217), (83, 114, 115)],
+        22: [(0, 0, 0), (255, 255, 255)],
+        23: [(0, 0, 255), (0, 255, 100), (255, 0, 0)],
+        24: [(0, 16, 120), (38, 70, 160), (5, 180, 222), (16, 180, 109),
+             (59, 183, 35), (143, 209, 19), (228, 215, 29), (246, 147, 17),
+             (243, 74, 0), (255, 0, 0)],
+        25: [(69, 92, 166), (66, 128, 167), (62, 176, 168), (78, 181, 137),
+             (120, 188, 59), (139, 184, 46), (197, 157, 54), (220, 144, 57),
+             (228, 100, 59), (233, 68, 60)]
     }
 
     def __init__(self):
@@ -165,12 +210,12 @@ class Colorset(object):
 
     @classmethod
     def original(cls):
-        """original Ladybug colors."""
+        """Original Ladybug colors."""
         return tuple(Color(*color) for color in cls._colors[0])
 
     @classmethod
     def nuanced(cls):
-        """nuanced Ladybug colors."""
+        """Nuanced Ladybug colors."""
         return tuple(Color(*color) for color in cls._colors[1])
 
     @classmethod
@@ -179,88 +224,88 @@ class Colorset(object):
         return tuple(Color(*color) for color in cls._colors[2])
 
     @classmethod
-    def view_analysis1(cls):
-        """View analysis colors."""
+    def ecotect(cls):
+        """Ecotect colors."""
         return tuple(Color(*color) for color in cls._colors[3])
 
     @classmethod
-    def view_analysis2(cls):
-        """View Analysis 2 colors."""
+    def view_study(cls):
+        """View analysis colors."""
         return tuple(Color(*color) for color in cls._colors[4])
 
     @classmethod
-    def sunlight_hours(cls):
-        """sunlight_hours colors."""
+    def shadow_study(cls):
+        """Shadow study colors (dark to light grey)."""
         return tuple(Color(*color) for color in cls._colors[5])
 
     @classmethod
-    def ecotect(cls):
-        """ecotect colors."""
+    def glare_study(cls):
+        """Useful for depicting spatial glare (light blue to yellow, red, black)."""
         return tuple(Color(*color) for color in cls._colors[6])
 
     @classmethod
-    def thermal_comfort_percentage(cls):
-        """thermal Comfort percentage."""
+    def annual_comfort(cls):
+        """Good for annual metrics like UDI and thermal comfort percent."""
         return tuple(Color(*color) for color in cls._colors[7])
 
     @classmethod
     def thermal_comfort(cls):
-        """thermal Comfort colors."""
+        """Thermal comfort colors (blue to white to red)."""
         return tuple(Color(*color) for color in cls._colors[8])
 
     @classmethod
-    def thermal_comfort_utci_1(cls):
-        """thermal Comfort UTCI 1."""
+    def thermal_comfort_utci(cls):
+        """Thermal comfort colors weighted for the UTCI scale (heat more than cold)."""
         return tuple(Color(*color) for color in cls._colors[9])
 
     @classmethod
-    def hot_hours(cls):
-        """Hot Hours."""
+    def heat_sensation(cls):
+        """Red colors for heat sensation."""
         return tuple(Color(*color) for color in cls._colors[10])
 
     @classmethod
-    def cold_hours(cls):
-        """Cold Hours."""
+    def cold_sensation(cls):
+        """Blue colors for cold sensation."""
         return tuple(Color(*color) for color in cls._colors[11])
 
     @classmethod
-    def shade_benefit_harm(cls):
-        """Shade Benefit Harm colors."""
+    def benefit_harm(cls):
+        """Benefit / harm study colors (red to light yellow to green)."""
         return tuple(Color(*color) for color in cls._colors[12])
 
     @classmethod
-    def thermal_comfort_utci_2(cls):
-        """thermal Comfort UTCI 2."""
+    def harm(cls):
+        """Harm colors (light yellow to red)."""
         return tuple(Color(*color) for color in cls._colors[13])
 
     @classmethod
-    def shade_harm(cls):
-        """Shade Harm colors."""
+    def benefit(cls):
+        """Benefit colors (light yellow to green)."""
         return tuple(Color(*color) for color in cls._colors[14])
 
     @classmethod
-    def shade_benefit(cls):
-        """Shade Benefit colors."""
+    def shade_benefit_harm(cls):
+        """Shade benefit / harm colors (dark red to white to dark blue)."""
         return tuple(Color(*color) for color in cls._colors[15])
 
     @classmethod
-    def black_to_white(cls):
-        """Black to white colors."""
+    def shade_harm(cls):
+        """Shade harm colors (white to dark red)."""
         return tuple(Color(*color) for color in cls._colors[16])
 
     @classmethod
-    def cfd_colors_1(cls):
-        """CFD colors 1."""
+    def shade_benefit(cls):
+        """Shade benefit colors (white to dark blue)."""
         return tuple(Color(*color) for color in cls._colors[17])
-
-    @classmethod
-    def cfd_colors_2(cls):
-        """CFD colors 2."""
-        return tuple(Color(*color) for color in cls._colors[18])
 
     @classmethod
     def energy_balance(cls):
         """Energy Balance colors."""
+        return tuple(Color(*color) for color in cls._colors[18])
+
+    @classmethod
+    def energy_balance_storage(cls):
+        """Energy Balance colors with a brown color for storage term."""
         return tuple(Color(*color) for color in cls._colors[19])
 
     @classmethod
@@ -270,8 +315,28 @@ class Colorset(object):
 
     @classmethod
     def cloud_cover(cls):
-        """Cloud Cover colors."""
+        """Cloud cover colors."""
         return tuple(Color(*color) for color in cls._colors[21])
+
+    @classmethod
+    def black_to_white(cls):
+        """Black to white colors."""
+        return tuple(Color(*color) for color in cls._colors[22])
+
+    @classmethod
+    def blue_green_red(cls):
+        """Blue to Green to Red colors."""
+        return tuple(Color(*color) for color in cls._colors[23])
+
+    @classmethod
+    def multicolored_2(cls):
+        """Multi-colored colors with less saturation."""
+        return tuple(Color(*color) for color in cls._colors[24])
+
+    @classmethod
+    def multicolored_3(cls):
+        """Multi-colored colors with the least saturation."""
+        return tuple(Color(*color) for color in cls._colors[25])
 
     def __len__(self):
         """Return length of currently installed color sets."""
@@ -280,10 +345,6 @@ class Colorset(object):
     def __getitem__(self, key):
         """Return one of the color sets."""
         return tuple(Color(*color) for color in self._colors[key])
-
-    def __iter__(self):
-        """Iterate through the color sets."""
-        return iter(self._colors)
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -299,29 +360,29 @@ class ColorRange(object):
 
     Usage:
         ##
-        colorRange = ColorRange(continuous_colors=False)
-        colorRange.domain = [100, 2000]
-        colorRange.colors = [Color(75, 107, 169), Color(245, 239, 103),
+        color_range = ColorRange(continuous_colors=False)
+        color_range.domain = [100, 2000]
+        color_range.colors = [Color(75, 107, 169), Color(245, 239, 103),
             Color(234, 38, 0)]
-        print(colorRange.color(99))
-        print(colorRange.color(100))
-        print(colorRange.color(2000))
-        print(colorRange.color(2001))
-        >> <R:75, G:107, B:169>
-        >> <R:245, G:239, B:103>
-        >> <R:245, G:239, B:103>
-        >> <R:234, G:38, B:0>
+        print(color_range.color(99))
+        print(color_range.color(100))
+        print(color_range.color(2000))
+        print(color_range.color(2001))
+        >> (R:75, G:107, B:169)
+        >> (R:245, G:239, B:103)
+        >> (R:245, G:239, B:103)
+        >> (R:234, G:38, B:0)
 
         ##
-        colorRange = ColorRange(continuous_colors=False)
-        colorRange.domain = [100, 2000]
-        colorRange.colors = [Color(75, 107, 169), Color(245, 239, 103),
+        color_range = ColorRange(continuous_colors=False)
+        color_range.domain = [100, 2000]
+        color_range.colors = [Color(75, 107, 169), Color(245, 239, 103),
             Color(234, 38, 0)]
-        colorRange.color(300)
-        >> <R:245, G:239, B:103>
+        color_range.color(300)
+        >> (R:245, G:239, B:103)
     """
 
-    def __init__(self, colors=None, domain=None, continuous_colors=True):
+    def __init__(self, colors=None, domain=None, continuous_colors=None):
         """Initiate Ladybug color range.
 
         Args:
@@ -339,13 +400,34 @@ class ColorRange(object):
                 they will be categorized in incremental groups according to the
                 number_of_segments. Default is True for continuous colors.
         """
-        assert isinstance(continuous_colors, bool), \
+        self._continuous_colors = True if continuous_colors is None \
+            else continuous_colors
+        assert isinstance(self._continuous_colors, bool), \
             "continuous_colors should be a Boolean.\nGot {}.".format(
                 type(continuous_colors))
-        self._continuous_colors = continuous_colors
         self._is_domain_set = False
         self.colors = colors
         self.domain = domain
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a color range from a dictionary.
+
+        Args:
+            data: {
+            "colors": ({'r': 0, 'g': 0, 'b': 0}, {'r': 255, 'g': 255, 'b': 255}),
+            "domain": (0, 100),
+            "continuous_colors": True}
+        """
+        optional_keys = ('colors', 'domain', 'continuous_colors')
+        for key in optional_keys:
+            if key not in data:
+                data[key] = None
+        colors = None
+        if data['colors'] is not None:
+            colors = [Color.from_json(col) for col in data['colors']]
+
+        return cls(colors, data['domain'], data['continuous_colors'])
 
     @property
     def colors(self):
@@ -363,11 +445,10 @@ class ColorRange(object):
             try:
                 cols = tuple(col if isinstance(col, Color) else Color(
                     col.R, col.G, col.B) for col in cols)
-            except Exception:
+            except AttributeError:
                 try:
-                    cols = tuple(Color(col.Red, col.Green, col.Blue)
-                                 for col in cols)
-                except Exception:
+                    cols = tuple(Color(col.Red, col.Green, col.Blue) for col in cols)
+                except AttributeError:
                     raise ValueError("{} is not a valid list of colors".format(cols))
             if self._is_domain_set:
                 self.domain = self.domain  # re-check the domain against new colors
@@ -433,6 +514,12 @@ class ColorRange(object):
                 else:
                     return self._colors[count + 1]
 
+    def to_json(self):
+        """Get color range as a dictionary."""
+        return {'colors': [col.to_json() for col in self.colors],
+                'domain': self.domain,
+                'continuous_colors': self.continuous_colors}
+
     def _cal_color(self, value, color_index):
         """Blend between two colors based on input value."""
         range_min_p = self._domain[color_index]
@@ -460,6 +547,8 @@ class ColorRange(object):
 
     def __setitem__(self, key, value):
         """Set a color to a new color in color list."""
+        assert isinstance(value, Color), 'Expected ladybug color. ' \
+            'Got {}'.format(type(value))
         _new_cols = list(self._colors)
         _new_cols[key] = value
         self._colors = tuple(_new_cols)
