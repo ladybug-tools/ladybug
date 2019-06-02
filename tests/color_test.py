@@ -1,0 +1,174 @@
+# coding=utf-8
+from __future__ import division
+
+from ladybug.color import Color, Colorset, ColorRange
+
+import unittest
+import pytest
+
+
+class ColorTestCase(unittest.TestCase):
+    """Test for (ladybug/color.py)"""
+
+    def test_init_color(self):
+        """Test the initialization of color objects."""
+        color = Color(255, 0, 100)
+        str(color)  # Test the color representation
+
+        assert color.r == 255
+        assert color.g == 0
+        assert color.b == 100
+
+        color.r = 100
+        assert color.r == 100
+
+        assert len(color) == 3
+        assert color == Color(100, 0, 100)
+        assert color != Color(100, 0, 0)
+
+        for c in color:
+            assert isinstance(c, int)
+
+    def test_init_color_inalid(self):
+        """Test the initialization of invalid color objects."""
+        with pytest.raises(Exception):
+            Color(256, 0, 100)
+        with pytest.raises(Exception):
+            Color(-1, 0, 100)
+        with pytest.raises(Exception):
+            Color(0, 256, 100)
+        with pytest.raises(Exception):
+            Color(0, -1, 100)
+        with pytest.raises(Exception):
+            Color(0, 0, 256)
+        with pytest.raises(Exception):
+            Color(0, 0, -1)
+
+    def test_from_json(self):
+        """Test the from json method."""
+        sample_json = {'r': '255',
+                       'g': '0',
+                       'b': '100'}
+        color = Color.from_json(sample_json)
+        assert isinstance(color, Color)
+        assert color.r == 255
+        assert color.g == 0
+        assert color.b == 100
+
+    def test_to_from_json(self):
+        """Test the to/from json methods."""
+        color = Color(255, 0, 100)
+        color_json = color.to_json()
+        new_color = Color.from_json(color_json)
+        assert new_color.to_json() == color_json
+
+
+class ColorsetTestCase(unittest.TestCase):
+    """Test for (ladybug/color.py)"""
+
+    def test_init_colorset(self):
+        """Test the initialization of colorset objects."""
+        colorset = Colorset()
+        str(colorset)  # Test the color representation
+
+        assert len(colorset) > 20
+        assert len(colorset[0]) == 10
+        for i in range(len(colorset)):
+            assert len(colorset[i]) > 1
+
+        for key in colorset._colors.keys():
+            for col in colorset._colors[key]:
+                assert len(col) == 3
+
+    def test_init_colorset_by_name(self):
+        """Test the initialization of colorset objects by name."""
+        assert len(Colorset.original()) > 1
+        assert len(Colorset.nuanced()) > 1
+        assert len(Colorset.multi_colored()) > 1
+        assert len(Colorset.ecotect()) > 1
+        assert len(Colorset.view_study()) > 1
+        assert len(Colorset.shadow_study()) > 1
+        assert len(Colorset.glare_study()) > 1
+        assert len(Colorset.annual_comfort()) > 1
+        assert len(Colorset.thermal_comfort()) > 1
+        assert len(Colorset.thermal_comfort_utci()) > 1
+        assert len(Colorset.heat_sensation()) > 1
+        assert len(Colorset.cold_sensation()) > 1
+        assert len(Colorset.benefit_harm()) > 1
+        assert len(Colorset.harm()) > 1
+        assert len(Colorset.benefit()) > 1
+        assert len(Colorset.shade_benefit_harm()) > 1
+        assert len(Colorset.shade_harm()) > 1
+        assert len(Colorset.shade_benefit()) > 1
+        assert len(Colorset.energy_balance()) > 1
+        assert len(Colorset.energy_balance_storage()) > 1
+        assert len(Colorset.therm()) > 1
+        assert len(Colorset.cloud_cover()) > 1
+        assert len(Colorset.black_to_white()) > 1
+        assert len(Colorset.blue_green_red()) > 1
+        assert len(Colorset.multicolored_2()) > 1
+        assert len(Colorset.multicolored_3()) > 1
+
+
+class ColorRangeTestCase(unittest.TestCase):
+    """Test for (ladybug/color.py)"""
+
+    def test_init_color_range(self):
+        """Test the initialization of color range objects."""
+        color_range = ColorRange([Color(75, 107, 169), Color(245, 239, 103),
+                                  Color(234, 38, 0)])
+        str(color_range)  # Test the color representation
+
+        assert len(color_range) == 3
+        assert isinstance(color_range.colors, tuple)
+        assert isinstance(color_range.domain, tuple)
+        assert color_range[0] == Color(75, 107, 169)
+
+        color_range[0] = Color(0, 0, 0)
+        assert color_range[0] == Color(0, 0, 0)
+
+        with pytest.raises(Exception):
+            color_range[0] = (0, 0, 0)
+
+    def test_color_range_discontinuous(self):
+        """Test color range objects with discontinuous colors."""
+        color_range = ColorRange(continuous_colors=False)
+        color_range.domain = [100, 2000]
+        color_range.colors = [Color(75, 107, 169), Color(245, 239, 103),
+                              Color(234, 38, 0)]
+
+        assert color_range.color(99) == Color(75, 107, 169)
+        assert color_range.color(100) == Color(245, 239, 103)
+        assert color_range.color(2000) == Color(245, 239, 103)
+        assert color_range.color(2001) == Color(234, 38, 0)
+
+    def test_color_range_continuous(self):
+        """Test color range objects with continuous colors."""
+        color_range = ColorRange([Color(0, 100, 0), Color(100, 200, 100)], [0, 1000])
+
+        assert color_range.color(-100) == Color(0, 100, 0)
+        assert color_range.color(0) == Color(0, 100, 0)
+        assert color_range.color(500) == Color(50, 150, 50)
+        assert color_range.color(250) == Color(25, 125, 25)
+        assert color_range.color(1000) == Color(100, 200, 100)
+        assert color_range.color(1100) == Color(100, 200, 100)
+
+    def test_from_json(self):
+        """Test the from_json method."""
+        sample_json = {'colors': [{'r': '0', 'g': '0', 'b': '0'},
+                                  {'r': '0', 'g': '255', 'b': '100'}]}
+        color_range = ColorRange.from_json(sample_json)
+        assert isinstance(color_range, ColorRange)
+        assert color_range[0] == Color(0, 0, 0)
+        assert color_range[1] == Color(0, 255, 100)
+
+    def test_to_from_json(self):
+        """Test the to/from json methods."""
+        color_range = ColorRange([Color(0, 100, 0), Color(100, 200, 100)], [0, 1000])
+        color_range_json = color_range.to_json()
+        new_color = ColorRange.from_json(color_range_json)
+        assert new_color.to_json() == color_range_json
+
+
+if __name__ == "__main__":
+    unittest.main()

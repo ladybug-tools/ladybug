@@ -47,45 +47,54 @@ class ResultMesh(object):
         if data_type is not None:
             assert isinstance(data_type, DataTypeBase), \
                 'data_type should be a ladybug DataType. Got {}'.format(type(data_type))
-            if self._legend._legend_par.is_title_default:
+            if self.legend_parameters.is_title_default:
                 unit = data_type.units[0] if unit is None else unit
                 data_type.is_unit_acceptable(unit)
-                self._legend._legend_par.title = unit
+                self.legend_parameters.title = unit
             if data_type.unit_descr is not None and \
-                    self._legend._legend_par.ordinal_dictionary is None:
-                self._legend._legend_par.minordinal_dictionary = data_type.unit_descr
+                    self.legend_parameters.ordinal_dictionary is None:
+                self.legend_parameters.minordinal_dictionary = data_type.unit_descr
                 sorted_keys = sorted(data_type.unit_descr.keys())
                 if legend_parameters.min is None:
-                    self._legend._legend_par.min = sorted_keys[0]
+                    self.legend_parameters.min = sorted_keys[0]
                 if legend_parameters.max is None:
-                    self._legend._legend_par.max = sorted_keys[-1]
-        elif unit is not None and self._legend._legend_par.is_title_default:
-            self._legend._legend_par.title = unit
+                    self.legend_parameters.max = sorted_keys[-1]
+                if legend_parameters.is_number_of_segments_default:
+                    try:  # try to set the number of segments to align with ordinal text
+                        min_i = sorted_keys.index(self.legend_parameters.min)
+                        max_i = sorted_keys.index(self.legend_parameters.max)
+                        self.legend_parameters.number_of_segments = \
+                            len(sorted_keys[min_i:max_i])
+                    except IndexError:
+                        pass
+
+        elif unit is not None and self.legend_parameters.is_title_default:
+            self.legend_parameters.title = unit
 
         # get min and max points around the ladybug mesh
         self._min_pt = mesh.min
         self._max_pt = mesh.max
 
         # set the default segment_height
-        if self._legend._legend_par.is_segment_height_default:
-            if self._legend._legend_par.vertical_or_horizontal:
+        if self.legend_parameters.is_segment_height_default:
+            if self.legend_parameters.vertical_or_horizontal:
                 seg_height = float((self._max_pt.y - self._min_pt.y) / 20)
             else:
                 seg_height = float((self._max_pt.x - self._min_pt.x) / 20)
-            self._legend._legend_par.segment_height = seg_height
+            self.legend_parameters.segment_height = seg_height
 
         # set the default base point
-        if self._legend._legend_par.is_base_plane_default:
-            if self._legend._legend_par.vertical_or_horizontal:
+        if self.legend_parameters.is_base_plane_default:
+            if self.legend_parameters.vertical_or_horizontal:
                 base_pt = Point3D(
-                    self._max_pt.x + self._legend._legend_par.segment_width,
+                    self._max_pt.x + self.legend_parameters.segment_width,
                     self._min_pt.y, self._min_pt.z)
             else:
                 base_pt = Point3D(
                     self._max_pt.x, self._max_pt.y +
-                    3 * self._legend._legend_par.text_height,
+                    3 * self.legend_parameters.text_height,
                     self._min_pt.z)
-            self._legend._legend_par.base_plane = Plane(o=base_pt)
+            self.legend_parameters.base_plane = Plane(o=base_pt)
 
     @property
     def values(self):

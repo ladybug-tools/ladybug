@@ -675,16 +675,23 @@ class LegendParameters(object):
 
     def __repr__(self):
         """Legend parameter representation."""
+        min = self.min if self.min is not None else '[default]'
+        max = self.max if self.max is not None else '[default]'
+        seg = '[default]' if self.is_number_of_segments_default \
+            else self.number_of_segments
+        title = '[default]' if self.is_title_default else self.title
+        base_pt = '[default]' if self.is_base_plane_default else self.base_plane.o
+        seg_h = '[default]' if self.is_segment_height_default else self.segment_height
+        seg_w = '[default]' if self.is_segment_width_default else self.segment_width
+        txt_h = '[default]' if self.is_text_height_default else self.text_height
         return 'Legend Parameters\n minimum: {}\n maximum: {}\n segments: {}\n' \
             ' colors:\n  {}\n continuous colors: {}\n continuous legend: {}\n' \
             ' title: {}\n ordinal text: {}\n number decimals: {}\n' \
             ' include < >: {}\n vertical: {}\n base point:\n  {}\n' \
             ' segment height: {}\n segment width: {}\n' \
             ' text height: {}\n font: {}'.format(
-                self.min, self.max, self.number_of_segments,
-                '\n  '.join([str(c) for c in self.colors]),
-                self.continuous_colors, self.continuous_legend, self.title,
+                min, max, seg, '\n  '.join([str(c) for c in self.colors]),
+                self.continuous_colors, self.continuous_legend, title,
                 self.ordinal_dictionary, self.number_decimal_places,
                 self.include_larger_smaller, self.vertical_or_horizontal,
-                self.base_plane.o, self.segment_height, self.segment_width,
-                self.text_height, self.font)
+                base_pt, seg_h, seg_w, txt_h, self.font)

@@ -17,14 +17,6 @@ PI = math.pi
 class DataTypesTestCase(unittest.TestCase):
     """Test for (ladybug/datatype.py)"""
 
-    # preparing to test.
-    def setUp(self):
-        """set up."""
-
-    def tearDown(self):
-        """Nothing to tear down as nothing gets written to file."""
-        pass
-
     def test_global_properties(self):
         """Test the global properties like TYPES, BASETYPES, and UNITS."""
         assert isinstance(datatype.TYPES, tuple)
