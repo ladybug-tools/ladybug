@@ -68,6 +68,23 @@ class Legend(object):
             self._legend_par.max = max(values)
             self._is_max_default = True
 
+    @classmethod
+    def from_json(cls, data):
+        """Create a legend from a dictionary.
+
+        Args:
+            data: {
+            "values": (0, 10),
+            "legend_parameters": None}
+        """
+        if 'legend_parameters' not in data:
+            data['legend_parameters'] = None
+        legend_parameters = None
+        if data['legend_parameters'] is not None:
+            legend_parameters = LegendParameters.from_json(data['legend_parameters'])
+
+        return cls(data['values'], legend_parameters)
+
     @property
     def legend_parameters(self):
         """The legend parameters assigned to this legend."""
@@ -216,12 +233,24 @@ class Legend(object):
         """
         return self._is_max_default
 
+    def duplicate(self):
+        """Return a copy of the current legend."""
+        return self.__copy__()
+
+    def to_json(self):
+        """Get legend as a dictionary."""
+        return {'values': self.values,
+                'legend_parameters': LegendParameters.from_json(self.legend_parameters)}
+
     @staticmethod
     def _frange(start, stop, step):
         """Range function capable of yielding float values."""
         while start < stop:
             yield start
             start += step
+
+    def __copy__(self):
+        return LegendParameters(self.values, self.legend_parameters)
 
     def __len__(self):
         """Return length of values on the object."""
@@ -354,6 +383,41 @@ class LegendParameters(object):
         self.segment_width = segment_width
         self.text_height = text_height
         self.font = font
+
+    @classmethod
+    def from_json(cls, data):
+        """Create a color range from a dictionary.
+
+        Args:
+            data: {
+            "min": -3,
+            "max": 3,
+            "number_of_segments": 7}
+        """
+        optional_keys = ('min', 'max', 'number_of_segments',
+                         'colors', 'continuous_colors', 'continuous_legend',
+                         'title', 'ordinal_dictionary',
+                         'number_decimal_places', 'include_larger_smaller',
+                         'vertical_or_horizontal', 'base_plane', 'segment_height',
+                         'segment_width', 'text_height', 'font')
+        for key in optional_keys:
+            if key not in data:
+                data[key] = None
+
+        colors = None
+        if data['colors'] is not None:
+            colors = [Color.from_json(col) for col in data['colors']]
+        base_plane = None
+        if data['base_plane'] is not None:
+            base_plane = Plane.from_dict(data['base_plane'])
+
+        return cls(data['min'], data['max'], data['number_of_segments'],
+                   colors, data['continuous_colors'], data['continuous_legend'],
+                   data['title'], data['ordinal_dictionary'],
+                   data['number_decimal_places'], data['include_larger_smaller'],
+                   data['vertical_or_horizontal'], base_plane,
+                   data['segment_height'], data['segment_width'],
+                   data['text_height'], data['font'])
 
     @property
     def min(self):
@@ -654,6 +718,29 @@ class LegendParameters(object):
 
     def duplicate(self):
         """Return a copy of the current legend parameters."""
+        return self.__copy__()
+
+    def to_json(self):
+        """Get legend parameters as a dictionary."""
+        seg = None if self.is_number_of_segments_default else self.number_of_segments
+        title = None if self.is_title_default else self.title
+        base_plane = None if self.is_base_plane_default else self.base_plane.to_json()
+        seg_h = None if self.is_segment_height_default else self.segment_height
+        seg_w = None if self.is_segment_width_default else self.segment_width
+        txt_h = None if self.is_text_height_default else self.text_height
+        return {'min': self.min, 'max': self.max, 'number_of_segments': seg,
+                'colors': [col.to_json() for col in self.colors],
+                'continuous_colors': self.continuous_colors,
+                'continuous_legend': self.continuous_legend, 'title': title,
+                'ordinal_dictionary': self.ordinal_dictionary,
+                'number_decimal_places': self.number_decimal_places,
+                'include_larger_smaller': self.include_larger_smaller,
+                'vertical_or_horizontal': self.vertical_or_horizontal,
+                'base_plane': base_plane,
+                'segment_height': seg_h, 'segment_width': seg_w,
+                'text_height': txt_h, 'font': self.font}
+
+    def __copy__(self):
         new_par = LegendParameters(
             self.min, self.max, self.number_of_segments, self.colors,
             self.continuous_colors, self.continuous_legend, self.title,

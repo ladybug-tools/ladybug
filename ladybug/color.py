@@ -73,6 +73,10 @@ class Color(object):
             "B value should be between 0-255"
         self._b = int(value)
 
+    def duplicate(self):
+        """Return a copy of the current color."""
+        return self.__copy__()
+
     def to_json(self):
         """Get color as a dictionary."""
         return {'r': self.r,
@@ -514,6 +518,10 @@ class ColorRange(object):
                 else:
                     return self._colors[count + 1]
 
+    def duplicate(self):
+        """Return a copy of the current color range."""
+        return self.__copy__()
+
     def to_json(self):
         """Get color range as a dictionary."""
         return {'colors': [col.to_json() for col in self.colors],
@@ -536,6 +544,9 @@ class ColorRange(object):
         blue = round(factor * (max_color.b - min_color.b) + min_color.b)
 
         return Color(red, green, blue)
+
+    def __copy__(self):
+        return self.__class__(self.colors, self.domain, self.continuous_colors)
 
     def __len__(self):
         """Return length of colors."""

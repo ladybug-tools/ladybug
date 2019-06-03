@@ -25,6 +25,7 @@ class ColorTestCase(unittest.TestCase):
         assert len(color) == 3
         assert color == Color(100, 0, 100)
         assert color != Color(100, 0, 0)
+        assert color == color.duplicate()
 
         for c in color:
             assert isinstance(c, int)
