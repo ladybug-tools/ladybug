@@ -33,8 +33,62 @@ class Legend(object):
         segment_numbers
         segment_colors
         segment_length
+        is_legend_parameters_default
         is_min_default
         is_max_default
+
+    Usage:
+        ##
+        data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        legend = Legend(data, LegendParameters(number_of_segments=6))
+        print(legend.segment_text)
+        print(legend.segment_mesh)
+        print(legend.segment_colors)
+
+        >> ['0.00', '1.80', '3.60', '5.40', '7.20', '9.00']
+        >> Mesh3D (6 faces) (14 vertices)
+        >> ((R:75, G:107, B:169), (R:159, G:189, B:238), (R:224, G:229, B:145),
+            (R:247, G:200, B:53), (R:234, G:113, B:0), (R:234, G:38, B:0))
+
+        ##
+        data = [100, 300, 500, 1000, 2000, 3000]
+        ordinal_dict = {300: 'low', 1150: 'desired', 2000: 'too much'}
+        legend = Legend(data, LegendParameters(min=300, max=2000, number_of_segments=3,
+                                               ordinal_dictionary=ordinal_dict))
+        print(legend.segment_text)
+        print(legend.segment_mesh)
+        print(legend.segment_colors)
+        print(legend.value_colors)  # colors in between dict categories are interpolated
+        legend.legend_parameters.continuous_colors = False  # get data in only 3 colors
+        print(legend.value_colors)  # data colors align with number_of_segments
+
+        >> ['low', 'desired', 'too much']
+        >> Mesh3D (3 faces) (8 vertices)
+        >> ((R:75, G:107, B:169), (R:249, G:235, B:89), (R:234, G:38, B:0))
+        >> ((R:75, G:107, B:169), (R:75, G:107, B:169), (R:118, G:150, B:205),
+            (R:230, G:231, B:134), (R:234, G:38, B:0), (R:234, G:38, B:0))
+        >> ((R:75, G:107, B:169), (R:115, G:147, B:202), (R:115, G:147, B:202),
+            (R:115, G:147, B:202), (R:115, G:147, B:202), (R:234, G:38, B:0))
+
+        ##
+        data = [-0.5, 0, 0.5]
+        ordinal_dict = {-3: 'Cold', -2: 'Cool', -1: 'Slightly Cool', 0: 'Neutral',
+                        1: 'Slightly Warm', 2: 'Warm', 3: 'Hot'}
+        legend = Legend(data, LegendParameters(min=-1, max=1, number_of_segments=3,
+                                               ordinal_dictionary=ordinal_dict))
+        print(legend.segment_text)
+        print(legend.segment_mesh)
+        print(legend.segment_colors)
+        legend.legend_parameters.number_of_segments = 5
+        print(legend.segment_text)
+        legend.legend_parameters.min = -2
+        legend.legend_parameters.max = 2
+        print(legend.segment_text)
+        >> ['Slightly Cool', 'Neutral', 'Slightly Warm']
+        >> Mesh3D (3 faces) (8 vertices)
+        >> ((R:75, G:107, B:169), (R:249, G:235, B:89), (R:234, G:38, B:0))
+        >> ['Slightly Cool', '', 'Neutral', '', 'Slightly Warm']
+        >> ['Cool', 'Slightly Cool', 'Neutral', 'Slightly Warm', 'Warm']
     """
 
     def __init__(self, values, legend_parameters=None):
@@ -55,8 +109,10 @@ class Legend(object):
             assert isinstance(legend_parameters, LegendParameters), \
                 'Expected LegendParameters. Got {}.'.format(type(legend_parameters))
             self._legend_par = legend_parameters.duplicate()
+            self._is_legend_parameters_default = False
         else:
             self._legend_par = LegendParameters()
+            self._is_legend_parameters_default = True
 
         # calculate min, max and number of segments
         self._is_min_default = False
@@ -82,8 +138,14 @@ class Legend(object):
         legend_parameters = None
         if data['legend_parameters'] is not None:
             legend_parameters = LegendParameters.from_json(data['legend_parameters'])
+        for key in ('is_min_default', 'is_max_default'):
+            if key not in data:
+                data[key] = False
 
-        return cls(data['values'], legend_parameters)
+        legend = cls(data['values'], legend_parameters)
+        legend._is_min_default = data['is_min_default']
+        legend._is_max_default = data['is_max_default']
+        return legend
 
     @property
     def legend_parameters(self):
@@ -149,14 +211,14 @@ class Legend(object):
             _pt_2d = tuple(
                 Point2D(_l_par.segment_width + _l_par.text_height * 0.25, i)
                 for i in Legend._frange(0, _l_par.segment_height *
-                                        _l_par.number_of_segments + 1,
+                                        _l_par.number_of_segments,
                                         _l_par.segment_height))
         else:  # horizontal
             _start_val = -_l_par.segment_width * self.segment_length
             _pt_2d = tuple(
                 Point2D(_start_val + i, -_l_par.text_height * 1.25)
                 for i in Legend._frange(0, _l_par.segment_width *
-                                        _l_par.number_of_segments + 1,
+                                        _l_par.number_of_segments,
                                         _l_par.segment_width))
         return [Plane(_l_par.base_plane.n,
                       _l_par.base_plane.xy_to_xyz(pt),
@@ -233,14 +295,23 @@ class Legend(object):
         """
         return self._is_max_default
 
+    @property
+    def is_legend_parameters_default(self):
+        """Boolean noting whether the legend_parameters is default."""
+        return self._is_legend_parameters_default
+
     def duplicate(self):
         """Return a copy of the current legend."""
         return self.__copy__()
 
     def to_json(self):
         """Get legend as a dictionary."""
+        leg_par = None if self.is_legend_parameters_default is True \
+            else self.legend_parameters.to_json()
         return {'values': self.values,
-                'legend_parameters': LegendParameters.from_json(self.legend_parameters)}
+                'legend_parameters': leg_par,
+                'is_min_default': self.is_min_default,
+                'is_max_default': self.is_max_default}
 
     @staticmethod
     def _frange(start, stop, step):
@@ -250,7 +321,10 @@ class Legend(object):
             start += step
 
     def __copy__(self):
-        return LegendParameters(self.values, self.legend_parameters)
+        _leg = Legend(self.values, self.legend_parameters)
+        _leg._is_min_default = self._is_min_default
+        _leg._is_max_default = self._is_max_default
+        return _leg
 
     def __len__(self):
         """Return length of values on the object."""
@@ -400,9 +474,15 @@ class LegendParameters(object):
                          'number_decimal_places', 'include_larger_smaller',
                          'vertical_or_horizontal', 'base_plane', 'segment_height',
                          'segment_width', 'text_height', 'font')
+        default_keys = ('is_number_of_segments_default', 'is_title_default',
+                        'is_base_plane_default', 'is_segment_height_default',
+                        'is_segment_width_default', 'is_text_height_default')
         for key in optional_keys:
             if key not in data:
                 data[key] = None
+        for key in default_keys:
+            if key not in data:
+                data[key] = False
 
         colors = None
         if data['colors'] is not None:
@@ -411,13 +491,20 @@ class LegendParameters(object):
         if data['base_plane'] is not None:
             base_plane = Plane.from_dict(data['base_plane'])
 
-        return cls(data['min'], data['max'], data['number_of_segments'],
-                   colors, data['continuous_colors'], data['continuous_legend'],
-                   data['title'], data['ordinal_dictionary'],
-                   data['number_decimal_places'], data['include_larger_smaller'],
-                   data['vertical_or_horizontal'], base_plane,
-                   data['segment_height'], data['segment_width'],
-                   data['text_height'], data['font'])
+        leg_par = cls(data['min'], data['max'], data['number_of_segments'],
+                      colors, data['continuous_colors'], data['continuous_legend'],
+                      data['title'], data['ordinal_dictionary'],
+                      data['number_decimal_places'], data['include_larger_smaller'],
+                      data['vertical_or_horizontal'], base_plane,
+                      data['segment_height'], data['segment_width'],
+                      data['text_height'], data['font'])
+        leg_par._is_number_of_segments_default = data['is_number_of_segments_default']
+        leg_par._is_title_default = data['is_title_default']
+        leg_par._is_base_plane_default = data['is_base_plane_default']
+        leg_par._is_segment_height_default = data['is_segment_height_default']
+        leg_par._is_segment_width_default = data['is_segment_width_default']
+        leg_par._is_text_height_default = data['is_text_height_default']
+        return leg_par
 
     @property
     def min(self):
@@ -724,7 +811,7 @@ class LegendParameters(object):
         """Get legend parameters as a dictionary."""
         seg = None if self.is_number_of_segments_default else self.number_of_segments
         title = None if self.is_title_default else self.title
-        base_plane = None if self.is_base_plane_default else self.base_plane.to_json()
+        base_plane = None if self.is_base_plane_default else self.base_plane.to_dict()
         seg_h = None if self.is_segment_height_default else self.segment_height
         seg_w = None if self.is_segment_width_default else self.segment_width
         txt_h = None if self.is_text_height_default else self.text_height
@@ -738,7 +825,13 @@ class LegendParameters(object):
                 'vertical_or_horizontal': self.vertical_or_horizontal,
                 'base_plane': base_plane,
                 'segment_height': seg_h, 'segment_width': seg_w,
-                'text_height': txt_h, 'font': self.font}
+                'text_height': txt_h, 'font': self.font,
+                'is_number_of_segments_default': self.is_number_of_segments_default,
+                'is_title_default': self.is_title_default,
+                'is_base_plane_default': self.is_base_plane_default,
+                'is_segment_height_default': self.is_segment_height_default,
+                'is_segment_width_default': self.is_segment_width_default,
+                'is_text_height_default': self.is_text_height_default}
 
     def __copy__(self):
         new_par = LegendParameters(

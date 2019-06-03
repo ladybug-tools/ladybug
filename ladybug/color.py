@@ -95,6 +95,9 @@ class Color(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __hash__(self):
+        return hash((self.r, self.g, self.b))
+
     def __len__(self):
         return 3
 

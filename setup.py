@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="lbt-ladybug",
-    use_scm_version = True,
+    use_scm_version=True,
     setup_requires=['setuptools_scm'],
     author="Ladybug Tools",
     author_email="info@ladybug.tools",
@@ -17,7 +17,7 @@ setuptools.setup(
     url="https://github.com/ladybug-tools/ladybug",
     packages=setuptools.find_packages(exclude=["tests"]),
     install_requires=[
-        'euclid3==0.1'
+        'ladybug-geometry'
     ],
     classifiers=[
         "Programming Language :: Python :: 2.7",
