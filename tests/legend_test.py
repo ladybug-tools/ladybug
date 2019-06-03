@@ -13,12 +13,11 @@ class LegendParametersTestCase(unittest.TestCase):
 
     def test_init_legend_parameters(self):
         """Test the initialization of LegendParameter objects."""
-        leg_par = LegendParameters(0, 1000, 3)
+        leg_par = LegendParameters(0, 1000)
         str(leg_par)  # Test the LegendParameters representation
 
         assert leg_par.min == 0
         assert leg_par.max == 1000
-        assert leg_par.number_of_segments == 3
         assert leg_par.is_number_of_segments_default is True
         assert leg_par.is_title_default is True
         assert leg_par.is_base_plane_default is True
@@ -27,9 +26,9 @@ class LegendParametersTestCase(unittest.TestCase):
         assert leg_par.is_text_height_default is True
 
         leg_par_copy = leg_par.duplicate()
-        assert leg_par_copy.min == 0
-        assert leg_par_copy.max == 1000
-        assert leg_par_copy.number_of_segments == 3
+        assert leg_par_copy.min == leg_par.min
+        assert leg_par_copy.max == leg_par.max
+        assert leg_par_copy.number_of_segments == leg_par.number_of_segments
 
     def test_colors(self):
         """Test the LegendParameter colors property."""
@@ -45,7 +44,7 @@ class LegendParametersTestCase(unittest.TestCase):
         assert leg_par_copy.colors[1] == Color(255, 255, 255)
 
         leg_par.colors = [Color(0, 0, 0), Color(100, 100, 100)]
-        assert leg_par_copy.colors[1] == Color(100, 100, 100)
+        assert leg_par.colors[1] == Color(100, 100, 100)
 
         with pytest.raises(Exception):
             leg_par = LegendParameters(colors=[0, 1])
