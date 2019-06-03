@@ -30,7 +30,7 @@ class ColorTestCase(unittest.TestCase):
         for c in color:
             assert isinstance(c, int)
 
-    def test_init_color_inalid(self):
+    def test_init_color_invalid(self):
         """Test the initialization of invalid color objects."""
         with pytest.raises(Exception):
             Color(256, 0, 100)
