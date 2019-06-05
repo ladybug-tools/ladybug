@@ -50,8 +50,7 @@ class ResultMeshTestCase(unittest.TestCase):
         assert result_mesh.lower_title_location != Plane()
         assert result_mesh.upper_title_location != Plane()
 
-    # TODO: Add `test` in front of this method once ladybug-geometry is updated on PyPi
-    def to_from_json(self):
+    def test_to_from_json(self):
         """Test the to/from json methods."""
         mesh2d = Mesh2D.from_grid(num_x=2, num_y=2)
         mesh3d = Mesh3D.from_mesh2d(mesh2d)
