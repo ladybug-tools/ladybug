@@ -42,11 +42,6 @@ class TemperatureDelta(DataTypeBase):
         else:
             return self.to_unit(values, 'C', from_unit), 'C'
 
-    @property
-    def isTemperatureDelta(self):
-        """Return True."""
-        return True
-
 
 class AirTemperatureDelta(TemperatureDelta):
     _abbreviation = 'DeltaTair'

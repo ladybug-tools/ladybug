@@ -35,14 +35,14 @@ class Header(object):
             metadata: Optional dictionary of additional metadata,
                 containing information such as 'source', 'city', or 'zone'.
         """
-        assert hasattr(data_type, 'isDataType'), \
+        assert isinstance(data_type, DataTypeBase), \
             'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
         if unit is None:
             unit = data_type.units[0]
         else:
             data_type.is_unit_acceptable(unit)
         if analysis_period is not None:
-            assert hasattr(analysis_period, 'isAnalysisPeriod'), \
+            assert isinstance(analysis_period, AnalysisPeriod), \
                 'analysis_period must be a Ladybug AnalysisPeriod. Got {}'.format(
                     type(analysis_period))
         if metadata is not None:
@@ -96,11 +96,6 @@ class Header(object):
     def metadata(self):
         """Metadata associated with the Header."""
         return self._metadata
-
-    @property
-    def isHeader(self):
-        """Return True."""
-        return True
 
     def duplicate(self):
         """Return a copy of the header."""

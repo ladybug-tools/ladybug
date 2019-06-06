@@ -36,8 +36,3 @@ class UValue(DataTypeBase):
             return values, from_unit
         else:
             return self.to_unit(values, 'W/m2-K', from_unit), 'W/m2-K'
-
-    @property
-    def isUValue(self):
-        """Return True."""
-        return True

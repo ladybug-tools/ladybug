@@ -90,8 +90,3 @@ class Area(DataTypeBase):
             return self.to_unit(values, 'ha', from_unit), 'ha'
         else:
             return self.to_unit(values, 'm2', from_unit), 'm2'
-
-    @property
-    def isArea(self):
-        """Return True."""
-        return True

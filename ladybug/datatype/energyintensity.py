@@ -54,20 +54,10 @@ class EnergyIntensity(DataTypeBase):
         else:
             return self.to_unit(values, 'kWh/m2', from_unit), 'kWh/m2'
 
-    @property
-    def isEnergyIntensity(self):
-        """Return True."""
-        return True
-
 
 class Radiation(EnergyIntensity):
     _min = 0
     _abbreviation = 'Esolar'
-
-    @property
-    def isRadiation(self):
-        """Return True."""
-        return True
 
 
 class GlobalHorizontalRadiation(Radiation):

@@ -96,8 +96,3 @@ class Volume(DataTypeBase):
             return self.to_unit(values, 'L', from_unit), 'L'
         else:
             return self.to_unit(values, 'm3', from_unit), 'm3'
-
-    @property
-    def isVolume(self):
-        """Return True."""
-        return True

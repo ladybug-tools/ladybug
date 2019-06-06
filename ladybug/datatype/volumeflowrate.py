@@ -74,8 +74,3 @@ class VolumeFlowRate(DataTypeBase):
             return self.to_unit(values, 'mL/s', from_unit), 'mL/s'
         else:
             return self.to_unit(values, 'm3/s', from_unit), 'm3/s'
-
-    @property
-    def isFlowRate(self):
-        """Return True."""
-        return True

@@ -48,11 +48,6 @@ class Fraction(DataTypeBase):
         """Return values in SI and the units to which the values have been converted."""
         return values, from_unit
 
-    @property
-    def isFraction(self):
-        """Return True."""
-        return True
-
 
 class PercentagePeopleDissatisfied(Fraction):
     _min = 0

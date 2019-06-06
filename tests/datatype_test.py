@@ -51,7 +51,7 @@ class DataTypesTestCase(unittest.TestCase):
     def test_generic_type(self):
         """Test the creation of generic types."""
         test_type = generic.GenericType('Test Type', 'widgets')
-        assert hasattr(test_type, 'isDataType')
+        assert isinstance(test_type, base.DataTypeBase)
         assert test_type.is_unit_acceptable('widgets')
 
     def test_temperature(self):

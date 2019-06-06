@@ -37,7 +37,7 @@ class DDY(object):
     """
     def __init__(self, location, design_days):
         """Initalize the class."""
-        assert hasattr(location, 'isLocation'), 'Expected' \
+        assert isinstance(location, Location), 'Expected' \
             ' Location type. Got {}'.format(type(location))
 
         self._location = location
@@ -160,7 +160,7 @@ class DDY(object):
 
     @location.setter
     def location(self, data):
-        assert hasattr(data, 'isLocation'), 'Expected' \
+        assert isinstance(data, Location), 'Expected' \
             ' Location type. Got {}'.format(type(data))
         self._location = data
         for dd in self._design_days:
@@ -178,18 +178,13 @@ class DDY(object):
         assert isinstance(data, list), 'Expected' \
             ' a list of design days. Got {}'.format(type(data))
         for item in data:
-            assert hasattr(item, 'isDesignDay'), 'Expected' \
+            assert isinstance(item, DesignDay), 'Expected' \
                 ' DesignDay type. Got {}'.format(type(item))
         self._design_days = data
         for dd in self._design_days:
             if dd.location != self._location:
                 dd.location = self._location
                 print('Updating location of {} to {}.'.format(dd, self._location))
-
-    @property
-    def isDdy(self):
-        """Return True."""
-        return True
 
     def to_dict(self):
         """Convert the Design Day to a dictionary."""
@@ -577,7 +572,7 @@ class DesignDay(object):
 
     @location.setter
     def location(self, data):
-        assert hasattr(data, 'isLocation'), 'Expected' \
+        assert isinstance(data, Location), 'Expected' \
             ' Location type. Got {}'.format(type(data))
         self._location = data
 
@@ -588,7 +583,7 @@ class DesignDay(object):
 
     @dry_bulb_condition.setter
     def dry_bulb_condition(self, data):
-        assert hasattr(data, 'isDryBulbCondition'), 'Expected' \
+        assert isinstance(data, DryBulbCondition), 'Expected' \
             ' DryBulbCondition type. Got {}'.format(type(data))
         self._dry_bulb_condition = data
 
@@ -599,7 +594,7 @@ class DesignDay(object):
 
     @humidity_condition.setter
     def humidity_condition(self, data):
-        assert hasattr(data, 'isHumidityCondition'), 'Expected' \
+        assert isinstance(data, HumidityCondition), 'Expected' \
             ' HumidityCondition type. Got {}'.format(type(data))
         self._humidity_condition = data
 
@@ -610,7 +605,7 @@ class DesignDay(object):
 
     @wind_condition.setter
     def wind_condition(self, data):
-        assert hasattr(data, 'isWindCondition'), 'Expected' \
+        assert isinstance(data, WindCondition), 'Expected' \
             ' WindCondition type. Got {}'.format(type(data))
         self._wind_condition = data
 
@@ -621,7 +616,7 @@ class DesignDay(object):
 
     @sky_condition.setter
     def sky_condition(self, data):
-        assert hasattr(data, 'isSkyCondition'), 'Expected' \
+        assert isinstance(data, SkyCondition), 'Expected' \
             ' SkyCondition type. Got {}'.format(type(data))
         self._sky_condition = data
 
@@ -733,11 +728,6 @@ class DesignDay(object):
                                        'city': self._location.city})
         return HourlyContinuousCollection(data_header, values)
 
-    @property
-    def isDesignDay(self):
-        """Return True."""
-        return True
-
     def to_dict(self):
         """Convert the Design Day to a dictionary."""
         return {
@@ -837,11 +827,6 @@ class DryBulbCondition(object):
         return (0.82, 0.88, 0.92, 0.95, 0.98, 1, 0.98, 0.91, 0.74, 0.55,
                 0.38, 0.23, 0.13, 0.05, 0, 0, 0.06, 0.14, 0.24, 0.39, 0.5,
                 0.59, 0.68, 0.75)
-
-    @property
-    def isDryBulbCondition(self):
-        """Return True."""
-        return True
 
     def to_dict(self):
         """Convert the Dry Bulb Condition to a dictionary."""
@@ -983,11 +968,6 @@ class HumidityCondition(object):
         """Types of humidity conditions."""
         return ('Wetbulb', 'Dewpoint', 'HumidityRatio', 'Enthalpy')
 
-    @property
-    def isHumidityCondition(self):
-        """Return True."""
-        return True
-
     def to_dict(self):
         """Convert the Humidity Condition to a dictionary."""
         return {
@@ -1107,11 +1087,6 @@ class WindCondition(object):
             else:
                 data = 'No'
         self._snow_on_ground = data
-
-    @property
-    def isWindCondition(self):
-        """Return True."""
-        return True
 
     def to_dict(self):
         """Convert the Wind Condition to a dictionary."""
@@ -1242,11 +1217,6 @@ class SkyCondition(object):
     def sky_types(self):
         """A list of possible sky types that can be associated with design days."""
         return ('ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule')
-
-    @property
-    def isSkyCondition(self):
-        """Return True."""
-        return True
 
     def to_dict(self):
         """Convert the Sky Condition to a dictionary."""
@@ -1465,7 +1435,7 @@ class RevisedClearSkyCondition(SkyCondition):
 
 
 def _check_analysis_period(analysis_period):
-    assert hasattr(analysis_period, 'isAnalysisPeriod'), 'Expected' \
+    assert isinstance(analysis_period, AnalysisPeriod), 'Expected' \
         ' AnalysisPeriod type. Got {}'.format(type(analysis_period))
     assert analysis_period.st_month == analysis_period.end_month and \
         analysis_period.st_day == analysis_period.end_day and \

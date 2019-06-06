@@ -72,7 +72,7 @@ class Location(object):
         if not location:
             return cls()
         try:
-            if hasattr(location, 'isLocation'):
+            if isinstance(location, Location):
                 # Ladybug location
                 return location
 
@@ -102,11 +102,6 @@ class Location(object):
         except Exception as e:
             raise ValueError(
                 "Failed to create a Location from %s!\n%s" % (location, e))
-
-    @property
-    def isLocation(self):
-        """Return Ture."""
-        return True
 
     @property
     def latitude(self):

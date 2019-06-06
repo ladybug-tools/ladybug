@@ -64,8 +64,3 @@ class Power(DataTypeBase):
             return self.to_unit(values, 'kW', from_unit), 'kW'
         else:
             return self.to_unit(values, 'W', from_unit), 'W'
-
-    @property
-    def isPower(self):
-        """Return True."""
-        return True

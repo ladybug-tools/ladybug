@@ -123,11 +123,6 @@ class DateTime(datetime):
         return cls(dt.month, dt.day, dt.hour, dt.minute, leap_year)
 
     @property
-    def isDateTime(self):
-        """Check if data is ladybug data."""
-        return True
-
-    @property
     def doy(self):
         """Calculate day of the year for this date time."""
         return self.timetuple().tm_yday

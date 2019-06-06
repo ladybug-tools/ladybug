@@ -677,11 +677,6 @@ class STAT(object):
             "monthly_tau_diffuse": self.monthly_tau_diffuse
         }
 
-    @property
-    def isStat(self):
-        """Return True."""
-        return True
-
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()

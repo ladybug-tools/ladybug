@@ -64,8 +64,3 @@ class Mass(DataTypeBase):
             return self.to_unit(values, 'tonne', from_unit), 'tonne'
         else:
             return self.to_unit(values, 'kg', from_unit), 'kg'
-
-    @property
-    def isMass(self):
-        """Return True."""
-        return True

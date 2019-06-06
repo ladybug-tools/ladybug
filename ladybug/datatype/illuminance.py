@@ -38,11 +38,6 @@ class Illuminance(DataTypeBase):
         else:
             return self.to_unit(values, 'lux', from_unit), 'lux'
 
-    @property
-    def isIlluminance(self):
-        """Return True."""
-        return True
-
 
 class GlobalHorizontalIlluminance(Illuminance):
     _abbreviation = 'GHI'

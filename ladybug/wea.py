@@ -823,11 +823,6 @@ class Wea(object):
 
         return direct_norm_rad, diffuse_horiz_rad
 
-    @property
-    def isWea(self):
-        """Return True."""
-        return True
-
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()

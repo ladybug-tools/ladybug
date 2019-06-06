@@ -43,11 +43,6 @@ class RValue(DataTypeBase):
         else:
             return self.to_unit(values, 'm2-K/W', from_unit), 'm2-K/W'
 
-    @property
-    def isRValue(self):
-        """Return True."""
-        return True
-
 
 class ClothingInsulation(RValue):
     _abbreviation = 'Rclo'

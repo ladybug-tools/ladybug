@@ -165,7 +165,7 @@ class AnalysisPeriod(object):
         """
         if not analysis_period:
             return cls()
-        elif hasattr(analysis_period, 'isAnalysisPeriod'):
+        elif isinstance(analysis_period, AnalysisPeriod):
             return analysis_period
         elif isinstance(analysis_period, str):
             try:
@@ -198,11 +198,6 @@ class AnalysisPeriod(object):
                        end_day, end_hour, int(timestep), is_leap_year)
         except Exception as e:
             raise ValueError(str(e))
-
-    @property
-    def isAnalysisPeriod(self):
-        """Return True."""
-        return True
 
     @property
     def st_month(self):

@@ -494,10 +494,6 @@ class HourlyDiscontinuousCollection(BaseCollection):
         collection._validated_a_period = True
         return collection
 
-    @property
-    def isHourly(self):
-        return True
-
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""
         return "{} Discontinuous Data Collection\n{}\n{} ({})\n...{} values...".format(
@@ -1132,10 +1128,6 @@ class DailyCollection(BaseCollection):
         else:
             return False
 
-    @property
-    def isDaily(self):
-        return True
-
     def __repr__(self):
         """Daily Collection representation."""
         a_per = self.header.analysis_period
@@ -1263,10 +1255,6 @@ class MonthlyCollection(BaseCollection):
             return True
         else:
             return False
-
-    @property
-    def isMonthly(self):
-        return True
 
     def __repr__(self):
         """Monthly Collection representation."""
@@ -1410,10 +1398,6 @@ class MonthlyPerHourCollection(BaseCollection):
             return True
         else:
             return False
-
-    @property
-    def isMonthlyPerHour(self):
-        return True
 
     def __repr__(self):
         """Monthly Per Hour Collection representation."""

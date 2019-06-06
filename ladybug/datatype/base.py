@@ -275,11 +275,6 @@ class DataTypeBase(object):
         """Whether the data type is cumulative."""
         return self._cumulative
 
-    @property
-    def isDataType(self):
-        """Return True."""
-        return True
-
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()

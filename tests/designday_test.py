@@ -62,7 +62,7 @@ class DdyTestCase(unittest.TestCase):
 
         assert len(ddy.design_days) == 18
         for des_day in ddy.design_days:
-            assert hasattr(des_day, 'isDesignDay')
+            assert isinstance(des_day, DesignDay)
         assert len(ddy.filter_by_keyword('.4%')) == 4
         assert len(ddy.filter_by_keyword('99.6%')) == 3
 
@@ -80,7 +80,7 @@ class DdyTestCase(unittest.TestCase):
 
         assert len(ddy.design_days) == 12
         for des_day in ddy.design_days:
-            assert hasattr(des_day, 'isDesignDay')
+            assert isinstance(des_day, DesignDay)
             assert des_day.day_type == 'SummerDesignDay'
 
     def test_design_day_from_properties(self):
