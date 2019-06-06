@@ -45,23 +45,23 @@ class ColorTestCase(unittest.TestCase):
         with pytest.raises(Exception):
             Color(0, 0, -1)
 
-    def test_from_json(self):
-        """Test the from json method."""
-        sample_json = {'r': '255',
+    def test_from_dict(self):
+        """Test the from dict method."""
+        sample_dict = {'r': '255',
                        'g': '0',
                        'b': '100'}
-        color = Color.from_json(sample_json)
+        color = Color.from_dict(sample_dict)
         assert isinstance(color, Color)
         assert color.r == 255
         assert color.g == 0
         assert color.b == 100
 
-    def test_to_from_json(self):
-        """Test the to/from json methods."""
+    def test_to_from_dict(self):
+        """Test the to/from dict methods."""
         color = Color(255, 0, 100)
-        color_json = color.to_json()
-        new_color = Color.from_json(color_json)
-        assert new_color.to_json() == color_json
+        color_dict = color.to_dict()
+        new_color = Color.from_dict(color_dict)
+        assert new_color.to_dict() == color_dict
 
 
 class ColorsetTestCase(unittest.TestCase):
@@ -154,21 +154,21 @@ class ColorRangeTestCase(unittest.TestCase):
         assert color_range.color(1000) == Color(100, 200, 100)
         assert color_range.color(1100) == Color(100, 200, 100)
 
-    def test_from_json(self):
-        """Test the from_json method."""
-        sample_json = {'colors': [{'r': '0', 'g': '0', 'b': '0'},
+    def test_from_dict(self):
+        """Test the from_dict method."""
+        sample_dict = {'colors': [{'r': '0', 'g': '0', 'b': '0'},
                                   {'r': '0', 'g': '255', 'b': '100'}]}
-        color_range = ColorRange.from_json(sample_json)
+        color_range = ColorRange.from_dict(sample_dict)
         assert isinstance(color_range, ColorRange)
         assert color_range[0] == Color(0, 0, 0)
         assert color_range[1] == Color(0, 255, 100)
 
-    def test_to_from_json(self):
-        """Test the to/from json methods."""
+    def test_to_from_dict(self):
+        """Test the to/from dict methods."""
         color_range = ColorRange([Color(0, 100, 0), Color(100, 200, 100)], [0, 1000])
-        color_range_json = color_range.to_json()
-        new_color = ColorRange.from_json(color_range_json)
-        assert new_color.to_json() == color_range_json
+        color_range_dict = color_range.to_dict()
+        new_color = ColorRange.from_dict(color_range_dict)
+        assert new_color.to_dict() == color_range_dict
 
 
 if __name__ == "__main__":

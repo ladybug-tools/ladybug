@@ -131,7 +131,7 @@ class AnalysisPeriod(object):
         self._timestamps_data = None  # set to None for now and calculate upon request
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create an analysis period from a dictionary.
         Args:
             data: {
@@ -380,7 +380,7 @@ class AnalysisPeriod(object):
                               self.end_month, self.end_day, self.end_hour,
                               self.timestep, self.is_leap_year)
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the analysis period to a dictionary."""
         return {
             'st_month': self.st_month,

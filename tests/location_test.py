@@ -94,7 +94,7 @@ class LocationTestCase(unittest.TestCase):
         assert loc_from_loc.time_zone == time_zone
         assert loc_from_loc.elevation == elevation
 
-    def test_json_methods(self):
+    def test_dict_methods(self):
         """Test JSON serialization functions"""
         city = 'Tehran'
         country = 'Iran'
@@ -107,19 +107,19 @@ class LocationTestCase(unittest.TestCase):
                        longitude=longitude, time_zone=time_zone,
                        elevation=elevation)
 
-        assert loc.to_json() == {"city": city, "state": '-', "country": country,
+        assert loc.to_dict() == {"city": city, "state": '-', "country": country,
                                  "latitude": latitude, "longitude": longitude,
                                  "time_zone": time_zone, "elevation": elevation,
                                  "station_id": None, "source": None}
 
-        loc_from_json = Location.from_json(loc.to_json())
+        loc_from_dict = Location.from_dict(loc.to_dict())
 
-        assert loc_from_json.city == city
-        assert loc_from_json.latitude == latitude
-        assert loc_from_json.longitude == longitude
-        assert loc_from_json.time_zone == time_zone
-        assert loc_from_json.elevation == elevation
-        assert loc_from_json.country == country
+        assert loc_from_dict.city == city
+        assert loc_from_dict.latitude == latitude
+        assert loc_from_dict.longitude == longitude
+        assert loc_from_dict.time_zone == time_zone
+        assert loc_from_dict.elevation == elevation
+        assert loc_from_dict.country == country
 
     def test_duplicate(self):
         """Test the duplicate method."""

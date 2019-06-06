@@ -40,7 +40,7 @@ class DateTime(datetime):
             ))
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Creat datetime from a dictionary.
 
         Args:
@@ -205,8 +205,8 @@ class DateTime(datetime):
         """Return date time as a string."""
         return self.strftime('%d %b %H:%M')
 
-    def to_json(self):
-        """Get date time as a dictionary."""
+    def to_dict(self):
+        """Get datetime as a dictionary."""
         return {'year': self.year,
                 'month': self.month,
                 'day': self.day,

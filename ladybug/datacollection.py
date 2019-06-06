@@ -72,7 +72,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         self._validated_a_period = False
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Data Collection from a dictionary.
 
         Args:
@@ -86,8 +86,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
         assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
-        collection = cls(Header.from_json(data['header']), data['values'],
-                         [DateTime.from_json(dat) for dat in data['datetimes']])
+        collection = cls(Header.from_dict(data['header']), data['values'],
+                         [DateTime.from_dict(dat) for dat in data['datetimes']])
         if 'validated_a_period' in data:
             collection._validated_a_period = data['validated_a_period']
         return collection
@@ -397,12 +397,12 @@ class HourlyDiscontinuousCollection(BaseCollection):
         new_coll._validated_a_period = True
         return new_coll
 
-    def to_json(self):
+    def to_dict(self):
         """Convert Data Collection to a dictionary."""
         return {
-            'header': self.header.to_json(),
+            'header': self.header.to_dict(),
             'values': self._values,
-            'datetimes': [dat.to_json() for dat in self.datetimes],
+            'datetimes': [dat.to_dict() for dat in self.datetimes],
             'validated_a_period': self._validated_a_period
         }
 
@@ -537,7 +537,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         self._validated_a_period = True
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Data Collection from a dictionary.
 
         Args:
@@ -548,7 +548,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
-        return cls(Header.from_json(data['header']), data['values'])
+        return cls(Header.from_dict(data['header']), data['values'])
 
     @property
     def datetimes(self):
@@ -865,10 +865,10 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """
         return self.duplicate()
 
-    def to_json(self):
+    def to_dict(self):
         """Convert Data Collection to a dictionary."""
         return {
-            'header': self.header.to_json(),
+            'header': self.header.to_dict(),
             'values': self._values
         }
 

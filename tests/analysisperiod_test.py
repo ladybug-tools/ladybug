@@ -46,13 +46,13 @@ class AnalysisPeriodTestCase(unittest.TestCase):
         assert annual_ap.is_annual
         assert not not_annual_ap.is_annual
 
-    def test_to_from_json(self):
-        """Test the json methods of the AnalysisPeriod."""
+    def test_to_from_dict(self):
+        """Test the dict methods of the AnalysisPeriod."""
         ap = AnalysisPeriod(st_month=2)
-        ap_json = ap.to_json()
-        rebuilt_ap = AnalysisPeriod.from_json(ap_json)
+        ap_dict = ap.to_dict()
+        rebuilt_ap = AnalysisPeriod.from_dict(ap_dict)
         assert rebuilt_ap.st_month == 2
-        assert rebuilt_ap.to_json() == ap_json
+        assert rebuilt_ap.to_dict() == ap_dict
 
     def test_include_last_hour(self):
         """Test that analysis period includes the last hour.

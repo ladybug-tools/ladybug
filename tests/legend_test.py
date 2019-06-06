@@ -34,12 +34,12 @@ class LegendParametersTestCase(unittest.TestCase):
         assert leg_par_copy.max == leg_par.max
         assert leg_par_copy.number_of_segments == leg_par.number_of_segments
 
-    def test_to_from_json(self):
-        """Test the to/from json methods."""
+    def test_to_from_dict(self):
+        """Test the to/from dict methods."""
         leg_par = LegendParameters(0, 1000)
-        leg_par_json = leg_par.to_json()
-        new_leg_par = LegendParameters.from_json(leg_par_json)
-        assert new_leg_par.to_json() == leg_par_json
+        leg_par_dict = leg_par.to_dict()
+        new_leg_par = LegendParameters.from_dict(leg_par_dict)
+        assert new_leg_par.to_dict() == leg_par_dict
 
     def test_colors(self):
         """Test the LegendParameter colors property."""
@@ -297,12 +297,12 @@ class LegendTestCase(unittest.TestCase):
         assert legend.is_min_default is False
         assert legend.is_max_default is False
 
-    def test_to_from_json(self):
-        """Test the to/from json methods."""
+    def test_to_from_dict(self):
+        """Test the to/from dict methods."""
         legend = Legend([0, 10], LegendParameters(2, 8))
-        legend_json = legend.to_json()
-        new_legend = Legend.from_json(legend_json)
-        assert new_legend.to_json() == legend_json
+        legend_dict = legend.to_dict()
+        new_legend = Legend.from_dict(legend_dict)
+        assert new_legend.to_dict() == legend_dict
 
     def test_value_colors(self):
         """Test the color_range, value_colors, and segment_colors property."""

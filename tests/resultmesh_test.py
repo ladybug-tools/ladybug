@@ -50,16 +50,16 @@ class ResultMeshTestCase(unittest.TestCase):
         assert result_mesh.lower_title_location != Plane()
         assert result_mesh.upper_title_location != Plane()
 
-    def test_to_from_json(self):
-        """Test the to/from json methods."""
+    def test_to_from_dict(self):
+        """Test the to/from dict methods."""
         mesh2d = Mesh2D.from_grid(num_x=2, num_y=2)
         mesh3d = Mesh3D.from_mesh2d(mesh2d)
         data = [0, 1, 2, 3]
         result_mesh = ResultMesh(data, mesh3d)
 
-        result_mesh_json = result_mesh.to_json()
-        new_result_mesh = ResultMesh.from_json(result_mesh_json)
-        assert new_result_mesh.to_json() == result_mesh_json
+        result_mesh_dict = result_mesh.to_dict()
+        new_result_mesh = ResultMesh.from_dict(result_mesh_dict)
+        assert new_result_mesh.to_dict() == result_mesh_dict
 
     def test_init_result_mesh_invalid(self):
         """Test the initialization of ResultMesh objects with invalid inputs."""

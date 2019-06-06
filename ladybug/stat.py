@@ -84,8 +84,8 @@ class STAT(object):
             self._import_data()
 
     @classmethod
-    def from_json(cls, data):
-        """ Create STAT from json dictionary.
+    def from_dict(cls, data):
+        """ Create Stat from a dictionary.
 
             Args:
                 data: {
@@ -141,19 +141,19 @@ class STAT(object):
                 data[key] = {}
 
         # assign the properties of the dictionary to the stat object.
-        stat_ob._location = Location.from_json(data['location'])
+        stat_ob._location = Location.from_dict(data['location'])
         stat_ob._ashrae_climate_zone = data['ashrae_climate_zone']
         stat_ob._koppen_climate_zone = data['koppen_climate_zone']
-        stat_ob._extreme_cold_week = AnalysisPeriod.from_json(data['extreme_cold_week'])\
+        stat_ob._extreme_cold_week = AnalysisPeriod.from_dict(data['extreme_cold_week'])\
             if data['extreme_cold_week'] else None
-        stat_ob._extreme_hot_week = AnalysisPeriod.from_json(data['extreme_hot_week'])\
+        stat_ob._extreme_hot_week = AnalysisPeriod.from_dict(data['extreme_hot_week'])\
             if data['extreme_hot_week'] else None
         stat_ob._typical_weeks = {}
         for key, val in data['typical_weeks'].items():
             if isinstance(val, list):
-                stat_ob._typical_weeks[key] = [AnalysisPeriod.from_json(v) for v in val]
+                stat_ob._typical_weeks[key] = [AnalysisPeriod.from_dict(v) for v in val]
             else:
-                stat_ob._typical_weeks[key] = AnalysisPeriod.from_json(val)
+                stat_ob._typical_weeks[key] = AnalysisPeriod.from_dict(val)
         stat_ob._winter_des_day_dict = data['heating_dict']
         stat_ob._summer_des_day_dict = data['cooling_dict']
         stat_ob._monthly_db_50 = data['monthly_db_50']
@@ -639,25 +639,25 @@ class STAT(object):
         """
         return self._monthly_tau_diffuse
 
-    def to_json(self):
-        """Convert the STAT object to a dictionary."""
-        def jsonify_dict(base_dict):
+    def to_dict(self):
+        """Convert the stat object to a dictionary."""
+        def dictify_dict(base_dict):
             new_dict = {}
             for key, val in base_dict.items():
                 if isinstance(val, list):
-                    new_dict[key] = [v.to_json() for v in val]
+                    new_dict[key] = [v.to_dict() for v in val]
                 else:
-                    new_dict[key] = val.to_json()
+                    new_dict[key] = val.to_dict()
             return new_dict
         return {
-            'location': self.location.to_json(),
+            'location': self.location.to_dict(),
             'ashrae_climate_zone': self.ashrae_climate_zone,
             'koppen_climate_zone': self.koppen_climate_zone,
-            'extreme_cold_week': self.extreme_cold_week.to_json()
+            'extreme_cold_week': self.extreme_cold_week.to_dict()
             if self.extreme_cold_week else None,
-            'extreme_hot_week': self.extreme_hot_week.to_json()
+            'extreme_hot_week': self.extreme_hot_week.to_dict()
             if self.extreme_cold_week else None,
-            'typical_weeks': jsonify_dict(self._typical_weeks),
+            'typical_weeks': dictify_dict(self._typical_weeks),
             'heating_dict': self._winter_des_day_dict,
             'cooling_dict': self._summer_des_day_dict,
             "monthly_db_50": self._monthly_db_50,

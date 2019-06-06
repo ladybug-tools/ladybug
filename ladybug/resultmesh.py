@@ -110,7 +110,7 @@ class ResultMesh(object):
             self.legend_parameters.base_plane = Plane(o=base_pt)
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a result mesh from a dictionary.
 
         Args:
@@ -130,10 +130,10 @@ class ResultMesh(object):
                 data[key] = None
         legend_parameters = None
         if data['legend_parameters'] is not None:
-            legend_parameters = LegendParameters.from_json(data['legend_parameters'])
+            legend_parameters = LegendParameters.from_dict(data['legend_parameters'])
         data_type = None
         if data['data_type'] is not None:
-            data_type = DataTypeBase.from_json(data['data_type'])
+            data_type = DataTypeBase.from_dict(data['data_type'])
 
         return cls(data['values'], Mesh3D.from_dict(data['mesh']),
                    legend_parameters, data_type, data['unit'])
@@ -190,12 +190,12 @@ class ResultMesh(object):
         """The unit input to this object (if it exists)."""
         return self._unit
 
-    def to_json(self):
+    def to_dict(self):
         """Get result mesh as a dictionary."""
         self._mesh.colors = None  # we don't need to send the colors as they regenerate
         leg_par = None if self.legend.is_legend_parameters_default is True \
-            else self.legend_parameters.to_json()
-        data_type = None if self.data_type is None else self.data_type.to_json()
+            else self.legend_parameters.to_dict()
+        data_type = None if self.data_type is None else self.data_type.to_dict()
         return {'values': self.values,
                 'mesh': self._mesh.to_dict(),
                 'legend_parameters': leg_par,

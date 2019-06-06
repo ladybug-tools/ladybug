@@ -125,7 +125,7 @@ class Legend(object):
             self._is_max_default = True
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a legend from a dictionary.
 
         Args:
@@ -137,7 +137,7 @@ class Legend(object):
             data['legend_parameters'] = None
         legend_parameters = None
         if data['legend_parameters'] is not None:
-            legend_parameters = LegendParameters.from_json(data['legend_parameters'])
+            legend_parameters = LegendParameters.from_dict(data['legend_parameters'])
         for key in ('is_min_default', 'is_max_default'):
             if key not in data:
                 data[key] = False
@@ -304,10 +304,10 @@ class Legend(object):
         """Return a copy of the current legend."""
         return self.__copy__()
 
-    def to_json(self):
+    def to_dict(self):
         """Get legend as a dictionary."""
         leg_par = None if self.is_legend_parameters_default is True \
-            else self.legend_parameters.to_json()
+            else self.legend_parameters.to_dict()
         return {'values': self.values,
                 'legend_parameters': leg_par,
                 'is_min_default': self.is_min_default,
@@ -459,7 +459,7 @@ class LegendParameters(object):
         self.font = font
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a color range from a dictionary.
 
         Args:
@@ -486,7 +486,7 @@ class LegendParameters(object):
 
         colors = None
         if data['colors'] is not None:
-            colors = [Color.from_json(col) for col in data['colors']]
+            colors = [Color.from_dict(col) for col in data['colors']]
         base_plane = None
         if data['base_plane'] is not None:
             base_plane = Plane.from_dict(data['base_plane'])
@@ -807,7 +807,7 @@ class LegendParameters(object):
         """Return a copy of the current legend parameters."""
         return self.__copy__()
 
-    def to_json(self):
+    def to_dict(self):
         """Get legend parameters as a dictionary."""
         seg = None if self.is_number_of_segments_default else self.number_of_segments
         title = None if self.is_title_default else self.title
@@ -816,7 +816,7 @@ class LegendParameters(object):
         seg_w = None if self.is_segment_width_default else self.segment_width
         txt_h = None if self.is_text_height_default else self.text_height
         return {'min': self.min, 'max': self.max, 'number_of_segments': seg,
-                'colors': [col.to_json() for col in self.colors],
+                'colors': [col.to_dict() for col in self.colors],
                 'continuous_colors': self.continuous_colors,
                 'continuous_legend': self.continuous_legend, 'title': title,
                 'ordinal_dictionary': self.ordinal_dictionary,

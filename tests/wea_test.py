@@ -145,36 +145,36 @@ class WeaTestCase(unittest.TestCase):
         assert sum(dif_horiz_error) / 8760 < 50
         assert avg_dif_horiz_error < 0.5
 
-    def test_json_methods(self):
+    def test_dict_methods(self):
         """Test JSON serialization methods"""
         epw_path = './tests/epw/chicago.epw'
         wea = Wea.from_epw_file(epw_path)
 
-        assert wea.to_json() == Wea.from_json(wea.to_json()).to_json()
+        assert wea.to_dict() == Wea.from_dict(wea.to_dict()).to_dict()
 
     def test_import_epw(self):
-        """Test to compare import from epw with its json version."""
+        """Test to compare import from epw with its dict version."""
         epw_path = './tests/epw/chicago.epw'
 
         wea_from_epw = Wea.from_epw_file(epw_path)
 
-        wea_json = wea_from_epw.to_json()
-        wea_from_json = Wea.from_json(wea_json)
-        assert wea_from_json.direct_normal_irradiance.values == \
+        wea_dict = wea_from_epw.to_dict()
+        wea_from_dict = Wea.from_dict(wea_dict)
+        assert wea_from_dict.direct_normal_irradiance.values == \
             wea_from_epw.direct_normal_irradiance.values
-        assert wea_from_json.diffuse_horizontal_irradiance.values == \
+        assert wea_from_dict.diffuse_horizontal_irradiance.values == \
             wea_from_epw.diffuse_horizontal_irradiance.values
 
     def test_import_stat(self):
-        """Test to compare import from stat with its json version."""
+        """Test to compare import from stat with its dict version."""
         stat_path = './tests/stat/chicago.stat'
         wea_from_stat = Wea.from_stat_file(stat_path)
 
-        wea_json = wea_from_stat.to_json()
-        wea_from_json = Wea.from_json(wea_json)
-        assert wea_from_json.direct_normal_irradiance.values == \
+        wea_dict = wea_from_stat.to_dict()
+        wea_from_dict = Wea.from_dict(wea_dict)
+        assert wea_from_dict.direct_normal_irradiance.values == \
             wea_from_stat.direct_normal_irradiance.values
-        assert wea_from_json.diffuse_horizontal_irradiance.values == \
+        assert wea_from_dict.diffuse_horizontal_irradiance.values == \
             wea_from_stat.diffuse_horizontal_irradiance.values
 
     def test_write_wea(self):
