@@ -7,61 +7,62 @@ from .datatype.base import DataTypeBase
 
 from ladybug_geometry.geometry3d.pointvector import Point3D
 from ladybug_geometry.geometry3d.plane import Plane
-from ladybug_geometry.geometry3d.mesh import Mesh3D
 
 
-class ResultMesh(object):
-    """Ladybug colored result mesh with legend.
+class GraphicContainer(object):
+    """Graphic container used to get legends, title locations, and colors for any graphic.
 
     Properties:
         values
-        colored_mesh
+        min_point
+        max_point
         legend_parameters
+        data_type
+        unit
         legend
         value_colors
         lower_title_location
         upper_title_location
-        data_type
-        unit
     """
 
-    def __init__(self, values, mesh, legend_parameters=None, data_type=None, unit=None):
-        """Initialize result mesh.
-
-        Initializing a legend and colored mesh this way will generate default
-        legend base points, text points, and general scaling that makes sense
-        given the input mesh.
+    def __init__(self, values, min_point, max_point,
+                 legend_parameters=None, data_type=None, unit=None):
+        """Initialize graphic container.
 
         Args:
             values: A List or Tuple of numerical values that will be used to
                 generate the legend and colors.
-            mesh: A Mesh3D object, with a number of faces or vertices that
-                match the number of input values and will be colored with
-                restults.
+            min_point: A Point3D object for the minimum of the bounding box
+                around the graphic geometry.
+            max_point: A Point3D object for the maximum of the  bounding box
+                around the graphic geometry.
             legend_parameters: An Optional LegendParameter object to override
                 default parameters of the legend.
+            data_type: Optional DataType from the ladybug datatype module, which
+                will be used to assign default legend properties. (ie. Temperature())
+            unit: Optional text string for the units of the values. (ie. 'C')
         """
         # check the inputs
-        assert isinstance(mesh, Mesh3D), \
-            'mesh should be a ladybug Mesh3D. Got {}'.format(type(mesh))
-        assert len(values) == len(mesh.faces) or len(values) == len(mesh.vertices), \
-            'Number of values ({}) does not match the number of' \
-            ' mesh faces ({}) nor the number of vertices ({}).'.format(
-                len(values), len(mesh.faces), len(mesh.vertices))
-        self._mesh = mesh
+        assert isinstance(min_point, Point3D), \
+            'min_point should be a ladybug Point3D. Got {}'.format(type(min_point))
+        assert isinstance(max_point, Point3D), \
+            'max_point should be a ladybug Point3D. Got {}'.format(type(max_point))
         self._legend = Legend(values, legend_parameters)
+        self._min_point = min_point
+        self._max_point = max_point
 
         # set default legend parameters based on input data_type and unit
         self._data_type = data_type
         self._unit = unit
         if data_type is not None:
+            # TODO: Have data types reference Colorsets, which override default colors
             assert isinstance(data_type, DataTypeBase), \
                 'data_type should be a ladybug DataType. Got {}'.format(type(data_type))
             if self.legend_parameters.is_title_default:
                 unit = data_type.units[0] if unit is None else unit
                 data_type.is_unit_acceptable(unit)
                 self.legend_parameters.title = unit if \
-                    self.legend_parameters.vertical_or_horizontal is True \
+                    self.legend_parameters.vertical is True \
                     else '{} ({})'.format(data_type.name, unit)
             if data_type.unit_descr is not None and \
                     self.legend_parameters.ordinal_dictionary is None:
@@ -71,11 +72,11 @@ class ResultMesh(object):
                     self.legend_parameters.min = sorted_keys[0]
                 if self.legend.is_max_default is True:
                     self.legend_parameters.max = sorted_keys[-1]
-                if self.legend_parameters.is_number_of_segments_default:
+                if self.legend_parameters.is_segment_count_default:
                     try:  # try to set the number of segments to align with ordinal text
                         min_i = sorted_keys.index(self.legend_parameters.min)
                         max_i = sorted_keys.index(self.legend_parameters.max)
-                        self.legend_parameters.number_of_segments = \
+                        self.legend_parameters.segment_count = \
                             len(sorted_keys[min_i:max_i + 1])
                     except IndexError:
                         pass
@@ -84,42 +85,36 @@ class ResultMesh(object):
                 'Expected string for unit. Got {}.'.format(type(unit))
             self.legend_parameters.title = unit
 
-        # get min and max points around the ladybug mesh
-        self._min_pt = mesh.min
-        self._max_pt = mesh.max
-
         # set the default segment_height
         if self.legend_parameters.is_segment_height_default:
-            if self.legend_parameters.vertical_or_horizontal:
-                seg_height = float((self._max_pt.y - self._min_pt.y) / 20)
+            if self.legend_parameters.vertical:
+                seg_height = float((self._max_point.y - self._min_point.y) / 20)
             else:
-                seg_height = float((self._max_pt.x - self._min_pt.x) / 20)
+                seg_height = float((self._max_point.x - self._min_point.x) / 20)
             self.legend_parameters.segment_height = seg_height
 
         # set the default base point
         if self.legend_parameters.is_base_plane_default:
-            if self.legend_parameters.vertical_or_horizontal:
+            if self.legend_parameters.vertical:
                 base_pt = Point3D(
-                    self._max_pt.x + self.legend_parameters.segment_width,
-                    self._min_pt.y, self._min_pt.z)
+                    self._max_point.x + self.legend_parameters.segment_width,
+                    self._min_point.y, self._min_point.z)
             else:
                 base_pt = Point3D(
-                    self._max_pt.x, self._max_pt.y +
+                    self._max_point.x, self._max_point.y +
                     3 * self.legend_parameters.text_height,
-                    self._min_pt.z)
+                    self._min_point.z)
             self.legend_parameters.base_plane = Plane(o=base_pt)
 
     @classmethod
     def from_json(cls, data):
-        """Create a result mesh from a dictionary.
+        """Create a graphic container from a dictionary.
 
         Args:
             data: {
             "values": (0, 10),
-            "mesh": {
-                "vertices": [{"x": 0, "y": 0, "z": 0}, {"x": 10, "y": 0, "z": 0},
-                             {"x": 0, "y": 10, "z": 0}, {"x": 10, "y": 10, "z": 0}],
-                "faces": [(0, 1, 2), (3, 2, 1)]}
+            "min_point": {"x": 0, "y": 0, "z": 0},
+            "max_point": {"x": 10, "y": 10, "z": 0}],
             "legend_parameters": None,
             "data_type": None,
             "unit": None}
@@ -135,50 +130,29 @@ class ResultMesh(object):
         if data['data_type'] is not None:
             data_type = DataTypeBase.from_json(data['data_type'])
 
-        return cls(data['values'], Mesh3D.from_dict(data['mesh']),
+        return cls(data['values'], Point3D.from_dict(data['min_point']),
+                   Point3D.from_dict(data['max_point']),
                    legend_parameters, data_type, data['unit'])
 
     @property
     def values(self):
-        """The data set assigned to the mesh."""
+        """The assigned data set of values."""
         return self._legend.values
 
     @property
-    def colored_mesh(self):
-        """The input mesh colored with results."""
-        self._mesh.colors = self.value_colors
-        return self._mesh
+    def min_point(self):
+        """Point3D for the minimum of the bounding box around referenced geometry."""
+        return self._min_point
+
+    @property
+    def max_point(self):
+        """Point3D for the maximum of the bounding box around referenced geometry."""
+        return self._max_point
 
     @property
     def legend_parameters(self):
-        """The legend parameters assigned to this mesh."""
+        """The legend parameters assigned to this graphic."""
         return self._legend._legend_par
-
-    @property
-    def legend(self):
-        """The legend assigned to this mesh."""
-        return self._legend
-
-    @property
-    def value_colors(self):
-        """A List of colors associated with the assigned values."""
-        return self._legend.value_colors
-
-    @property
-    def lower_title_location(self):
-        """A Plane for the lower location of title text."""
-        return Plane(o=Point3D(
-            self._min_pt.x,
-            self._min_pt.y - 2 * self._legend.legend_parameters.text_height,
-            self._min_pt.z))
-
-    @property
-    def upper_title_location(self):
-        """A Plane for the upper location of title text."""
-        return Plane(o=Point3D(
-            self._min_pt.x,
-            self._max_pt.y + self._legend.legend_parameters.text_height,
-            self._min_pt.z))
 
     @property
     def data_type(self):
@@ -190,15 +164,39 @@ class ResultMesh(object):
         """The unit input to this object (if it exists)."""
         return self._unit
 
+    @property
+    def legend(self):
+        """The legend assigned to this graphic."""
+        return self._legend
+
+    @property
+    def value_colors(self):
+        """A List of colors associated with the assigned values."""
+        return self._legend.value_colors
+
+    @property
+    def lower_title_location(self):
+        """A Plane for the lower location of title text."""
+        return Plane(o=Point3D(
+            self._min_point.x,
+            self._min_point.y - 2.5 * self._legend.legend_parameters.text_height,
+            self._min_point.z))
+
+    @property
+    def upper_title_location(self):
+        """A Plane for the upper location of title text."""
+        return Plane(o=Point3D(
+            self._min_point.x,
+            self._max_point.y + self._legend.legend_parameters.text_height,
+            self._min_point.z))
+
     def to_json(self):
-        """Get result mesh as a dictionary."""
-        self._mesh.colors = None  # we don't need to send the colors as they regenerate
-        leg_par = None if self.legend.is_legend_parameters_default is True \
-            else self.legend_parameters.to_json()
+        """Get result graphic container as a dictionary."""
         data_type = None if self.data_type is None else self.data_type.to_json()
         return {'values': self.values,
-                'mesh': self._mesh.to_dict(),
-                'legend_parameters': leg_par,
+                'min_point': self.min_point.to_dict(),
+                'max_point': self.max_point.to_dict(),
+                'legend_parameters': self.legend_parameters.to_json(),
                 'data_type': data_type,
                 'unit': self.unit}
 

@@ -125,12 +125,6 @@ class ColorRangeTestCase(unittest.TestCase):
         assert isinstance(color_range.domain, tuple)
         assert color_range[0] == Color(75, 107, 169)
 
-        color_range[0] = Color(0, 0, 0)
-        assert color_range[0] == Color(0, 0, 0)
-
-        with pytest.raises(Exception):
-            color_range[0] = (0, 0, 0)
-
     def test_color_range_discontinuous(self):
         """Test color range objects with discontinuous colors."""
         color_range = ColorRange(continuous_colors=False)
