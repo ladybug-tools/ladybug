@@ -488,15 +488,16 @@ class ColorRange(object):
                 _step = float(dom[1] - dom[0]) / (len(self._colors) - 1)
                 _n = dom[0]
                 dom = tuple(_n + c * _step for c in range(len(self._colors)))
-
-            assert len(self._colors) >= len(dom), \
-                "For continuous colors, length of domain should be 2 or equal" \
-                " to number of colors"
+            else:
+                assert len(self._colors) == len(dom), \
+                    "For a continuous color range, the length of the domain should " \
+                    "be 2 or equal to number of colors."
         else:  # segmented
             # Number of colors should be at least one more than number
             # of domain values
-            assert len(self._colors) > len(dom), "Length of colors " + \
-                "should be more than domain values for segmented colors"
+            assert len(self._colors) > len(dom), \
+                "For a segmented color range, the length of colors " + \
+                "should be more than the number of domain values ."
 
         self._is_domain_set = True
         self._domain = tuple(dom)
@@ -558,14 +559,6 @@ class ColorRange(object):
     def __getitem__(self, key):
         """Return key item from the color list."""
         return self._colors[key]
-
-    def __setitem__(self, key, value):
-        """Set a color to a new color in color list."""
-        assert isinstance(value, Color), 'Expected ladybug color. ' \
-            'Got {}'.format(type(value))
-        _new_cols = list(self._colors)
-        _new_cols[key] = value
-        self._colors = tuple(_new_cols)
 
     def __iter__(self):
         """Use colors to iterate."""
