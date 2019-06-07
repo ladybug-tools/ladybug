@@ -9,7 +9,6 @@ from .header import Header
 from .datacollection import HourlyContinuousCollection
 from .analysisperiod import AnalysisPeriod
 from .sunpath import Sunpath
-from .euclid import Vector3
 from .futil import write_to_file
 
 from .datatype.energyflux import Irradiance, GlobalHorizontalIrradiance, \
@@ -21,16 +20,16 @@ from .datatype.luminance import ZenithLuminance
 from .skymodel import ashrae_revised_clear_sky, ashrae_clear_sky, \
     zhang_huang_solar_split, estimate_illuminance_from_irradiance
 
+from ladybug_geometry.geometry3d.pointvector import Vector3D
+
 import math
 import os
 
-try:
-    # python 2
+try:  # python 2
     from itertools import izip as zip
     readmode = 'rb'
     writemode = 'wb'
-except ImportError:
-    # python 3
+except ImportError:  # python 3
     xrange = range
     readmode = 'r'
     writemode = 'w'
@@ -610,7 +609,7 @@ class Wea(object):
             x = math.sin(phi) * mult
             y = math.cos(phi) * mult
             z = math.sin(theta)
-            return Vector3(x, y, z)
+            return Vector3D(x, y, z)
 
         # convert the altitude and azimuth to a normal vector
         normal = pol2cart(math.radians(azimuth), math.radians(altitude))
