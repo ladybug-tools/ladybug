@@ -136,14 +136,14 @@ class StatTestCase(unittest.TestCase):
         assert str(typical_summer) == '8/24 to 8/30 between 0 and 23 @1'
         assert str(typical_autumn) == '10/27 to 11/2 between 0 and 23 @1'
 
-    def test_json_methods(self):
+    def test_dict_methods(self):
         """Test JSON serialization methods"""
         relative_path = './tests/stat/chicago.stat'
         stat_obj = STAT(relative_path)
 
-        stat_json = stat_obj.to_json()
-        rebuilt_stat = STAT.from_json(stat_json)
-        assert stat_json == rebuilt_stat.to_json()
+        stat_dict = stat_obj.to_dict()
+        rebuilt_stat = STAT.from_dict(stat_dict)
+        assert stat_dict == rebuilt_stat.to_dict()
 
 
 if __name__ == "__main__":

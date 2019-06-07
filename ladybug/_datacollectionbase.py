@@ -44,7 +44,7 @@ class BaseCollection(object):
         self._validated_a_period = False
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Data Collection from a dictionary.
 
         Args:
@@ -58,7 +58,7 @@ class BaseCollection(object):
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
         assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
-        coll = cls(Header.from_json(data['header']), data['values'], data['datetimes'])
+        coll = cls(Header.from_dict(data['header']), data['values'], data['datetimes'])
         if 'validated_a_period' in data:
             coll._validated_a_period = data['validated_a_period']
         return coll
@@ -349,10 +349,10 @@ class BaseCollection(object):
         collection._validated_a_period = self._validated_a_period
         return collection
 
-    def to_json(self):
+    def to_dict(self):
         """Convert Data Collection to a dictionary."""
         return {
-            'header': self.header.to_json(),
+            'header': self.header.to_dict(),
             'values': self._values,
             'datetimes': self.datetimes,
             'validated_a_period': self._validated_a_period

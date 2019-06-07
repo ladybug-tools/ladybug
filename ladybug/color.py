@@ -29,7 +29,7 @@ class Color(object):
         self.b = b
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a color from a dictionary.
 
         Args:
@@ -77,7 +77,7 @@ class Color(object):
         """Return a copy of the current color."""
         return self.__copy__()
 
-    def to_json(self):
+    def to_dict(self):
         """Get color as a dictionary."""
         return {'r': self.r,
                 'g': self.g,
@@ -417,7 +417,7 @@ class ColorRange(object):
         self.domain = domain
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a color range from a dictionary.
 
         Args:
@@ -432,7 +432,7 @@ class ColorRange(object):
                 data[key] = None
         colors = None
         if data['colors'] is not None:
-            colors = [Color.from_json(col) for col in data['colors']]
+            colors = [Color.from_dict(col) for col in data['colors']]
 
         return cls(colors, data['domain'], data['continuous_colors'])
 
@@ -526,9 +526,9 @@ class ColorRange(object):
         """Return a copy of the current color range."""
         return self.__copy__()
 
-    def to_json(self):
+    def to_dict(self):
         """Get color range as a dictionary."""
-        return {'colors': [col.to_json() for col in self.colors],
+        return {'colors': [col.to_dict() for col in self.colors],
                 'domain': self.domain,
                 'continuous_colors': self.continuous_colors}
 

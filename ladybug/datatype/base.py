@@ -67,7 +67,7 @@ class DataTypeBase(object):
         self._name = name
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a data type from a dictionary.
 
         Args:
@@ -175,8 +175,8 @@ class DataTypeBase(object):
         """Return a copy of the data type."""
         return self.__class__(self.name)
 
-    def to_json(self):
-        """Get data type as a json object"""
+    def to_dict(self):
+        """Get data type as a dictionary."""
         return {
             'name': self.name,
             'data_type': self.__class__.__name__,
