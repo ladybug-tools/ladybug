@@ -24,28 +24,28 @@ class DataTypesTestCase(unittest.TestCase):
         assert isinstance(datatype.UNITS, dict)
         assert isinstance(datatype.TYPESDICT, dict)
 
-    def test_from_json(self):
-        """Test the from json method."""
-        sample_json = {'name': 'Temperature',
+    def test_from_dict(self):
+        """Test the from dict method."""
+        sample_dict = {'name': 'Temperature',
                        'data_type': 'Temperature',
                        'base_unit': 'C'}
-        new_temp = base.DataTypeBase.from_json(sample_json)
+        new_temp = base.DataTypeBase.from_dict(sample_dict)
         assert isinstance(new_temp, temperature.Temperature)
 
-    def test_to_from_json(self):
-        """Test the to/from json methods."""
+    def test_to_from_dict(self):
+        """Test the to/from dict methods."""
         my_temp = temperature.Temperature()
-        temp_json = my_temp.to_json()
-        new_temp = base.DataTypeBase.from_json(temp_json)
-        new_temp = base.DataTypeBase.from_json(temp_json)
-        assert new_temp.to_json() == temp_json
+        temp_dict = my_temp.to_dict()
+        new_temp = base.DataTypeBase.from_dict(temp_dict)
+        new_temp = base.DataTypeBase.from_dict(temp_dict)
+        assert new_temp.to_dict() == temp_dict
 
-    def test_json_generic(self):
-        """Test the from json for a generic type."""
-        sample_json = {'name': 'Days Since Last Snowfall',
+    def test_dict_generic(self):
+        """Test the from dict for a generic type."""
+        sample_dict = {'name': 'Days Since Last Snowfall',
                        'data_type': 'GenericType',
                        'base_unit': 'days'}
-        new_type = base.DataTypeBase.from_json(sample_json)
+        new_type = base.DataTypeBase.from_dict(sample_dict)
         assert isinstance(new_type, base.DataTypeBase)
 
     def test_generic_type(self):

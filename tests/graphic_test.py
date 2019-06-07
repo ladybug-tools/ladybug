@@ -48,16 +48,16 @@ class GraphicContainerTestCase(unittest.TestCase):
         assert graphic_con.lower_title_location != Plane()
         assert graphic_con.upper_title_location != Plane()
 
-    def test_to_from_json(self):
-        """Test the to/from json methods."""
+    def test_to_from_dict(self):
+        """Test the to/from dict methods."""
         mesh2d = Mesh2D.from_grid(num_x=2, num_y=2)
         mesh3d = Mesh3D.from_mesh2d(mesh2d)
         data = [0, 1, 2, 3]
         graphic_con = GraphicContainer(data, mesh3d.min, mesh3d.max)
 
-        graphic_con_json = graphic_con.to_json()
-        new_graphic_con = GraphicContainer.from_json(graphic_con_json)
-        assert new_graphic_con.to_json() == graphic_con_json
+        graphic_con_dict = graphic_con.to_dict()
+        new_graphic_con = GraphicContainer.from_dict(graphic_con_dict)
+        assert new_graphic_con.to_dict() == graphic_con_dict
 
     def test_init_graphic_con_invalid(self):
         """Test the initialization of GraphicContainer objects with invalid inputs."""
