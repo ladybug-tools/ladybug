@@ -45,7 +45,7 @@ class DDY(object):
         self._file_path = None
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a DDY from a dictionary.
 
         Args:
@@ -57,8 +57,8 @@ class DDY(object):
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
 
-        return cls(Location.from_json(data['location']),
-                   [DesignDay.from_json(des_day) for des_day in data['design_days']])
+        return cls(Location.from_dict(data['location']),
+                   [DesignDay.from_dict(des_day) for des_day in data['design_days']])
 
     @classmethod
     def from_ddy_file(cls, file_path):
@@ -191,11 +191,11 @@ class DDY(object):
         """Return True."""
         return True
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the Design Day to a dictionary."""
         return {
-            'location': self.location.to_json(),
-            'design_days': [des_d.to_json() for des_d in self.design_days]
+            'location': self.location.to_dict(),
+            'design_days': [des_d.to_dict() for des_d in self.design_days]
         }
 
     def ToString(self):
@@ -295,7 +295,7 @@ class DesignDay(object):
         self.sky_condition = sky_condition
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Design Day from a dictionary.
 
         Args:
@@ -313,11 +313,11 @@ class DesignDay(object):
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
 
-        return cls(data['name'], data['day_type'], Location.from_json(data['location']),
-                   DryBulbCondition.from_json(data['dry_bulb_condition']),
-                   HumidityCondition.from_json(data['humidity_condition']),
-                   WindCondition.from_json(data['wind_condition']),
-                   SkyCondition.from_json(data['sky_condition']))
+        return cls(data['name'], data['day_type'], Location.from_dict(data['location']),
+                   DryBulbCondition.from_dict(data['dry_bulb_condition']),
+                   HumidityCondition.from_dict(data['humidity_condition']),
+                   WindCondition.from_dict(data['wind_condition']),
+                   SkyCondition.from_dict(data['sky_condition']))
 
     @classmethod
     def from_ep_string(cls, ep_string, location):
@@ -738,16 +738,16 @@ class DesignDay(object):
         """Return True."""
         return True
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the Design Day to a dictionary."""
         return {
             'name': self.name,
             'day_type': self.day_type,
-            'location': self.location.to_json(),
-            'dry_bulb_condition': self.dry_bulb_condition.to_json(),
-            'humidity_condition': self.humidity_condition.to_json(),
-            'wind_condition': self.wind_condition.to_json(),
-            'sky_condition': self.sky_condition.to_json()
+            'location': self.location.to_dict(),
+            'dry_bulb_condition': self.dry_bulb_condition.to_dict(),
+            'humidity_condition': self.humidity_condition.to_dict(),
+            'wind_condition': self.wind_condition.to_dict(),
+            'sky_condition': self.sky_condition.to_dict()
         }
 
     def ToString(self):
@@ -778,7 +778,7 @@ class DryBulbCondition(object):
         self.modifier_schedule = str(modifier_schedule)
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Dry Bulb Condition from a dictionary.
 
         Args:
@@ -843,7 +843,7 @@ class DryBulbCondition(object):
         """Return True."""
         return True
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the Dry Bulb Condition to a dictionary."""
         return {
             'dry_bulb_max': self.dry_bulb_max,
@@ -883,7 +883,7 @@ class HumidityCondition(object):
         self.wet_bulb_range = wet_bulb_range
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Humidity Condition from a dictionary.
 
         Args:
@@ -988,7 +988,7 @@ class HumidityCondition(object):
         """Return True."""
         return True
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the Humidity Condition to a dictionary."""
         return {
             'hum_type': self.hum_type,
@@ -1026,7 +1026,7 @@ class WindCondition(object):
         self.snow_on_ground = snow_on_ground
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Wind Condition from a dictionary.
 
         Args:
@@ -1113,7 +1113,7 @@ class WindCondition(object):
         """Return True."""
         return True
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the Wind Condition to a dictionary."""
         return {
             'wind_speed': self.wind_speed,
@@ -1153,7 +1153,7 @@ class SkyCondition(object):
         self.diff_sched = diff_sched
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Sky Condition from a dictionary.
 
         Args:
@@ -1169,9 +1169,9 @@ class SkyCondition(object):
             assert key in data, 'Required key "{}" is missing!'.format(key)
 
         if data['solar_model'] == 'ASHRAEClearSky':
-            return OriginalClearSkyCondition.from_json(data)
+            return OriginalClearSkyCondition.from_dict(data)
         if data['solar_model'] == 'ASHRAETau':
-            return RevisedClearSkyCondition.from_json(data)
+            return RevisedClearSkyCondition.from_dict(data)
 
         if 'daylight_savings_indicator' not in data:
             data['daylight_savings_indicator'] = 'No'
@@ -1248,7 +1248,7 @@ class SkyCondition(object):
         """Return True."""
         return True
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the Sky Condition to a dictionary."""
         return {
             'solar_model': self.solar_model,
@@ -1294,7 +1294,7 @@ class OriginalClearSkyCondition(SkyCondition):
                    daylight_savings_indicator)
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Sky Condition from a dictionary.
 
         Args:
@@ -1354,7 +1354,7 @@ class OriginalClearSkyCondition(SkyCondition):
                       alt, dnr, dhr in zip(altitudes, dir_norm, diff_horiz)]
         return dir_norm, diff_horiz, glob_horiz
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the Sky Condition to a dictionary."""
         return {
             'solar_model': self.solar_model,
@@ -1392,7 +1392,7 @@ class RevisedClearSkyCondition(SkyCondition):
                    daylight_savings_indicator)
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a Sky Condition from a dictionary.
 
         Args:
@@ -1452,7 +1452,7 @@ class RevisedClearSkyCondition(SkyCondition):
                       alt, dnr, dhr in zip(altitudes, dir_norm, diff_horiz)]
         return dir_norm, diff_horiz, glob_horiz
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the Sky Condition to a dictionary."""
         return {
             'solar_model': self.solar_model,

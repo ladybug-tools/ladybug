@@ -107,7 +107,7 @@ class GraphicContainer(object):
             self.legend_parameters.base_plane = Plane(o=base_pt)
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a graphic container from a dictionary.
 
         Args:
@@ -125,10 +125,10 @@ class GraphicContainer(object):
                 data[key] = None
         legend_parameters = None
         if data['legend_parameters'] is not None:
-            legend_parameters = LegendParameters.from_json(data['legend_parameters'])
+            legend_parameters = LegendParameters.from_dict(data['legend_parameters'])
         data_type = None
         if data['data_type'] is not None:
-            data_type = DataTypeBase.from_json(data['data_type'])
+            data_type = DataTypeBase.from_dict(data['data_type'])
 
         return cls(data['values'], Point3D.from_dict(data['min_point']),
                    Point3D.from_dict(data['max_point']),
@@ -190,13 +190,13 @@ class GraphicContainer(object):
             self._max_point.y + self._legend.legend_parameters.text_height,
             self._min_point.z))
 
-    def to_json(self):
+    def to_dict(self):
         """Get result graphic container as a dictionary."""
-        data_type = None if self.data_type is None else self.data_type.to_json()
+        data_type = None if self.data_type is None else self.data_type.to_dict()
         return {'values': self.values,
                 'min_point': self.min_point.to_dict(),
                 'max_point': self.max_point.to_dict(),
-                'legend_parameters': self.legend_parameters.to_json(),
+                'legend_parameters': self.legend_parameters.to_dict(),
                 'data_type': data_type,
                 'unit': self.unit}
 

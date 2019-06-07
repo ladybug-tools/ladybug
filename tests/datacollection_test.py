@@ -1081,25 +1081,25 @@ class DataCollectionTestCase(unittest.TestCase):
         assert dc1.header.metadata == dc2.header.metadata
         assert dc1.values == dc2.values
 
-    def test_json_methods(self):
-        """Test the to/from json methods for discontinuous collections."""
+    def test_dict_methods(self):
+        """Test the to/from dict methods for discontinuous collections."""
         header = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=1))
         values = list(xrange(24))
         dc = HourlyDiscontinuousCollection(header, values,
                                            header.analysis_period.datetimes)
-        dc_json = dc.to_json()
-        reconstruced_dc = HourlyDiscontinuousCollection.from_json(dc_json)
-        assert dc_json == reconstruced_dc.to_json()
+        dc_dict = dc.to_dict()
+        reconstruced_dc = HourlyDiscontinuousCollection.from_dict(dc_dict)
+        assert dc_dict == reconstruced_dc.to_dict()
 
-    def test_json_methods_continuous(self):
-        """Test the to/from json methods for continuous collection."""
+    def test_dict_methods_continuous(self):
+        """Test the to/from dict methods for continuous collection."""
         header = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=1))
         values = list(xrange(24))
         dc = HourlyContinuousCollection(header, values)
-        dc_json = dc.to_json()
-        reconstruced_dc = HourlyContinuousCollection.from_json(dc_json)
+        dc_dict = dc.to_dict()
+        reconstruced_dc = HourlyContinuousCollection.from_dict(dc_dict)
 
-        assert dc_json == reconstruced_dc.to_json()
+        assert dc_dict == reconstruced_dc.to_dict()
 
     def test_filter_collections_by_statement(self):
         """Test the method to filter collections by conditional statement."""

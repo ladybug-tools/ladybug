@@ -128,7 +128,7 @@ class Legend(object):
                  self._legend_par.decimal_count + 2)
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a legend from a dictionary.
 
         Args:
@@ -140,7 +140,7 @@ class Legend(object):
             data['legend_parameters'] = None
         legend_parameters = None
         if data['legend_parameters'] is not None:
-            legend_parameters = LegendParameters.from_json(data['legend_parameters'])
+            legend_parameters = LegendParameters.from_dict(data['legend_parameters'])
         for key in ('is_min_default', 'is_max_default'):
             if key not in data:
                 data[key] = False
@@ -235,9 +235,7 @@ class Legend(object):
     def segment_mesh_2d(self):
         """A Ladybug Mesh2D for the legend colors."""
         _o = self.legend_parameters.base_plane.o
-        _mesh_2d = self._segment_mesh_2d()
-        _verts = tuple(Point2D(pt.x + _o.x, pt.y + _o.y) for pt in _mesh_2d.vertices)
-        return Mesh2D(_verts, _mesh_2d.faces, _mesh_2d.colors)
+        return self._segment_mesh_2d(Point2D(_o.x, _o.y))
 
     @property
     def color_range(self):
@@ -288,10 +286,10 @@ class Legend(object):
         """Return a copy of the current legend."""
         return self.__copy__()
 
-    def to_json(self):
+    def to_dict(self):
         """Get legend as a dictionary."""
         return {'values': self.values,
-                'legend_parameters': self.legend_parameters.to_json(),
+                'legend_parameters': self.legend_parameters.to_dict(),
                 'is_min_default': self.is_min_default,
                 'is_max_default': self.is_max_default}
 
@@ -323,7 +321,7 @@ class Legend(object):
                                         _l_par.segment_width))
         return _pt_2d
 
-    def _segment_mesh_2d(self):
+    def _segment_mesh_2d(self, base_pt=Point2D(0, 0)):
         """Mesh2D for the segments in the 2D space of the legend."""
         # get general properties
         _l_par = self.legend_parameters
@@ -331,9 +329,9 @@ class Legend(object):
         # create the 2D mesh of the legend
         if _l_par.vertical:
             mesh2d = Mesh2D.from_grid(
-                Point2D(0, 0), 1, n_seg, _l_par.segment_width, _l_par.segment_height)
+                base_pt, 1, n_seg, _l_par.segment_width, _l_par.segment_height)
         else:
-            _base_pt = Point2D(-_l_par.segment_width * n_seg, 0)
+            _base_pt = Point2D(base_pt.x - _l_par.segment_width * n_seg, base_pt.y)
             mesh2d = Mesh2D.from_grid(
                 _base_pt, n_seg, 1, _l_par.segment_width, _l_par.segment_height)
         # add colors to the mesh
@@ -460,7 +458,7 @@ class LegendParameters(object):
         self.font = None
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a color range from a dictionary.
 
         Args:
@@ -487,7 +485,7 @@ class LegendParameters(object):
 
         colors = None
         if data['colors'] is not None:
-            colors = [Color.from_json(col) for col in data['colors']]
+            colors = [Color.from_dict(col) for col in data['colors']]
         base_plane = None
         if data['base_plane'] is not None:
             base_plane = Plane.from_dict(data['base_plane'])
@@ -852,7 +850,7 @@ class LegendParameters(object):
         """Return a copy of the current legend parameters."""
         return self.__copy__()
 
-    def to_json(self):
+    def to_dict(self):
         """Get legend parameters as a dictionary."""
         seg = None if self.is_segment_count_default else self.segment_count
         title = None if self.is_title_default else self.title
@@ -861,7 +859,7 @@ class LegendParameters(object):
         seg_w = None if self.is_segment_width_default else self.segment_width
         txt_h = None if self.is_text_height_default else self.text_height
         return {'min': self.min, 'max': self.max, 'segment_count': seg,
-                'colors': [col.to_json() for col in self.colors],
+                'colors': [col.to_dict() for col in self.colors],
                 'continuous_colors': self.continuous_colors,
                 'continuous_legend': self.continuous_legend, 'title': title,
                 'ordinal_dictionary': self.ordinal_dictionary,

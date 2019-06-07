@@ -55,7 +55,7 @@ class Header(object):
         self._metadata = metadata or {}
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a header from a dictionary.
 
         Args:
@@ -73,8 +73,8 @@ class Header(object):
             if key not in data:
                 data[key] = None
 
-        data_type = DataTypeBase.from_json(data['data_type'])
-        ap = AnalysisPeriod.from_json(data['analysis_period'])
+        data_type = DataTypeBase.from_dict(data['data_type'])
+        ap = AnalysisPeriod.from_dict(data['analysis_period'])
         return cls(data_type, data['unit'], ap, data['metadata'])
 
     @property
@@ -121,10 +121,10 @@ class Header(object):
         """Return data as tuple."""
         return self.to_tuple()
 
-    def to_json(self):
+    def to_dict(self):
         """Return a header as a dictionary."""
-        a_per = self.analysis_period.to_json() if self.analysis_period else None
-        return {'data_type': self.data_type.to_json(),
+        a_per = self.analysis_period.to_dict() if self.analysis_period else None
+        return {'data_type': self.data_type.to_dict(),
                 'unit': self.unit,
                 'analysis_period': a_per,
                 'metadata': self.metadata}

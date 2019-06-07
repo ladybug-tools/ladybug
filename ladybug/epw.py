@@ -178,8 +178,8 @@ class EPW(object):
         return epw_obj
 
     @classmethod
-    def from_json(cls, data):
-        """ Create EPW from json dictionary.
+    def from_dict(cls, data):
+        """ Create EPW from a dictionary.
 
             Args:
                 data: {
@@ -228,8 +228,8 @@ class EPW(object):
                 data[key] = {}
 
         # Set the required properties of the EPW object.
-        epw_obj._location = Location.from_json(data['location'])
-        epw_obj._data = [HourlyContinuousCollection.from_json(dc)
+        epw_obj._location = Location.from_dict(data['location'])
+        epw_obj._data = [HourlyContinuousCollection.from_dict(dc)
                          for dc in data['data_collections']]
         if 'is_leap_year' in data:
             epw_obj._is_leap_year = data['is_leap_year']
@@ -251,15 +251,15 @@ class EPW(object):
         epw_obj.cooling_design_condition_dictionary = data['cooling_dict']
         epw_obj.extreme_design_condition_dictionary = data['extremes_dict']
 
-        def _dejson(parent_dict, obj):
+        def _dedict(parent_dict, obj):
             new_dict = {}
             for key, val in parent_dict.items():
-                new_dict[key] = obj.from_json(val)
+                new_dict[key] = obj.from_dict(val)
             return new_dict
-        epw_obj.extreme_hot_weeks = _dejson(data['extreme_hot_weeks'], AnalysisPeriod)
-        epw_obj.extreme_cold_weeks = _dejson(data['extreme_cold_weeks'], AnalysisPeriod)
-        epw_obj.typical_weeks = _dejson(data['typical_weeks'], AnalysisPeriod)
-        epw_obj.monthly_ground_temperature = _dejson(
+        epw_obj.extreme_hot_weeks = _dedict(data['extreme_hot_weeks'], AnalysisPeriod)
+        epw_obj.extreme_cold_weeks = _dedict(data['extreme_cold_weeks'], AnalysisPeriod)
+        epw_obj.typical_weeks = _dedict(data['typical_weeks'], AnalysisPeriod)
+        epw_obj.monthly_ground_temperature = _dedict(
             data['monthly_ground_temps'], MonthlyCollection)
 
         if 'daylight_savings_start' in data:
@@ -1340,24 +1340,24 @@ class EPW(object):
 
         return file_path
 
-    def to_json(self):
+    def to_dict(self):
         """Convert the EPW to a dictionary."""
         # load data if it's not loaded
         if not self.is_data_loaded:
             self._import_data()
 
-        def jsonify_dict(base_dict):
+        def dictify_dict(base_dict):
             new_dict = {}
             for key, val in base_dict.items():
-                new_dict[key] = val.to_json()
+                new_dict[key] = val.to_dict()
             return new_dict
-        hot_wks = jsonify_dict(self.extreme_hot_weeks)
-        cold_wks = jsonify_dict(self.extreme_cold_weeks)
-        typ_wks = jsonify_dict(self.typical_weeks)
-        grnd_temps = jsonify_dict(self.monthly_ground_temperature)
+        hot_wks = dictify_dict(self.extreme_hot_weeks)
+        cold_wks = dictify_dict(self.extreme_cold_weeks)
+        typ_wks = dictify_dict(self.typical_weeks)
+        grnd_temps = dictify_dict(self.monthly_ground_temperature)
         return {
-            'location': self.location.to_json(),
-            'data_collections': [dc.to_json() for dc in self._data],
+            'location': self.location.to_dict(),
+            'data_collections': [dc.to_dict() for dc in self._data],
             'metadata': self.metadata,
             'heating_dict': self.heating_design_condition_dictionary,
             'cooling_dict': self.cooling_design_condition_dictionary,

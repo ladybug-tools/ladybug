@@ -5,8 +5,11 @@ from ladybug.legend import Legend, LegendParameters
 from ladybug.color import Color, Colorset, ColorRange
 from ladybug.datatype.thermalcondition import PredictedMeanVote
 
+from ladybug_geometry.geometry2d.pointvector import Point2D
+from ladybug_geometry.geometry2d.mesh import Mesh2D
 from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
 from ladybug_geometry.geometry3d.plane import Plane
+from ladybug_geometry.geometry3d.mesh import Mesh3D
 
 import unittest
 import pytest
@@ -34,12 +37,12 @@ class LegendParametersTestCase(unittest.TestCase):
         assert leg_par_copy.max == leg_par.max
         assert leg_par_copy.segment_count == leg_par.segment_count
 
-    def test_to_from_json(self):
-        """Test the to/from json methods."""
+    def test_to_from_dict(self):
+        """Test the to/from dict methods."""
         leg_par = LegendParameters(0, 1000)
-        leg_par_json = leg_par.to_json()
-        new_leg_par = LegendParameters.from_json(leg_par_json)
-        assert new_leg_par.to_json() == leg_par_json
+        leg_par_dict = leg_par.to_dict()
+        new_leg_par = LegendParameters.from_dict(leg_par_dict)
+        assert new_leg_par.to_dict() == leg_par_dict
 
     def test_colors(self):
         """Test the LegendParameter colors property."""
@@ -305,12 +308,12 @@ class LegendTestCase(unittest.TestCase):
         assert legend.is_min_default is False
         assert legend.is_max_default is False
 
-    def test_to_from_json(self):
-        """Test the to/from json methods."""
+    def test_to_from_dict(self):
+        """Test the to/from dict methods."""
         legend = Legend([0, 10], LegendParameters(2, 8))
-        legend_json = legend.to_json()
-        new_legend = Legend.from_json(legend_json)
-        assert new_legend.to_json() == legend_json
+        legend_dict = legend.to_dict()
+        new_legend = Legend.from_dict(legend_dict)
+        assert new_legend.to_dict() == legend_dict
 
     def test_value_colors(self):
         """Test the color_range, value_colors, and segment_colors property."""
@@ -331,11 +334,13 @@ class LegendTestCase(unittest.TestCase):
         assert legend.title == ''
         assert legend.legend_parameters.is_title_default is True
         assert legend.title_location.o == Point3D(0, 11.25, 0)
+        assert legend.title_location_2d == Point2D(0, 11.25)
 
         legend = Legend(range(5), LegendParameters(segment_count=5, title='C'))
         assert legend.title == 'C'
         assert legend.legend_parameters.is_title_default is False
         assert legend.title_location.o == Point3D(0, 5.25, 0)
+        assert legend.title_location_2d == Point2D(0, 5.25)
 
     def test_segment_text(self):
         """Test the segment_text property."""
@@ -345,6 +350,8 @@ class LegendTestCase(unittest.TestCase):
         assert legend.segment_text == ['0.00', '1.80', '3.60', '5.40', '7.20', '9.00']
         for pl in legend.segment_text_location:
             assert isinstance(pl, Plane)
+        for pt in legend.segment_text_location_2d:
+            assert isinstance(pt, Point2D)
         seg_num = [0, 1.8, 3.6, 5.4, 7.2, 9]
         for i, num in enumerate(legend.segment_numbers):
             assert num == pytest.approx(seg_num[i], rel=1e-3)
@@ -395,6 +402,7 @@ class LegendTestCase(unittest.TestCase):
         """Test the segment_mesh property."""
         legend = Legend(range(10), LegendParameters(segment_count=6))
 
+        assert isinstance(legend.segment_mesh, Mesh3D)
         assert len(legend.segment_mesh.faces) == 6
         assert len(legend.segment_mesh.vertices) == 14
         legend.legend_parameters.vertical = False
@@ -407,6 +415,24 @@ class LegendTestCase(unittest.TestCase):
         legend.legend_parameters.vertical = True
         assert len(legend.segment_mesh.faces) == 5
         assert len(legend.segment_mesh.vertices) == 12
+
+    def test_segment_mesh_2d(self):
+        """Test the segment_mesh_2d property."""
+        legend = Legend(range(10), LegendParameters(segment_count=6))
+
+        assert isinstance(legend.segment_mesh_2d, Mesh2D)
+        assert len(legend.segment_mesh_2d.faces) == 6
+        assert len(legend.segment_mesh_2d.vertices) == 14
+        legend.legend_parameters.vertical = False
+        assert len(legend.segment_mesh_2d.faces) == 6
+        assert len(legend.segment_mesh_2d.vertices) == 14
+
+        legend.legend_parameters.continuous_legend = True
+        assert len(legend.segment_mesh_2d.faces) == 5
+        assert len(legend.segment_mesh_2d.vertices) == 12
+        legend.legend_parameters.vertical = True
+        assert len(legend.segment_mesh_2d.faces) == 5
+        assert len(legend.segment_mesh_2d.vertices) == 12
 
 
 if __name__ == "__main__":

@@ -100,16 +100,17 @@ class Wea(object):
         return cls(location, dnr, dhr, timestep, is_leap_year)
 
     @classmethod
-    def from_json(cls, data):
-        """ Create Wea from json file
-            {
+    def from_dict(cls, data):
+        """ Create Wea from a dictionary
+
+        Args:
+            data: {
             "location": {} , // ladybug location schema
             "direct_normal_irradiance": [], // List of hourly direct normal
                 irradiance data points
             "diffuse_horizontal_irradiance": [], // List of hourly diffuse
                 horizontal irradiance data points
-            "timestep": float //timestep between measurements, default is 1
-            }
+            "timestep": float //timestep between measurements, default is 1}
         """
         required_keys = ('location', 'direct_normal_irradiance',
                          'diffuse_horizontal_irradiance')
@@ -122,11 +123,11 @@ class Wea(object):
             if key not in data:
                 data[key] = None
 
-        location = Location.from_json(data['location'])
+        location = Location.from_dict(data['location'])
         direct_normal_irradiance = \
-            HourlyContinuousCollection.from_json(data['direct_normal_irradiance'])
+            HourlyContinuousCollection.from_dict(data['direct_normal_irradiance'])
         diffuse_horizontal_irradiance = \
-            HourlyContinuousCollection.from_json(data['diffuse_horizontal_irradiance'])
+            HourlyContinuousCollection.from_dict(data['diffuse_horizontal_irradiance'])
         timestep = data['timestep']
         is_leap_year = data['is_leap_year']
 
@@ -729,23 +730,14 @@ class Wea(object):
 
         return global_horiz_ill, direct_normal_ill, diffuse_horizontal_ill, zenith_lum
 
-    def to_json(self):
-        """Write Wea to json file
-            {
-            "location": {} , // ladybug location schema
-            "direct_normal_irradiance": (), // Tuple of hourly direct normal
-                irradiance
-            "diffuse_horizontal_irradiance": (), // Tuple of hourly diffuse
-                horizontal irradiance
-            "timestep": float //timestep between measurements, default is 1
-            }
-        """
+    def to_dict(self):
+        """Get the Wea as a dictionary."""
         return {
-            'location': self.location.to_json(),
+            'location': self.location.to_dict(),
             'direct_normal_irradiance':
-                self.direct_normal_irradiance.to_json(),
+                self.direct_normal_irradiance.to_dict(),
             'diffuse_horizontal_irradiance':
-                self.diffuse_horizontal_irradiance.to_json(),
+                self.diffuse_horizontal_irradiance.to_dict(),
             'timestep': self.timestep,
             'is_leap_year': self.is_leap_year
         }

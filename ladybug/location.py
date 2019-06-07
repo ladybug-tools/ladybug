@@ -37,7 +37,7 @@ class Location(object):
         self.source = source
 
     @classmethod
-    def from_json(cls, data):
+    def from_dict(cls, data):
         """Create a location from a dictionary.
 
         Args:
@@ -179,16 +179,8 @@ class Location(object):
         """Overwrite .NET ToString."""
         return self.__repr__()
 
-    def to_json(self):
-        """Create a location from json.
-            {
-              "city": "-",
-              "latitude": 0,
-              "longitude": 0,
-              "time_zone": 0,
-              "elevation": 0
-            }
-        """
+    def to_dict(self):
+        """Get location as a a dictionary."""
         return {
             "city": self.city,
             "state": self.state,
