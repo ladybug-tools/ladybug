@@ -31,10 +31,15 @@ if (sys.version_info > (3, 0)):
 class DDY(object):
     """A DDY object containing all of the data of a .ddy file.
 
-    properties:
+    Properties:
         location: A Ladybug location object
         design_days: A list of the design days in the ddy file.
     """
+    _location_format = re.compile(
+        r"(Site:Location,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
+    _design_day_format = re.compile(
+        r"(SizingPeriod:DesignDay,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
+
     def __init__(self, location, design_days):
         """Initalize the class."""
         assert hasattr(location, 'isLocation'), 'Expected' \
@@ -89,12 +94,8 @@ class DDY(object):
 
         try:
             ddytxt = ddywin.read()
-            location_format = re.compile(
-                r"(Site:Location,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
-            design_day_format = re.compile(
-                r"(SizingPeriod:DesignDay,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
-            location_matches = location_format.findall(ddytxt)
-            des_day_matches = design_day_format.findall(ddytxt)
+            location_matches = cls._location_format.findall(ddytxt)
+            des_day_matches = cls._design_day_format.findall(ddytxt)
         except Exception as e:
             import traceback
             raise Exception('{}\n{}'.format(e, traceback.format_exc()))

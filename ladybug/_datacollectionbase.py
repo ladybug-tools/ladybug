@@ -258,7 +258,11 @@ class BaseCollection(object):
         if self._enumeration is None:
             self._get_mutable_enumeration()
         col_obj = self._enumeration['mutable'][self._collection_type]
-        collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
+        try:
+            collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
+        except AssertionError as e:
+            raise AssertionError('No value meets the conditional statement.'
+                                 '\n{}'.format(e))
         collection._validated_a_period = self._validated_a_period
         return collection
 
@@ -374,7 +378,11 @@ class BaseCollection(object):
         """
         pattern = BaseCollection.pattern_from_collections_and_statement(
             data_collections, statement)
-        collections = [coll.filter_by_pattern(pattern) for coll in data_collections]
+        try:
+            collections = [coll.filter_by_pattern(pattern) for coll in data_collections]
+        except AssertionError as e:
+            raise AssertionError('No value meets the conditional statement.'
+                                 '\n{}'.format(e))
         return collections
 
     @staticmethod
