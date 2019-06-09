@@ -54,11 +54,44 @@ class STAT(object):
         monthly_tau_beam
         monthly_tau_diffuse
     """
+    # categories used for parsing text
     _months = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
                'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
     _wind_dirs = (0, 45, 90, 135, 180, 225, 270, 315)
     _wind_dir_names = ('North', 'NorthEast', 'East', 'SouthEast', 'South',
                        'SouthWest', 'West', 'NorthWest')
+    # compiled strings for identifying data in the file
+    _coord_pattern1 = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)")
+    _coord_pattern2 = re.compile(r"{([NSEW])(\s*\d*) (\s*\d*)")
+    _elev_pattern1 = re.compile(r"Elevation\s*[-]*\s*(\d*)m\s*(\S*)")
+    _elev_pattern2 = re.compile(r"Elevation\s*[-]*\s*(\d*)\s*m\s*(\S*)")
+    _timez_pattern = re.compile(r"{GMT\s*(\S*)\s*Hours}")
+    _press_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)")
+    _ashraecz_pattern = re.compile(r'Climate type\s"(\S*)"\s\(A')
+    _koppencz_pattern = re.compile(r'Climate type\s"(\S*)"\s\(K')
+    _hotweek_pattern = re.compile(r"Extreme Hot Week Period selected:"
+                                  "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
+    _coldweek_pattern = re.compile(r"Extreme Cold Week Period selected:"
+                                   "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
+    _typweek_pattern = re.compile(r"(\S*)\s*Typical Week Period selected:"
+                                  "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
+    _heat_pattern = re.compile(r"Heating\s(\d.*)")
+    _cool_pattern = re.compile(r"Cooling\s(\d.*)")
+    _tau_beam_pattern = re.compile(r"taub \(beam\)(.*)")
+    _tau_diffuse_pattern = re.compile(r"taud \(diffuse\)(.*)")
+    _db_50_pattern = re.compile(r"Drybulb 5.0%(.*)")
+    _wb_50_pattern = re.compile(r"Coincident Wetbulb 5.0%(.*)")
+    _db_100_pattern = re.compile(r"Drybulb 10.%(.*)")
+    _wb_100_pattern = re.compile(r"Coincident Wetbulb 10.%(.*)")
+    _db_20_pattern = re.compile(r"Drybulb 2.0%(.*)")
+    _wb_20_pattern = re.compile(r"Coincident Wetbulb 2.0%(.*)")
+    _db_04_pattern = re.compile(r"Drybulb 0.4%(.*)")
+    _wb_04_pattern = re.compile(r"Coincident Wetbulb 0.4%(.*)")
+    _db_range_50_pattern = re.compile(r"Drybulb range - DB 5%(.*)")
+    _wb_range_50_pattern = re.compile(r"Wetbulb range - DB 5%(.*)")
+    _winds_pattern = re.compile(r"Monthly Statistics for Wind Speed[\s\S]*Daily Avg(.*)")
+    _windd_patterns = tuple(re.compile(
+        r"Monthly Wind Direction %[\s\S]*" + dir + r"\s(.*)") for dir in _wind_dir_names)
 
     def __init__(self, file_path):
         """Initalize the class.
@@ -212,30 +245,24 @@ class STAT(object):
             loc_name = self._header[2].strip().replace('Location -- ', '')
             if ' - ' in loc_name:
                 city = ' '.join(loc_name.split(' - ')[:-1])
-            else:
-                # for US stat files it is full name separated by spaces
+            else:  # for US stat files it is full name separated by spaces
                 city = ' '.join(loc_name.split()[:-2])
             country = loc_name.split(' ')[-1]
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
-            if iron_python:
-                # IronPython
-                coord_pattern = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)")
-                matches = coord_pattern.findall(self._header[3].replace('\xb0', 'deg'))
-            else:
-                # CPython
-                coord_pattern = re.compile(r"{([NSEW])(\s*\d*) (\s*\d*)")
-                matches = coord_pattern.findall(self._header[3])
+            if iron_python:  # IronPython
+                matches = self._coord_pattern1.findall(
+                    self._header[3].replace('\xb0', 'deg'))
+            else:  # CPython
+                matches = self._coord_pattern2.findall(self._header[3])
             lat_sign = -1 if matches[0][0] == 'S' else 1
             latitude = lat_sign * (float(matches[0][1]) + (float(matches[0][2]) / 60))
             lon_sign = -1 if matches[1][0] == 'W' else 1
             longitude = lon_sign * (float(matches[1][1]) + (float(matches[1][2]) / 60))
-            time_zone = self._regex_check(r"{GMT\s*(\S*)\s*Hours}", self._header[3])
-            elev_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)m\s*(\S*)")
-            elev_matches = elev_pattern.findall(self._header[4])
+            time_zone = self._regex_check(self._timez_pattern, self._header[3])
+            elev_matches = self._elev_pattern1.findall(self._header[4])
             if len(elev_matches) == 0:
-                elev_pattern = re.compile(r"Elevation\s*[-]*\s*(\d*)\s*m\s*(\S*)")
-                elev_matches = elev_pattern.findall(self._header[4])
+                elev_matches = self._elev_pattern2.findall(self._header[4])
             elev_sign = -1 if elev_matches[0][-1].lower() == 'below' else 1
             elevation = elev_sign * float(elev_matches[0][0])
             self._location = Location()
@@ -250,47 +277,41 @@ class STAT(object):
 
             # pull out individual properties
             self._stand_press_at_elev = self._regex_check(
-                r"Elevation\s*[-]*\s*(\d*)", self._header[5])
+                self._press_pattern, self._header[5])
             self._ashrae_climate_zone = self._regex_check(
-                r'Climate type\s"(\S*)"\s\(A', self._body)
+                self._ashraecz_pattern, self._body)
             self._koppen_climate_zone = self._regex_check(
-                r'Climate type\s"(\S*)"\s\(K', self._body)
+                self._koppencz_pattern, self._body)
 
             # pull out extreme and seasonal weeks.
-            self._extreme_hot_week = self._regex_week_parse(
-                r"Extreme Hot Week Period selected:"
-                "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
-            self._extreme_cold_week = self._regex_week_parse(
-                r"Extreme Cold Week Period selected:"
-                "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
+            self._extreme_hot_week = self._regex_week_parse(self._hotweek_pattern)
+            self._extreme_cold_week = self._regex_week_parse(self._coldweek_pattern)
             self._typical_weeks = self._regex_typical_week_parse()
 
             # pull out annual design days
-            winter_vals = self._regex_parse(r"Heating\s(\d.*)")
+            winter_vals = self._regex_parse(self._heat_pattern)
             for key, val in zip(DesignDay.heating_keys, winter_vals):
                 self._winter_des_day_dict[key] = val
-            summer_vals = self._regex_parse(r"Cooling\s(\d.*)")
+            summer_vals = self._regex_parse(self._cool_pattern)
             for key, val in zip(DesignDay.cooling_keys, summer_vals):
                 self._summer_des_day_dict[key] = val
 
             # Pull out relevant monthly information
-            self._monthly_tau_beam = self._regex_parse(r"taub \(beam\)(.*)")
-            self._monthly_tau_diffuse = self._regex_parse(r"taud \(diffuse\)(.*)")
-            self._monthly_db_50 = self._regex_parse(r"Drybulb 5.0%(.*)")
-            self._monthly_wb_50 = self._regex_parse(r"Coincident Wetbulb 5.0%(.*)")
-            self._monthly_db_100 = self._regex_parse(r"Drybulb 10.%(.*)")
-            self._monthly_wb_100 = self._regex_parse(r"Coincident Wetbulb 10.%(.*)")
-            self._monthly_db_20 = self._regex_parse(r"Drybulb 2.0%(.*)")
-            self._monthly_wb_20 = self._regex_parse(r"Coincident Wetbulb 2.0%(.*)")
-            self._monthly_db_04 = self._regex_parse(r"Drybulb 0.4%(.*)")
-            self._monthly_wb_04 = self._regex_parse(r"Coincident Wetbulb 0.4%(.*)")
-            self._monthly_db_range_50 = self._regex_parse(r"Drybulb range - DB 5%(.*)")
-            self._monthly_wb_range_50 = self._regex_parse(r"Wetbulb range - DB 5%(.*)")
-            self._monthly_wind = self._regex_parse(
-                r"Monthly Statistics for Wind Speed[\s\S]*Daily Avg(.*)")
-            for direction in self._wind_dir_names:
-                re_string = r"Monthly Wind Direction %[\s\S]*" + direction + r"\s(.*)"
-                dirs = self._regex_parse(re_string)
+            self._monthly_tau_beam = self._regex_parse(self._tau_beam_pattern)
+            self._monthly_tau_diffuse = self._regex_parse(self._tau_diffuse_pattern)
+            self._monthly_db_50 = self._regex_parse(self._db_50_pattern)
+            self._monthly_wb_50 = self._regex_parse(self._wb_50_pattern)
+            self._monthly_db_100 = self._regex_parse(self._db_100_pattern)
+            self._monthly_wb_100 = self._regex_parse(self._wb_100_pattern)
+            self._monthly_db_20 = self._regex_parse(self._db_20_pattern)
+            self._monthly_wb_20 = self._regex_parse(self._wb_20_pattern)
+            self._monthly_db_04 = self._regex_parse(self._db_04_pattern)
+            self._monthly_wb_04 = self._regex_parse(self._wb_04_pattern)
+            self._monthly_db_range_50 = self._regex_parse(self._db_range_50_pattern)
+            self._monthly_wb_range_50 = self._regex_parse(self._wb_range_50_pattern)
+            self._monthly_wind = self._regex_parse(self._winds_pattern)
+            for direction in self._windd_patterns:
+                dirs = self._regex_parse(direction)
                 if dirs != []:
                     self._monthly_wind_dirs.append(dirs)
             if self._monthly_wind_dirs == []:
@@ -299,8 +320,8 @@ class STAT(object):
         finally:
             statwin.close()
 
-    def _regex_check(self, regex_str, search_space):
-        matches = re.compile(regex_str).findall(search_space)
+    def _regex_check(self, regex_pattern, search_space):
+        matches = regex_pattern.findall(search_space)
         if len(matches) > 0:
             try:
                 return float(matches[0])
@@ -322,8 +343,8 @@ class STAT(object):
         else:
             return None
 
-    def _regex_week_parse(self, regex_str):
-        matches = re.compile(regex_str).findall(self._body)
+    def _regex_week_parse(self, regex_pattern):
+        matches = regex_pattern.findall(self._body)
         if len(matches) > 0:
             return self._regex_week(matches[0])
         else:
@@ -331,9 +352,7 @@ class STAT(object):
 
     def _regex_typical_week_parse(self):
         typ_weeks = {'other': []}
-        typ_str = r"(\S*)\s*Typical Week Period selected:" \
-            "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),"
-        matches = re.compile(typ_str).findall(self._body)
+        matches = self._typweek_pattern.findall(self._body)
         for match in matches:
             a_per = self._regex_week(match[1:])
             if 'winter' in match[0]:
@@ -348,8 +367,8 @@ class STAT(object):
                 typ_weeks['other'].append(a_per)
         return typ_weeks
 
-    def _regex_parse(self, regex_str):
-        matches = re.compile(regex_str).findall(self._body)
+    def _regex_parse(self, regex_pattern):
+        matches = regex_pattern.findall(self._body)
         if len(matches) > 0:
             raw_txt = matches[0].strip().split('\t')
             try:
