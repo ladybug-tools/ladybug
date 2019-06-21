@@ -10,6 +10,7 @@ ladybug/sunpathplus.py
 *.ipynb
 .tox
 *.egg-info
+.eggs/*
 build
 dist
 venv
