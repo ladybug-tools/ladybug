@@ -69,3 +69,8 @@ class Power(DataTypeBase):
     def isPower(self):
         """Return True."""
         return True
+
+
+class ActivityLevel(Power):
+    _abbreviation = 'Activity'
+    _min = 0
