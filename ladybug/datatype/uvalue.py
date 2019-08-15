@@ -41,3 +41,11 @@ class UValue(DataTypeBase):
     def isUValue(self):
         """Return True."""
         return True
+
+
+class ConvectionCoefficient(UValue):
+    _abbreviation = 'hc'
+
+
+class RadiantCoefficient(UValue):
+    _abbreviation = 'hr'
