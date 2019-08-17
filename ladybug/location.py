@@ -72,7 +72,7 @@ class Location(object):
         if not location:
             return cls()
         try:
-            if hasattr(location, 'isLocation'):
+            if isinstance(location, Location):
                 # Ladybug location
                 return location
 
