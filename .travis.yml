@@ -30,6 +30,11 @@ jobs:
     - git config --global user.email "releases@ladybug.tools"
     - git config --global user.name "ladybugbot"
     - npx semantic-release
+  - stage: docs
+    if: branch = master AND (NOT type IN (pull_request))
+    script:
+    - sphinx-apidoc -f -e -d 4 -o ./docs ./ladybug ./ladybug/euclid.py
+    - sphinx-build -b html ./docs ./docs/_build/docs
     deploy:
       provider: pages
       skip_cleanup: true
