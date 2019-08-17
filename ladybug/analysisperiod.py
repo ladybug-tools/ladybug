@@ -165,7 +165,7 @@ class AnalysisPeriod(object):
         """
         if not analysis_period:
             return cls()
-        elif hasattr(analysis_period, 'isAnalysisPeriod'):
+        elif isinstance(analysis_period, AnalysisPeriod):
             return analysis_period
         elif isinstance(analysis_period, str):
             try:
@@ -447,11 +447,8 @@ class AnalysisPeriod(object):
         if isinstance(other, self.__class__):
             if (self.st_time, self.end_time, self.timestep, self.is_leap_year) == \
                     (other.st_time, other.end_time, other.timestep, other.is_leap_year):
-                        return True
-            else:
-                return False
-        else:
-            return False
+                return True
+        return False
 
     def __ne__(self, other):
         return not self.__eq__(other)
