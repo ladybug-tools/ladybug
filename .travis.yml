@@ -5,7 +5,8 @@ python:
   - "3.6"
 
 install:
- - pip install -r dev-requirements.txt
+  - pip install -r dev-requirements.txt
+  - pip install -r requirements.txt 
 
 
 script:
@@ -25,6 +26,7 @@ jobs:
     - "3.6"
     install:
     - pip install -r dev-requirements.txt
+    - pip install -r requirements.txt 
     - npm install @semantic-release/exec
     script:
     - git config --global user.email "releases@ladybug.tools"

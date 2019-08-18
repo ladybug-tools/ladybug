@@ -5,6 +5,9 @@ import sys
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+with open('requirements.txt') as f:
+    requirements = f.read().splitlines()
+
 setuptools.setup(
     name="lbt-ladybug",
     use_scm_version=True,
@@ -16,9 +19,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/ladybug-tools/ladybug",
     packages=setuptools.find_packages(exclude=["tests"]),
-    install_requires=[
-        'ladybug-geometry'
-    ],
+    install_requires=requirements,
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
