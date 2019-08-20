@@ -380,7 +380,7 @@ class Wea(object):
             relative_humidity: A list of annual float values between
                 0 and 100 that represent the relative humidity in percent.
             dry_bulb_temperature: A list of annual float values that
-                represent the dry bulb temperature in degrees Celcius.
+                represent the dry bulb temperature in degrees Celsius.
             wind_speed: A list of annual float values that
                 represent the wind speed in meters per second.
             atmospheric_pressure: An optional list of float values that
@@ -571,14 +571,14 @@ class Wea(object):
         """Returns the irradiance components facing a given altitude and azimuth.
 
         This method computes unobstructed solar flux facing a given
-        altitude and azimuth. The default is set to return the golbal horizontal
+        altitude and azimuth. The default is set to return the global horizontal
         irradiance, assuming an altitude facing straight up (90 degrees).
 
         Args:
             altitude: A number between -90 and 90 that represents the
                 altitude at which irradiance is being evaluated in degrees.
             azimuth: A number between 0 and 360 that represents the
-                azimuth at wich irradiance is being evaluated in degrees.
+                azimuth at which irradiance is being evaluated in degrees.
             ground_reflectance: A number between 0 and 1 that represents the
                 reflectance of the ground. Default is set to 0.2. Some
                 common ground reflectances are:
@@ -592,10 +592,10 @@ class Wea(object):
                     asphalt: 0.12
                     concrete: 0.30
                     sea: 0.06
-            isotrophic: A boolean value that sets whether an istotrophic sky is
-                used (as opposed to an anisotrophic sky). An isotrophic sky
-                assummes an even distribution of diffuse irradiance across the
-                sky while an anisotrophic sky places more diffuse irradiance
+            isotrophic: A boolean value that sets whether an isotropic sky is
+                used (as opposed to an anisotropic sky). An isotrophic sky
+                assumes an even distribution of diffuse irradiance across the
+                sky while an anisotropic sky places more diffuse irradiance
                 near the solar disc. Default is set to True for isotrophic
 
         Returns:
@@ -685,11 +685,11 @@ class Wea(object):
                 or lack of a leap year must align with this Wea.
 
         Returns:
-            global_horiz_ill: Data collectin of Global Horizontal Illuminance in lux.
-            direct_normal_ill: Data collectin of Direct Normal Illuminance in lux.
-            diffuse_horizontal_ill: Data collectin of  Diffuse Horizontal Illuminance
+            global_horiz_ill: Data collection of Global Horizontal Illuminance in lux.
+            direct_normal_ill: Data collection of Direct Normal Illuminance in lux.
+            diffuse_horizontal_ill: Data collection of  Diffuse Horizontal Illuminance
                 in lux.
-            zenith_lum: Data collectin of Zenith Luminance in lux.
+            zenith_lum: Data collection of Zenith Luminance in lux.
         """
         # check the dew_point input
         assert len(dew_point) == self.hour_count(self.is_leap_year) * self.timestep, \
@@ -750,7 +750,7 @@ class Wea(object):
         """
         if not file_path.lower().endswith('.wea'):
             file_path += '.wea'
-
+        is_leap_year = self.is_leap_year
         # generate hoys in wea file based on timestep
         full_wea = False
         if not hoys:
@@ -776,7 +776,7 @@ class Wea(object):
                     print('Warn: Wea data for {} is not available!'.format(dt))
                     continue
 
-                dt = DateTime.from_hoy(hoy)
+                dt = DateTime.from_hoy(hoy, is_leap_year)
                 dt = dt.add_minute(30) if self.timestep == 1 else dt
                 line = "%d %d %.3f %d %d\n" \
                     % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
