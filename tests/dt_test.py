@@ -49,6 +49,15 @@ def test_to_from_date_time_string():
     assert str(rebuilt_dt) == dt_str
 
 
+def test_to_from_array():
+    """Test the from_array method for DateTime."""
+    dt1 = DateTime(6, 21, 12)
+    dt_arr = dt1.to_array()
+    rebuilt_dt = DateTime.from_array(dt_arr)
+    assert rebuilt_dt == dt1
+    assert rebuilt_dt.to_array() == dt_arr
+
+
 def test_date_time_from_hoy():
     """Test the from_hoy method for DateTime and basic properties."""
     dt1 = DateTime.from_hoy(4116)
@@ -125,6 +134,15 @@ def test_to_from_date_string():
     assert str(rebuilt_dt) == dt_str
 
 
+def test_date_to_from_array():
+    """Test the from_array method for Date."""
+    dt1 = Date(6, 21)
+    dt_arr = dt1.to_array()
+    rebuilt_dt = Date.from_array(dt_arr)
+    assert rebuilt_dt == dt1
+    assert rebuilt_dt.to_array() == dt_arr
+
+
 def test_time_init():
     """Test the init method for Date and basic properties."""
     t1 = Time(12, 30)
@@ -164,3 +182,12 @@ def test_to_from_time_string():
     rebuilt_t = Time.from_time_string(t_str)
     assert rebuilt_t == t1
     assert str(rebuilt_t) == t_str
+
+
+def test_time_to_from_array():
+    """Test the from_array method for Date."""
+    t1 = Time(12, 30)
+    t_arr = t1.to_array()
+    rebuilt_t = Time.from_array(t_arr)
+    assert rebuilt_t == t1
+    assert rebuilt_t.to_array() == t_arr
