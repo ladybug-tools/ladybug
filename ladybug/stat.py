@@ -70,11 +70,11 @@ class STAT(object):
     _ashraecz_pattern = re.compile(r'Climate type\s"(\S*)"\s\(A')
     _koppencz_pattern = re.compile(r'Climate type\s"(\S*)"\s\(K')
     _hotweek_pattern = re.compile(r"Extreme Hot Week Period selected:"
-                                  "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
+                                  r"\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
     _coldweek_pattern = re.compile(r"Extreme Cold Week Period selected:"
-                                   "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
+                                   r"\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
     _typweek_pattern = re.compile(r"(\S*)\s*Typical Week Period selected:"
-                                  "\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
+                                  r"\s*(\w{3})\s*(\d{1,2}):\s*(\w{3})\s*(\d{1,2}),")
     _heat_pattern = re.compile(r"Heating\s(\d.*)")
     _cool_pattern = re.compile(r"Cooling\s(\d.*)")
     _tau_beam_pattern = re.compile(r"taub \(beam\)(.*)")
@@ -383,7 +383,7 @@ class STAT(object):
         if self._monthly_db_range_50 != [] and self._monthly_wb_range_50 != [] \
             and self._monthly_wind != [] \
                 and self._stand_press_at_elev is not None:
-                    return True
+            return True
         else:
             return False
 
@@ -487,8 +487,8 @@ class STAT(object):
             if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
                 and self._monthly_tau_beam[month_num - 1] is not None and \
                     self._monthly_tau_diffuse[month_num - 1] is not None:
-                        tau = (self._monthly_tau_beam[month_num - 1],
-                               self._monthly_tau_diffuse[month_num - 1])
+                tau = (self._monthly_tau_beam[month_num - 1],
+                       self._monthly_tau_diffuse[month_num - 1])
             return DesignDay.from_ashrae_dict_cooling(
                 self._summer_des_day_dict, self.location, False,
                 self._stand_press_at_elev, tau)
@@ -504,8 +504,8 @@ class STAT(object):
             if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
                 and self._monthly_tau_beam[month_num - 1] is not None and \
                     self._monthly_tau_diffuse[month_num - 1] is not None:
-                        tau = (self._monthly_tau_beam[month_num - 1],
-                               self._monthly_tau_diffuse[month_num - 1])
+                tau = (self._monthly_tau_beam[month_num - 1],
+                       self._monthly_tau_diffuse[month_num - 1])
             return DesignDay.from_ashrae_dict_cooling(
                 self._summer_des_day_dict, self.location, True,
                 self._stand_press_at_elev, tau)
@@ -517,7 +517,7 @@ class STAT(object):
         """A list of 12 objects representing monthly 5.0% cooling design days."""
         if self.monthly_found is False or self._monthly_db_50 == [] \
                 or self._monthly_wb_50 == []:
-                    return []
+            return []
         else:
             db_conds = [DryBulbCondition(x, y) for x, y in zip(
                 self._monthly_db_50, self._monthly_db_range_50)]
@@ -536,7 +536,7 @@ class STAT(object):
         """A list of 12 objects representing monthly 10.0% cooling design days."""
         if self.monthly_found is False or self._monthly_db_100 == [] \
                 or self._monthly_wb_100 == []:
-                    return []
+            return []
         else:
             db_conds = [DryBulbCondition(x, y) for x, y in zip(
                 self._monthly_db_100, self._monthly_db_range_50)]
@@ -555,7 +555,7 @@ class STAT(object):
         """A list of 12 objects representing monthly 2.0% cooling design days."""
         if self.monthly_found is False or self._monthly_db_20 == [] \
                 or self._monthly_wb_20 == []:
-                    return []
+            return []
         else:
             db_conds = [DryBulbCondition(x, y) for x, y in zip(
                 self._monthly_db_20, self._monthly_db_range_50)]
@@ -574,7 +574,7 @@ class STAT(object):
         """A list of 12 objects representing monthly 0.4% cooling design days."""
         if self.monthly_found is False or self._monthly_db_04 == [] \
                 or self._monthly_wb_04 == []:
-                    return []
+            return []
         else:
             db_conds = [DryBulbCondition(x, y) for x, y in zip(
                 self._monthly_db_04, self._monthly_db_range_50)]

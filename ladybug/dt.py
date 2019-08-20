@@ -126,6 +126,16 @@ class DateTime(datetime):
         return cls(dt.month, dt.day, dt.hour, dt.minute, leap_year)
 
     @classmethod
+    def from_array(cls, datetime_array):
+        """Create Ladybug DateTime from am array of integers.
+
+        Args:
+            datetime_array: An array of 4 integers (and optional leap_year boolean)
+                ordered as follows: (month, day, hour, minute, leap_year)
+        """
+        return cls(*datetime_array)
+
+    @classmethod
     def from_date_and_time(cls, date, time):
         """Create Ladybug DateTime from a Date and a Time object.
 
@@ -213,6 +223,12 @@ class DateTime(datetime):
     def to_simple_string(self, separator="_"):
         """Return a simplified string."""
         return self.strftime('%d_%b_%H_%M').replace("_", separator)
+
+    def to_array(self):
+        """Return datetime as an array of values."""
+        if not self.leap_year:
+            return (self.month, self.day, self.hour, self.minute)
+        return (self.month, self.day, self.hour, self.minute, 1)
 
     def to_dict(self):
         """Get datetime as a dictionary."""
@@ -317,6 +333,16 @@ class Date(date):
         dt = datetime.strptime(date_string, '%d %b')
         return cls(dt.month, dt.day, leap_year)
 
+    @classmethod
+    def from_array(cls, date_array):
+        """Create Ladybug Date from am array of integers.
+
+        Args:
+            datetime_array: An array of 2 integers (and optional leap_year boolean)
+                ordered as follows: (month, day, leap_year)
+        """
+        return cls(*date_array)
+
     @property
     def leap_year(self):
         """Boolean to note whether Date belongs to a leap year or not."""
@@ -326,6 +352,12 @@ class Date(date):
     def doy(self):
         """Calculate day of the year for this date."""
         return self.timetuple().tm_yday
+
+    def to_array(self):
+        """Return date as an array of values."""
+        if not self.leap_year:
+            return (self.month, self.day)
+        return (self.month, self.day, 1)
 
     def to_dict(self):
         """Get date as a dictionary."""
@@ -407,6 +439,15 @@ class Time(time):
         dt = datetime.strptime(time_string, '%H:%M')
         return cls(dt.hour, dt.minute)
 
+    @classmethod
+    def from_array(cls, time_array):
+        """Create Ladybug Time from am array of integers.
+
+        Args:
+            datetime_array: An array of 2 integers ordered as follows: (hour, minute)
+        """
+        return cls(*time_array)
+
     @property
     def mod(self):
         """Calculate minute of the day for this time."""
@@ -416,6 +457,10 @@ class Time(time):
     def float_hour(self):
         """Get hour and minute as a float value (e.g. 6.25 for 6:15)."""
         return self.hour + self.minute / 60.0
+
+    def to_array(self):
+        """Return time as an array of values."""
+        return (self.hour, self.minute)
 
     def to_dict(self):
         """Get time as a dictionary."""

@@ -87,7 +87,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         assert 'values' in data, 'Required keyword "values" is missing!'
         assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
         collection = cls(Header.from_dict(data['header']), data['values'],
-                         [DateTime.from_dict(dat) for dat in data['datetimes']])
+                         [DateTime.from_array(dat) for dat in data['datetimes']])
         if 'validated_a_period' in data:
             collection._validated_a_period = data['validated_a_period']
         return collection
@@ -402,7 +402,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return {
             'header': self.header.to_dict(),
             'values': self._values,
-            'datetimes': [dat.to_dict() for dat in self.datetimes],
+            'datetimes': [dat.to_array() for dat in self.datetimes],
             'validated_a_period': self._validated_a_period
         }
 
@@ -848,7 +848,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         elif len(self.values) != len(data_collection.values):
             return False
         elif self.header.analysis_period != data_collection.header.analysis_period:
-                return False
+            return False
         return True
 
     def to_discontinuous(self):
