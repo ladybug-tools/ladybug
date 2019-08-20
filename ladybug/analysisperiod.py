@@ -322,7 +322,7 @@ class AnalysisPeriod(object):
         """Check if an analysis period is annual."""
         if (self.st_month, self.st_day, self.st_hour, self.end_month,
                 self.end_day, self.end_hour) == (1, 1, 0, 12, 31, 23):
-                    return True
+            return True
         else:
             return False
 
