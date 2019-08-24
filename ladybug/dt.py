@@ -316,6 +316,9 @@ class Date(date):
                 break
         try:
             day = int(doy - days_until_month[month - 1])
+            if day == 0:
+                month -= 1
+                day = int(doy - days_until_month[month - 1])
         except UnboundLocalError:
             raise ValueError(
                 "doy must be positive and smaller than 366. Invalid input %d" % (doy)
