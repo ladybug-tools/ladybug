@@ -114,6 +114,10 @@ def test_date_from_doy():
     assert dt1 == Date(6, 21)
     dt2 = Date.from_doy(172, leap_year=True)
     assert dt2 == Date(6, 20, leap_year=True)
+    dt3 = Date.from_doy(181)
+    assert dt3 == Date(6, 30)
+    dt4 = Date.from_doy(182)
+    assert dt4 == Date(7, 1)
 
 
 def test_date_to_from_dict():
