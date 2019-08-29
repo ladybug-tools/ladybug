@@ -198,9 +198,9 @@ class Wea(object):
                                       epw.diffuse_horizontal_radiation.values,
                                       epw.metadata, 1, is_leap_year)
         if timestep != 1:
-            print ("Note: timesteps greater than 1 on epw-generated Wea's \n" +
-                   "are suitable for thermal models but are not recommended \n" +
-                   "for daylight models.")
+            print("Note: timesteps greater than 1 on epw-generated Wea's \n" +
+                  "are suitable for thermal models but are not recommended \n" +
+                  "for daylight models.")
             # interpolate the data
             direct_normal = direct_normal.interpolate_to_timestep(timestep)
             diffuse_horizontal = diffuse_horizontal.interpolate_to_timestep(timestep)

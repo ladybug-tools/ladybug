@@ -36,7 +36,10 @@ from .analysisperiod import AnalysisPeriod
 from .dt import DateTime
 
 from collections import OrderedDict
-from collections import Iterable
+try:
+    from collections.abc import Iterable  # python < 3.7
+except ImportError:
+    from collections import Iterable  # python >= 3.8
 try:
     from itertools import izip as zip  # python 2
 except ImportError:
