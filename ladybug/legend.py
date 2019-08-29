@@ -9,7 +9,10 @@ from ladybug_geometry.geometry3d.mesh import Mesh3D
 from ladybug_geometry.geometry2d.pointvector import Point2D
 from ladybug_geometry.geometry2d.mesh import Mesh2D
 
-from collections import Iterable
+try:
+    from collections.abc import Iterable  # python < 3.7
+except ImportError:
+    from collections import Iterable  # python >= 3.8
 import sys
 if (sys.version_info > (3, 0)):  # python 3
     xrange = range

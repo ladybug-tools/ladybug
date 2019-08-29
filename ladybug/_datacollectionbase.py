@@ -6,10 +6,12 @@ from __future__ import division
 from .header import Header
 from .datatype.base import DataTypeBase
 
-from collections import Iterable
+try:
+    from collections.abc import Iterable  # python < 3.7
+except ImportError:
+    from collections import Iterable  # python >= 3.8
 from string import ascii_lowercase
 import math
-
 import sys
 if (sys.version_info >= (3, 0)):
     xrange = range
