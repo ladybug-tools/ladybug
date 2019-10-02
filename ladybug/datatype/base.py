@@ -180,7 +180,8 @@ class DataTypeBase(object):
         return {
             'name': self.name,
             'data_type': self.__class__.__name__,
-            'base_unit': self.units[0]
+            'base_unit': self.units[0],
+            'type': "DataTypeBase"
         }
 
     # TODO: Un-comment the numeric check once we have gotten rid of the DataPoint class

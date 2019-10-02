@@ -193,12 +193,15 @@ class GraphicContainer(object):
     def to_dict(self):
         """Get result graphic container as a dictionary."""
         data_type = None if self.data_type is None else self.data_type.to_dict()
-        return {'values': self.values,
-                'min_point': self.min_point.to_dict(),
-                'max_point': self.max_point.to_dict(),
-                'legend_parameters': self.legend_parameters.to_dict(),
-                'data_type': data_type,
-                'unit': self.unit}
+        return {
+            'values': self.values,
+            'min_point': self.min_point.to_dict(),
+            'max_point': self.max_point.to_dict(),
+            'legend_parameters': self.legend_parameters.to_dict(),
+            'data_type': data_type,
+            'unit': self.unit,
+            'type': "GraphicContainer"
+        }
 
     def __len__(self):
         """Return length of values on the object."""

@@ -232,10 +232,13 @@ class DateTime(datetime):
 
     def to_dict(self):
         """Get datetime as a dictionary."""
-        base = {'month': self.month,
-                'day': self.day,
-                'hour': self.hour,
-                'minute': self.minute}
+        base = {
+            'month': self.month,
+            'day': self.day,
+            'hour': self.hour,
+            'minute': self.minute,
+            'type': "DateTime"
+        }
         if self.leap_year:
             base['leap_year'] = True
         return base
@@ -364,7 +367,7 @@ class Date(date):
 
     def to_dict(self):
         """Get date as a dictionary."""
-        base = {'month': self.month, 'day': self.day}
+        base = {'month': self.month, 'day': self.day, 'type': "Date"}
         if self.leap_year:
             base['leap_year'] = True
         return base
@@ -467,7 +470,7 @@ class Time(time):
 
     def to_dict(self):
         """Get time as a dictionary."""
-        return {'hour': self.hour, 'minute': self.minute}
+        return {'hour': self.hour, 'minute': self.minute, 'type': "Time"}
 
     @staticmethod
     def _calculate_hour_and_minute(float_hour):

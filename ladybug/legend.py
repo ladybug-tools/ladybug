@@ -291,10 +291,13 @@ class Legend(object):
 
     def to_dict(self):
         """Get legend as a dictionary."""
-        return {'values': self.values,
-                'legend_parameters': self.legend_parameters.to_dict(),
-                'is_min_default': self.is_min_default,
-                'is_max_default': self.is_max_default}
+        return {
+            'values': self.values,
+            'legend_parameters': self.legend_parameters.to_dict(),
+            'is_min_default': self.is_min_default,
+            'is_max_default': self.is_max_default,
+            'type': "Legend"
+        }
 
     def _title_point_2d(self):
         """Point2D for the title in the 2D space of the legend."""
@@ -861,23 +864,26 @@ class LegendParameters(object):
         seg_h = None if self.is_segment_height_default else self.segment_height
         seg_w = None if self.is_segment_width_default else self.segment_width
         txt_h = None if self.is_text_height_default else self.text_height
-        return {'min': self.min, 'max': self.max, 'segment_count': seg,
-                'colors': [col.to_dict() for col in self.colors],
-                'continuous_colors': self.continuous_colors,
-                'continuous_legend': self.continuous_legend, 'title': title,
-                'ordinal_dictionary': self.ordinal_dictionary,
-                'decimal_count': self.decimal_count,
-                'include_larger_smaller': self.include_larger_smaller,
-                'vertical': self.vertical,
-                'base_plane': base_plane,
-                'segment_height': seg_h, 'segment_width': seg_w,
-                'text_height': txt_h, 'font': self.font,
-                'is_segment_count_default': self.is_segment_count_default,
-                'is_title_default': self.is_title_default,
-                'is_base_plane_default': self.is_base_plane_default,
-                'is_segment_height_default': self.is_segment_height_default,
-                'is_segment_width_default': self.is_segment_width_default,
-                'is_text_height_default': self.is_text_height_default}
+        return {
+            'min': self.min, 'max': self.max, 'segment_count': seg,
+            'colors': [col.to_dict() for col in self.colors],
+            'continuous_colors': self.continuous_colors,
+            'continuous_legend': self.continuous_legend, 'title': title,
+            'ordinal_dictionary': self.ordinal_dictionary,
+            'decimal_count': self.decimal_count,
+            'include_larger_smaller': self.include_larger_smaller,
+            'vertical': self.vertical,
+            'base_plane': base_plane,
+            'segment_height': seg_h, 'segment_width': seg_w,
+            'text_height': txt_h, 'font': self.font,
+            'is_segment_count_default': self.is_segment_count_default,
+            'is_title_default': self.is_title_default,
+            'is_base_plane_default': self.is_base_plane_default,
+            'is_segment_height_default': self.is_segment_height_default,
+            'is_segment_width_default': self.is_segment_width_default,
+            'is_text_height_default': self.is_text_height_default,
+            'type': "LegendParameters"
+        }
 
     def __copy__(self):
         new_par = LegendParameters(self.min, self.max, self.segment_count,

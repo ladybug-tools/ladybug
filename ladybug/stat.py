@@ -693,7 +693,8 @@ class STAT(object):
             "monthly_wind_dirs": self._monthly_wind_dirs,
             "standard_pressure_at_elev": self.standard_pressure_at_elev,
             "monthly_tau_beam": self.monthly_tau_beam,
-            "monthly_tau_diffuse": self.monthly_tau_diffuse
+            "monthly_tau_diffuse": self.monthly_tau_diffuse,
+            "type": "STAT"
         }
 
     @property
