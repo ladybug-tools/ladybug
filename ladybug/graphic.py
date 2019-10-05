@@ -200,7 +200,7 @@ class GraphicContainer(object):
             'legend_parameters': self.legend_parameters.to_dict(),
             'data_type': data_type,
             'unit': self.unit,
-            'type': "GraphicContainer"
+            'type': 'GraphicContainer'
         }
 
     def __len__(self):

@@ -362,7 +362,7 @@ class BaseCollection(object):
             'values': self._values,
             'datetimes': self.datetimes,
             'validated_a_period': self._validated_a_period,
-            'type': "BaseCollection"
+            'type': 'BaseCollection'
         }
 
     @staticmethod

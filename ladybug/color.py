@@ -83,7 +83,7 @@ class Color(object):
             'r': self.r,
             'g': self.g,
             'b': self.b,
-            'type': "Color"
+            'type': 'Color'
         }
 
     def __copy__(self):
@@ -535,7 +535,7 @@ class ColorRange(object):
             'colors': [col.to_dict() for col in self.colors],
             'domain': self.domain,
             'continuous_colors': self.continuous_colors,
-            'type': "ColorRange"
+            'type': 'ColorRange'
         }
 
     def _cal_color(self, value, color_index):

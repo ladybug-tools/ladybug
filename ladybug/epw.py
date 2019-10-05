@@ -1372,7 +1372,7 @@ class EPW(object):
             "daylight_savings_end": self.daylight_savings_end,
             "comments_1": self.comments_1,
             "comments_2": self.comments_2,
-            "type": "EPW"
+            "type": 'EPW'
         }
 
     def ToString(self):

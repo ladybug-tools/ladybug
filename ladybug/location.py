@@ -191,7 +191,7 @@ class Location(object):
             "elevation": self.elevation,
             "station_id": self.station_id,
             "source": self.source,
-            "type": "Location"
+            "type": 'Location'
         }
 
     def __repr__(self):

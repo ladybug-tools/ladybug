@@ -129,7 +129,7 @@ class Header(object):
             'unit': self.unit,
             'analysis_period': a_per,
             'metadata': self.metadata,
-            'type': "Header",
+            'type': 'Header',
         }
 
     def ToString(self):

@@ -296,7 +296,7 @@ class Legend(object):
             'legend_parameters': self.legend_parameters.to_dict(),
             'is_min_default': self.is_min_default,
             'is_max_default': self.is_max_default,
-            'type': "Legend"
+            'type': 'Legend'
         }
 
     def _title_point_2d(self):
@@ -882,7 +882,7 @@ class LegendParameters(object):
             'is_segment_height_default': self.is_segment_height_default,
             'is_segment_width_default': self.is_segment_width_default,
             'is_text_height_default': self.is_text_height_default,
-            'type': "LegendParameters"
+            'type': 'LegendParameters'
         }
 
     def __copy__(self):

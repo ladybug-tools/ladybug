@@ -391,7 +391,7 @@ class AnalysisPeriod(object):
             'end_hour': self.end_hour,
             'timestep': self.timestep,
             'is_leap_year': self.is_leap_year,
-            'type': "AnalysisPeriod"
+            'type': 'AnalysisPeriod'
         }
 
     def _calc_timestamps(self, st_time, end_time):

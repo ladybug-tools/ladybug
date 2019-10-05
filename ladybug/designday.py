@@ -197,7 +197,7 @@ class DDY(object):
         return {
             'location': self.location.to_dict(),
             'design_days': [des_d.to_dict() for des_d in self.design_days],
-            'type': "DDY"
+            'type': 'DDY'
         }
 
     def ToString(self):
@@ -750,7 +750,7 @@ class DesignDay(object):
             'humidity_condition': self.humidity_condition.to_dict(),
             'wind_condition': self.wind_condition.to_dict(),
             'sky_condition': self.sky_condition.to_dict(),
-            'type': "DesignDay"
+            'type': 'DesignDay'
         }
 
     def ToString(self):
@@ -853,7 +853,7 @@ class DryBulbCondition(object):
             'dry_bulb_range': self.dry_bulb_range,
             'modifier_type': self.modifier_type,
             'modifier_schedule': self.modifier_schedule,
-            'type': "DryBulbCondition"
+            'type': 'DryBulbCondition'
         }
 
     def ToString(self):
@@ -1000,7 +1000,7 @@ class HumidityCondition(object):
             'barometric_pressure': self.barometric_pressure,
             'schedule': self.schedule,
             'wet_bulb_range': self.wet_bulb_range,
-            'type': "HumidityCondition"
+            'type': 'HumidityCondition'
         }
 
     def ToString(self):
@@ -1125,7 +1125,7 @@ class WindCondition(object):
             'wind_direction': self.wind_direction,
             'rain': self.rain,
             'snow_on_ground': self.snow_on_ground,
-            'type': "WindCondition"
+            'type': 'WindCondition'
         }
 
     def ToString(self):
@@ -1263,7 +1263,7 @@ class SkyCondition(object):
             'daylight_savings_indicator': self.daylight_savings_indicator,
             'beam_shced': self.beam_shced,
             'diff_sched': self.diff_sched,
-            'type': "SkyCondition"
+            'type': 'SkyCondition'
         }
 
     def ToString(self):
@@ -1369,7 +1369,7 @@ class OriginalClearSkyCondition(SkyCondition):
             'day_of_month': self.day_of_month,
             'clearness': self.clearness,
             'daylight_savings_indicator': self.daylight_savings_indicator,
-            'type': "OriginalClearSkyCondition"
+            'type': 'OriginalClearSkyCondition'
         }
 
 
@@ -1469,7 +1469,7 @@ class RevisedClearSkyCondition(SkyCondition):
             'tau_b': self.tau_b,
             'tau_d': self.tau_d,
             'daylight_savings_indicator': self.daylight_savings_indicator,
-            'type': "RevisedClearSkyCondition"
+            'type': 'RevisedClearSkyCondition'
         }
 
 
