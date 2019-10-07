@@ -6,6 +6,8 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+import re
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -100,11 +102,11 @@ html_theme_options = {
     # Fix navigation bar to top of page?
     # Values: "true" (default) or "false"
     'navbar_fixed_top': "true",
-	'navbar_pagenav': True,
+    'navbar_pagenav': True,
     'source_link_position': "nav",
-	'bootswatch_theme': "united",
+    'bootswatch_theme': "united",
     'bootstrap_version': "3",
-	}
+}
 
 # on_rtd is whether we are on readthedocs.org
 # on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
@@ -213,3 +215,119 @@ epub_exclude_files = ['search.html']
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+# -- Options for autodoc extension --------------------------------------------
+autodoc_default_options = {
+    'inherited-members': True,
+}
+
+autodoc_member_order = 'groupwise'
+
+
+# Autodoc event handlers
+def autodoc_process_docstring(app, what, name, obj, options, lines):
+    """Function to handle the autodoc-process-docstring event.
+
+    Emitted when autodoc has read and processed a docstring. lines is a list of
+    strings – the lines of the processed docstring – that the event handler
+    can modify in place to change what Sphinx puts into the output.
+
+    More information on sphinx documentation:
+        http://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html
+        #event-autodoc-process-docstring
+
+    Args:
+        app: the Sphinx application object
+        what: the type of the object which the docstring belongs to (one of "module",
+            "class", "exception", "function", "method", "attribute")
+        name: the fully qualified name of the object
+        obj: the object itself
+        options: the options given to the directive: an object with attributes
+            inherited_members, undoc_members, show_inheritance and noindex that
+            are true if the flag option of same name was given to the auto directive
+        lines: the lines of the docstring
+    """
+
+    # Make class properties display matching the 'Args' format
+    if what == 'class':
+        make_properties_one_liner(lines)
+        make_fields_bolded(lines)
+
+    return lines
+
+
+def make_properties_one_liner(lines):
+    """Ensures that lines with the 'field: value' format that extend multiple
+    lines are merged into a single line. The multiline properties display secondary
+    lines incorrectly when field is made bolded.
+
+    Args:
+        lines: the lines of the docstring
+    """
+
+    # Connect the list strings into a single string
+    doc_text = "\n".join(lines) + "\n"
+
+    # Generate groups based on three possible line formats:
+    # 1: new line (\n)
+    # 2: Bulleted field: value (?:(\s*\*\s*)(\w+)(\s*:)([^\n]+)\n)
+    # 3: Any other string: (?:(\s*)([^\n]+)\n)
+    matches = re.findall(
+        r"(\n)|(?:(\s*\*\s*)(\w+)(\s*:)([^\n]+)\n)|(?:(\s*)([^\n]+)\n)", doc_text)
+
+    # Traverse groups to detect and join multilined field:value cases
+    i, field_i = 0, -1
+    while i < len(matches):
+        group = matches[i]
+        # Check for bulleted field:value line and track line index
+        if "*" in group[1]:
+            field_i = i
+        # Check if it is next line of field:value line(not bulleted & text vertically
+        # aligned)
+        # Connect this line's text group to parent field:value line
+        elif group[6] != '' and field_i >= 0 and group[6].lstrip()[0] != "*" and \
+                len(group[5]) == len(matches[field_i][1]):
+            lines[field_i] = lines[field_i] + ' ' + group[6]
+            lines[i] = ""
+        # If not aligned text line or empty line reset field:value line index
+        else:
+            field_i = -1
+        # Loop through every line match
+        i += 1
+
+
+def make_fields_bolded(lines):
+    """Make field font bolded in 'field: value' line format.
+
+    Note the purpose of this change is to match the class 'Parameters'
+    and 'Args' fields format.
+    Regex pattern "(\s*\*\s*)(\w+)(\s*:)(.+)" detects range of 'field: value'
+    formats.
+
+    Args:
+        lines: the lines of the docstring
+    """
+
+    # Include boldface (reST inline markup '**') in field names of matching lines
+    def replace(match):
+        return "{0[0]} **{0[1]}** --{0[3]}".format(match.groups())
+
+    # Substitute macthing lines
+    new_lines = [re.sub(r"(\s*\*\s*)(\w+)(\s*:)(.+)", replace, line) for line in lines]
+
+    # Copy changes back to lines (in place)
+    for i in range(len(lines)):
+        lines[i] = new_lines[i]
+
+
+def setup(app):
+    """Run custom code with access to the Shinx application object
+
+    Args:
+        app: the Sphinx application object
+    """
+    # Register the event handler for 'autodoc-process-docstring' event
+    app.connect('autodoc-process-docstring', autodoc_process_docstring)
+
+    # Add bootstrap theme custom stylesheet
+    app.add_stylesheet("custom.css")
