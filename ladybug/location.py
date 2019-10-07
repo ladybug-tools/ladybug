@@ -8,7 +8,7 @@ import re
 class Location(object):
     """Ladybug Location.
 
-    Attributes:
+    Args:
         city: Name of the city as a string.
         state: Optional state in which the city is located.
         country: Name of the country as a string.
@@ -18,6 +18,20 @@ class Location(object):
         elevation: A number for elevation of the location.
         station_id: ID of the location if the location is represnting a weather station.
         source: Source of data (e.g. TMY, TMY3).
+
+    Properties:
+        * city
+        * country
+        * elevation
+        * ep_style_location_string
+        * isLocation
+        * latitude
+        * longitude
+        * meridian
+        * source
+        * state
+        * station_id
+        * time_zone
     """
 
     __slots__ = ("city", "state", "country", "_lat", "_lon", "_tz", "_elev",
@@ -41,12 +55,17 @@ class Location(object):
         """Create a location from a dictionary.
 
         Args:
-            data: {
-            "city": "-",
-            "latitude": 0,
-            "longitude": 0,
-            "time_zone": 0,
-            "elevation": 0}
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
+                {
+                "city": "-",
+                "latitude": 0,
+                "longitude": 0,
+                "time_zone": 0,
+                "elevation": 0
+                }
         """
         optional_keys = ('city', 'state', 'country', 'latitude', 'longitude',
                          'time_zone', 'elevation', 'station_id', 'source')
@@ -66,6 +85,8 @@ class Location(object):
             locationString: Location string
 
         Usage:
+
+        .. code-block:: json
 
             l = Location.from_location(locationString)
         """

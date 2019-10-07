@@ -8,31 +8,39 @@ from datetime import datetime, date, time
 class DateTime(datetime):
     """Create Ladybug Date time.
 
+    Args:
+        month: A value for month between 1-12 (Defualt: 1).
+        day: A value for day between 1-31 (Defualt: 1).
+        hour: A value for hour between 0-23 (Defualt: 0).
+        minute: A value for month between 0-59 (Defualt: 0).
+        leap_year: A boolean to indicate if datetime is for a leap year
+            (Default: False).
+
     Properties:
-        month
-        day
-        hour
-        minute
-        leap_year
-        doy
-        hoy
-        moy
-        int_hoy
-        float_hour
+        * month
+        * day
+        * hour
+        * leap_year
+        * doy
+        * hoy
+        * int_hoy
+        * max
+        * microsecond
+        * min
+        * minute
+        * moy
+        * int_hoy
+        * float_hour
+        * resolution
+        * second
+        * tzinfo
+        * year
     """
 
     __slots__ = ()
 
     def __new__(cls, month=1, day=1, hour=0, minute=0, leap_year=False):
         """Create Ladybug datetime.
-
-        Args:
-            month: A value for month between 1-12 (Defualt: 1).
-            day: A value for day between 1-31 (Defualt: 1).
-            hour: A value for hour between 0-23 (Defualt: 0).
-            minute: A value for month between 0-59 (Defualt: 0).
-            leap_year: A boolean to indicate if datetime is for a leap year
-                (Default: False).
         """
         year = 2016 if leap_year else 2017
         hour, minute = Time._calculate_hour_and_minute(hour + minute / 60.0)
@@ -48,12 +56,16 @@ class DateTime(datetime):
         """Creat datetime from a dictionary.
 
         Args:
-            data: {
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
+                {
                 'month': A value for month between 1-12. (Defualt: 1)
                 'day': A value for day between 1-31. (Defualt: 1)
                 'hour': A value for hour between 0-23. (Defualt: 0)
                 'minute': A value for month between 0-59. (Defualt: 0)
-            }
+                }
         """
         month = data['month'] if 'month' in data else 1
         day = data['day'] if 'day' in data else 1
@@ -120,6 +132,9 @@ class DateTime(datetime):
                 leap year. Default: False.
 
         Usage:
+
+        .. code-block:: shell
+
             dt = DateTime.from_date_time_string("31 Dec 12:00")
         """
         dt = datetime.strptime(datetime_string, '%d %b %H:%M')
@@ -256,23 +271,26 @@ class DateTime(datetime):
 class Date(date):
     """Ladybug Date.
 
+    Args:
+        month: A value for month between 1-12 (Defualt: 1).
+        day: A value for day between 1-31 (Defualt: 1).
+        leap_year: A boolean to indicate if date is for a leap year
+            (Default: False).
+
     Properties:
-        month
-        day
-        leap_year
-        doy
+        * day
+        * doy
+        * leap_year
+        * max
+        * min
+        * month
+        * year
     """
 
     __slots__ = ()
 
     def __new__(cls, month=1, day=1, leap_year=False):
         """Create Ladybug Date.
-
-        Args:
-            month: A value for month between 1-12 (Defualt: 1).
-            day: A value for day between 1-31 (Defualt: 1).
-            leap_year: A boolean to indicate if date is for a leap year
-                (Default: False).
         """
         year = 2016 if leap_year else 2017
         try:
@@ -285,10 +303,14 @@ class Date(date):
         """Create date from a dictionary.
 
         Args:
-            data: {
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
+                {
                 'month': A value for month between 1-12. (Defualt: 1)
                 'day': A value for day between 1-31. (Defualt: 1)
-            }
+                }
         """
         month = data['month'] if 'month' in data else 1
         day = data['day'] if 'day' in data else 1
@@ -330,6 +352,8 @@ class Date(date):
         """Create Ladybug Date from a Date string.
 
         Usage:
+
+        .. code-block:: shell
 
             dt = Date.from_date_string("31 Dec")
         """
@@ -385,21 +409,26 @@ class Date(date):
 class Time(time):
     """Create Ladybug Time.
 
+    Args:
+        hour: A value for hour between 0-23 (Defualt: 0).
+        minute: A value for month between 0-59 (Defualt: 0).
+
     Properties:
-        hour
-        minute
-        mod
-        float_hour
+        * hour
+        * max
+        * microsecond
+        * min
+        * minute
+        * mod
+        * resolution
+        * second
+        * tzinfo
     """
 
     __slots__ = ()
 
     def __new__(cls, hour=0, minute=0):
         """Create Ladybug Time.
-
-        Args:
-            hour: A value for hour between 0-23 (Defualt: 0).
-            minute: A value for month between 0-59 (Defualt: 0).
         """
         hour, minute = cls._calculate_hour_and_minute(hour + minute / 60.0)
         try:
@@ -412,10 +441,14 @@ class Time(time):
         """Create time from a dictionary.
 
         Args:
-            data: {
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
+                {
                 'hour': A value for hour between 0-23. (Defualt: 0)
                 'minute': A value for month between 0-59. (Defualt: 0)
-            }
+                }
         """
         hour = data['hour'] if 'hour' in data else 0
         minute = data['minute'] if 'minute' in data else 0
@@ -436,6 +469,8 @@ class Time(time):
         """Create Ladybug Time from a Time string.
 
         Usage:
+
+        .. code-block:: shell
 
             dt = Time.from_time_string("12:00")
         """

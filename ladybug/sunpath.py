@@ -20,10 +20,9 @@ except ImportError as e:
 
 
 class Sunpath(object):
-    """
-    Calculates sun path.
+    """Calculates sun path.
 
-    Attributes:
+    Args:
         latitude: The latitude of the location in degrees. Values must be
             between -90 and 90. Default is set to the equator.
         longitude: The longitude of the location in degrees (Default: 0)
@@ -37,7 +36,17 @@ class Sunpath(object):
         daylight_saving_period: An analysis period for daylight saving.
             (Default: None)
 
+    Properties:
+        * daylight_saving_period
+        * is_leap_year
+        * latitude
+        * longitude
+        * north_angle
+        * time_zone
+
     Usage:
+
+    .. code-block:: json
 
         import ladybug.sunpath as sunpath
         # initiate sunpath
@@ -53,21 +62,6 @@ class Sunpath(object):
     def __init__(self, latitude=0, longitude=0, time_zone=0, north_angle=0,
                  daylight_saving_period=None):
         """Init sunpath.
-
-        Args:
-            latitude: The latitude of the location in degrees. Values must be
-                between -90 and 90. Default is set to the equator.
-            longitude: The longitude of the location in degrees (Default: 0)
-            time_zone: A number representing the time zone of the location you are
-                constructing. This can improve the accuracy of the resulting sun
-                plot.  The time zone should follow the epw convention and should be
-                between -12 and +12, where 0 is at Greenwich, UK, positive values
-                are to the East of Greenwich and negative values are to the West.
-            north_angle: Angle to north (0-360). 90 is west and 270 is east
-                (Default: 0).
-            daylight_saving_period: An analysis period for daylight saving.
-                (Default: None).
-
         """
         self.time_zone = time_zone
         self.latitude = latitude
@@ -520,11 +514,17 @@ class Sunpath(object):
             annual: Set to True to draw an annual sunpath.
                 Otherwise a daily sunpath is drawn.
             rem_night: Remove suns which are under the horizon(night!).
+
         Returns:
-            base_curves: A collection of curves for base plot.
-            analemma_curves: A collection of analemma_curves.
-            daily_curves: A collection of daily_curves.
-            suns: A list of suns.
+            A tuple with four elements
+
+            -   base_curves: A collection of curves for base plot.
+
+            -   analemma_curves: A collection of analemma_curves.
+
+            -   daily_curves: A collection of daily_curves.
+
+            -   suns: A list of suns.
         """
         # check and make sure the call is coming from inside a plus library
         assert ladybug.isplus, \
@@ -593,9 +593,11 @@ class Sunpath(object):
         This is useful for calculating hours of analemma curves.
 
         Returns:
-            -1 if always night,
-            0 if both day and night,
-            1 if always day.
+            One of the following:
+
+            * -1 if always night,
+            * 0 if both day and night,
+            * 1 if always day.
         """
         # check for 21 dec and 21 jun
         low = self.calculate_sun(12, 21, hour).is_during_day
@@ -680,7 +682,7 @@ class Sunpath(object):
 class Sun(object):
     """Sun.
 
-    Attributes:
+    Args:
         datetime: A DateTime that represents the datetime for this sun_vector
         altitude: Solar Altitude in **radians**
         azimuth: Solar Azimuth in **radians**
@@ -690,6 +692,20 @@ class Sun(object):
             for Daylight saving period
         north_angle: North angle of the sunpath in Degrees. This will be only
             used to calculate the solar vector.
+
+    Properties:
+        * datetime
+        * north_angle
+        * hoy
+        * altitude
+        * azimuth
+        * altitude_in_radians
+        * azimuth_in_radians
+        * is_solar_time
+        * is_daylight_saving
+        * data
+        * is_during_day
+        * sun_vector
     """
 
     __slots__ = ('_datetime', '_altitude', '_azimuth', '_is_solar_time',

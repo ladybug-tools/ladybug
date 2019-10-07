@@ -8,7 +8,7 @@ from collections import Iterable
 class Color(object):
     """Ladybug RGB color.
 
-    Attributes:
+    Args:
         r: red value 0-255, default: 0
         g: green value 0-255, default: 0
         b: blue red value 0-255, default: 0
@@ -18,11 +18,6 @@ class Color(object):
 
     def __init__(self, r, g, b):
         """Generate RGB Color.
-
-        Args:
-            r: red value 0-255, default: 0
-            g: green value 0-255, default: 0
-            b: blue red value 0-255, default: 0
         """
         self.r = r
         self.g = g
@@ -33,10 +28,15 @@ class Color(object):
         """Create a color from a dictionary.
 
         Args:
-            data: {
-            "r": 255,
-            "g": 0,
-            "b": 150}
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
+                {
+                "r": 255,
+                "g": 0,
+                "b": 150
+                }
         """
         return cls(data['r'], data['g'], data['b'])
 
@@ -121,38 +121,40 @@ class Colorset(object):
     """Ladybug Color-range repository.
 
     A list of default Ladybug colorsets for color range:
-        0 - original Ladybug
-        1 - nuanced Ladybug
-        2 - Multi-colored Ladybug
-        3 - View Analysis 1
-        4 - View Analysis 2 (Red,Green,Blue)
-        5 - Sunlight Hours
-        6 - ecotect
-        7 - thermal Comfort Percentage
-        8 - thermal Comfort Colors
-        9 - thermal Comfort Colors (UTCI)
-        10 - Hot Hours
-        11 - Cold Hours
-        12 - Shade Benefit/Harm
-        13 - thermal Comfort Colors v2 (UTCI)
-        14 - Shade Harm
-        15 - Shade Benefit
-        16 - Black to White
-        17 - CFD Colors 1
-        18 - CFD Colors 2
-        19 - Energy Balance
-        20 - THERM
-        21 - Cloud Cover
+        * 0 - original Ladybug
+        * 1 - nuanced Ladybug
+        * 2 - Multi-colored Ladybug
+        * 3 - View Analysis 1
+        * 4 - View Analysis 2 (Red,Green,Blue)
+        * 5 - Sunlight Hours
+        * 6 - ecotect
+        * 7 - thermal Comfort Percentage
+        * 8 - thermal Comfort Colors
+        * 9 - thermal Comfort Colors (UTCI)
+        * 10 - Hot Hours
+        * 11 - Cold Hours
+        * 12 - Shade Benefit/Harm
+        * 13 - thermal Comfort Colors v2 (UTCI)
+        * 14 - Shade Harm
+        * 15 - Shade Benefit
+        * 16 - Black to White
+        * 17 - CFD Colors 1
+        * 18 - CFD Colors 2
+        * 19 - Energy Balance
+        * 20 - THERM
+        * 21 - Cloud Cover
 
     Usage:
 
+    .. code-block:: shell
+
         # initiare colorsets
-        cs = Colorset()
-        print(cs[0])
-        >> [<R:75, G:107, B:169>, <R:115, G:147, B:202>, <R:170, G:200, B:247>,
-            <R:193, G:213, B:208>, <R:245, G:239, B:103>, <R:252, G:230, B:74>,
-            <R:239, G:156, B:21>, <R:234, G:123, B:0>, <R:234, G:74, B:0>,
-            <R:234, G:38, B:0>]
+            cs = Colorset()
+            print(cs[0])
+            >> [<R:75, G:107, B:169>, <R:115, G:147, B:202>, <R:170, G:200, B:247>,
+                <R:193, G:213, B:208>, <R:245, G:239, B:103>, <R:252, G:230, B:74>,
+                <R:239, G:156, B:21>, <R:234, G:123, B:0>, <R:234, G:74, B:0>,
+                <R:234, G:38, B:0>]
     """
     # base color sets for which there are several variations
     _multicolored = [(4, 25, 145), (7, 48, 224), (7, 88, 255), (1, 232, 255),
@@ -366,27 +368,30 @@ class ColorRange(object):
     """Ladybug Color Range. Used to generate colors from numerical values.
 
     Usage:
-        ##
-        color_range = ColorRange(continuous_colors=False)
-        color_range.domain = [100, 2000]
-        color_range.colors = [Color(75, 107, 169), Color(245, 239, 103),
-            Color(234, 38, 0)]
-        print(color_range.color(99))
-        print(color_range.color(100))
-        print(color_range.color(2000))
-        print(color_range.color(2001))
-        >> (R:75, G:107, B:169)
-        >> (R:245, G:239, B:103)
-        >> (R:245, G:239, B:103)
-        >> (R:234, G:38, B:0)
 
-        ##
-        color_range = ColorRange(continuous_colors=False)
-        color_range.domain = [100, 2000]
-        color_range.colors = [Color(75, 107, 169), Color(245, 239, 103),
-            Color(234, 38, 0)]
-        color_range.color(300)
-        >> (R:245, G:239, B:103)
+    .. code-block:: shell
+
+        1.
+            color_range = ColorRange(continuous_colors=False)
+            color_range.domain = [100, 2000]
+            color_range.colors = [Color(75, 107, 169), Color(245, 239, 103),
+                Color(234, 38, 0)]
+            print(color_range.color(99))
+            print(color_range.color(100))
+            print(color_range.color(2000))
+            print(color_range.color(2001))
+            >> (R:75, G:107, B:169)
+            >> (R:245, G:239, B:103)
+            >> (R:245, G:239, B:103)
+            >> (R:234, G:38, B:0)
+
+        2.
+            color_range = ColorRange(continuous_colors=False)
+            color_range.domain = [100, 2000]
+            color_range.colors = [Color(75, 107, 169), Color(245, 239, 103),
+                Color(234, 38, 0)]
+            color_range.color(300)
+            >> (R:245, G:239, B:103)
     """
 
     def __init__(self, colors=None, domain=None, continuous_colors=None):
@@ -421,10 +426,15 @@ class ColorRange(object):
         """Create a color range from a dictionary.
 
         Args:
-            data: {
-            "colors": ({'r': 0, 'g': 0, 'b': 0}, {'r': 255, 'g': 255, 'b': 255}),
-            "domain": (0, 100),
-            "continuous_colors": True}
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
+            {
+            "colors": [{'r': 0, 'g': 0, 'b': 0}, {'r': 255, 'g': 255, 'b': 255}],
+            "domain": [0, 100],
+            "continuous_colors": True
+            }
         """
         optional_keys = ('colors', 'domain', 'continuous_colors')
         for key in optional_keys:

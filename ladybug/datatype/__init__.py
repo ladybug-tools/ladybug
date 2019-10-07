@@ -6,12 +6,15 @@ It also includes descriptions of the data types and the units.
 
 Properties:
     TYPES: A tuple indicating all currently supported data types.
+
     BASETYPES: A tuple indicating all base types. Base types are the
-        data types on which unit systems are defined.
+    data types on which unit systems are defined.
+
     UNITS: A dictionary containing all currently supported units. The
-        keys of this dictionary are the base type names (eg. 'Temperature').
+    keys of this dictionary are the base type names (eg. 'Temperature').
+
     TYPESDICT: A dictionary containing pointers to the classes of each data type.
-        The keys of this dictionary are the data type names.
+    The keys of this dictionary are the data type names.
 """
 
 from .base import _DataTypeEnumeration

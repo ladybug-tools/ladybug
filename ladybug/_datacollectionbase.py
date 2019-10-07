@@ -18,7 +18,14 @@ if (sys.version_info >= (3, 0)):
 
 
 class BaseCollection(object):
-    """Base class for all Data Collections."""
+    """Base class for all Data Collections.
+
+    Args:
+        header: A Ladybug Header object.
+        values: A list of values.
+        datetimes: A list of Ladybug DateTime objects that aligns with
+            the list of values.
+    """
 
     __slots__ = ('_header', '_values', '_datetimes', '_validated_a_period')
     _collection_type = None
@@ -27,12 +34,6 @@ class BaseCollection(object):
 
     def __init__(self, header, values, datetimes):
         """Initialize base collection.
-
-        Args:
-            header: A Ladybug Header object.
-            values: A list of values.
-            datetimes: A list of Ladybug DateTime objects that aligns with
-                the list of values.
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
@@ -50,11 +51,15 @@ class BaseCollection(object):
         """Create a Data Collection from a dictionary.
 
         Args:
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
             {
-                "header": A Ladybug Header,
-                "values": An array of values,
-                "datetimes": An array of datetimes,
-                "validated_a_period": Boolean for whether header analysis_period is valid
+            "header": A Ladybug Header,
+            "values": An array of values,
+            "datetimes": An array of datetimes,
+            "validated_a_period": Boolean for whether header analysis_period is valid
             }
         """
         assert 'header' in data, 'Required keyword "header" is missing!'
@@ -189,9 +194,14 @@ class BaseCollection(object):
             count: Integer representing the number of highest values to account for.
 
         Returns:
-            highest_values: The n highest values in data list, ordered from
+            A tuple with two elements.
+
+            -   highest_values:
+                The n highest values in data list, ordered from
                 highest to lowest.
-            highest_values_index: Indicies of the n highest values in data
+
+            -   highest_values_index:
+                Indicies of the n highest values in data
                 list, ordered from highest to lowest.
         """
         count = int(count)
@@ -216,9 +226,13 @@ class BaseCollection(object):
             count: Integer representing the number of lowest values to account for.
 
         Returns:
-            highest_values: The n lowest values in data list, ordered from
+            A tuple with two elements.
+
+            -   highest_values:
+                The n lowest values in data list, ordered from
                 lowest to lowest.
-            lowest_values_index: Indicies of the n lowest values in data
+            -   lowest_values_index:
+                Indicies of the n lowest values in data
                 list, ordered from lowest to lowest.
         """
         count = int(count)
@@ -375,8 +389,8 @@ class BaseCollection(object):
                 The variable should always be named as 'a' (without quotations).
 
         Return:
-            collections: A list of Data Collections that have been filtered based
-                on the statement.
+            collections -- A list of Data Collections that have been filtered based
+            on the statement.
         """
         pattern = BaseCollection.pattern_from_collections_and_statement(
             data_collections, statement)
@@ -398,9 +412,9 @@ class BaseCollection(object):
                 The variable should always be named as 'a' (without quotations).
 
         Return:
-            pattern: A list of True/False booleans with the length of the
-                Data Collections where True meets the conditional statement
-                and False does not.
+            pattern -- A list of True/False booleans with the length of the
+            Data Collections where True meets the conditional statement
+            and False does not.
         """
         BaseCollection.are_collections_aligned(data_collections)
         correct_var = BaseCollection._check_conditional_statement(
@@ -467,6 +481,9 @@ class BaseCollection(object):
             data_collections are individual values, only a single value will be returned.
 
         Usage:
+
+        .. code-block:: shell
+
             from ladybug.datacollection import HourlyContinuousCollection
             from ladybug.epw import EPW
             from ladybug.psychrometrics import humid_ratio_from_db_rh
@@ -518,7 +535,7 @@ class BaseCollection(object):
                 that the statement will be evaluating.
 
         Return:
-            correct_var: A list of the correct variable names that should be
+            correct_var -- A list of the correct variable names that should be
                 used within the statement (eg. ['a', 'b', 'c'])
         """
         # Determine what the list of variables should be based on the num_collections

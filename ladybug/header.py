@@ -14,12 +14,19 @@ class Header(object):
     Header carries meatdata for DataCollections including data type, unit
     and analysis period.
 
-    Attributes:
+    Args:
         data_type: A DataType object. (e.g. Temperature)
         unit: data_type unit (Default: None).
         analysis_period: A Ladybug analysis period (Defualt: None)
         metadata: Optional dictionary of additional metadata,
             containing information such as 'source', 'city', or 'zone'.
+
+    Properties:
+        * data_type
+        * unit
+        * analysis_period
+        * metadata
+        * isHeader
     """
 
     __slots__ = ('_data_type', '_unit', '_analysis_period', '_metadata')
@@ -27,13 +34,6 @@ class Header(object):
     def __init__(self, data_type, unit=None,
                  analysis_period=None, metadata=None):
         """Initiate Ladybug header for lists.
-
-        Args:
-            data_type: A DataType object. (e.g. Temperature)
-            unit: data_type unit (Default: None)
-            analysis_period: A Ladybug analysis period (Defualt: None)
-            metadata: Optional dictionary of additional metadata,
-                containing information such as 'source', 'city', or 'zone'.
         """
         assert isinstance(data_type, DataTypeBase), \
             'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
@@ -59,12 +59,16 @@ class Header(object):
         """Create a header from a dictionary.
 
         Args:
-            data: {
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
+                {
                 "data_type": {}, //Type of data (e.g. Temperature)
                 "unit": string,
                 "analysis_period": {} // A Ladybug AnalysisPeriod
                 "metadata": {}, // A dictionary of metadata
-            }
+                }
         """
         # assign default values
         assert 'data_type' in data, 'Required keyword "data_type" is missing!'

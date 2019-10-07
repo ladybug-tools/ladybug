@@ -39,7 +39,7 @@ except ImportError:  # python 3
 class Wea(object):
     """An annual WEA object containing solar irradiance.
 
-    Attributes:
+    Args:
         location: Ladybug location object.
         direct_normal_irradiance: An annual data collection of direct normal irradiance
             values for every timestep of the year.
@@ -49,6 +49,18 @@ class Wea(object):
             Default is 1 for one value per hour.
         is_leap_year: A boolean to indicate if values are representing a leap year.
             Default is False.
+
+    Properties:
+        * datetimes
+        * direct_normal_irradiance
+        * diffuse_horizontal_irradiance
+        * direct_horizontal_irradiance
+        * global_horizontal_irradiance
+        * header
+        * hoys
+        * isWea
+        * timestep
+        * is_leap_year
     """
 
     def __init__(self, location, direct_normal_irradiance,
@@ -104,13 +116,18 @@ class Wea(object):
         """ Create Wea from a dictionary
 
         Args:
-            data: {
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
+            {
             "location": {} , // ladybug location schema
             "direct_normal_irradiance": [], // List of hourly direct normal
                 irradiance data points
             "diffuse_horizontal_irradiance": [], // List of hourly diffuse
                 horizontal irradiance data points
-            "timestep": float //timestep between measurements, default is 1}
+            "timestep": float //timestep between measurements, default is 1
+            }
         """
         required_keys = ('location', 'direct_normal_irradiance',
                          'diffuse_horizontal_irradiance')
@@ -582,16 +599,16 @@ class Wea(object):
             ground_reflectance: A number between 0 and 1 that represents the
                 reflectance of the ground. Default is set to 0.2. Some
                 common ground reflectances are:
-                    urban: 0.18
-                    grass: 0.20
-                    fresh grass: 0.26
-                    soil: 0.17
-                    sand: 0.40
-                    snow: 0.65
-                    fresh_snow: 0.75
-                    asphalt: 0.12
-                    concrete: 0.30
-                    sea: 0.06
+                *   urban: 0.18
+                *   grass: 0.20
+                *   fresh grass: 0.26
+                *   soil: 0.17
+                *   sand: 0.40
+                *   snow: 0.65
+                *   fresh_snow: 0.75
+                *   asphalt: 0.12
+                *   concrete: 0.30
+                *   sea: 0.06
             isotrophic: A boolean value that sets whether an isotropic sky is
                 used (as opposed to an anisotropic sky). An isotrophic sky
                 assumes an even distribution of diffuse irradiance across the
@@ -599,10 +616,16 @@ class Wea(object):
                 near the solar disc. Default is set to True for isotrophic
 
         Returns:
-            total_irradiance: A data collection of total solar irradiance.
-            direct_irradiance: A data collection of direct solar irradiance.
-            diffuse_irradiance: A data collection of diffuse sky solar irradiance.
-            reflected_irradiance: A data collection of ground reflected solar irradiance.
+            A tuple of four elements
+
+            -   total_irradiance: A data collection of total solar irradiance.
+
+            -   direct_irradiance: A data collection of direct solar irradiance.
+
+            -   diffuse_irradiance: A data collection of diffuse sky solar irradiance.
+
+            -   reflected_irradiance: A data collection of ground reflected solar
+                irradiance.
         """
         # function to convert polar coordinates to xyz.
         def pol2cart(phi, theta):
@@ -685,11 +708,17 @@ class Wea(object):
                 or lack of a leap year must align with this Wea.
 
         Returns:
-            global_horiz_ill: Data collection of Global Horizontal Illuminance in lux.
-            direct_normal_ill: Data collection of Direct Normal Illuminance in lux.
-            diffuse_horizontal_ill: Data collection of  Diffuse Horizontal Illuminance
+            A tuple with four elements
+
+            -   global_horiz_ill: Data collection of Global Horizontal Illuminance
                 in lux.
-            zenith_lum: Data collection of Zenith Luminance in lux.
+
+            -   direct_normal_ill: Data collection of Direct Normal Illuminance in lux.
+
+            -   diffuse_horizontal_ill: Data collection of  Diffuse Horizontal
+                Illuminance in lux.
+
+            -   zenith_lum: Data collection of Zenith Luminance in lux.
         """
         # check the dew_point input
         assert len(dew_point) == self.hour_count(self.is_leap_year) * self.timestep, \

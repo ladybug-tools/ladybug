@@ -21,27 +21,36 @@ if (sys.version_info > (3, 0)):  # python 3
 class Legend(object):
     """Ladybug legend used to get legend geometry, legend text, generate colors, etc.
 
+    Args:
+        values: A List or Tuple of numerical values that will be used to
+            generate the legend and colors.
+        legend_parameters: An Optional LegendParameter object to override
+            default parameters of the legend.
+
     Properties:
-        legend_parameters
-        values
-        value_colors
-        title
-        title_location
-        title_location_2d
-        segment_text
-        segment_text_location
-        segment_text_location_2d
-        segment_mesh
-        segment_mesh_2d
-        color_range
-        segment_numbers
-        segment_colors
-        segment_length
-        is_min_default
-        is_max_default
+        * legend_parameters
+        * values
+        * value_colors
+        * title
+        * title_location
+        * title_location_2d
+        * segment_text
+        * segment_text_location
+        * segment_text_location_2d
+        * segment_mesh
+        * segment_mesh_2d
+        * color_range
+        * segment_numbers
+        * segment_colors
+        * segment_length
+        * is_min_default
+        * is_max_default
 
     Usage:
-        ##
+
+    .. code-block:: shell
+
+        1.
         data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         legend = Legend(data, LegendParameters(segment_count=6))
         print(legend.segment_text)
@@ -53,16 +62,19 @@ class Legend(object):
         >> ((R:75, G:107, B:169), (R:159, G:189, B:238), (R:224, G:229, B:145),
             (R:247, G:200, B:53), (R:234, G:113, B:0), (R:234, G:38, B:0))
 
-        ##
+        2.
         data = [100, 300, 500, 1000, 2000, 3000]
         legend_par = LegendParameters(min=300, max=2000, segment_count=3)
-        legend_par.ordinal_dictionary = {300: 'low', 1150: 'desired', 2000: 'too much'}
+        legend_par.ordinal_dictionary = {300: 'low', 1150: 'desired',
+            2000: 'too much'}
         legend = Legend(data, legend_par)
         print(legend.segment_text)
         print(legend.segment_mesh)
         print(legend.segment_colors)
-        print(legend.value_colors)  # colors in between dict categories are interpolated
-        legend.legend_parameters.continuous_colors = False  # get data in only 3 colors
+        print(legend.value_colors)  # colors in between dict categories
+            are interpolated
+        legend.legend_parameters.continuous_colors = False  # get data in
+            only 3 colors
         print(legend.value_colors)  # data colors align with segment_count
 
         >> ['low', 'desired', 'too much']
@@ -73,7 +85,7 @@ class Legend(object):
         >> ((R:75, G:107, B:169), (R:115, G:147, B:202), (R:115, G:147, B:202),
             (R:115, G:147, B:202), (R:115, G:147, B:202), (R:234, G:38, B:0))
 
-        ##
+        3.
         data = [-0.5, 0, 0.5]
         legend_par = LegendParameters(min=-1, max=1, segment_count=3)
         legend_par.ordinal_dictionary = {-3: 'Cold', -2: 'Cool', -1: 'Slightly Cool',
@@ -97,13 +109,7 @@ class Legend(object):
 
     def __init__(self, values, legend_parameters=None):
         """Initalize Ladybug Legend.
-
-        Args:
-            values: A List or Tuple of numerical values that will be used to
-                generate the legend and colors.
-            legend_parameters: An Optional LegendParameter object to override
-                default parameters of the legend.
-            """
+        """
         # check the inputs
         assert isinstance(values, Iterable) \
             and not isinstance(values, (str, dict, bytes, bytearray)), \
@@ -135,9 +141,14 @@ class Legend(object):
         """Create a legend from a dictionary.
 
         Args:
-            data: {
-            "values": (0, 10),
-            "legend_parameters": None}
+            data: A python dictionary in the following format
+
+        .. code-block:: json
+
+            {
+            "values": [0, 10],
+            "legend_parameters": None
+            }
         """
         if 'legend_parameters' not in data:
             data['legend_parameters'] = None
@@ -387,33 +398,52 @@ class LegendParameters(object):
 
     All properties of LegendParameters are set-able (except the is_..._default ones).
 
-    Properties:
-        min
-        max
-        segment_count
-        colors
-        continuous_colors
-        continuous_legend
-        title
-        ordinal_dictionary
-        decimal_count
-        include_larger_smaller
-        vertical
-        base_plane
-        segment_height
-        segment_width
-        text_height
-        font
+    Args:
+        min: A number to set the lower boundary of the legend. If None, the
+            minimum of the values associated with the legend will be used.
+        max: A number to set the upper boundary of the legend. If None, the
+            maximum of the values associated with the legend will be used.
+        segment_count: An interger representing the number of steps between
+            the high and low boundary of the legend. The default is set to 11
+            and any custom values input in here should always be greater than or
+            equal to 2.
+        colors: An list of color objects. Default is Ladybug's original colorset.
+        title: Text string for Legend title. Typically, the units of the data are
+            used here but the type of data might also be used. Default is
+            an empty string.
+        base_plane: A Ladybug Plane object to note the starting point from
+            where the legend will be genrated. The default is the world XY plane
+            at origin (0, 0, 0).
 
-        is_segment_count_default
-        is_title_default
-        is_base_plane_default
-        is_segment_height_default
-        is_segment_width_default
-        is_text_height_default
+    Properties:
+        * min
+        * max
+        * segment_count
+        * colors
+        * continuous_colors
+        * continuous_legend
+        * title
+        * ordinal_dictionary
+        * decimal_count
+        * include_larger_smaller
+        * vertical
+        * base_plane
+        * segment_height
+        * segment_width
+        * text_height
+        * font
+
+        * is_segment_count_default
+        * is_title_default
+        * is_base_plane_default
+        * is_segment_height_default
+        * is_segment_width_default
+        * is_text_height_default
 
     Usage:
-        ##
+
+    .. code-block:: json
+
         lp = LegendParameters(min=0, max=100, segment_count=6)
         lp.vertical = False
         lp.segment_width = 5
@@ -422,23 +452,6 @@ class LegendParameters(object):
     def __init__(self, min=None, max=None, segment_count=None,
                  colors=None, title=None, base_plane=None):
         """Initalize Ladybug Legend Parameters.
-
-        Args:
-            min: A number to set the lower boundary of the legend. If None, the
-                minimum of the values associated with the legend will be used.
-            max: A number to set the upper boundary of the legend. If None, the
-                maximum of the values associated with the legend will be used.
-            segment_count: An interger representing the number of steps between
-                the high and low boundary of the legend. The default is set to 11
-                and any custom values input in here should always be greater than or
-                equal to 2.
-            colors: An list of color objects. Default is Ladybug's original colorset.
-            title: Text string for Legend title. Typically, the units of the data are
-                used here but the type of data might also be used. Default is
-                an empty string.
-            base_plane: A Ladybug Plane object to note the starting point from
-                where the legend will be genrated. The default is the world XY plane
-                at origin (0, 0, 0).
         """
         self._min = None
         self._max = None
@@ -464,11 +477,16 @@ class LegendParameters(object):
     def from_dict(cls, data):
         """Create a color range from a dictionary.
 
-        Args:
-            data: {
+    Args:
+        data: A python dictionary in the following format
+
+    .. code-block:: json
+
+            {
             "min": -3,
             "max": 3,
-            "segment_count": 7}
+            "segment_count": 7
+            }
         """
         optional_keys = ('min', 'max', 'segment_count',
                          'colors', 'continuous_colors', 'continuous_legend',
