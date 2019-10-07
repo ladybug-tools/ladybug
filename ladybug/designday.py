@@ -196,7 +196,8 @@ class DDY(object):
         """Convert the Design Day to a dictionary."""
         return {
             'location': self.location.to_dict(),
-            'design_days': [des_d.to_dict() for des_d in self.design_days]
+            'design_days': [des_d.to_dict() for des_d in self.design_days],
+            'type': 'DDY'
         }
 
     def ToString(self):
@@ -748,7 +749,8 @@ class DesignDay(object):
             'dry_bulb_condition': self.dry_bulb_condition.to_dict(),
             'humidity_condition': self.humidity_condition.to_dict(),
             'wind_condition': self.wind_condition.to_dict(),
-            'sky_condition': self.sky_condition.to_dict()
+            'sky_condition': self.sky_condition.to_dict(),
+            'type': 'DesignDay'
         }
 
     def ToString(self):
@@ -850,7 +852,8 @@ class DryBulbCondition(object):
             'dry_bulb_max': self.dry_bulb_max,
             'dry_bulb_range': self.dry_bulb_range,
             'modifier_type': self.modifier_type,
-            'modifier_schedule': self.modifier_schedule
+            'modifier_schedule': self.modifier_schedule,
+            'type': 'DryBulbCondition'
         }
 
     def ToString(self):
@@ -997,6 +1000,7 @@ class HumidityCondition(object):
             'barometric_pressure': self.barometric_pressure,
             'schedule': self.schedule,
             'wet_bulb_range': self.wet_bulb_range,
+            'type': 'HumidityCondition'
         }
 
     def ToString(self):
@@ -1120,7 +1124,8 @@ class WindCondition(object):
             'wind_speed': self.wind_speed,
             'wind_direction': self.wind_direction,
             'rain': self.rain,
-            'snow_on_ground': self.snow_on_ground
+            'snow_on_ground': self.snow_on_ground,
+            'type': 'WindCondition'
         }
 
     def ToString(self):
@@ -1257,7 +1262,8 @@ class SkyCondition(object):
             'day_of_month': self.day_of_month,
             'daylight_savings_indicator': self.daylight_savings_indicator,
             'beam_shced': self.beam_shced,
-            'diff_sched': self.diff_sched
+            'diff_sched': self.diff_sched,
+            'type': 'SkyCondition'
         }
 
     def ToString(self):
@@ -1362,7 +1368,8 @@ class OriginalClearSkyCondition(SkyCondition):
             'month': self.month,
             'day_of_month': self.day_of_month,
             'clearness': self.clearness,
-            'daylight_savings_indicator': self.daylight_savings_indicator
+            'daylight_savings_indicator': self.daylight_savings_indicator,
+            'type': 'OriginalClearSkyCondition'
         }
 
 
@@ -1461,7 +1468,8 @@ class RevisedClearSkyCondition(SkyCondition):
             'day_of_month': self.day_of_month,
             'tau_b': self.tau_b,
             'tau_d': self.tau_d,
-            'daylight_savings_indicator': self.daylight_savings_indicator
+            'daylight_savings_indicator': self.daylight_savings_indicator,
+            'type': 'RevisedClearSkyCondition'
         }
 
 

@@ -190,7 +190,8 @@ class Location(object):
             "time_zone": self.time_zone,
             "elevation": self.elevation,
             "station_id": self.station_id,
-            "source": self.source
+            "source": self.source,
+            "type": 'Location'
         }
 
     def __repr__(self):

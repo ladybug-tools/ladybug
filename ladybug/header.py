@@ -124,10 +124,13 @@ class Header(object):
     def to_dict(self):
         """Return a header as a dictionary."""
         a_per = self.analysis_period.to_dict() if self.analysis_period else None
-        return {'data_type': self.data_type.to_dict(),
-                'unit': self.unit,
-                'analysis_period': a_per,
-                'metadata': self.metadata}
+        return {
+            'data_type': self.data_type.to_dict(),
+            'unit': self.unit,
+            'analysis_period': a_per,
+            'metadata': self.metadata,
+            'type': 'Header',
+        }
 
     def ToString(self):
         """Overwrite .NET ToString."""

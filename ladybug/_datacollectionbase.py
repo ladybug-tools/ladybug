@@ -361,7 +361,8 @@ class BaseCollection(object):
             'header': self.header.to_dict(),
             'values': self._values,
             'datetimes': self.datetimes,
-            'validated_a_period': self._validated_a_period
+            'validated_a_period': self._validated_a_period,
+            'type': 'BaseCollection'
         }
 
     @staticmethod

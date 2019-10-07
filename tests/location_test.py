@@ -100,7 +100,7 @@ def test_dict_methods():
     assert loc.to_dict() == {"city": city, "state": '-', "country": country,
                              "latitude": latitude, "longitude": longitude,
                              "time_zone": time_zone, "elevation": elevation,
-                             "station_id": None, "source": None}
+                             "station_id": None, "source": None, "type": 'Location'}
 
     loc_from_dict = Location.from_dict(loc.to_dict())
 

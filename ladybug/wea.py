@@ -739,7 +739,8 @@ class Wea(object):
             'diffuse_horizontal_irradiance':
                 self.diffuse_horizontal_irradiance.to_dict(),
             'timestep': self.timestep,
-            'is_leap_year': self.is_leap_year
+            'is_leap_year': self.is_leap_year,
+            'type': 'Wea'
         }
 
     def write(self, file_path, hoys=None, write_hours=False):

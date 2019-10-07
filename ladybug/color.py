@@ -79,9 +79,12 @@ class Color(object):
 
     def to_dict(self):
         """Get color as a dictionary."""
-        return {'r': self.r,
-                'g': self.g,
-                'b': self.b}
+        return {
+            'r': self.r,
+            'g': self.g,
+            'b': self.b,
+            'type': 'Color'
+        }
 
     def __copy__(self):
         return self.__class__(self.r, self.g, self.b)
@@ -528,9 +531,12 @@ class ColorRange(object):
 
     def to_dict(self):
         """Get color range as a dictionary."""
-        return {'colors': [col.to_dict() for col in self.colors],
-                'domain': self.domain,
-                'continuous_colors': self.continuous_colors}
+        return {
+            'colors': [col.to_dict() for col in self.colors],
+            'domain': self.domain,
+            'continuous_colors': self.continuous_colors,
+            'type': 'ColorRange'
+        }
 
     def _cal_color(self, value, color_index):
         """Blend between two colors based on input value."""

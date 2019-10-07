@@ -406,7 +406,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
             'header': self.header.to_dict(),
             'values': self._values,
             'datetimes': [dat.to_array() for dat in self.datetimes],
-            'validated_a_period': self._validated_a_period
+            'validated_a_period': self._validated_a_period,
+            'type': 'HourlyDiscontinuousCollection'
         }
 
     def _xxrange(self, start, end, step_count):
@@ -872,7 +873,8 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """Convert Data Collection to a dictionary."""
         return {
             'header': self.header.to_dict(),
-            'values': self._values
+            'values': self._values,
+            'type': 'HourlyContinuousCollection'
         }
 
     def _get_analysis_period_subset(self, a_per):
