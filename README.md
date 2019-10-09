@@ -14,9 +14,9 @@ Ladybug is a Python library to load, analyze and modify EneregyPlus Weather file
 This repository includes the core library which is the base for Ladybug. For plugin-specific questions and comments refer to [ladybug-grasshopper](https://github.com/ladybug-tools/ladybug-grasshopper) or [ladybug-dynamo](https://github.com/ladybug-tools/ladybug-dynamo) repositories.
 
 ## Note
-For the legacy, Ladybug Grasshopper plugin see [this repository](https://github.com/mostaphaRoudsari/ladybug).
+For the Legacy Ladybug Grasshopper Plugin see [this repository](https://github.com/ladybug-tools/ladybug-legacy).
 
-## [API Documentation](http://ladybug-tools.github.io/apidoc/ladybug)
+## [API Documentation](https://www.ladybug.tools/ladybug/docs/ladybug.html)
 
 ## Installation
 
