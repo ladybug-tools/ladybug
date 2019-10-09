@@ -7,14 +7,14 @@
 
 [![Python 2.7](https://img.shields.io/badge/python-2.7-green.svg)](https://www.python.org/downloads/release/python-270/) [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/) [![IronPython](https://img.shields.io/badge/ironpython-2.7-red.svg)](https://github.com/IronLanguages/ironpython2/releases/tag/ipy-2.7.8/)
 
-# ladybug
+# Ladybug
 
 Ladybug is a Python library to load, analyze and modify EneregyPlus Weather files (epw). You can download epw files from [EPWMap](http://www.ladybug.tools/epwmap/).
 
-This repository includes the core library which is the base for Ladybug. For plugin-specific questions and comments refer to [ladybug-grasshopper](https://github.com/ladybug-tools/ladybug-grasshopper) or [ladybug-dynamo](https://github.com/ladybug-tools/ladybug-dynamo) repositories.
+This repository includes the core library which is the base for Ladybug. For plugin-specific questions and comments, refer to [ladybug-grasshopper](https://github.com/ladybug-tools/ladybug-grasshopper) or [ladybug-dynamo](https://github.com/ladybug-tools/ladybug-dynamo) repositories.
 
-## note
-For the legacy Ladybug Grasshopper plugin see [this repository](https://github.com/mostaphaRoudsari/ladybug).
+## Note
+For the legacy Ladybug Grasshopper plugin, see [this repository](https://github.com/mostaphaRoudsari/ladybug).
 
 ## [API Documentation](http://ladybug-tools.github.io/apidoc/ladybug)
 
@@ -47,11 +47,11 @@ print('altitude: {}, azimuth: {}'.format(sun.altitude, sun.azimuth))
 ```
 
 
-### derivative work
+### Derivative Work
 Ladybug is a derivative work of the following software projects:
 
 [pyeuclid](https://code.google.com/p/pyeuclid/) for vector math calculation. Available under LGPL.
 
 [PVLib-python](https://github.com/pvlib/pvlib-python) for solar irradiance calculations. Available under BSD 3-clause.
 
-Applicable copyright notices for theses works can be found within the relevant .py files.
+Applicable copyright notice for these works can be found within the relevant .py files.
