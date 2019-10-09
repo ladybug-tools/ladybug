@@ -55,3 +55,9 @@ Ladybug is a derivative work of the following software projects:
 [PVLib-python](https://github.com/pvlib/pvlib-python) for solar irradiance calculations. Available under BSD 3-clause.
 
 Applicable copyright notices for theses works can be found within the relevant .py files.
+
+## Code of Conduct
+See [Code of Conduct](CODE_OF_CONDUCT.md)
+
+## Contributing
+Read the [contribution guidelines](CONTRIBUTING.md) before start contributing.
