@@ -1,6 +1,6 @@
 
 ## Usage
-For generating the documents localy use commands below from the root folder. 
+For generating the documents locally, use commands below from the root folder. 
 
 ```shell
 # install dependencies
