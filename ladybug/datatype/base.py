@@ -272,9 +272,9 @@ class DataTypeBase(object):
     def point_in_time(self):
         """"Whether the data type is point_in_time.
 
-        A Boolean indicates whether the data type represents conditions
-        at a single instant in time (True) as opposed to being an average or
-        accumulation over time (False) when it is found in hourly lists of data.
+        A Boolean indicates that the data type represents conditions
+        at a single instant in time (True) or at an average or
+        accumulation over time (False) when found in hourly lists of data.
         (True Examples: Temperature, WindSpeed)
         (False Examples: Energy, Radiation, Illuminance)"""
         return self._point_in_time
@@ -283,7 +283,7 @@ class DataTypeBase(object):
     def cumulative(self):
         """Whether the data type is cumulative.
 
-        A Boolean to tell whether the data type can be cumulative when it
+        A Boolean indicates that the data type can be cumulative when it
         is represented over time (True) or it can only be averaged over time
         to be meaningful (False). Note that cumulative cannot be True
         when point_in_time is also True.
