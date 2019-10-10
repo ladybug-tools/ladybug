@@ -231,14 +231,18 @@ class DataTypeBase(object):
 
     @property
     def min(self):
-        """Lower limit for the data type, values below which should be physically
+        """Lower limit for the data type.
+
+        Values below lower limit should be physically
         or mathematically impossible. (Default: -inf)
         """
         return self._min
 
     @property
     def max(self):
-        """ Upper limit for the data type, values above which should be physically
+        """ Upper limit for the data type.
+
+        Values above upper limit should be physically
         or mathematically impossible. (Default: +inf)
         """
         return self._max
@@ -255,9 +259,10 @@ class DataTypeBase(object):
 
     @property
     def unit_descr(self):
-        """An optional dictionary describing categories that the numerical
-        values of the units relate to.
+        """A description of the data type units
 
+        A dictionary is used to describe categories that the numerical values of
+        the units relate to.
         This is useful if numerical values of the units relate to specific categories.
         (eg. -1 = Cold, 0 = Neutral, +1 = Hot) (eg. 0 = False, 1 = True).
         """
@@ -265,21 +270,23 @@ class DataTypeBase(object):
 
     @property
     def point_in_time(self):
-        """Boolean to note whether the data type represents conditions
+        """"Whether the data type is point_in_time.
+
+        A Boolean indicates whether the data type represents conditions
         at a single instant in time (True) as opposed to being an average or
         accumulation over time (False) when it is found in hourly lists of data.
-
         (True Examples: Temperature, WindSpeed)
         (False Examples: Energy, Radiation, Illuminance)"""
         return self._point_in_time
 
     @property
     def cumulative(self):
-        """Boolean to tell whether the data type can be cumulative when it
+        """Whether the data type is cumulative.
+
+        A Boolean to tell whether the data type can be cumulative when it
         is represented over time (True) or it can only be averaged over time
         to be meaningful (False). Note that cumulative cannot be True
         when point_in_time is also True.
-
         (False Examples: Temperature, Irradiance, Illuminance)
         (True Examples: Energy, Radiation)
         """
