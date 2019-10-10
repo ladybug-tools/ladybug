@@ -9,14 +9,14 @@
 
 # ladybug
 
-Ladybug is a Python library to load, analyze and modify EneregyPlus Weather files (epw). You can download epw files from [EPWMap](http://www.ladybug.tools/epwmap/).
+Ladybug is a Python library to load, analyze and modify EnergyPlus Weather files (epw). You can download epw files from [EPWMap](http://www.ladybug.tools/epwmap/).
 
 This repository includes the core library which is the base for Ladybug. For plugin-specific questions and comments refer to [ladybug-grasshopper](https://github.com/ladybug-tools/ladybug-grasshopper) or [ladybug-dynamo](https://github.com/ladybug-tools/ladybug-dynamo) repositories.
 
-## note
-For the legacy Ladybug Grasshopper plugin see [this repository](https://github.com/mostaphaRoudsari/ladybug).
+## Note
+For the Legacy Ladybug Grasshopper Plugin see [this repository](https://github.com/ladybug-tools/ladybug-legacy).
 
-## [API Documentation](http://ladybug-tools.github.io/apidoc/ladybug)
+## [API Documentation](https://www.ladybug.tools/ladybug/docs/ladybug.html)
 
 ## Installation
 
@@ -47,11 +47,11 @@ print('altitude: {}, azimuth: {}'.format(sun.altitude, sun.azimuth))
 ```
 
 
-### derivative work
+### Derivative Work
 Ladybug is a derivative work of the following software projects:
 
-[pyeuclid](https://code.google.com/p/pyeuclid/) for vector math calculation. Available under LGPL.
+[ladybug-geometry](https://github.com/ladybug-tools/ladybug-geometry) for vector math calculation. Available under GNU GPL.
 
 [PVLib-python](https://github.com/pvlib/pvlib-python) for solar irradiance calculations. Available under BSD 3-clause.
 
-Applicable copyright notices for theses works can be found within the relevant .py files.
+Applicable copyright notices for these works can be found within the relevant .py files.
