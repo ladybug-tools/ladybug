@@ -51,9 +51,7 @@ class DDY(object):
         * location
         * name
         * sky_condition
-
-wind_condition
-Get or set the wind conditions.
+        * wind_condition
     """
     _location_format = re.compile(
         r"(Site:Location,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
@@ -76,11 +74,11 @@ Get or set the wind conditions.
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "location": ladybug Location schema,
-            "design_days": [] // list of ladybug DesignDay schemas
+            "location": l  # ladybug Location schema,
+            "design_days": d  # list of ladybug DesignDay schemas
             }
         """
         required_keys = ('location', 'design_days')
@@ -326,16 +324,16 @@ class DesignDay(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "name": string,
-            "day_type": string,
-            "location": ladybug Location schema,
-            "dry_bulb_condition": ladybug DryBulbCondition schema,
-            "humidity_condition": ladybug HumidityCondition schema,
-            "wind_condition": ladybug WindCondition schema,
-            "sky_condition": ladybug SkyCondition schema
+            "name": s  # string,
+            "day_type": d  # string,
+            "location": l  # ladybug Location schema,
+            "dry_bulb_condition": b  # ladybug DryBulbCondition schema,
+            "humidity_condition": h  # ladybug HumidityCondition schema,
+            "wind_condition": w  # ladybug WindCondition schema,
+            "sky_condition": s  # ladybug SkyCondition schema
             }
         """
         required_keys = ('name', 'day_type', 'location', 'dry_bulb_condition',
@@ -821,13 +819,13 @@ class DryBulbCondition(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "dry_bulb_max": float,
-            "dry_bulb_range": float,
-            "modifier_type": string,
-            "modifier_schedule": string
+            "dry_bulb_max": m  # float,
+            "dry_bulb_range": r  # float,
+            "modifier_type": t  # string,
+            "modifier_schedule": s  # string
             }
         """
         # Check required and optional keys
@@ -941,14 +939,14 @@ class HumidityCondition(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "hum_type": string,
-            "hum_value": float,
-            "barometric_pressure": float,
-            "schedule": string,
-            "wet_bulb_range": string
+            "hum_type": t  # string,
+            "hum_value": v  # float,
+            "barometric_pressure": p  # float,
+            "schedule": s  # string,
+            "wet_bulb_range": r  # string
             }
         """
         # Check required and optional keys
@@ -1099,13 +1097,13 @@ class WindCondition(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "wind_speed": float,
-            "wind_direction": float,
-            "rain": bool,
-            "snow_on_ground": bool
+            "wind_speed": s  # float,
+            "wind_direction": d  # float,
+            "rain": False  # bool,
+            "snow_on_ground": False  # bool
             }
         """
         # Check required and optional keys
@@ -1241,13 +1239,13 @@ class SkyCondition(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "solar_model": string,
-            "month": int,
-            "day_of_month": int,
-            "daylight_savings_indicator": string // "Yes" or "No"
+            "solar_model": s  # string,
+            "month": m  # int,
+            "day_of_month": d  # int,
+            "daylight_savings_indicator": ds  # string // "Yes" or "No"
             }
         """
         # Check required and optional keys
@@ -1393,14 +1391,14 @@ class OriginalClearSkyCondition(SkyCondition):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "solar_model": string,
-            "month": int,
-            "day_of_month": int,
-            "clearness": float,
-            "daylight_savings_indicator": string // "Yes" or "No"
+            "solar_model": s  # string,
+            "month": 1  # int,
+            "day_of_month": 1  # int,
+            "clearness": c  # float,
+            "daylight_savings_indicator": "No"  # string // "Yes" or "No"
             }
         """
         # Check required and optional keys
@@ -1506,15 +1504,15 @@ class RevisedClearSkyCondition(SkyCondition):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "solar_model": string,
-            "month": int,
-            "day_of_month": int,
-            "tau_b": float,
-            "tau_d": float,
-            "daylight_savings_indicator": string // "Yes" or "No"
+            "solar_model": s  # string,
+            "month": 1  # int,
+            "day_of_month": 1  # int,
+            "tau_b": tb  # float,
+            "tau_d": td  # float,
+            "daylight_savings_indicator": "No"  #string // "Yes" or "No"
             }
         """
         # Check required and optional keys

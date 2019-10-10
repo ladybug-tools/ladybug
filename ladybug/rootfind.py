@@ -18,7 +18,7 @@ def secant(a, b, fn, epsilon):
             trying to find and the target condition you are trying to satisfy.
             It should typically be structured in the following way:
 
-            .. code-block:: json
+            .. code-block:: python
 
                 def fn(value_trying_to_find):
                     funct(value_trying_to_find) - target_desired_from_funct
@@ -70,7 +70,7 @@ def bisect(a, b, fn, epsilon, target):
             trying to find and the target condition you are trying to satisfy.
             It should typically be structured in the following way:
 
-            .. code-block:: json
+            .. code-block:: python
 
                 def fn(value_trying_to_find):
                     funct(value_trying_to_find) - target_desired_from_funct

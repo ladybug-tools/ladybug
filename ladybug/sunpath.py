@@ -46,7 +46,7 @@ class Sunpath(object):
 
     Usage:
 
-    .. code-block:: json
+    .. code-block:: python
 
         import ladybug.sunpath as sunpath
         # initiate sunpath

@@ -129,7 +129,7 @@ class EPW(object):
 
         Usage:
 
-        .. code-block:: shell
+        .. code-block:: python
 
             from ladybug.epw import EPW
             from ladybug.location import Location
@@ -188,32 +188,34 @@ class EPW(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
                 {
-                "location": {} , // ladybug location schema
-                "data_collections": [], // list of hourly annual hourly data collection
-                    schemas for each of the 35 fields within the EPW file.
-                "metadata": {},  // dict of metadata assigned to all data collections
-                "heating_dict": {}, // dict containing heating design conditions
-                "cooling_dict": {}, // dict containing cooling design conditions
-                "extremes_dict": {}, // dict containing extreme design conditions
-                "extreme_hot_weeks": {}, // dict with values of week-long ladybug
-                    analysis period schemas signifying extreme hot weeks.
-                "extreme_cold_weeks": {}, // dict with values of week-long ladybug
-                    analysis period schemas signifying extreme cold weeks.
-                "typical_weeks": {}, // dict with values of week-long ladybug
-                    analysis period schemas signifying typical weeks.
-                "monthly_ground_temps": {}, // dict with keys as floats signifying
-                    depths in meters below ground and values of monthly collection schema
-                "is_ip": Boolean // denote whether the data is in IP units
-                "is_leap_year": Boolean, // denote whether data is for a leap year
-                "daylight_savings_start": 0, // signify when daylight savings starts
-                    or 0 for no daylight savings
-                "daylight_savings_end" 0, // signify when daylight savings ends
-                    or 0 for no daylight savings
-                "comments_1": String, // epw comments
-                "comments_2": String // epw comments
+                "location": {} ,  # ladybug location schema
+                "data_collections": [],  # list of hourly annual hourly data collection
+                    # schemas for each of the 35 fields within the EPW file.
+                "metadata": {},  # dict of metadata assigned to all data collections
+                "heating_dict": {},  # dict containing heating design conditions
+                "cooling_dict": {},  # dict containing cooling design conditions
+                "extremes_dict": {},  # dict containing extreme design conditions
+                "extreme_hot_weeks": {},  # dict with values of week-long ladybug
+                    # analysis period schemas signifying extreme hot weeks.
+                "extreme_cold_weeks": {},  # dict with values of week-long ladybug
+                    # analysis period schemas signifying extreme cold weeks.
+                "typical_weeks": {},  # dict with values of week-long ladybug
+                    # analysis period schemas signifying typical weeks.
+                "monthly_ground_temps": {},  # dict with keys as floats signifying
+                    # depths in meters below ground and values of monthly
+                    # collection schema
+                "is_ip": False  # Boolean // denote whether the data is in IP units
+                "is_leap_year": False  # Boolean, denote whether data is for
+                                       # a leap year
+                "daylight_savings_start": 0,  # signify when daylight savings starts
+                                              # or 0 for no daylight savings
+                "daylight_savings_end" 0,  # signify when daylight savings ends
+                                           # or 0 for no daylight savings
+                "comments_1": ""  # String, epw comments
+                "comments_2": ""  # String, epw comments
                 }
         """
         # Initialize the class with all data missing
@@ -1401,7 +1403,7 @@ pdfs_v8.4.0/AuxiliaryPrograms.pdf
     (Chapter 2.9.1)
     """
 
-    FIELDS = {
+    _fields = {
         0: {'name': generic.GenericType('Year', 'yr'),
             'type': int,
             'unit': 'yr'

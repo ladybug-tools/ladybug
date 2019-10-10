@@ -41,7 +41,7 @@ def nukedir(target_dir, rmdir=False):
 
     Usage:
 
-    .. code-block:: shell
+    .. code-block:: python
 
         nukedir("c:/ladybug/libs", True)
     """

@@ -61,13 +61,13 @@ class Header(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
                 {
-                "data_type": {}, //Type of data (e.g. Temperature)
-                "unit": string,
-                "analysis_period": {} // A Ladybug AnalysisPeriod
-                "metadata": {}, // A dictionary of metadata
+                "data_type": {},  # Type of data (e.g. Temperature)
+                "unit": "",  # string
+                "analysis_period": {},  # A Ladybug AnalysisPeriod
+                "metadata": {}  # A dictionary of metadata
                 }
         """
         # assign default values

@@ -113,7 +113,7 @@ class GraphicContainer(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
             "values": [0, 10],

@@ -48,7 +48,7 @@ class Legend(object):
 
     Usage:
 
-    .. code-block:: shell
+    .. code-block:: python
 
         1.
         data = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -143,7 +143,7 @@ class Legend(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
             "values": [0, 10],
@@ -396,7 +396,8 @@ class Legend(object):
 class LegendParameters(object):
     """Ladybug legend parameters used to customize legends.
 
-    All properties of LegendParameters are set-able (except the is_..._default ones).
+    All properties of LegendParameters are set-able (except the
+    is_someproperty_default ones).
 
     Args:
         min: A number to set the lower boundary of the legend. If None, the
@@ -442,7 +443,7 @@ class LegendParameters(object):
 
     Usage:
 
-    .. code-block:: json
+    .. code-block:: python
 
         lp = LegendParameters(min=0, max=100, segment_count=6)
         lp.vertical = False
@@ -480,7 +481,7 @@ class LegendParameters(object):
     Args:
         data: A python dictionary in the following format
 
-    .. code-block:: json
+    .. code-block:: python
 
             {
             "min": -3,

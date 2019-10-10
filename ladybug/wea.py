@@ -118,15 +118,15 @@ class Wea(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "location": {} , // ladybug location schema
-            "direct_normal_irradiance": [], // List of hourly direct normal
-                irradiance data points
-            "diffuse_horizontal_irradiance": [], // List of hourly diffuse
-                horizontal irradiance data points
-            "timestep": float //timestep between measurements, default is 1
+            "location": {} ,  # ladybug location schema
+            "direct_normal_irradiance": [],  # List of hourly direct normal
+                                             # irradiance data points
+            "diffuse_horizontal_irradiance": [],  # List of hourly diffuse
+                                                  # horizontal irradiance data points
+            "timestep": 1.0  # timestep between measurements, default is 1
             }
         """
         required_keys = ('location', 'direct_normal_irradiance',

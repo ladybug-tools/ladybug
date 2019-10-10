@@ -9,39 +9,16 @@ class ThermalCondition(DataTypeBase):
     """Thermal Condition
 
     Properties:
-        *   name: The full name of the data type as a string.
-        *   units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        *   si_units: A list of acceptable SI units.
-        *   ip_units: A list of acceptable IP units.
-        *   min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        *   max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        *   abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        *   unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        *   point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        *   cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
-        *   isDataType
-        *   isThermalCondition
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _units = ('condition', 'PMV')
     _si_units = ('condition', 'PMV')
@@ -78,39 +55,16 @@ class ThermalCondition(DataTypeBase):
 class PredictedMeanVote(ThermalCondition):
     """
     Properties:
-        *   name: The full name of the data type as a string.
-        *   units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        *   si_units: A list of acceptable SI units.
-        *   ip_units: A list of acceptable IP units.
-        *   min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        *   max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        *   abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        *   unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        *   point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        *   cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
-        *   isDataType
-        *   isThermalCondition
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _min = float('-inf')
     _max = float('+inf')
@@ -122,39 +76,16 @@ class PredictedMeanVote(ThermalCondition):
 class ThermalComfort(ThermalCondition):
     """
     Properties:
-        *   name: The full name of the data type as a string.
-        *   units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        *   si_units: A list of acceptable SI units.
-        *   ip_units: A list of acceptable IP units.
-        *   min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        *   max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        *   abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        *   unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        *   point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        *   cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
-        *   isDataType
-        *   isThermalCondition
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _min = 0
     _max = 1
@@ -165,39 +96,16 @@ class ThermalComfort(ThermalCondition):
 class DiscomfortReason(ThermalCondition):
     """
     Properties:
-        *   name: The full name of the data type as a string.
-        *   units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        *   si_units: A list of acceptable SI units.
-        *   ip_units: A list of acceptable IP units.
-        *   min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        *   max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        *   abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        *   unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        *   point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        *   cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
-        *   isDataType
-        *   isThermalCondition
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _min = -2
     _max = 2
@@ -209,39 +117,16 @@ class DiscomfortReason(ThermalCondition):
 class ThermalConditionFivePoint(ThermalCondition):
     """
     Properties:
-        *   name: The full name of the data type as a string.
-        *   units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        *   si_units: A list of acceptable SI units.
-        *   ip_units: A list of acceptable IP units.
-        *   min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        *   max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        *   abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        *   unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        *   point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        *   cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
-        *   isDataType
-        *   isThermalCondition
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _min = -2
     _max = 2
@@ -253,39 +138,16 @@ class ThermalConditionFivePoint(ThermalCondition):
 class ThermalConditionSevenPoint(ThermalCondition):
     """
     Properties:
-        *   name: The full name of the data type as a string.
-        *   units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        *   si_units: A list of acceptable SI units.
-        *   ip_units: A list of acceptable IP units.
-        *   min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        *   max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        *   abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        *   unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        *   point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        *   cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
-        *   isDataType
-        *   isThermalCondition
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _min = -3
     _max = 3
@@ -298,39 +160,16 @@ class ThermalConditionSevenPoint(ThermalCondition):
 class ThermalConditionNinePoint(ThermalCondition):
     """
     Properties:
-        *   name: The full name of the data type as a string.
-        *   units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        *   si_units: A list of acceptable SI units.
-        *   ip_units: A list of acceptable IP units.
-        *   min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        *   max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        *   abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        *   unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        *   point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        *   cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
-        *   isDataType
-        *   isThermalCondition
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _min = -4
     _max = 4
@@ -344,39 +183,16 @@ class ThermalConditionNinePoint(ThermalCondition):
 class ThermalConditionElevenPoint(ThermalCondition):
     """
     Properties:
-        *   name: The full name of the data type as a string.
-        *   units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        *   si_units: A list of acceptable SI units.
-        *   ip_units: A list of acceptable IP units.
-        *   min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        *   max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        *   abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        *   unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        *   point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        *   cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
-        *   isDataType
-        *   isThermalCondition
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _min = -5
     _max = 5
@@ -390,39 +206,16 @@ class ThermalConditionElevenPoint(ThermalCondition):
 class UTCICategory(ThermalCondition):
     """
     Properties:
-        *   name: The full name of the data type as a string.
-        *   units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        *   si_units: A list of acceptable SI units.
-        *   ip_units: A list of acceptable IP units.
-        *   min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        *   max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        *   abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        *   unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        *   point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        *   cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
-        *   isDataType
-        *   isThermalCondition
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _min = 0
     _max = 9

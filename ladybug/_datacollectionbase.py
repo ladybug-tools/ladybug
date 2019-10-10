@@ -53,13 +53,14 @@ class BaseCollection(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
-            "header": A Ladybug Header,
-            "values": An array of values,
-            "datetimes": An array of datetimes,
-            "validated_a_period": Boolean for whether header analysis_period is valid
+            "header": h  # A Ladybug Header,
+            "values": v  # An array of values,
+            "datetimes": d  # An array of datetimes,
+            "validated_a_period": p  # Boolean for whether header
+                                     #analysis_period is valid
             }
         """
         assert 'header' in data, 'Required keyword "header" is missing!'
@@ -482,7 +483,7 @@ class BaseCollection(object):
 
         Usage:
 
-        .. code-block:: shell
+        .. code-block:: python
 
             from ladybug.datacollection import HourlyContinuousCollection
             from ladybug.epw import EPW

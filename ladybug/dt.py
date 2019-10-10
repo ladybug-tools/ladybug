@@ -58,13 +58,13 @@ class DateTime(datetime):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
                 {
-                'month': A value for month between 1-12. (Defualt: 1)
-                'day': A value for day between 1-31. (Defualt: 1)
-                'hour': A value for hour between 0-23. (Defualt: 0)
-                'minute': A value for month between 0-59. (Defualt: 0)
+                'month': 1  #A value for month between 1-12. (Defualt: 1)
+                'day': 1  # A value for day between 1-31. (Defualt: 1)
+                'hour': 0  # A value for hour between 0-23. (Defualt: 0)
+                'minute': 0  # A value for month between 0-59. (Defualt: 0)
                 }
         """
         month = data['month'] if 'month' in data else 1
@@ -133,7 +133,7 @@ class DateTime(datetime):
 
         Usage:
 
-        .. code-block:: shell
+        .. code-block:: python
 
             dt = DateTime.from_date_time_string("31 Dec 12:00")
         """
@@ -183,7 +183,7 @@ class DateTime(datetime):
 
     @property
     def float_hour(self):
-        """Get hour and minute as a float value (e.g. 6.25 for 6:15)."""
+        """Get hour and minute as a float value, e.g. 6.25 for 6:15."""
         return self.hour + self.minute / 60.0
 
     @property
@@ -305,11 +305,11 @@ class Date(date):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
                 {
-                'month': A value for month between 1-12. (Defualt: 1)
-                'day': A value for day between 1-31. (Defualt: 1)
+                'month': 1  # A value for month between 1-12. (Defualt: 1)
+                'day': 1  # A value for day between 1-31. (Defualt: 1)
                 }
         """
         month = data['month'] if 'month' in data else 1
@@ -353,7 +353,7 @@ class Date(date):
 
         Usage:
 
-        .. code-block:: shell
+        .. code-block:: python
 
             dt = Date.from_date_string("31 Dec")
         """
@@ -443,11 +443,11 @@ class Time(time):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
                 {
-                'hour': A value for hour between 0-23. (Defualt: 0)
-                'minute': A value for month between 0-59. (Defualt: 0)
+                'hour': 0  # A value for hour between 0-23. (Defualt: 0)
+                'minute': 0  # A value for month between 0-59. (Defualt: 0)
                 }
         """
         hour = data['hour'] if 'hour' in data else 0
@@ -470,7 +470,7 @@ class Time(time):
 
         Usage:
 
-        .. code-block:: shell
+        .. code-block:: python
 
             dt = Time.from_time_string("12:00")
         """
@@ -493,7 +493,7 @@ class Time(time):
 
     @property
     def float_hour(self):
-        """Get hour and minute as a float value (e.g. 6.25 for 6:15)."""
+        """Get hour and minute as a float value, e.g. 6.25 for 6:15."""
         return self.hour + self.minute / 60.0
 
     def to_array(self):

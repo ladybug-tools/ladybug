@@ -57,7 +57,7 @@ class Location(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
                 {
                 "city": "-",
@@ -86,7 +86,7 @@ class Location(object):
 
         Usage:
 
-        .. code-block:: json
+        .. code-block:: python
 
             l = Location.from_location(locationString)
         """

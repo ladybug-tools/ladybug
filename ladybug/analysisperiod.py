@@ -33,27 +33,19 @@ class AnalysisPeriod(object):
           %s/%s to %s/%s between %s to %s @%s
 
     Properties:
-        * st_time: A DateTime object representing the start time.
-        * end_time: A DateTime object representing the end time.
-        * datetimes: A sorted list of DateTimes in this analysis period.
-        * moys: A sorted list of minutes of year in this analysis period
-          as integers.
-        * hoys: A sorted list of hours of year in this analysis period as floats.
-        * hoys_int: A sorted list of hours of year values in this analysis period
-          as integers.
-        * doys_int: A sorted list of days of the year in this analysis period
-          as integers.
-        * months_int: A sorted list of months of the year in this analysis period
-          as integers.
-        * months_per_hour_str: A list of strings representing hours per month
-          in this analysis period
-        * minute_intervals: The number of minutes between each of the timesteps
-          of the analysis period
-        * is_annual: Check if the analysis period is annual.
-        * is_overnight: If an analysis period is not overnight each segments of hours
-          will be in the same day (self.st_time.hoy < self.end_time.hoy)
-        * is_reversed: A reversed analysis period defines a period that starting month
-          is after ending month (e.g DEC to JUN).
+        * st_time
+        * end_time
+        * datetimes
+        * moys
+        * hoys
+        * hoys_int
+        * doys_int
+        * months_int
+        * months_per_hour_str
+        * minute_intervals
+        * is_annual
+        * is_overnight
+        * is_reversed
     """
 
     VALIDTIMESTEPS = {1: 60, 2: 30, 3: 20, 4: 15, 5: 12,
@@ -122,38 +114,19 @@ class AnalysisPeriod(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
-                {
-                "st_month": 1,
-                "st_day": 1,
-                "st_hour": 0,
-                "end_month": 12,
-                "end_day": 31,
-                "end_hour": 23,
-                "timestep": 1
-                }
-
-
-        Data keys:
-            *   st_month: An integer between 1-12 for starting month (default = 1)
-            *   st_day: An integer between 1-31 for starting day (default = 1).
-                Note that some months are shorter than 31 days.
-            *   st_hour: An integer between 0-23 for starting hour (default = 0)
-            *   end_month: An integer between 1-12 for ending month (default = 12)
-            *   end_day:    An integer between 1-31 for ending day (default = 31)
-                Note that some months are shorter than 31 days.
-            *   end_hour: An integer between 0-23 for ending hour (default = 23)
-            *   timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
-            *   st_month: An integer between 1-12 for starting month (default = 1)
-            *   st_day: An integer between 1-31 for starting day (default = 1).
-                Note that some months are shorter than 31 days.'
-            *   st_hour: An integer between 0-23 for starting hour (default = 0)
-            *   end_month: An integer between 1-12 for ending month (default = 12)
-            *   end_day:    An integer between 1-31 for ending day (default = 31)
-                Note that some months are shorter than 31 days.
-            *   end_hour: An integer between 0-23 for ending hour (default = 23)
-            *   timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+            {
+            st_month: 1  # An integer between 1-12 for starting month (default = 1)
+            st_day: 1  # An integer between 1-31 for starting day (default = 1).
+                       # Note that some months are shorter than 31 days.
+            st_hour: 0  # An integer between 0-23 for starting hour (default = 0)
+            end_month: 12  # An integer between 1-12 for ending month (default = 12)
+            end_day: 31  # An integer between 1-31 for ending day (default = 31)
+                         #Note that some months are shorter than 31 days.
+            end_hour: 23  # An integer between 0-23 for ending hour (default = 23)
+            timestep: 1 # An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+            }
         """
         keys = ('st_month', 'st_day', 'st_hour', 'end_month',
                 'end_day', 'end_hour', 'timestep', 'is_leap_year')

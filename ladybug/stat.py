@@ -126,33 +126,33 @@ class STAT(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
                 {
-                'location': {} , // ladybug location schema
-                'ashrae_climate_zone': str,
-                'koppen_climate_zone': str,
-                'extreme_cold_week': {}, // ladybug analysis period schema
-                'extreme_hot_week': {}, // ladybug analysis period schema
-                'typical_weeks': {}, // dict of ladybug analysis period schemas
-                'heating_dict': {}, // dict containing heating design conditions
-                'cooling_dict': {}, // dict containing cooling design conditions
-                "monthly_db_50": [],  // list of 12 float values for each month
-                "monthly_wb_50": [],  // list of 12 float values for each month
-                "monthly_db_range_50": [],  // list of 12 float values for each month
-                "monthly_wb_range_50": [],  // list of 12 float values for each month
-                "monthly_db_100": [],  // list of 12 float values for each month
-                "monthly_wb_100": [],  // list of 12 float values for each month
-                "monthly_db_20": [],  // list of 12 float values for each month
-                "monthly_wb_20": [],  // list of 12 float values for each month
-                "monthly_db_04": [],  // list of 12 float values for each month
-                "monthly_wb_04": [],  // list of 12 float values for each month
-                "monthly_wind": [],  // list of 12 float values for each month
-                "monthly_wind_dirs": [], // matrix with 12 cols for months of the year
-                    and 8 rows for the cardinal directions.
-                "standard_pressure_at_elev": float, // float value for pressure in Pa
-                "monthly_tau_beam":[], // list of 12 float values for each month
-                "monthly_tau_diffuse": [] // list of 12 float values for each month
+                "location": {},  # ladybug location schema
+                "ashrae_climate_zone": "",  # str
+                "koppen_climate_zone": "", # str
+                "extreme_cold_week": {},  # ladybug analysis period schema
+                "extreme_hot_week": {},  # ladybug analysis period schema
+                "typical_weeks": {},  # dict of ladybug analysis period schemas
+                "heating_dict": {},  # dict containing heating design conditions
+                "cooling_dict": {},  # dict containing cooling design conditions
+                "monthly_db_50": [],  # list of 12 float values for each month
+                "monthly_wb_50": [],  # list of 12 float values for each month
+                "monthly_db_range_50": [],  # list of 12 float values for each month
+                "monthly_wb_range_50": [],  # list of 12 float values for each month
+                "monthly_db_100": [],  # list of 12 float values for each month
+                "monthly_wb_100": [],  # list of 12 float values for each month
+                "monthly_db_20": [],  # list of 12 float values for each month
+                "monthly_wb_20": [],  # list of 12 float values for each month
+                "monthly_db_04": [],  # list of 12 float values for each month
+                "monthly_wb_04": [],  # list of 12 float values for each month
+                "monthly_wind": [],  # list of 12 float values for each month
+                "monthly_wind_dirs": [],  # matrix with 12 cols for months of the year
+                                          #and 8 rows for the cardinal directions.
+                "standard_pressure_at_elev": 0.0,  # float value for pressure in Pa
+                "monthly_tau_beam":[],  # list of 12 float values for each month
+                "monthly_tau_diffuse": []  # list of 12 float values for each month
                 }
         """
         # Initialize the class with all data missing

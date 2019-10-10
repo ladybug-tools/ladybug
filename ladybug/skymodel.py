@@ -617,9 +617,9 @@ def disc(ghi, altitude, doy, pressure=101325,
 
     This implementation limits the clearness index to 1 by default.
 
-    The original report describing the DISC model [1]_ uses the
+    The original report describing the DISC model [1] uses the
     relative air mass rather than the absolute (pressure-corrected)
-    air mass. However, the NREL implementation of the DISC model [2]_
+    air mass. However, the NREL implementation of the DISC model [2]
     uses absolute air mass. PVLib Matlab also uses the absolute air mass.
     pvlib python defaults to absolute air mass, but the relative airmass
     can be used by supplying `pressure=None`.

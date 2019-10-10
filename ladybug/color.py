@@ -12,6 +12,11 @@ class Color(object):
         r: red value 0-255, default: 0
         g: green value 0-255, default: 0
         b: blue red value 0-255, default: 0
+
+    Properties:
+        * r
+        * g
+        * b
     """
 
     __slots__ = ("_r", "_g", "_b")
@@ -30,7 +35,7 @@ class Color(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
                 {
                 "r": 255,
@@ -146,7 +151,7 @@ class Colorset(object):
 
     Usage:
 
-    .. code-block:: shell
+    .. code-block:: python
 
         # initiare colorsets
             cs = Colorset()
@@ -367,9 +372,29 @@ class Colorset(object):
 class ColorRange(object):
     """Ladybug Color Range. Used to generate colors from numerical values.
 
+    Args:
+        range:
+        colors: A list of colors. Colors should be input as objects with
+            R, G, B values. Default is Ladybug's original colorset.
+        domain: A list of at least two numbers to set the lower and upper
+            boundary of the color range. This can also be a list of more than
+            two values, which can be used to approximate logartihmic or other types
+            of color scales. However, the number of values in the domain must
+            always be less than or equal to the number of colors.
+            Default: [0, 1].
+        continuous_colors: Boolean. If True, the colors generated from the
+            color range will be in a continuous gradient. If False,
+            they will be categorized in incremental groups according to the
+            number_of_segments. Default is True for continuous colors.
+
+    Properties:
+        * colors
+        * continuous_colors
+        * domain
+
     Usage:
 
-    .. code-block:: shell
+    .. code-block:: python
 
         1.
             color_range = ColorRange(continuous_colors=False)
@@ -396,21 +421,6 @@ class ColorRange(object):
 
     def __init__(self, colors=None, domain=None, continuous_colors=None):
         """Initiate Ladybug color range.
-
-        Args:
-            range:
-            colors: A list of colors. Colors should be input as objects with
-                R, G, B values. Default is Ladybug's original colorset.
-            domain: A list of at least two numbers to set the lower and upper
-                boundary of the color range. This can also be a list of more than
-                two values, which can be used to approximate logartihmic or other types
-                of color scales. However, the number of values in the domain must
-                always be less than or equal to the number of colors.
-                Default: [0, 1].
-            continuous_colors: Boolean. If True, the colors generated from the
-                color range will be in a continuous gradient. If False,
-                they will be categorized in incremental groups according to the
-                number_of_segments. Default is True for continuous colors.
         """
         self._continuous_colors = True if continuous_colors is None \
             else continuous_colors
@@ -428,7 +438,7 @@ class ColorRange(object):
         Args:
             data: A python dictionary in the following format
 
-        .. code-block:: json
+        .. code-block:: python
 
             {
             "colors": [{'r': 0, 'g': 0, 'b': 0}, {'r': 255, 'g': 255, 'b': 255}],
