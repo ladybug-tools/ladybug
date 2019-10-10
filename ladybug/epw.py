@@ -1674,13 +1674,13 @@ pdfs_v8.4.0/AuxiliaryPrograms.pdf
         *   33 Liquid Precipitation Depth
         *   34 Liquid Precipitation Quantity
         """
-        return EPWField(cls.FIELDS[field_number])
+        return EPWField(cls._fields[field_number])
 
     def __repr__(self):
         """EPW fields representation."""
         fields = (
             '{}: {}'.format(key, value['name'])
-            for key, value in self.FIELDS.items()
+            for key, value in self._fields.items()
         )
 
         return '\n'.join(fields)
