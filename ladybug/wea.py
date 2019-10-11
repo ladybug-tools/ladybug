@@ -121,7 +121,7 @@ class Wea(object):
         .. code-block:: python
 
             {
-            "location": {} ,  # ladybug location schema
+            "location": {},  # ladybug location schema
             "direct_normal_irradiance": [],  # List of hourly direct normal
                                              # irradiance data points
             "diffuse_horizontal_irradiance": [],  # List of hourly diffuse

@@ -55,9 +55,9 @@ class DataTypeBase(object):
         .. code-block:: python
 
                 {
-                    "name": n  # data type name of the data type as a string
-                    "data_type": t  # the class name of the data type as a string
-                    "base_unit": b  # the base unit of the data type
+                    "name": ""  # data type name of the data type as a string
+                    "data_type": ""  # the class name of the data type as a string
+                    "base_unit": ""  # the base unit of the data type
                 }
         """
         assert 'name' in data, 'Required keyword "name" is missing!'

@@ -56,11 +56,11 @@ class BaseCollection(object):
         .. code-block:: python
 
             {
-            "header": h  # A Ladybug Header,
-            "values": v  # An array of values,
-            "datetimes": d  # An array of datetimes,
-            "validated_a_period": p  # Boolean for whether header
-                                     #analysis_period is valid
+            "header": {},  # A Ladybug Header
+            "values": [],  # An array of values
+            "datetimes": [],  # An array of datetimes
+            "validated_a_period": True  # Boolean for whether header analysis_period
+                                        # is valid
             }
         """
         assert 'header' in data, 'Required keyword "header" is missing!'

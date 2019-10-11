@@ -117,15 +117,16 @@ class AnalysisPeriod(object):
         .. code-block:: python
 
             {
-            st_month: 1  # An integer between 1-12 for starting month (default = 1)
-            st_day: 1  # An integer between 1-31 for starting day (default = 1).
+            "st_month": 1  # An integer between 1-12 for starting month (default = 1)
+            "st_day": 1  # An integer between 1-31 for starting day (default = 1).
                        # Note that some months are shorter than 31 days.
-            st_hour: 0  # An integer between 0-23 for starting hour (default = 0)
-            end_month: 12  # An integer between 1-12 for ending month (default = 12)
-            end_day: 31  # An integer between 1-31 for ending day (default = 31)
+            "st_hour": 0  # An integer between 0-23 for starting hour (default = 0)
+            "end_month": 12  # An integer between 1-12 for ending month (default = 12)
+            "end_day": 31  # An integer between 1-31 for ending day (default = 31)
                          #Note that some months are shorter than 31 days.
-            end_hour: 23  # An integer between 0-23 for ending hour (default = 23)
-            timestep: 1 # An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+            "end_hour": 23  # An integer between 0-23 for ending hour (default = 23)
+            "timestep": 1 # An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15,
+                          #20, 30, 60
             }
         """
         keys = ('st_month', 'st_day', 'st_hour', 'end_month',

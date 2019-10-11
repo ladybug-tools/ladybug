@@ -77,8 +77,8 @@ class DDY(object):
         .. code-block:: python
 
             {
-            "location": l  # ladybug Location schema,
-            "design_days": d  # list of ladybug DesignDay schemas
+            "location": {}  # ladybug Location schema,
+            "design_days": []  # list of ladybug DesignDay schemas
             }
         """
         required_keys = ('location', 'design_days')
@@ -327,13 +327,13 @@ class DesignDay(object):
         .. code-block:: python
 
             {
-            "name": s  # string,
-            "day_type": d  # string,
-            "location": l  # ladybug Location schema,
-            "dry_bulb_condition": b  # ladybug DryBulbCondition schema,
-            "humidity_condition": h  # ladybug HumidityCondition schema,
-            "wind_condition": w  # ladybug WindCondition schema,
-            "sky_condition": s  # ladybug SkyCondition schema
+            "name": "",  # string
+            "day_type": "",  # string
+            "location": {},  # ladybug Location schema
+            "dry_bulb_condition": {},  # ladybug DryBulbCondition schema
+            "humidity_condition": {},  # ladybug HumidityCondition schema
+            "wind_condition": {},  # ladybug WindCondition schema
+            "sky_condition": {}  # ladybug SkyCondition schema
             }
         """
         required_keys = ('name', 'day_type', 'location', 'dry_bulb_condition',
@@ -822,10 +822,10 @@ class DryBulbCondition(object):
         .. code-block:: python
 
             {
-            "dry_bulb_max": m  # float,
-            "dry_bulb_range": r  # float,
-            "modifier_type": t  # string,
-            "modifier_schedule": s  # string
+            "dry_bulb_max": 0.0  # float,
+            "dry_bulb_range": 0.0  # float,
+            "modifier_type": ""  # string,
+            "modifier_schedule": ""  # string
             }
         """
         # Check required and optional keys
@@ -942,11 +942,11 @@ class HumidityCondition(object):
         .. code-block:: python
 
             {
-            "hum_type": t  # string,
-            "hum_value": v  # float,
-            "barometric_pressure": p  # float,
-            "schedule": s  # string,
-            "wet_bulb_range": r  # string
+            "hum_type": ""  # string,
+            "hum_value": 0.0  # float,
+            "barometric_pressure": 0.0  # float,
+            "schedule": {}  # string,
+            "wet_bulb_range": ""  # string
             }
         """
         # Check required and optional keys
@@ -1100,8 +1100,8 @@ class WindCondition(object):
         .. code-block:: python
 
             {
-            "wind_speed": s  # float,
-            "wind_direction": d  # float,
+            "wind_speed": 0.0  # float,
+            "wind_direction": 0.0  # float,
             "rain": False  # bool,
             "snow_on_ground": False  # bool
             }
@@ -1242,10 +1242,10 @@ class SkyCondition(object):
         .. code-block:: python
 
             {
-            "solar_model": s  # string,
-            "month": m  # int,
-            "day_of_month": d  # int,
-            "daylight_savings_indicator": ds  # string // "Yes" or "No"
+            "solar_model": ""  # string,
+            "month": 1  # int,
+            "day_of_month": 1  # int,
+            "daylight_savings_indicator": "No"  # string // "Yes" or "No"
             }
         """
         # Check required and optional keys
@@ -1394,10 +1394,10 @@ class OriginalClearSkyCondition(SkyCondition):
         .. code-block:: python
 
             {
-            "solar_model": s  # string,
+            "solar_model": ""  # string,
             "month": 1  # int,
             "day_of_month": 1  # int,
-            "clearness": c  # float,
+            "clearness": 0.0  # float,
             "daylight_savings_indicator": "No"  # string // "Yes" or "No"
             }
         """
@@ -1507,11 +1507,11 @@ class RevisedClearSkyCondition(SkyCondition):
         .. code-block:: python
 
             {
-            "solar_model": s  # string,
+            "solar_model": ""  # string,
             "month": 1  # int,
             "day_of_month": 1  # int,
-            "tau_b": tb  # float,
-            "tau_d": td  # float,
+            "tau_b": 0.0  # float,
+            "tau_d": 0.0  # float,
             "daylight_savings_indicator": "No"  #string // "Yes" or "No"
             }
         """
