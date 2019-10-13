@@ -792,7 +792,7 @@ class DryBulbCondition(object):
     """Represents dry bulb conditions on a design day.
 
     Args:
-       dry_bulb_max: The maximum dry bulb temperature on the design day [C].
+        dry_bulb_max: The maximum dry bulb temperature on the design day [C].
         dry_bulb_range: The difference between mina dn max temperatures on the
             design day [C].
         modifier_type: Text string for the type of modifier used to estimate

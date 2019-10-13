@@ -270,13 +270,14 @@ class DataTypeBase(object):
 
     @property
     def point_in_time(self):
-        """"Whether the data type is point_in_time.
+        """Whether the data type is point_in_time.
 
         A Boolean indicates that the data type represents conditions
         at a single instant in time (True) or at an average or
         accumulation over time (False) when found in hourly lists of data.
         (True Examples: Temperature, WindSpeed)
-        (False Examples: Energy, Radiation, Illuminance)"""
+        (False Examples: Energy, Radiation, Illuminance)
+        """
         return self._point_in_time
 
     @property
