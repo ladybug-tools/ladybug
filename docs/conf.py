@@ -223,7 +223,7 @@ autodoc_member_order = 'groupwise'
 
 
 def setup(app):
-    """Run custom code with access to the Shinx application object
+    """Run custom code with access to the Sphinx application object
 
     Args:
         app: the Sphinx application object
