@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class Pressure(DataTypeBase):
     """Pressure
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('Pa', 'inHg', 'atm', 'bar', 'Torr', 'psi', 'inH2O')
     _si_units = ('Pa', 'bar')
@@ -87,18 +75,5 @@ class Pressure(DataTypeBase):
 
 
 class AtmosphericStationPressure(Pressure):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _abbreviation = 'Patm'

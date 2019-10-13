@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class TemperatureDelta(DataTypeBase):
     """TemperatureDelta
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('C', 'F', 'K')
     _si_units = ('C', 'K')
@@ -62,51 +50,12 @@ class TemperatureDelta(DataTypeBase):
 
 
 class AirTemperatureDelta(TemperatureDelta):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DeltaTair'
 
 
 class RadiantTemperatureDelta(TemperatureDelta):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DeltaTrad'
 
 
 class OperativeTemperatureDelta(TemperatureDelta):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DeltaTo'

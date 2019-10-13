@@ -10,18 +10,6 @@ PI = math.pi
 
 class Angle(DataTypeBase):
     """Angle
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('degrees', 'radians')
     _si_units = ('degrees', 'radians')
@@ -53,19 +41,5 @@ class Angle(DataTypeBase):
 
 
 class WindDirection(Angle):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
-
     _name = 'Wind Direction'
     _abbreviation = 'WD'

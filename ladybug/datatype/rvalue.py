@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class RValue(DataTypeBase):
     """R Value
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('m2-K/W', 'h-ft2-F/Btu', 'clo')
     _si_units = ('m2-K/W', 'clo')
@@ -63,18 +51,5 @@ class RValue(DataTypeBase):
 
 
 class ClothingInsulation(RValue):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'Rclo'
     _unit_descr = {0: 'No Clothing', 0.5: 'T-shirt + Shorts', 1: '3-piece Suit'}

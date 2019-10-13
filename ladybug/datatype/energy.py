@@ -7,19 +7,6 @@ from .base import DataTypeBase
 
 class Energy(DataTypeBase):
     """Energy
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-
     """
     _units = ('kWh', 'kBtu', 'Wh', 'Btu', 'MMBtu', 'J', 'kJ', 'MJ', 'GJ',
               'therm', 'cal', 'kcal')

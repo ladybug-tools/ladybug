@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class Power(DataTypeBase):
     """Power
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('W', 'Btu/h', 'kW', 'kBtu/h', 'TR', 'hp')
     _si_units = ('kW', 'W')
@@ -85,18 +73,5 @@ class Power(DataTypeBase):
 
 
 class ActivityLevel(Power):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'Activity'
     _min = 0

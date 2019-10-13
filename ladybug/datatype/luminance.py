@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class Luminance(DataTypeBase):
     """Luminance
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('cd/m2', 'cd/ft2')
     _si_units = ('cd/m2')
@@ -58,17 +46,4 @@ class Luminance(DataTypeBase):
 
 
 class ZenithLuminance(Luminance):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'ZL'

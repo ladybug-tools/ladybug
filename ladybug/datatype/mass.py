@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class Mass(DataTypeBase):
     """Mass
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('kg', 'lb', 'g', 'tonne', 'ton', 'oz')
     _si_units = ('kg', 'g', 'tonne')

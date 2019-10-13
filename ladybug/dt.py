@@ -272,10 +272,9 @@ class Date(date):
     """Ladybug Date.
 
     Args:
-        month: A value for month between 1-12 (Defualt: 1).
-        day: A value for day between 1-31 (Defualt: 1).
-        leap_year: A boolean to indicate if date is for a leap year
-            (Default: False).
+        month: A value for month between 1-12. Defualt: 1.
+        day: A value for day between 1-31. Defualt: 1.
+        leap_year: A boolean to indicate if date is for a leap year. Default: False.
 
     Properties:
         * day

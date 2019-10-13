@@ -792,10 +792,16 @@ class DryBulbCondition(object):
     """Represents dry bulb conditions on a design day.
 
     Args:
-        dry_bulb_max
-        dry_bulb_range
-        modifier_type
-        modifier_schedule
+       dry_bulb_max: The maximum dry bulb temperature on the design day [C].
+        dry_bulb_range: The difference between mina dn max temperatures on the
+            design day [C].
+        modifier_type: Text string for the type of modifier used to estimate
+            temperature at a given timestep. Choose from the following:
+            'DefaultMultipliers', 'MultiplierSchedule', 'DifferenceSchedule',
+            'TemperatureProfileSchedule'. Default: 'DefaultMultipliers'
+        modifier_schedule: Optional text string for the name of the modifier
+            schedule. Should be an empty string unless 'MultiplierSchedule' is
+            selected as the modifier_type.
 
     Properties:
         * dry_bulb_max
@@ -1067,10 +1073,10 @@ class WindCondition(object):
     """Represents wind and rain conditions on the design day.
 
     Args:
-        wind_speed
-        wind_direction
-        rain
-        snow_on_ground
+        wind_speed: Wind speed on the design day [m/s].
+        wind_direction: Wind direction on the design day [degrees]. Default: 0
+        rain: Boolean to indicate rain on the design day. Default: False.
+        snow_on_ground: Boolean to indicate snow on the design day. Default: False.
 
     Properties:
         * wind_speed
@@ -1206,12 +1212,16 @@ class SkyCondition(object):
     """An object representing a sky on the design day.
 
     Args:
-        solar_model
-        month
-        day_of_month
-        daylight_savings_indicator
-        beam_shced
-        diff_sched
+        solar_model: Text for the name of the solar model to use. Choose from the
+            following: 'ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule'
+        month: Month in which the design day occurs.
+        day_of_month: Day of the month on which the design day occurs.
+        daylight_savings_indicator: Text ('Yes' or 'No'), for whether daylight savings
+            time is active. Default: 'No'
+        beam_shced: Schedule name for beam irradiance. Shoulb be an empty string unless
+            solar_model is 'Schedule'.
+        diff_sched: Schedule name for diffuse irradiance. Shoulb be an empty string
+            unless solar_model is 'Schedule'.
 
     Properties:
         * month
@@ -1358,10 +1368,12 @@ class OriginalClearSkyCondition(SkyCondition):
     """An object representing an original ASHRAE Clear Sky.
 
     Args:
-        month
-        day_of_month
-        clearness
-        daylight_savings_indicator
+        month: Month in which the design day occurs.
+        day_of_month: Day of the month on which the design day occurs.
+        clearness: Value between 0 and 1.2 that will get multiplied by the model's
+            irradinace to correct for factors like elevation.
+        daylight_savings_indicator: Text ('Yes' or 'No'), for whether daylight savings
+            time is active. Default: 'No'
 
     Properties:
         * month
@@ -1465,11 +1477,14 @@ class RevisedClearSkyCondition(SkyCondition):
     """An object representing an ASHRAE Revised Clear Sky (Tau model).
 
     Args:
-        month
-        day_of_month
-        tau_b
-        tau_d
-        daylight_savings_indicator
+        month: Month in which the design day occurs.
+        day_of_month: Day of the month on which the design day occurs.
+        tau_b: Value for the 'beam' term in the Tau model. Typically
+            found in .stat files.
+        tau_d: Value for the 'diffuse' term in the Tau model. Typically
+            found in .stat files.
+        daylight_savings_indicator: Text ('Yes' or 'No'), for whether daylight savings
+            time is active. Default: 'No'
 
     Properties:
         * day_of_month

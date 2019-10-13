@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class TemperatureTime(DataTypeBase):
     """Temperature-Time
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('degC-days', 'degF-days', 'degC-hours', 'degF-hours')
     _si_units = ('degC-days', 'degC-hours')
@@ -72,34 +60,8 @@ class TemperatureTime(DataTypeBase):
 
 
 class CoolingDegreeTime(TemperatureTime):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'coolTime'
 
 
 class HeatingDegreeTime(TemperatureTime):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'heatTime'

@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class VolumeFlowRate(DataTypeBase):
     """Volume Flow Rate
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('m3/s', 'ft3/s', 'L/s', 'cfm', 'gpm', 'mL/s', 'fl oz/s')
     _si_units = ('m3/s', 'L/s', 'mL/s')

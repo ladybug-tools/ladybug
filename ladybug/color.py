@@ -373,7 +373,6 @@ class ColorRange(object):
     """Ladybug Color Range. Used to generate colors from numerical values.
 
     Args:
-        range:
         colors: A list of colors. Colors should be input as objects with
             R, G, B values. Default is Ladybug's original colorset.
         domain: A list of at least two numbers to set the lower and upper

@@ -130,8 +130,8 @@ class STAT(object):
 
                 {
                 "location": {},  # ladybug location schema
-                "ashrae_climate_zone": "",  # str
-                "koppen_climate_zone": "", # str
+                "ashrae_climate_zone": ""5A,  # str
+                "koppen_climate_zone": "Dfa", # str
                 "extreme_cold_week": {},  # ladybug analysis period schema
                 "extreme_hot_week": {},  # ladybug analysis period schema
                 "typical_weeks": {},  # dict of ladybug analysis period schemas
@@ -150,7 +150,7 @@ class STAT(object):
                 "monthly_wind": [],  # list of 12 float values for each month
                 "monthly_wind_dirs": [],  # matrix with 12 cols for months of the year
                                           #and 8 rows for the cardinal directions.
-                "standard_pressure_at_elev": 0.0,  # float value for pressure in Pa
+                "standard_pressure_at_elev": 101325,  # float value for pressure in Pa
                 "monthly_tau_beam":[],  # list of 12 float values for each month
                 "monthly_tau_diffuse": []  # list of 12 float values for each month
                 }

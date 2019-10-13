@@ -28,18 +28,6 @@ class GenericType(DataTypeBase):
             is represented over time (True) or it can only be averaged over time
             to be meaningful (False). Note that cumulative cannot be True
             when point_in_time is also True. (Default: False)
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     def __init__(self, name, unit, min=float('-inf'), max=float('+inf'),
                  abbreviation=None, unit_descr=None, point_in_time=True,

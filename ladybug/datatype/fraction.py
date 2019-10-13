@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class Fraction(DataTypeBase):
     """Fraction
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('fraction', '%', 'tenths', 'thousandths', 'okta')
     _si_units = ('fraction', '%', 'tenths', 'thousandths', 'okta')
@@ -68,75 +56,23 @@ class Fraction(DataTypeBase):
 
 
 class PercentagePeopleDissatisfied(Fraction):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _max = 1
     _abbreviation = 'PPD'
 
 
 class RelativeHumidity(Fraction):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _abbreviation = 'RH'
 
 
 class HumidityRatio(Fraction):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _max = 1
     _abbreviation = 'HR'
 
 
 class TotalSkyCover(Fraction):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     # (used if Horizontal IR Intensity missing)
     _min = 0
     _max = 1
@@ -144,19 +80,6 @@ class TotalSkyCover(Fraction):
 
 
 class OpaqueSkyCover(Fraction):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     # (used if Horizontal IR Intensity missing)
     _min = 0
     _max = 1
@@ -164,56 +87,17 @@ class OpaqueSkyCover(Fraction):
 
 
 class AerosolOpticalDepth(Fraction):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _max = 1
     _abbreviation = 'AOD'
 
 
 class Albedo(Fraction):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _max = 1
     _abbreviation = 'a'
 
 
 class LiquidPrecipitationQuantity(Fraction):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _abbreviation = 'LPQ'

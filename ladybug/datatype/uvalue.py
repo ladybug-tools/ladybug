@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class UValue(DataTypeBase):
     """U Value
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('W/m2-K', 'Btu/h-ft2-F')
     _si_units = ('W/m2-K')
@@ -57,34 +45,8 @@ class UValue(DataTypeBase):
 
 
 class ConvectionCoefficient(UValue):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'hc'
 
 
 class RadiantCoefficient(UValue):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'hr'

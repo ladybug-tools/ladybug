@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class Illuminance(DataTypeBase):
     """Illuminance
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('lux', 'fc')
     _si_units = ('lux')
@@ -58,51 +46,12 @@ class Illuminance(DataTypeBase):
 
 
 class GlobalHorizontalIlluminance(Illuminance):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'GHI'
 
 
 class DirectNormalIlluminance(Illuminance):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DNI'
 
 
 class DiffuseHorizontalIlluminance(Illuminance):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DHI'

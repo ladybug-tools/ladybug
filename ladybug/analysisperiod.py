@@ -28,10 +28,6 @@ class AnalysisPeriod(object):
         is_leap_year: A boolean to indicate whether the AnalysisPeriod represents
             a leap year.
 
-    Class methods:
-        * from_string: Create an Analysis Period object from an analysis period string.
-          %s/%s to %s/%s between %s to %s @%s
-
     Properties:
         * st_time
         * end_time

@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class ThermalCondition(DataTypeBase):
     """Thermal Condition
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('condition', 'PMV')
     _si_units = ('condition', 'PMV')
@@ -53,19 +41,6 @@ class ThermalCondition(DataTypeBase):
 
 
 class PredictedMeanVote(ThermalCondition):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = float('-inf')
     _max = float('+inf')
     _abbreviation = 'PMV'
@@ -74,19 +49,6 @@ class PredictedMeanVote(ThermalCondition):
 
 
 class ThermalComfort(ThermalCondition):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _max = 1
     _abbreviation = 'TC'
@@ -94,19 +56,6 @@ class ThermalComfort(ThermalCondition):
 
 
 class DiscomfortReason(ThermalCondition):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = -2
     _max = 2
     _abbreviation = 'RDiscomf'
@@ -115,19 +64,6 @@ class DiscomfortReason(ThermalCondition):
 
 
 class ThermalConditionFivePoint(ThermalCondition):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = -2
     _max = 2
     _abbreviation = 'Tcond-5'
@@ -136,19 +72,6 @@ class ThermalConditionFivePoint(ThermalCondition):
 
 
 class ThermalConditionSevenPoint(ThermalCondition):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = -3
     _max = 3
     _abbreviation = 'Tcond-7'
@@ -158,19 +81,6 @@ class ThermalConditionSevenPoint(ThermalCondition):
 
 
 class ThermalConditionNinePoint(ThermalCondition):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = -4
     _max = 4
     _abbreviation = 'Tcond-9'
@@ -181,19 +91,6 @@ class ThermalConditionNinePoint(ThermalCondition):
 
 
 class ThermalConditionElevenPoint(ThermalCondition):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = -5
     _max = 5
     _abbreviation = 'Tcond-11'
@@ -204,19 +101,6 @@ class ThermalConditionElevenPoint(ThermalCondition):
 
 
 class UTCICategory(ThermalCondition):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _max = 9
     _abbreviation = 'UTCIcond'

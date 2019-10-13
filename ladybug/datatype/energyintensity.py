@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class EnergyIntensity(DataTypeBase):
     """Energy Intensity
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('kWh/m2', 'kBtu/ft2', 'Wh/m2', 'Btu/ft2')
     _si_units = ('kWh/m2', 'Wh/m2')
@@ -74,19 +62,6 @@ class EnergyIntensity(DataTypeBase):
 
 
 class Radiation(EnergyIntensity):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _abbreviation = 'Esolar'
 
@@ -97,102 +72,24 @@ class Radiation(EnergyIntensity):
 
 
 class GlobalHorizontalRadiation(Radiation):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'GHR'
 
 
 class DirectNormalRadiation(Radiation):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DNR'
 
 
 class DiffuseHorizontalRadiation(Radiation):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DHR'
 
 
 class DirectHorizontalRadiation(Radiation):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DR'
 
 
 class ExtraterrestrialHorizontalRadiation(Radiation):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'HRex'
 
 
 class ExtraterrestrialDirectNormalRadiation(Radiation):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DNRex'

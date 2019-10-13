@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class Speed(DataTypeBase):
     """Speed
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('m/s', 'mph', 'km/h', 'knot', 'ft/s')
     _si_units = ('m/s', 'km/h')
@@ -75,34 +63,8 @@ class Speed(DataTypeBase):
 
 
 class WindSpeed(Speed):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'WS'
 
 
 class AirSpeed(Speed):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'vair'

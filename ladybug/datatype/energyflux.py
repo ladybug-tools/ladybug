@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class EnergyFlux(DataTypeBase):
     """Energy Flux
-
-    Properties:
-            *   name
-            *   units
-            *   si_units
-            *   ip_units
-            *   min
-            *   max
-            *   abbreviation
-            *   unit_descr
-            *   point_in_time
-            *   cumulative
     """
     _units = ('W/m2', 'Btu/h-ft2', 'kW/m2', 'kBtu/h-ft2', 'W/ft2', 'met')
     _si_units = ('W/m2', 'kW/m2')
@@ -85,57 +73,15 @@ class EnergyFlux(DataTypeBase):
 
 
 class MetabolicRate(EnergyFlux):
-    """
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _abbreviation = 'MetR'
 
 
 class EffectiveRadiantField(EnergyFlux):
-    """
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'ERF'
 
 
 class Irradiance(EnergyFlux):
-    """
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _min = 0
     _abbreviation = 'Qsolar'
 
@@ -146,91 +92,21 @@ class Irradiance(EnergyFlux):
 
 
 class GlobalHorizontalIrradiance(Irradiance):
-    """
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'GHIr'
 
 
 class DirectNormalIrradiance(Irradiance):
-    """
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DNIr'
 
 
 class DiffuseHorizontalIrradiance(Irradiance):
-    """
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DHIr'
 
 
 class DirectHorizontalIrradiance(Irradiance):
-    """
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'DHIr'
 
 
 class HorizontalInfraredRadiationIntensity(Irradiance):
-    """
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'HIr'
     _point_in_time = True

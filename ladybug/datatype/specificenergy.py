@@ -7,18 +7,6 @@ from .base import DataTypeBase
 
 class SpecificEnergy(DataTypeBase):
     """Energy
-
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
     """
     _units = ('kWh/kg', 'kBtu/lb', 'Wh/kg', 'Btu/lb', 'J/kg', 'kJ/kg')
     _si_units = ('kWh/kg', 'Wh/kg', 'J/kg', 'kJ/kg')
@@ -86,18 +74,5 @@ class SpecificEnergy(DataTypeBase):
 
 
 class Enthalpy(SpecificEnergy):
-    """
-    Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-    """
     _abbreviation = 'Enth'
     _min = 0

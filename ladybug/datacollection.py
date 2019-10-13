@@ -16,10 +16,10 @@ Collections have the following inheritence structure:
 
 
 All Data Collections in this module have the ability to:
-* max, min, bounds, average, median, total, get_percentile, get_highest/lowest values
-* perform unit conversions on the data: to_unit, to_ip, to_si
-* filter based on conditional statements
-* filter based on analysis period
+    * max, min, bounds, average, median, total, get_percentile, get_highest/lowest values
+    * perform unit conversions on the data: to_unit, to_ip, to_si
+    * filter based on conditional statements
+    * filter based on analysis period
 
 The Hourly Continuous Collection should be used for all annual hourly data
 since it possesses the features of the other classes but includes
@@ -247,7 +247,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
         -   The first represents the month of the year between 1-12.
 
-        -   The first represents the hour of the day between 0-24.
+        -   The second represents the hour of the day between 0-24.
             (eg. (12, 23) for December at 11 PM)
         """
         data_by_month_per_hour = OrderedDict()
