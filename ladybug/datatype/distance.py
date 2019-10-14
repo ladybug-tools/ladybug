@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Distance(DataTypeBase):
-    """Distance"""
+    """Distance
+    """
     _units = ('m', 'ft', 'mm', 'in', 'km', 'mi', 'cm')
     _si_units = ('m', 'mm', 'km', 'cm')
     _ip_units = ('ft', 'in', 'mi')
@@ -82,25 +83,35 @@ class Distance(DataTypeBase):
 
 
 class Visibility(Distance):
+    """Visibility
+    """
     _abbreviation = 'Vis'
     _missing_epw = 9999
 
 
 class CeilingHeight(Distance):
+    """CeilingHeight
+    """
     _abbreviation = 'Hciel'
     _missing_epw = 99999
 
 
 class PrecipitableWater(Distance):
+    """PrecipitableWater
+    """
     _abbreviation = 'PW'
     _missing_epw = 999
 
 
 class SnowDepth(Distance):
+    """SnowDepth
+    """
     _abbreviation = 'Dsnow'
     _missing_epw = 999
 
 
 class LiquidPrecipitationDepth(Distance):
+    """LiquidPrecipitationDepth
+    """
     _abbreviation = 'LPD'
     _missing_epw = 999

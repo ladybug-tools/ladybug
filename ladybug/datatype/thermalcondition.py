@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class ThermalCondition(DataTypeBase):
-    """Thermal Condition"""
+    """Thermal Condition
+    """
     _units = ('condition', 'PMV')
     _si_units = ('condition', 'PMV')
     _ip_units = ('condition', 'PMV')

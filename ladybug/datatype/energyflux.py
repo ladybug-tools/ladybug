@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class EnergyFlux(DataTypeBase):
-    """Energy Flux"""
+    """Energy Flux
+    """
     _units = ('W/m2', 'Btu/h-ft2', 'kW/m2', 'kBtu/h-ft2', 'W/ft2', 'met')
     _si_units = ('W/m2', 'kW/m2')
     _ip_units = ('Btu/h-ft2', 'kBtu/h-ft2')

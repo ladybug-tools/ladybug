@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class SpecificEnergy(DataTypeBase):
-    """Energy"""
+    """Energy
+    """
     _units = ('kWh/kg', 'kBtu/lb', 'Wh/kg', 'Btu/lb', 'J/kg', 'kJ/kg')
     _si_units = ('kWh/kg', 'Wh/kg', 'J/kg', 'kJ/kg')
     _ip_units = ('Btu/lb', 'kBtu/lb')

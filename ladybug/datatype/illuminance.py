@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Illuminance(DataTypeBase):
-    """Illuminance"""
+    """Illuminance
+    """
     _units = ('lux', 'fc')
     _si_units = ('lux')
     _ip_units = ('fc')

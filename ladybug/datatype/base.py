@@ -11,38 +11,20 @@ import re
 class DataTypeBase(object):
     """Base class for data types.
 
+    Args:
+        name: Optional name for the type. Default is derived from the class name.
+
     Properties:
-        name: The full name of the data type as a string.
-        units: A list of all accetpable units of the data type as abbreviated text.
-            The first item of the list should be the standard SI unit.
-            The second item of the list should be the stadard IP unit (if it exists).
-            The rest of the list can be any other acceptable units.
-            (eg. [C, F, K])
-        si_units: A list of acceptable SI units.
-        ip_units: A list of acceptable IP units.
-        min: Lower limit for the data type, values below which should be physically
-            or mathematically impossible. (Default: -inf)
-        max: Upper limit for the data type, values above which should be physically
-            or mathematically impossible. (Default: +inf)
-        abbreviation: An optional abbreviation for the data type as text.
-            (eg. 'UTCI' for Universal Thermal Climate Index).
-            This can also be a letter that represents the data type in a formula.
-            (eg. 'A' for Area; 'P' for Pressure)
-        unit_descr: An optional dictionary describing categories that the numerical
-            values of the units relate to. For example:
-            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-            {0: 'False', 1: 'True'}
-        point_in_time: Boolean to note whether the data type represents conditions
-            at a single instant in time (True) as opposed to being an average or
-            accumulation over time (False) when it is found in hourly lists of data.
-            (True Examples: Temperature, WindSpeed)
-            (False Examples: Energy, Radiation, Illuminance)
-        cumulative: Boolean to tell whether the data type can be cumulative when it
-            is represented over time (True) or it can only be averaged over time
-            to be meaningful (False). Note that cumulative cannot be True
-            when point_in_time is also True.
-            (False Examples: Temperature, Irradiance, Illuminance)
-            (True Examples: Energy, Radiation)
+        *   name
+        *   units
+        *   si_units
+        *   ip_units
+        *   min
+        *   max
+        *   abbreviation
+        *   unit_descr
+        *   point_in_time
+        *   cumulative
     """
     _name = None
     _units = [None]
@@ -60,9 +42,6 @@ class DataTypeBase(object):
 
     def __init__(self, name=None):
         """Initialize DataType.
-
-        Args:
-            name: Optional name for the type. Default is derived from the class name.
         """
         self._name = name
 
@@ -71,11 +50,14 @@ class DataTypeBase(object):
         """Create a data type from a dictionary.
 
         Args:
-            data: Data as a dictionary.
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
                 {
-                    "name": data type name of the data type as a string
-                    "data_type": the class name of the data type as a string
-                    "base_unit": the base unit of the data type
+                    "name": ""  # data type name of the data type as a string
+                    "data_type": ""  # the class name of the data type as a string
+                    "base_unit": ""  # the base unit of the data type
                 }
         """
         assert 'name' in data, 'Required keyword "name" is missing!'
@@ -221,7 +203,7 @@ class DataTypeBase(object):
 
     @property
     def name(self):
-        """The data type name."""
+        """The full name of the data type as a string."""
         if self._name is None:
             return re.sub(r"(?<=\w)([A-Z])", r" \1", self.__class__.__name__)
         else:
@@ -229,7 +211,13 @@ class DataTypeBase(object):
 
     @property
     def units(self):
-        """A tuple of all acceptable units for the data type."""
+        """A tuple of all accetpable units of the data type as abbreviated text.
+
+        The first item of the list should be the standard SI unit.
+        The second item of the list should be the stadard IP unit (if it exists).
+        The rest of the list can be any other acceptable units.
+        (eg. [C, F, K])
+        """
         return self._units
 
     @property
@@ -244,23 +232,38 @@ class DataTypeBase(object):
 
     @property
     def min(self):
-        """The minimum possible value of the data type."""
+        """Lower limit for the data type.
+
+        Values below lower limit should be physically
+        or mathematically impossible. (Default: -inf)
+        """
         return self._min
 
     @property
     def max(self):
-        """The maximum possible value of the data type."""
+        """ Upper limit for the data type.
+
+        Values above upper limit should be physically
+        or mathematically impossible. (Default: +inf)
+        """
         return self._max
 
     @property
     def abbreviation(self):
-        """The abbreviation of the data type."""
+        """An optional abbreviation for the data type as text.
+
+        (eg. 'UTCI' for Universal Thermal Climate Index).
+        This can also be a letter that represents the data type in a formula.
+        (eg. 'A' for Area; 'P' for Pressure)
+        """
         return self._abbreviation
 
     @property
     def unit_descr(self):
-        """A description of the data type units.
+        """A description of the data type units
 
+        A dictionary is used to describe categories that the numerical values of
+        the units relate to.
         This is useful if numerical values of the units relate to specific categories.
         (eg. -1 = Cold, 0 = Neutral, +1 = Hot) (eg. 0 = False, 1 = True).
         """
@@ -268,12 +271,27 @@ class DataTypeBase(object):
 
     @property
     def point_in_time(self):
-        """Whether the data type is point_in_time."""
+        """Whether the data type is point_in_time.
+
+        A Boolean indicates that the data type represents conditions
+        at a single instant in time (True) or at an average or
+        accumulation over time (False) when found in hourly lists of data.
+        (True Examples: Temperature, WindSpeed)
+        (False Examples: Energy, Radiation, Illuminance)
+        """
         return self._point_in_time
 
     @property
     def cumulative(self):
-        """Whether the data type is cumulative."""
+        """Whether the data type is cumulative.
+
+        A Boolean indicates that the data type can be cumulative when it
+        is represented over time (True) or it can only be averaged over time
+        to be meaningful (False). Note that cumulative cannot be True
+        when point_in_time is also True.
+        (False Examples: Temperature, Irradiance, Illuminance)
+        (True Examples: Energy, Radiation)
+        """
         return self._cumulative
 
     @property

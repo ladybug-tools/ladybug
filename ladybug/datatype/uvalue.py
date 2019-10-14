@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class UValue(DataTypeBase):
-    """U Value"""
+    """U Value
+    """
     _units = ('W/m2-K', 'Btu/h-ft2-F')
     _si_units = ('W/m2-K')
     _ip_units = ('Btu/h-ft2-F')

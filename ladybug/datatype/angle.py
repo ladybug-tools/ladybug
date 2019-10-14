@@ -9,7 +9,8 @@ PI = math.pi
 
 
 class Angle(DataTypeBase):
-    """Angle"""
+    """Angle
+    """
     _units = ('degrees', 'radians')
     _si_units = ('degrees', 'radians')
     _ip_units = ('degrees', 'radians')

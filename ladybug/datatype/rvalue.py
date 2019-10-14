@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class RValue(DataTypeBase):
-    """R Value"""
+    """R Value
+    """
     _units = ('m2-K/W', 'h-ft2-F/Btu', 'clo')
     _si_units = ('m2-K/W', 'clo')
     _ip_units = ('h-ft2-F/Btu', 'clo')

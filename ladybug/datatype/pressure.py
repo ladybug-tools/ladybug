@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Pressure(DataTypeBase):
-    """Pressure"""
+    """Pressure
+    """
     _units = ('Pa', 'inHg', 'atm', 'bar', 'Torr', 'psi', 'inH2O')
     _si_units = ('Pa', 'bar')
     _ip_units = ('inHg', 'psi', 'inH2O')

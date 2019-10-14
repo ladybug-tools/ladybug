@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Fraction(DataTypeBase):
-    """Fraction"""
+    """Fraction
+    """
     _units = ('fraction', '%', 'tenths', 'thousandths', 'okta')
     _si_units = ('fraction', '%', 'tenths', 'thousandths', 'okta')
     _ip_units = ('fraction', '%', 'tenths', 'thousandths', 'okta')

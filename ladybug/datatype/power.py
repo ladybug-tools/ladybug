@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Power(DataTypeBase):
-    """Power"""
+    """Power
+    """
     _units = ('W', 'Btu/h', 'kW', 'kBtu/h', 'TR', 'hp')
     _si_units = ('kW', 'W')
     _ip_units = ('Btu/h', 'kBtu/h', 'TR', 'hp')

@@ -5,11 +5,14 @@ Note that all of the methods or properties on an immutable collection that
 return another data collection will return a collection that is mutable.
 
 The only exceptions to this rule are:
-duplicate() - which will always return an exact copy of the collection including
+
+*   duplicate() - which will always return an exact copy of the collection including
     its mutabiliy.
-get_aligned_collection() - which follows the mutability of the starting collection
+
+*   get_aligned_collection() - which follows the mutability of the starting collection
     by default but includes an parameter to override this.
-to_immutable() - which clearly always returns an immutable version of the collection
+
+*   to_immutable() - which clearly always returns an immutable version of the collection
 
 Note that the to_mutable() method on the immutable collections can always be used to
 get a mutable version of an immutable collection.

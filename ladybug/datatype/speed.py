@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Speed(DataTypeBase):
-    """Speed"""
+    """Speed
+    """
     _units = ('m/s', 'mph', 'km/h', 'knot', 'ft/s')
     _si_units = ('m/s', 'km/h')
     _ip_units = ('mph', 'ft/s')

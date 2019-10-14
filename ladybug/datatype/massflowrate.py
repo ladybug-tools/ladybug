@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class MassFlowRate(DataTypeBase):
-    """Mass"""
+    """MassFlowRate
+    """
     _units = ('kg/s', 'lb/s', 'g/s', 'oz/s')
     _si_units = ('kg/s', 'g/s')
     _ip_units = ('lb/s', 'oz/s')

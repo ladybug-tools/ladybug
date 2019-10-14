@@ -6,32 +6,33 @@ from .base import DataTypeBase
 
 
 class GenericType(DataTypeBase):
-    """Type for any data type that is not currently implemented."""
+    """Type for any data type that is not currently implemented.
+
+    Args:
+        name: A name for the data type as a string.
+        unit: A unit for the data type as a string.
+        min: Optional lower limit for the data type, values below which should be
+            physically or mathematically impossible. (Default: -inf)
+        max: Optional upper limit for the data type, values above which should be
+            physically or mathematically impossible. (Default: +inf)
+        abbreviation: An optional abbreviation for the data type as text.
+        unit_descr: An optional dictionary describing categories that the numerical
+            values of the units relate to. For example:
+            {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
+            {0: 'False', 1: 'True'}
+        point_in_time: Boolean to note whether the data type represents conditions
+            at a single instant in time (True) as opposed to being an average or
+            accumulation over time (False) when it is found in hourly lists of data.
+            (Default: True)
+        cumulative: Boolean to tell whether the data type can be cumulative when it
+            is represented over time (True) or it can only be averaged over time
+            to be meaningful (False). Note that cumulative cannot be True
+            when point_in_time is also True. (Default: False)
+    """
     def __init__(self, name, unit, min=float('-inf'), max=float('+inf'),
                  abbreviation=None, unit_descr=None, point_in_time=True,
                  cumulative=False):
         """Initalize Generic Type.
-
-        Args:
-            name: A name for the data type as a string.
-            unit: A unit for the data type as a string.
-            min: Optional lower limit for the data type, values below which should be
-                physically or mathematically impossible. (Default: -inf)
-            max: Optional upper limit for the data type, values above which should be
-                physically or mathematically impossible. (Default: +inf)
-            abbreviation: An optional abbreviation for the data type as text.
-            unit_descr: An optional dictionary describing categories that the numerical
-                values of the units relate to. For example:
-                {-1: 'Cold', 0: 'Neutral', +1: 'Hot'}
-                {0: 'False', 1: 'True'}
-            point_in_time: Boolean to note whether the data type represents conditions
-                at a single instant in time (True) as opposed to being an average or
-                accumulation over time (False) when it is found in hourly lists of data.
-                (Default: True)
-            cumulative: Boolean to tell whether the data type can be cumulative when it
-                is represented over time (True) or it can only be averaged over time
-                to be meaningful (False). Note that cumulative cannot be True
-                when point_in_time is also True. (Default: False)
         """
         assert isinstance(name, str), 'name must be a string. Got {}.'.format(type(name))
         assert isinstance(unit, str), 'unit must be a string. Got {}.'.format(type(unit))

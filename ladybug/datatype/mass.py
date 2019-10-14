@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Mass(DataTypeBase):
-    """Mass"""
+    """Mass
+    """
     _units = ('kg', 'lb', 'g', 'tonne', 'ton', 'oz')
     _si_units = ('kg', 'g', 'tonne')
     _ip_units = ('lb', 'ton')

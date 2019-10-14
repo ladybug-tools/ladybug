@@ -40,6 +40,9 @@ def nukedir(target_dir, rmdir=False):
     """Delete all the files inside target_dir.
 
     Usage:
+
+    .. code-block:: python
+
         nukedir("c:/ladybug/libs", True)
     """
     d = os.path.normpath(target_dir)

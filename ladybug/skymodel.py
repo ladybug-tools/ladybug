@@ -29,9 +29,12 @@ def ashrae_clear_sky(altitudes, month, sky_clearness=1):
             than 1.2. Default is set to 1.0.
 
     Returns:
-        dir_norm_rad: A list of direct normal radiation values for each
+        A tuple with two elements
+
+        -   dir_norm_rad: A list of direct normal radiation values for each
             of the connected altitudes in W/m2.
-        dif_horiz_rad: A list of diffuse horizontall radiation values for each
+
+        -   dif_horiz_rad: A list of diffuse horizontall radiation values for each
             of the connected altitudes in W/m2.
     """
     # apparent solar irradiation at air mass m = 0
@@ -71,6 +74,7 @@ def ashrae_revised_clear_sky(altitudes, tb, td, use_2017_model=False):
 
     By default, this function returns clear sky values following the
     methods originally published in the ASHRAE 2009 HOF.
+
     Args:
         altitudes: A list of solar altitudes in degrees.
         tb: A value indicating the beam optical depth of the sky.
@@ -83,9 +87,12 @@ def ashrae_revised_clear_sky(altitudes, tb, td, use_2017_model=False):
             for tb and td and so this input defaults to False.
 
     Returns:
-        dir_norm_rad: A list of direct normal radiation values for each
+        A tuple with two elements
+
+        -   dir_norm_rad: A list of direct normal radiation values for each
             of the connected altitudes in W/m2.
-        dif_horiz_rad: A list of diffuse horizontall radiation values for each
+
+        -   dif_horiz_rad: A list of diffuse horizontall radiation values for each
             of the connected altitudes in W/m2.
     """
     dir_norm_rad = []
@@ -139,7 +146,7 @@ def zhang_huang_solar(alt, cloud_cover, relative_humidity,
             Default is to use the average value over the earth's orbit (1355).
 
     Returns:
-        glob_ir: A global horizontall radiation value in W/m2.
+        glob_ir -- A global horizontall radiation value in W/m2.
     """
     # zhang-huang solar model regression constants
     C0, C1, C2, C3, C4, C5, D_COEFF, K_COEFF = 0.5598, 0.4982, \
@@ -193,9 +200,12 @@ def zhang_huang_solar_split(altitudes, doys, cloud_cover, relative_humidity,
             newer and more accurate DIRINT model. Default is False.
 
     Returns:
-        dir_norm_rad: A list of direct normal radiation values for each
+        A tuple with two elements
+
+        -   dir_norm_rad: A list of direct normal radiation values for each
             of the connected altitudes in W/m2.
-        dif_horiz_rad: A list of diffuse horizontall radiation values for each
+
+        -   dif_horiz_rad: A list of diffuse horizontall radiation values for each
             of the connected altitudes in W/m2.
     """
     # Calculate global horizontal irradiance using the original zhang-huang model
@@ -257,10 +267,15 @@ def estimate_illuminance_from_irradiance(
             the kastenyoung1989 model to compute this value.
 
     Returns:
-        gh_ill: Value for Global Horizontal Illuminance in lux.
-        dn_ill: Value for Direct Normal Illuminance in lux.
-        dh_ill: Value for Diffuse Horizontal Illuminance in lux.
-        z_lum: Value for Zenith Luminance in lux.
+        A tuple with four elements
+
+        -   gh_ill: Value for Global Horizontal Illuminance in lux.
+
+        -   dn_ill: Value for Direct Normal Illuminance in lux.
+
+        -   dh_ill: Value for Diffuse Horizontal Illuminance in lux.
+
+        -   z_lum: Value for Zenith Luminance in lux.
 
     """
     if altitude <= 0:  # sun is below the horizon, return 0 for all results
@@ -378,7 +393,7 @@ def calc_horizontal_infrared(sky_cover, dry_bulb, dew_point):
             in degrees C.
 
     Returns:
-        horiz_ir: A horizontal infrared radiation intensity value in W/m2.
+        horiz_ir -- A horizontal infrared radiation intensity value in W/m2.
     """
     # stefan-boltzmann constant
     SIGMA = 5.6697e-8
@@ -410,7 +425,7 @@ def calc_sky_temperature(horiz_ir, source_emissivity=1):
              most outdoor surfaces.
 
     Returns:
-        sky_temp: A sky temperature value in C.
+        sky_temp -- A sky temperature value in C.
     """
     sigma = 5.6697e-8  # stefan-boltzmann constant
     return ((horiz_ir / (source_emissivity * sigma)) ** 0.25) - 273.15
@@ -485,9 +500,9 @@ def dirint(ghi, altitudes, doys, pressures, use_delta_kt_prime=True,
             set to 0 for times with altitude values smaller than `min_altitude`.
 
     Returns:
-        dni: array-like
-            The modeled direct normal irradiance in W/m^2 provided by the
-            DIRINT model.
+        dni -- array-like.
+        The modeled direct normal irradiance in W/m^2 provided by the
+        DIRINT model.
     """
     # calculate kt_prime values
     kt_primes = []
@@ -602,9 +617,9 @@ def disc(ghi, altitude, doy, pressure=101325,
 
     This implementation limits the clearness index to 1 by default.
 
-    The original report describing the DISC model [1]_ uses the
+    The original report describing the DISC model [1] uses the
     relative air mass rather than the absolute (pressure-corrected)
-    air mass. However, the NREL implementation of the DISC model [2]_
+    air mass. However, the NREL implementation of the DISC model [2]
     uses absolute air mass. PVLib Matlab also uses the absolute air mass.
     pvlib python defaults to absolute air mass, but the relative airmass
     can be used by supplying `pressure=None`.
@@ -640,12 +655,16 @@ def disc(ghi, altitude, doy, pressure=101325,
             to air mass in the original paper.
 
     Returns:
-        dni: The modeled direct normal irradiance
+        A tuple with two elements
+
+        -   dni: The modeled direct normal irradiance
             in W/m^2 provided by the
             Direct Insolation Simulation Code (DISC) model.
-        kt: Ratio of global to extraterrestrial
+
+        -   kt: Ratio of global to extraterrestrial
             irradiance on a horizontal plane.
-        am: Airmass
+
+        -   am: Airmass
     """
     if altitude > min_altitude and ghi > 0:
         # this is the I0 calculation from the reference
@@ -680,8 +699,11 @@ def _disc_kn(clearness_index, airmass, max_airmass=12):
             in calculating Kn.
 
     Returns:
-        Kn : numeric
-        am : numeric
+        A tuple with two elements
+
+        -   Kn : numeric
+
+        -   am : numeric
             airmass used in the calculation of Kn. am <= max_airmass.
     """
     # short names for equations
@@ -728,11 +750,11 @@ def get_extra_radiation(doy, solar_constant=1366.1):
             The solar constant.
 
     Returns:
-        dni_extra : float, array, or Series
-            The extraterrestrial radiation present in watts per square meter
-            on a surface which is normal to the sun. Pandas Timestamp and
-            DatetimeIndex inputs will yield a Pandas TimeSeries. All other
-            inputs will yield a float or an array of floats.
+        dni_extra -- float, array, or Series.
+        The extraterrestrial radiation present in watts per square meter
+        on a surface which is normal to the sun. Pandas Timestamp and
+        DatetimeIndex inputs will yield a Pandas TimeSeries. All other
+        inputs will yield a float or an array of floats.
     """
     # Calculates the day angle for the Earth's orbit around the Sun.
     B = (2. * math.pi / 365.) * (doy - 1)
@@ -776,8 +798,8 @@ def clearness_index(ghi, altitude, extra_radiation, min_sin_altitude=0.065,
             NREL's SRRL Fortran code used 0.82 for hourly data.
 
     Returns:
-        kt : numeric
-            Clearness index
+        kt -- numeric.
+        Clearness index
     """
     sin_altitude = math.sin(math.radians(altitude))
     I0h = extra_radiation * max(sin_altitude, min_sin_altitude)
@@ -798,7 +820,7 @@ def clearness_index_zenith_independent(clearness_index, airmass,
         ASHRAE Transactions-Research Series, pp. 354-369
 
     Args:
-        clearness_index: numeric
+        clearness_index: numeric.
             Ratio of global to extraterrestrial irradiance on a horizontal
             plane
         airmass: numeric
@@ -809,8 +831,8 @@ def clearness_index_zenith_independent(clearness_index, airmass,
             NREL's SRRL Fortran code used 0.82 for hourly data.
 
     Returns:
-        kt_prime : numeric
-            Zenith independent clearness index
+        kt_prime -- numeric.
+        Zenith independent clearness index
     """
     if airmass is not None:
         # Perez eqn 1
@@ -841,14 +863,14 @@ def get_absolute_airmass(airmass_relative, pressure=101325.):
         data," Solar Energy, vol. 51, pp. 121-138, 1993.
 
     Args:
-        airmass_relative: numeric
+        airmass_relative: numeric.
             The air mass at sea-level.
         pressure: numeric, default 101325
             The site pressure in Pascal.
 
     Returns:
-        airmass_absolute: numeric
-            Absolute (pressure corrected) air mass
+        airmass_absolute -- numeric.
+        Absolute (pressure corrected) air mass
     """
     if airmass_relative is not None:
         return airmass_relative * pressure / 101325.
@@ -892,25 +914,27 @@ def get_relative_airmass(altitude, model='kastenyoung1989'):
             model descriptions to determine which type of altitude angle is
             required. Apparent altitude angles must be calculated at sea level.
         model: string, default 'kastenyoung1989'
-            Available models include the following:
-            * 'simple' - secant(apparent altitude angle) -
-              Note that this gives -inf at altitude=0
-            * 'kasten1966' - See reference [1] -
-              requires apparent sun altitude
-            * 'youngirvine1967' - See reference [2] -
-              requires true sun altitude
-            * 'kastenyoung1989' - See reference [3] -
-              requires apparent sun altitude
-            * 'gueymard1993' - See reference [4] -
-              requires apparent sun altitude
-            * 'young1994' - See reference [5] -
-              requries true sun altitude
-            * 'pickering2002' - See reference [6] -
-              requires apparent sun altitude
+
+                Available models include the following:
+
+                *   'simple' - secant(apparent altitude angle) -
+                    Note that this gives -inf at altitude=0
+                *   'kasten1966' - See reference [1] -
+                    requires apparent sun altitude
+                *   'youngirvine1967' - See reference [2] -
+                    requires true sun altitude
+                *   'kastenyoung1989' - See reference [3] -
+                    requires apparent sun altitude
+                *   'gueymard1993' - See reference [4] -
+                    requires apparent sun altitude
+                *   'young1994' - See reference [5] -
+                    requries true sun altitude
+                *   'pickering2002' - See reference [6] -
+                    requires apparent sun altitude
 
     Returns:
-        airmass_relative: Relative airmass at sea level. Will return None for any
-            altitude angle smaller than 0 degrees.
+        airmass_relative -- Relative airmass at sea level. Will return None for any
+        altitude angle smaller than 0 degrees.
     """
     if altitude < 0:
         return None

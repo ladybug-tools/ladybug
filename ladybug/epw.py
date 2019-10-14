@@ -24,59 +24,59 @@ except ImportError:
 class EPW(object):
     """An EPW object containing all of the data of an .epw file.
 
-    properties:
-        location
-        annual_heating_design_day_996
-        annual_heating_design_day_990
-        annual_cooling_design_day_004
-        annual_cooling_design_day_010
-        heating_design_condition_dictionary
-        cooling_design_condition_dictionary
-        extreme_design_condition_dictionary
-        extreme_hot_weeks
-        extreme_cold_weeks
-        typical_weeks
-        monthly_ground_temperature
-        header
+    Args:
+        file_path: Local file address to an .epw file.
 
-        years
-        dry_bulb_temperature
-        dew_point_temperature
-        relative_humidity
-        atmospheric_station_pressure
-        extraterrestrial_horizontal_radiation
-        extraterrestrial_direct_normal_radiation
-        horizontal_infrared_radiation_intensity
-        global_horizontal_radiation
-        direct_normal_radiation
-        diffuse_horizontal_radiation
-        global_horizontal_illuminance
-        direct_normal_illuminance
-        diffuse_horizontal_illuminance
-        zenith_luminance
-        wind_direction
-        wind_speed
-        total_sky_cover
-        opaque_sky_cover
-        visibility
-        ceiling_height
-        present_weather_observation
-        present_weather_codes
-        precipitable_water
-        aerosol_optical_depth
-        snow_depth
-        days_since_last_snowfall
-        albedo
-        liquid_precipitation_depth
-        liquid_precipitation_quantity
-        sky_temperature
+    Properties:
+        * location
+        * annual_heating_design_day_996
+        * annual_heating_design_day_990
+        * annual_cooling_design_day_004
+        * annual_cooling_design_day_010
+        * heating_design_condition_dictionary
+        * cooling_design_condition_dictionary
+        * extreme_design_condition_dictionary
+        * extreme_hot_weeks
+        * extreme_cold_weeks
+        * typical_weeks
+        * monthly_ground_temperature
+        * header
+
+        * years
+        * dry_bulb_temperature
+        * dew_point_temperature
+        * relative_humidity
+        * atmospheric_station_pressure
+        * extraterrestrial_horizontal_radiation
+        * extraterrestrial_direct_normal_radiation
+        * horizontal_infrared_radiation_intensity
+        * global_horizontal_radiation
+        * direct_normal_radiation
+        * diffuse_horizontal_radiation
+        * global_horizontal_illuminance
+        * direct_normal_illuminance
+        * diffuse_horizontal_illuminance
+        * zenith_luminance
+        * wind_direction
+        * wind_speed
+        * total_sky_cover
+        * opaque_sky_cover
+        * visibility
+        * ceiling_height
+        * present_weather_observation
+        * present_weather_codes
+        * precipitable_water
+        * aerosol_optical_depth
+        * snow_depth
+        * days_since_last_snowfall
+        * albedo
+        * liquid_precipitation_depth
+        * liquid_precipitation_quantity
+        * sky_temperature
     """
 
     def __init__(self, file_path):
         """Initalize an EPW object from from a local .epw file.
-
-        Args:
-            file_path: Local file address to an .epw file.
         """
         self._file_path = os.path.normpath(file_path) if file_path is not None else None
         self._is_header_loaded = False
@@ -111,22 +111,26 @@ class EPW(object):
         all hourly data slots just possess the missing value for that data
         type. To obtain a EPW that is simulate-able in EnergyPlus, one must
         at least set the following properties:
-            location
-            dry_bulb_temperature
-            dew_point_temperature
-            relative_humidity
-            atmospheric_station_pressure
-            direct_normal_radiation
-            diffuse_horizontal_radiation
-            wind_direction
-            wind_speed
-            total_sky_cover
-            opaque_sky_cover or horizontal_infrared_radiation_intensity
+
+        * location
+        * dry_bulb_temperature
+        * dew_point_temperature
+        * relative_humidity
+        * atmospheric_station_pressure
+        * direct_normal_radiation
+        * diffuse_horizontal_radiation
+        * wind_direction
+        * wind_speed
+        * total_sky_cover
+        * opaque_sky_cover or horizontal_infrared_radiation_intensity
 
         Args:
             is_leap_year: A boolean to set whether the EPW object is for a leap year.
 
         Usage:
+
+        .. code-block:: python
+
             from ladybug.epw import EPW
             from ladybug.location import Location
             epw = EPW.from_missing_values()
@@ -181,32 +185,38 @@ class EPW(object):
     def from_dict(cls, data):
         """ Create EPW from a dictionary.
 
-            Args:
-                data: {
-                "location": {} , // ladybug location schema
-                "data_collections": [], // list of hourly annual hourly data collection
-                    schemas for each of the 35 fields within the EPW file.
-                "metadata": {},  // dict of metadata assigned to all data collections
-                "heating_dict": {}, // dict containing heating design conditions
-                "cooling_dict": {}, // dict containing cooling design conditions
-                "extremes_dict": {}, // dict containing extreme design conditions
-                "extreme_hot_weeks": {}, // dict with values of week-long ladybug
-                    analysis period schemas signifying extreme hot weeks.
-                "extreme_cold_weeks": {}, // dict with values of week-long ladybug
-                    analysis period schemas signifying extreme cold weeks.
-                "typical_weeks": {}, // dict with values of week-long ladybug
-                    analysis period schemas signifying typical weeks.
-                "monthly_ground_temps": {}, // dict with keys as floats signifying
-                    depths in meters below ground and values of monthly collection schema
-                "is_ip": Boolean // denote whether the data is in IP units
-                "is_leap_year": Boolean, // denote whether data is for a leap year
-                "daylight_savings_start": 0, // signify when daylight savings starts
-                    or 0 for no daylight savings
-                "daylight_savings_end" 0, // signify when daylight savings ends
-                    or 0 for no daylight savings
-                "comments_1": String, // epw comments
-                "comments_2": String // epw comments
-            }
+        Args:
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+                {
+                "location": {} ,  # ladybug location schema
+                "data_collections": [],  # list of hourly annual hourly data collection
+                    # schemas for each of the 35 fields within the EPW file.
+                "metadata": {},  # dict of metadata assigned to all data collections
+                "heating_dict": {},  # dict containing heating design conditions
+                "cooling_dict": {},  # dict containing cooling design conditions
+                "extremes_dict": {},  # dict containing extreme design conditions
+                "extreme_hot_weeks": {},  # dict with values of week-long ladybug
+                    # analysis period schemas signifying extreme hot weeks.
+                "extreme_cold_weeks": {},  # dict with values of week-long ladybug
+                    # analysis period schemas signifying extreme cold weeks.
+                "typical_weeks": {},  # dict with values of week-long ladybug
+                    # analysis period schemas signifying typical weeks.
+                "monthly_ground_temps": {},  # dict with keys as floats signifying
+                    # depths in meters below ground and values of monthly
+                    # collection schema
+                "is_ip": False  # Boolean // denote whether the data is in IP units
+                "is_leap_year": False  # Boolean, denote whether data is for
+                                       # a leap year
+                "daylight_savings_start": 0,  # signify when daylight savings starts
+                                              # or 0 for no daylight savings
+                "daylight_savings_end" 0,  # signify when daylight savings ends
+                                           # or 0 for no daylight savings
+                "comments_1": ""  # String, epw comments
+                "comments_2": ""  # String, epw comments
+                }
         """
         # Initialize the class with all data missing
         epw_obj = cls(None)
@@ -723,7 +733,7 @@ class EPW(object):
     def save(self, file_path):
         """Save epw object as an epw file.
 
-        args:
+        Args:
             file_path: A string representing the path to write the epw file to.
         """
         # load data if it's  not loaded convert to SI if it is in IP
@@ -827,42 +837,44 @@ class EPW(object):
         EPWFields.fields
 
         Args:
-            field_number: a value between 0 to 34 for different available epw fields.
-            0 Year
-            1 Month
-            2 Day
-            3 Hour
-            4 Minute
-            -
-            6 Dry Bulb Temperature
-            7 Dew Point Temperature
-            8 Relative Humidity
-            9 Atmospheric Station Pressure
-            10 Extraterrestrial Horizontal Radiation
-            11 Extraterrestrial Direct Normal Radiation
-            12 Horizontal Infrared Radiation Intensity
-            13 Global Horizontal Radiation
-            14 Direct Normal Radiation
-            15 Diffuse Horizontal Radiation
-            16 Global Horizontal Illuminance
-            17 Direct Normal Illuminance
-            18 Diffuse Horizontal Illuminance
-            19 Zenith Luminance
-            20 Wind Direction
-            21 Wind Speed
-            22 Total Sky Cover
-            23 Opaque Sky Cover
-            24 Visibility
-            25 Ceiling Height
-            26 Present Weather Observation
-            27 Present Weather Codes
-            28 Precipitable Water
-            29 Aerosol Optical Depth
-            30 Snow Depth
-            31 Days Since Last Snowfall
-            32 Albedo
-            33 Liquid Precipitation Depth
-            34 Liquid Precipitation Quantity
+            field_number: A value between 0 to 34 for different available epw fields.
+
+                *   0 Year
+                *   1 Month
+                *   2 Day
+                *   3 Hour
+                *   4 Minute
+                *   5 -
+                *   6 Dry Bulb Temperature
+                *   7 Dew Point Temperature
+                *   8 Relative Humidity
+                *   9 Atmospheric Station Pressure
+                *   10 Extraterrestrial Horizontal Radiation
+                *   11 Extraterrestrial Direct Normal Radiation
+                *   12 Horizontal Infrared Radiation Intensity
+                *   13 Global Horizontal Radiation
+                *   14 Direct Normal Radiation
+                *   15 Diffuse Horizontal Radiation
+                *   16 Global Horizontal Illuminance
+                *   17 Direct Normal Illuminance
+                *   18 Diffuse Horizontal Illuminance
+                *   19 Zenith Luminance
+                *   20 Wind Direction
+                *   21 Wind Speed
+                *   22 Total Sky Cover
+                *   23 Opaque Sky Cover
+                *   24 Visibility
+                *   25 Ceiling Height
+                *   26 Present Weather Observation
+                *   27 Present Weather Codes
+                *   28 Precipitable Water
+                *   29 Aerosol Optical Depth
+                *   30 Snow Depth
+                *   31 Days Since Last Snowfall
+                *   32 Albedo
+                *   33 Liquid Precipitation Depth
+                *   34 Liquid Precipitation Quantity
+
         Returns:
             An annual Ladybug list
         """
@@ -881,8 +893,8 @@ class EPW(object):
         this is a full numeric field (i.e. 23.6) and not an integer representation
         with tenths. Valid values range from -70C to 70 C. Missing value for this
         field is 99.9.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(6)
 
@@ -893,8 +905,8 @@ class EPW(object):
         This is the dew point temperature in C at the time indicated. Note that this is
         a full numeric field (i.e. 23.6) and not an integer representation with tenths.
         Valid values range from -70 C to 70 C. Missing value for this field is 99.9
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(7)
 
@@ -904,8 +916,8 @@ class EPW(object):
 
         This is the Relative Humidity in percent at the time indicated. Valid values
         range from 0% to 110%. Missing value for this field is 999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(8)
 
@@ -916,8 +928,8 @@ class EPW(object):
         This is the station pressure in Pa at the time indicated. Valid values range
         from 31,000 to 120,000. (These values were chosen from the standard barometric
         pressure for all elevations of the World). Missing value for this field is 999999
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(9)
 
@@ -928,8 +940,8 @@ class EPW(object):
         This is the Extraterrestrial Horizontal Radiation in Wh/m2. It is not currently
         used in EnergyPlus calculations. It should have a minimum value of 0; missing
         value for this field is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(10)
 
@@ -942,8 +954,8 @@ class EPW(object):
         of the atmosphere during the number of minutes preceding the time indicated).
         It is not currently used in EnergyPlus calculations. It should have a minimum
         value of 0; missing value for this field is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(11)
 
@@ -955,8 +967,8 @@ class EPW(object):
         it is calculated from the Opaque Sky Cover field as shown in the following
         explanation. It should have a minimum value of 0; missing value for this field
         is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(12)
 
@@ -969,8 +981,8 @@ class EPW(object):
         number of minutes preceding the time indicated.) It is not currently used in
         EnergyPlus calculations. It should have a minimum value of 0; missing value
         for this field is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(13)
 
@@ -983,8 +995,8 @@ class EPW(object):
         sun's rays, during the number of minutes preceding the time indicated.) If the
         field is missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such
         missing values are totaled and presented at the end of the runperiod.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(14)
 
@@ -997,8 +1009,8 @@ class EPW(object):
         during the number of minutes preceding the time indicated.) If the field is
         missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such missing
         values are totaled and presented at the end of the runperiod
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-        /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(15)
 
@@ -1012,8 +1024,8 @@ class EPW(object):
         currently used in EnergyPlus calculations. It should have a minimum value of 0;
         missing value for this field is 999999 and will be considered missing if greater
         than or equal to 999900.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(16)
 
@@ -1028,8 +1040,8 @@ class EPW(object):
         value of 0; missing value for this field is 999999 and will be considered missing
         if greater than or equal to 999900.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(17)
 
@@ -1044,8 +1056,8 @@ class EPW(object):
         value of 0; missing value for this field is 999999 and will be considered missing
         if greater than or equal to 999900.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(18)
 
@@ -1058,8 +1070,8 @@ class EPW(object):
         the time indicated.) It is not currently used in EnergyPlus calculations.
         It should have a minimum value of 0; missing value for this field is 9999.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(19)
 
@@ -1072,8 +1084,8 @@ class EPW(object):
         indicated. If calm, direction equals zero.) Values can range from 0 to 360.
         Missing value is 999.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(20)
 
@@ -1084,8 +1096,8 @@ class EPW(object):
         This is the wind speed in m/sec. (Wind speed at time indicated.) Values can
         range from 0 to 40. Missing value is 999.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(21)
 
@@ -1098,8 +1110,8 @@ class EPW(object):
         or obscuring phenomena at the hour indicated at the time indicated.) Minimum
         value is 0; maximum value is 10; missing value is 99.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(22)
 
@@ -1115,8 +1127,8 @@ class EPW(object):
         Horizontal Infrared Radiation Intensity. Minimum value is 0; maximum value is
         10; missing value is 99.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(23)
 
@@ -1128,8 +1140,8 @@ class EPW(object):
         indicated.) It is not currently used in EnergyPlus calculations. Missing
         value is 9999.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(24)
 
@@ -1141,8 +1153,8 @@ class EPW(object):
         88888 is cirroform ceiling.) It is not currently used in EnergyPlus calculations.
         Missing value is 99999
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(25)
 
@@ -1156,8 +1168,8 @@ class EPW(object):
         Present Weather Codes) is for rain/wet surfaces, a missing observation field or
         a missing weather code implies no rain.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(26)
 
@@ -1175,8 +1187,8 @@ class EPW(object):
         representing liquid precipitation - where the surfaces of the building would be
         wet. EnergyPlus uses "Snow Depth" to determine if snow is on the ground.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(27)
 
@@ -1190,8 +1202,8 @@ class EPW(object):
         (primarily due to the unreliability of the reporting of this value). Missing
         value is 999.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(28)
 
@@ -1202,8 +1214,8 @@ class EPW(object):
         This is the value for Aerosol Optical Depth in thousandths. It is not currently
         used in EnergyPlus calculations. Missing value is .999.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(29)
 
@@ -1215,8 +1227,8 @@ class EPW(object):
         is on the ground and, thus, the ground reflectance may change. Missing value
         is 999.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(30)
 
@@ -1227,8 +1239,8 @@ class EPW(object):
         This is the value for Days Since Last Snowfall. It is not currently used in
         EnergyPlus calculations. Missing value is 99.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(31)
 
@@ -1239,8 +1251,8 @@ class EPW(object):
         The ratio (unitless) of reflected solar irradiance to global horizontal
         irradiance. It is not currently used in EnergyPlus.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(32)
 
@@ -1254,8 +1266,8 @@ class EPW(object):
         Conversely, if the precipitation flag shows rain and this field is missing or
         zero, it is set to 1.5 (mm).
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs
-            /pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
+/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(33)
 
@@ -1266,8 +1278,8 @@ class EPW(object):
         The period of accumulation (hr) for the liquid precipitation depth field.
         It is not currently used in EnergyPlus.
 
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/
-            pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
+        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/\
+pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(34)
 
@@ -1278,8 +1290,8 @@ class EPW(object):
         This value in degrees Celcius is derived from the Horizontal Infrared
         Radiation Intensity in Wh/m2. It represents the long wave radiant
         temperature of the sky
-        Read more at: https://bigladdersoftware.com/epx/docs/8-9/engineering-reference
-            /climate-calculations.html#energyplus-sky-temperature-calculation
+        Read more at: https://bigladdersoftware.com/epx/docs/8-9/engineering-reference\
+/climate-calculations.html#energyplus-sky-temperature-calculation
         """
         # create sky temperature header
         sky_temp_header = Header(data_type=temperature.SkyTemperature(), unit='C',
@@ -1305,7 +1317,7 @@ class EPW(object):
         WEA carries radiation values from epw. Gendaymtx uses these values to
         generate the sky. For an annual analysis it is identical to using epw2wea.
 
-        args:
+        Args:
             file_path: Full file path for output file.
             hoys: List of hours of the year. Default is 0-8759.
         """
@@ -1387,13 +1399,12 @@ class EPW(object):
 class EPWFields(object):
     """EPW weather file fields.
 
-    Read more at:
-    https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/
-        pdfs_v8.4.0/AuxiliaryPrograms.pdf
+    Read more at https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/\
+pdfs_v8.4.0/AuxiliaryPrograms.pdf
     (Chapter 2.9.1)
     """
 
-    FIELDS = {
+    _fields = {
         0: {'name': generic.GenericType('Year', 'yr'),
             'type': int,
             'unit': 'yr'
@@ -1628,49 +1639,49 @@ class EPWFields(object):
     def field_by_number(cls, field_number):
         """Return an EPWField based on field number.
 
-        0 Year
-        1 Month
-        2 Day
-        3 Hour
-        4 Minute
-        -
-        6 Dry Bulb Temperature
-        7 Dew Point Temperature
-        8 Relative Humidity
-        9 Atmospheric Station Pressure
-        10 Extraterrestrial Horizontal Radiation
-        11 Extraterrestrial Direct Normal Radiation
-        12 Horizontal Infrared Radiation Intensity
-        13 Global Horizontal Radiation
-        14 Direct Normal Radiation
-        15 Diffuse Horizontal Radiation
-        16 Global Horizontal Illuminance
-        17 Direct Normal Illuminance
-        18 Diffuse Horizontal Illuminance
-        19 Zenith Luminance
-        20 Wind Direction
-        21 Wind Speed
-        22 Total Sky Cover
-        23 Opaque Sky Cover
-        24 Visibility
-        25 Ceiling Height
-        26 Present Weather Observation
-        27 Present Weather Codes
-        28 Precipitable Water
-        29 Aerosol Optical Depth
-        30 Snow Depth
-        31 Days Since Last Snowfall
-        32 Albedo
-        33 Liquid Precipitation Depth
-        34 Liquid Precipitation Quantity
+        *   0 Year
+        *   1 Month
+        *   2 Day
+        *   3 Hour
+        *   4 Minute
+        *   5 -
+        *   6 Dry Bulb Temperature
+        *   7 Dew Point Temperature
+        *   8 Relative Humidity
+        *   9 Atmospheric Station Pressure
+        *   10 Extraterrestrial Horizontal Radiation
+        *   11 Extraterrestrial Direct Normal Radiation
+        *   12 Horizontal Infrared Radiation Intensity
+        *   13 Global Horizontal Radiation
+        *   14 Direct Normal Radiation
+        *   15 Diffuse Horizontal Radiation
+        *   16 Global Horizontal Illuminance
+        *   17 Direct Normal Illuminance
+        *   18 Diffuse Horizontal Illuminance
+        *   19 Zenith Luminance
+        *   20 Wind Direction
+        *   21 Wind Speed
+        *   22 Total Sky Cover
+        *   23 Opaque Sky Cover
+        *   24 Visibility
+        *   25 Ceiling Height
+        *   26 Present Weather Observation
+        *   27 Present Weather Codes
+        *   28 Precipitable Water
+        *   29 Aerosol Optical Depth
+        *   30 Snow Depth
+        *   31 Days Since Last Snowfall
+        *   32 Albedo
+        *   33 Liquid Precipitation Depth
+        *   34 Liquid Precipitation Quantity
         """
-        return EPWField(cls.FIELDS[field_number])
+        return EPWField(cls._fields[field_number])
 
     def __repr__(self):
         """EPW fields representation."""
         fields = (
             '{}: {}'.format(key, value['name'])
-            for key, value in self.FIELDS.items()
+            for key, value in self._fields.items()
         )
 
         return '\n'.join(fields)

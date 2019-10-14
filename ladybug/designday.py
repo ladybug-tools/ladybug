@@ -31,9 +31,14 @@ if (sys.version_info > (3, 0)):
 class DDY(object):
     """A DDY object containing all of the data of a .ddy file.
 
-    Properties:
+    Args:
         location: A Ladybug location object
         design_days: A list of the design days in the ddy file.
+
+    Properties:
+        * file_locatiom
+        * location
+        * design_days
     """
     _location_format = re.compile(
         r"(Site:Location,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
@@ -54,9 +59,14 @@ class DDY(object):
         """Create a DDY from a dictionary.
 
         Args:
-            data = {
-            "location": ladybug Location schema,
-            "design_days": [] // list of ladybug DesignDay schemas}
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+            {
+            "location": {}  # ladybug Location schema,
+            "design_days": []  # list of ladybug DesignDay schemas
+            }
         """
         required_keys = ('location', 'design_days')
         for key in required_keys:
@@ -69,7 +79,7 @@ class DDY(object):
     def from_ddy_file(cls, file_path):
         """Initalize from a ddy file object from an existing ddy file.
 
-        args:
+        Args:
             file_path: A string representing a complete path to the .ddy file.
         """
         # check that the file is there
@@ -119,7 +129,7 @@ class DDY(object):
     def from_design_day(cls, design_day):
         """Initalize from a ddy file object from a ladybug design day object.
 
-        args:
+        Args:
             design_day: A Ladybug DesignDay object.
         """
         return cls(design_day.location, [design_day])
@@ -127,7 +137,7 @@ class DDY(object):
     def save(self, file_path):
         """Save ddy object as a .ddy file.
 
-        args:
+        Args:
             file_path: A string representing the path to write the ddy file to.
         """
         # write all data into the file
@@ -214,7 +224,7 @@ class DDY(object):
 class DesignDay(object):
     """An object representing design day conditions.
 
-    properties:
+    Args:
         name: A text string to set the name of the design day
         day_type: Choose from 'SummerDesignDay', 'WinterDesignDay' or other
             EnergyPlus days visible under the day_types property of this object.
@@ -223,6 +233,26 @@ class DesignDay(object):
         humidity_condition: Ladyubug HumidityCondition object
         wind_condition: Ladyubug WindCondition object
         sky_condition: Ladybug SkyCondition object
+
+    Properties:
+        * name
+        * day_type
+        * location
+        * dry_bulb_condition
+        * hourly_barometric_pressure
+        * hourly_datetimes
+        * hourly_dew_point
+        * hourly_dry_bulb
+        * hourly_horizontal_infrared
+        * hourly_relative_humidity
+        * hourly_sky_cover
+        * hourly_solar_radiation
+        * hourly_wind_direction
+        * hourly_wind_speed
+        * humidity_condition
+        * name
+        * sky_condition
+        * wind_condition
     """
     # possible day types
     day_types = ('SummerDesignDay', 'WinterDesignDay', 'Sunday', 'Monday',
@@ -277,16 +307,6 @@ class DesignDay(object):
                  dry_bulb_condition, humidity_condition,
                  wind_condition, sky_condition):
         """Initalize the class
-
-        Args:
-            name: A text string to set the name of the design day
-            day_type: Choose from 'SummerDesignDay', 'WinterDesignDay' or other
-                EnergyPlus days visible under the day_types property of this object.
-            location: Location object for the design day
-            dry_bulb_condition: Ladyubug DryBulbCondition object
-            humidity_condition: Ladyubug HumidityCondition object
-            wind_condition: Ladyubug WindCondition object
-            sky_condition: Ladybug SkyCondition object
         """
         self.name = str(name)
         self.day_type = day_type
@@ -301,14 +321,19 @@ class DesignDay(object):
         """Create a Design Day from a dictionary.
 
         Args:
-            data = {
-            "name": string,
-            "day_type": string,
-            "location": ladybug Location schema,
-            "dry_bulb_condition": ladybug DryBulbCondition schema,
-            "humidity_condition": ladybug HumidityCondition schema,
-            "wind_condition": ladybug WindCondition schema,
-            "sky_condition": ladybug SkyCondition schema}
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+            {
+            "name": "",  # string
+            "day_type": "",  # string
+            "location": {},  # ladybug Location schema
+            "dry_bulb_condition": {},  # ladybug DryBulbCondition schema
+            "humidity_condition": {},  # ladybug HumidityCondition schema
+            "wind_condition": {},  # ladybug WindCondition schema
+            "sky_condition": {}  # ladybug SkyCondition schema
+            }
         """
         required_keys = ('name', 'day_type', 'location', 'dry_bulb_condition',
                          'humidity_condition', 'wind_condition', 'sky_condition')
@@ -325,7 +350,7 @@ class DesignDay(object):
     def from_ep_string(cls, ep_string, location):
         """Initalize from an EnergyPlus string of a SizingPeriod:DesignDay.
 
-        args:
+        Args:
             ep_string: A full string representing a SizingPeriod:DesignDay.
         """
         # format the object into a list of properties
@@ -499,7 +524,7 @@ class DesignDay(object):
         """Serialize object to an EnerygPlus SizingPeriod:DesignDay.
 
         Returns:
-            ep_string: A full string representing a SizingPeriod:DesignDay.
+            ep_string -- A full string representing a SizingPeriod:DesignDay.
         """
         # Put together the values in the order that they exist in the ddy file
         ep_vals = [self.name,
@@ -766,11 +791,23 @@ class DesignDay(object):
 class DryBulbCondition(object):
     """Represents dry bulb conditions on a design day.
 
+    Args:
+        dry_bulb_max: The maximum dry bulb temperature on the design day [C].
+        dry_bulb_range: The difference between mina dn max temperatures on the
+            design day [C].
+        modifier_type: Text string for the type of modifier used to estimate
+            temperature at a given timestep. Choose from the following:
+            'DefaultMultipliers', 'MultiplierSchedule', 'DifferenceSchedule',
+            'TemperatureProfileSchedule'. Default: 'DefaultMultipliers'
+        modifier_schedule: Optional text string for the name of the modifier
+            schedule. Should be an empty string unless 'MultiplierSchedule' is
+            selected as the modifier_type.
+
     Properties:
-        dry_bulb_max
-        dry_bulb_range
-        modifier_type
-        modifier_schedule
+        * dry_bulb_max
+        * dry_bulb_range
+        * hourly_values
+        * temp_multipliers
     """
     def __init__(self, dry_bulb_max, dry_bulb_range,
                  modifier_type='DefaultMultipliers', modifier_schedule=''):
@@ -785,11 +822,16 @@ class DryBulbCondition(object):
         """Create a Dry Bulb Condition from a dictionary.
 
         Args:
-            data = {
-            "dry_bulb_max": float,
-            "dry_bulb_range": float,
-            "modifier_type": string,
-            "modifier_schedule": string}
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+            {
+            "dry_bulb_max": 0.0  # float,
+            "dry_bulb_range": 0.0  # float,
+            "modifier_type": ""  # string,
+            "modifier_schedule": ""  # string
+            }
         """
         # Check required and optional keys
         required_keys = ('dry_bulb_max', 'dry_bulb_range')
@@ -869,13 +911,22 @@ class DryBulbCondition(object):
 class HumidityCondition(object):
     """Represents humidity conditions on the design day.
 
-    Properties:
+    Args:
         hum_type: Choose from
             Wetbulb, Dewpoint, HumidityRatio, Enthalpy
         hum_value: The value of the condition above
         barometric_pressure: Default is to use pressure at sea level
         schedule: Optional humidity schedule
         wet_bulb_range: Optional wet bulb temperature range
+
+    Properties:
+        * hum_type
+        * hum_value
+        * barometric_pressure
+        * schedule
+        * wet_bulb_range
+        * hourly_pressure
+        * humid_types
     """
     def __init__(self, hum_type, hum_value, barometric_pressure=101325,
                  schedule='', wet_bulb_range=''):
@@ -891,12 +942,17 @@ class HumidityCondition(object):
         """Create a Humidity Condition from a dictionary.
 
         Args:
-            data = {
-            "hum_type": string,
-            "hum_value": float,
-            "barometric_pressure": float,
-            "schedule": string,
-            "wet_bulb_range": string}
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+            {
+            "hum_type": ""  # string,
+            "hum_value": 0.0  # float,
+            "barometric_pressure": 0.0  # float,
+            "schedule": {}  # string,
+            "wet_bulb_range": ""  # string
+            }
         """
         # Check required and optional keys
         required_keys = ('hum_type', 'hum_value')
@@ -914,7 +970,7 @@ class HumidityCondition(object):
     def hourly_dew_point_values(self, dry_bulb_condition):
         """Get a list of dew points (C) at each hour over the design day.
 
-        args:
+        Args:
             dry_bulb_condition: The dry bulb condition for the day.
         """
         hourly_dew_point = []
@@ -929,7 +985,7 @@ class HumidityCondition(object):
     def dew_point(self, db):
         """Get the dew point (C), which is constant throughout the day (except at saturation).
 
-        args:
+        Args:
             db: The maximum dry bulb temperature over the day.
         """
         if self._hum_type == 'Dewpoint':
@@ -1016,11 +1072,19 @@ class HumidityCondition(object):
 class WindCondition(object):
     """Represents wind and rain conditions on the design day.
 
+    Args:
+        wind_speed: Wind speed on the design day [m/s].
+        wind_direction: Wind direction on the design day [degrees]. Default: 0
+        rain: Boolean to indicate rain on the design day. Default: False.
+        snow_on_ground: Boolean to indicate snow on the design day. Default: False.
+
     Properties:
-        wind_speed
-        wind_direction
-        rain
-        snow_on_ground
+        * wind_speed
+        * wind_direction
+        * rain
+        * snow_on_ground
+        * hourly_values
+        * hourly_wind_dirs
     """
     def __init__(self, wind_speed, wind_direction=0,
                  rain=False, snow_on_ground=False):
@@ -1035,11 +1099,16 @@ class WindCondition(object):
         """Create a Wind Condition from a dictionary.
 
         Args:
-            data = {
-            "wind_speed": float,
-            "wind_direction": float,
-            "rain": bool,
-            "snow_on_ground": bool}
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+            {
+            "wind_speed": 0.0  # float,
+            "wind_direction": 0.0  # float,
+            "rain": False  # bool,
+            "snow_on_ground": False  # bool
+            }
         """
         # Check required and optional keys
         optional_keys = {'wind_direction': 0, 'rain': False, 'snow_on_ground': False}
@@ -1141,11 +1210,24 @@ class WindCondition(object):
 class SkyCondition(object):
     """An object representing a sky on the design day.
 
+    Args:
+        solar_model: Text for the name of the solar model to use. Choose from the
+            following: 'ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule'
+        month: Month in which the design day occurs.
+        day_of_month: Day of the month on which the design day occurs.
+        daylight_savings_indicator: Text ('Yes' or 'No'), for whether daylight savings
+            time is active. Default: 'No'
+        beam_shced: Schedule name for beam irradiance. Shoulb be an empty string unless
+            solar_model is 'Schedule'.
+        diff_sched: Schedule name for diffuse irradiance. Shoulb be an empty string
+            unless solar_model is 'Schedule'.
+
     Properties:
-        solar_model
-        month
-        day_of_month
-        daylight_savings_indicator
+        * month
+        * day_of_month
+        * hourly_sky_cover
+        * sky_types
+        * solar_model
     """
     def __init__(self, solar_model, month, day_of_month,
                  daylight_savings_indicator='No',
@@ -1163,11 +1245,16 @@ class SkyCondition(object):
         """Create a Sky Condition from a dictionary.
 
         Args:
-            data = {
-            "solar_model": string,
-            "month": int,
-            "day_of_month": int,
-            "daylight_savings_indicator": string // "Yes" or "No"}
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+            {
+            "solar_model": ""  # string,
+            "month": 1  # int,
+            "day_of_month": 1  # int,
+            "daylight_savings_indicator": "No"  # string // "Yes" or "No"
+            }
         """
         # Check required and optional keys
         required_keys = ('solar_model', 'month', 'day_of_month')
@@ -1279,11 +1366,19 @@ class SkyCondition(object):
 class OriginalClearSkyCondition(SkyCondition):
     """An object representing an original ASHRAE Clear Sky.
 
+    Args:
+        month: Month in which the design day occurs.
+        day_of_month: Day of the month on which the design day occurs.
+        clearness: Value between 0 and 1.2 that will get multiplied by the model's
+            irradinace to correct for factors like elevation.
+        daylight_savings_indicator: Text ('Yes' or 'No'), for whether daylight savings
+            time is active. Default: 'No'
+
     Properties:
-        month
-        day_of_month
-        clearness
-        daylight_savings_indicator
+        * month
+        * day_of_month
+        * clearness
+        * daylight_savings_indicator
     """
     def __init__(self, month, day_of_month, clearness=1,
                  daylight_savings_indicator='No'):
@@ -1305,12 +1400,17 @@ class OriginalClearSkyCondition(SkyCondition):
         """Create a Sky Condition from a dictionary.
 
         Args:
-            data = {
-            "solar_model": string,
-            "month": int,
-            "day_of_month": int,
-            "clearness": float,
-            "daylight_savings_indicator": string // "Yes" or "No"}
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+            {
+            "solar_model": ""  # string,
+            "month": 1  # int,
+            "day_of_month": 1  # int,
+            "clearness": 0.0  # float,
+            "daylight_savings_indicator": "No"  # string // "Yes" or "No"
+            }
         """
         # Check required and optional keys
         required_keys = ('solar_model', 'month', 'day_of_month', 'clearness')
@@ -1376,12 +1476,24 @@ class OriginalClearSkyCondition(SkyCondition):
 class RevisedClearSkyCondition(SkyCondition):
     """An object representing an ASHRAE Revised Clear Sky (Tau model).
 
+    Args:
+        month: Month in which the design day occurs.
+        day_of_month: Day of the month on which the design day occurs.
+        tau_b: Value for the 'beam' term in the Tau model. Typically
+            found in .stat files.
+        tau_d: Value for the 'diffuse' term in the Tau model. Typically
+            found in .stat files.
+        daylight_savings_indicator: Text ('Yes' or 'No'), for whether daylight savings
+            time is active. Default: 'No'
+
     Properties:
-        month
-        day_of_month
-        tau_b
-        tau_d
-        daylight_savings_indicator
+        * day_of_month
+        * hourly_sky_cover
+        * month
+        * sky_types
+        * solar_model
+        * tau_b
+        * tau_d
     """
     def __init__(self, month, day_of_month, tau_b, tau_d,
                  daylight_savings_indicator='No'):
@@ -1404,13 +1516,18 @@ class RevisedClearSkyCondition(SkyCondition):
         """Create a Sky Condition from a dictionary.
 
         Args:
-            data = {
-            "solar_model": string,
-            "month": int,
-            "day_of_month": int,
-            "tau_b": float,
-            "tau_d": float,
-            "daylight_savings_indicator": string // "Yes" or "No"}
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+            {
+            "solar_model": ""  # string,
+            "month": 1  # int,
+            "day_of_month": 1  # int,
+            "tau_b": 0.0  # float,
+            "tau_d": 0.0  # float,
+            "daylight_savings_indicator": "No"  #string // "Yes" or "No"
+            }
         """
         # Check required and optional keys
         required_keys = ('solar_model', 'month', 'day_of_month', 'tau_b', 'tau_d')

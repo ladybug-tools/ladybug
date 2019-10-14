@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class EnergyIntensity(DataTypeBase):
-    """Energy Intensity"""
+    """Energy Intensity
+    """
     _units = ('kWh/m2', 'kBtu/ft2', 'Wh/m2', 'Btu/ft2')
     _si_units = ('kWh/m2', 'Wh/m2')
     _ip_units = ('kBtu/ft2', 'Btu/ft2')

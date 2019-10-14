@@ -2,16 +2,17 @@
 """Ladybug Data Collections.
 
 Collections have the following inheritence structure:
-                         Base
-       ___________________|__________________
-      |             |           |            |
 
-    Hourly        Daily     Monthly     MonthlyPerHour
-Discontinuous
-      |
+.. code-block:: shell
 
-    Hourly
-  Continuous
+                             Base
+           ___________________|__________________
+          |             |           |            |
+        Hourly        Daily     Monthly     MonthlyPerHour
+    Discontinuous
+          |
+        Hourly
+      Continuous
 
 
 All Data Collections in this module have the ability to:
@@ -47,19 +48,37 @@ except ImportError:
 
 
 class HourlyDiscontinuousCollection(BaseCollection):
-    """Discontinous Data Collection at hourly or sub-hourly intervals."""
+    """Discontinous Data Collection at hourly or sub-hourly intervals.
+
+    Args:
+        header: A Ladybug Header object.  Note that this header
+            must have an AnalysisPeriod on it.
+        values: A list of values.
+        datetimes: A list of Ladybug DateTime objects that aligns with
+            the list of values.
+
+
+    Properties:
+        * average
+        * bounds
+        * datetimes
+        * header
+        * is_continuous
+        * is_mutable
+        * max
+        * median
+        * min
+        * moys_dict
+        * timestep_text
+        * total
+        * validated_a_period
+        * values
+    """
 
     _collection_type = 'HourlyDiscontinuous'
 
     def __init__(self, header, values, datetimes):
         """Initialize hourly discontinuous collection.
-
-        Args:
-            header: A Ladybug Header object.  Note that this header
-                must have an AnalysisPeriod on it.
-            values: A list of values.
-            datetimes: A list of Ladybug DateTime objects that aligns with
-                the list of values.
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
@@ -79,12 +98,17 @@ class HourlyDiscontinuousCollection(BaseCollection):
         """Create a Data Collection from a dictionary.
 
         Args:
-            {
-                "header": A Ladybug Header,
-                "values": An array of values,
-                "datetimes": An array of datetimes,
-                "validated_a_period": Boolean for whether header analysis_period is valid
-            }
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+                {
+                "header": {}  # A Ladybug Header,
+                "values": []  # An array of values,
+                "datetimes": []  # An array of datetimes,
+                "validated_a_period": True  # Boolean for whether header
+                                            # analysis_period is valid
+                }
         """
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
@@ -217,10 +241,12 @@ class HourlyDiscontinuousCollection(BaseCollection):
     def group_by_month_per_hour(self):
         """Return a dictionary of this collection's values grouped by each month per hour.
 
-        Key values are tuples of 2 integers:
-        The first represents the month of the year between 1-12.
-        The first represents the hour of the day between 0-24.
-        (eg. (12, 23) for December at 11 PM)
+        Key values are tuples of 2 integers.
+
+        -   The first represents the month of the year between 1-12.
+
+        -   The second represents the hour of the day between 0-24.
+            (eg. (12, 23) for December at 11 PM)
         """
         data_by_month_per_hour = OrderedDict()
         for m in xrange(1, 13):
@@ -251,9 +277,9 @@ class HourlyDiscontinuousCollection(BaseCollection):
         """Linearly interpolate over holes in this collection to make it continuous.
 
         Returns:
-            continuous_collection: A HourlyContinuousCollection with the same data
-                as this collection but with missing data filled by means of a
-                linear interpolation.
+            continuous_collection -- A HourlyContinuousCollection with the same data
+            as this collection but with missing data filled by means of a
+            linear interpolation.
         """
         # validate analysis_period and use the resulting period to generate datetimes
         assert self.validated_a_period is True, 'validated_a_period property must be' \
@@ -318,12 +344,18 @@ class HourlyDiscontinuousCollection(BaseCollection):
         """Get a collection where the header analysis_period aligns with datetimes.
 
         This means that checks for five criteria will be performed:
-        1) All datetimes in the data collection are in chronological orderstarting
+
+        1)  All datetimes in the data collection are in chronological order starting
             from the analysis_period start hour to the end hour.
-        2) No duplicate datetimes exist in the data collection.
-        3) There are no datetimes that lie outside of the analysis_period time range.
-        4) There are no datetimes that do not align with the analysis_period timestep.
-        5) Datetimes for February 29th are excluded if is_leap_year is False on
+
+        2)  No duplicate datetimes exist in the data collection.
+
+        3)  There are no datetimes that lie outside of the analysis_period time range.
+
+        4)  There are no datetimes that do not align with the analysis_period
+            timestep.
+
+        5)  Datetimes for February 29th are excluded if is_leap_year is False on
             the analysis_period.
 
         Note that there is no need to run this check any time that a discontinous
@@ -510,19 +542,37 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
 
 class HourlyContinuousCollection(HourlyDiscontinuousCollection):
-    """Class for Continouus Data Collections at hourly or sub-hourly intervals."""
+    """Class for Continuous Data Collections at hourly or sub-hourly intervals.
+
+    Args:
+        header: A Ladybug Header object.  Note that this header
+            must have an AnalysisPeriod on it that aligns with the
+            list of values.
+        values: A list of values.  Note that the length of this list
+            must align with the AnalysisPeriod on the header.
+
+    Properties:
+        * average
+        * bounds
+        * datetimes
+        * header
+        * isContinuous
+        * is_continuous
+        * is_mutable
+        * max
+        * median
+        * min
+        * moys_dict
+        * timestep_text
+        * total
+        * validated_a_period
+        * values
+    """
 
     _collection_type = 'HourlyContinuous'
 
     def __init__(self, header, values):
         """Initialize hourly discontinuous collection.
-
-        Args:
-            header: A Ladybug Header object.  Note that this header
-                must have an AnalysisPeriod on it that aligns with the
-                list of values.
-            values: A list of values.  Note that the length of this list
-                must align with the AnalysisPeriod on the header.
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
@@ -545,10 +595,14 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """Create a Data Collection from a dictionary.
 
         Args:
-            {
-                "header": A Ladybug Header,
-                "values": An array of values,
-            }
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+                {
+                "header": {}  # A Ladybug Header,
+                "values": []  # An array of values,
+                }
         """
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
@@ -583,7 +637,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
         Return:
             A continuous hourly data collection with data interpolated to
-                the input timestep.
+            the input timestep.
         """
         assert timestep % self.header.analysis_period.timestep == 0, \
             'Target timestep({}) must be divisable by current timestep({})' \
@@ -845,7 +899,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
                 collection is aligned with.
 
         Return:
-            True if collections are aligned, Fale if not aligned
+            True if collections are aligned, False if not aligned
         """
         if self._collection_type != data_collection._collection_type:
             return False
@@ -937,20 +991,34 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
 
 class DailyCollection(BaseCollection):
-    """Class for Daily Data Collections."""
+    """Class for Daily Data Collections.
 
+    Args:
+        header: A Ladybug Header object.  Note that this header
+            must have an AnalysisPeriod on it.
+        values: A list of values.
+        datetimes: A list of integers that aligns with the list of values.
+            Each integer in the list is 1-365 and denotes the day of the
+            year for each value of the collection.
+
+    Properties:
+        * average
+        * bounds
+        * datetimes
+        * header
+        * is_continuous
+        * is_mutable
+        * max
+        * median
+        * min
+        * total
+        * validated_a_period
+        * values
+    """
     _collection_type = 'Daily'
 
     def __init__(self, header, values, datetimes):
         """Initialize daily collection.
-
-        Args:
-            header: A Ladybug Header object.  Note that this header
-                must have an AnalysisPeriod on it.
-            values: A list of values.
-            datetimes: A list of integers that aligns with the list of values.
-                Each integer in the list is 1-365 and denotes the day of the
-                year for each value of the collection.
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
@@ -1031,11 +1099,15 @@ class DailyCollection(BaseCollection):
         """Get a collection where the header analysis_period aligns with datetimes.
 
         This means that checks for four criteria will be performed:
-        1) All days in the data collection are chronological starting from the
+
+        1)  All days in the data collection are chronological starting from the
             analysis_period start day to the end day.
-        2) No duplicate days exist in the data collection.
-        3) There are no days that lie outside of the analysis_period time range.
-        4) February 29th is excluded if is_leap_year is False on the analysis_period.
+
+        2)  No duplicate days exist in the data collection.
+
+        3)  There are no days that lie outside of the analysis_period time range.
+
+        4)  February 29th is excluded if is_leap_year is False on the analysis_period.
 
         Note that there is no need to run this check any time that a discontinous
         data collection has been derived from a continuous one or when the
@@ -1150,20 +1222,35 @@ class DailyCollection(BaseCollection):
 
 
 class MonthlyCollection(BaseCollection):
-    """Class for Monthly Data Collections."""
+    """Class for Monthly Data Collections.
+
+    Args:
+        header: A Ladybug Header object.  Note that this header
+            must have an AnalysisPeriod on it.
+        values: A list of values.
+        datetimes: A list of integers that aligns with the list of values.
+            Each integer in the list is 1-12 and denotes the month of the
+            year for each value of the collection.
+
+    Properties:
+        * average
+        * bounds
+        * datetimes
+        * header
+        * is_continuous
+        * is_mutable
+        * max
+        * median
+        * min
+        * total
+        * validated_a_period
+        * values
+    """
 
     _collection_type = 'Monthly'
 
     def __init__(self, header, values, datetimes):
         """Initialize monthly collection.
-
-        Args:
-            header: A Ladybug Header object.  Note that this header
-                must have an AnalysisPeriod on it.
-            values: A list of values.
-            datetimes: A list of integers that aligns with the list of values.
-                Each integer in the list is 1-12 and denotes the month of the
-                year for each value of the collection.
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
@@ -1213,10 +1300,13 @@ class MonthlyCollection(BaseCollection):
         """Get a collection where the header analysis_period aligns with datetimes.
 
         This means that checks for three criteria will be performed:
-        1) All months in the data collection are chronological starting from the
+
+        1)  All months in the data collection are chronological starting from the
             analysis_period start month to the end month.
-        2) No duplicate months exist in the data collection.
-        3) There are no months that lie outside of the analysis_period range.
+
+        2)  No duplicate months exist in the data collection.
+
+        3)  There are no months that lie outside of the analysis_period range.
 
         Note that there is no need to run this check any time that a
         data collection has been derived from a continuous one or when the
@@ -1282,20 +1372,35 @@ class MonthlyCollection(BaseCollection):
 
 
 class MonthlyPerHourCollection(BaseCollection):
-    """Class for Monthly Per Hour Collections."""
+    """Class for Monthly Per Hour Collections.
+
+    Args:
+        header: A Ladybug Header object.  Note that this header
+            must have an AnalysisPeriod on it.
+        values: A list of values.
+        datetimes: A list of tuples that aligns with the list of values.
+            Each tuple should possess two values: the first is the month
+            and the second is the hour. (eg. (12, 23) = December at 11 PM)
+
+    Properties:
+        * average
+        * bounds
+        * datetimes
+        * header
+        * is_continuous
+        * is_mutable
+        * max
+        * median
+        * min
+        * total
+        * validated_a_period
+        * values
+    """
 
     _collection_type = 'MonthlyPerHour'
 
     def __init__(self, header, values, datetimes):
         """Initialize monthly per hour collection.
-
-        Args:
-            header: A Ladybug Header object.  Note that this header
-                must have an AnalysisPeriod on it.
-            values: A list of values.
-            datetimes: A list of tuples that aligns with the list of values.
-                Each tuple should possess two values: the first is the month
-                and the second is the hour. (eg. (12, 23) = December at 11 PM)
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
@@ -1348,10 +1453,13 @@ class MonthlyPerHourCollection(BaseCollection):
         """Get a collection where the header analysis_period aligns with datetimes.
 
         This means that checks for three criteria will be performed:
-        1) All datetimes in the data collection are chronological starting from the
+
+        1)  All datetimes in the data collection are chronological starting from the
             analysis_period start datetime to the end datetime.
-        2) No duplicate datetimes exist in the data collection.
-        3) There are no datetimes that lie outside of the analysis_period range.
+
+        2)  No duplicate datetimes exist in the data collection.
+
+        3)  There are no datetimes that lie outside of the analysis_period range.
 
         Note that there is no need to run this check any time that a
         data collection has been derived from a continuous one or when the

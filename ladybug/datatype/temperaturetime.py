@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class TemperatureTime(DataTypeBase):
-    """Temperature-Time"""
+    """Temperature-Time
+    """
     _units = ('degC-days', 'degF-days', 'degC-hours', 'degF-hours')
     _si_units = ('degC-days', 'degC-hours')
     _ip_units = ('degF-days', 'degF-hours')

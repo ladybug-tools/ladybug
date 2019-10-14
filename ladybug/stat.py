@@ -23,36 +23,41 @@ except ImportError:
 class STAT(object):
     """Import data from a local .stat file.
 
+    Args:
+        file_path: Address to a local .stat file.
+
     Properties:
-        location
-        ashrae_climate_zone
-        koppen_climate_zone
-        extreme_cold_week
-        extreme_hot_week
-        typical_winter_week
-        typical_spring_week
-        typical_summer_week
-        typical_autumn_week
-        other_typical_weeks
-        annual_heating_design_day_996
-        annual_heating_design_day_990
-        annual_cooling_design_day_004
-        annual_cooling_design_day_010
-        monthly_cooling_design_days_100
-        monthly_cooling_design_days_050
-        monthly_cooling_design_days_020
-        monthly_cooling_design_days_004
-        monthly_db_temp_050
-        monthly_wb_temp_050
-        monthly_db_temp_range_050
-        monthly_wb_temp_range_050
-        standard_pressure_at_elev
-        monthly_wind_conditions
-        monthly_ws_avg
-        monthly_wind_dirs
-        monthly_clear_sky_conditions
-        monthly_tau_beam
-        monthly_tau_diffuse
+        * location
+        * ashrae_climate_zone
+        * koppen_climate_zone
+        * extreme_cold_week
+        * extreme_hot_week
+        * typical_winter_week
+        * typical_spring_week
+        * typical_summer_week
+        * typical_autumn_week
+        * other_typical_weeks
+        * annual_heating_design_day_996
+        * annual_heating_design_day_990
+        * annual_cooling_design_day_004
+        * annual_cooling_design_day_010
+        * monthly_cooling_design_days_100
+        * monthly_cooling_design_days_050
+        * monthly_cooling_design_days_020
+        * monthly_cooling_design_days_004
+        * monthly_db_temp_050
+        * monthly_wb_temp_050
+        * monthly_db_temp_range_050
+        * monthly_wb_temp_range_050
+        * monthly_found
+        * standard_pressure_at_elev
+        * monthly_wind_conditions
+        * monthly_ws_avg
+        * monthly_wind_dirs
+        * monthly_clear_sky_conditions
+        * monthly_tau_beam
+        * monthly_tau_diffuse
+        * file_path
     """
     # categories used for parsing text
     _months = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
@@ -95,9 +100,6 @@ class STAT(object):
 
     def __init__(self, file_path):
         """Initalize the class.
-
-        Args:
-            file_path: Address to a local .stat file.
         """
         if file_path is not None:
             if not os.path.isfile(file_path):
@@ -120,33 +122,37 @@ class STAT(object):
     def from_dict(cls, data):
         """ Create Stat from a dictionary.
 
-            Args:
-                data: {
-                'location': {} , // ladybug location schema
-                'ashrae_climate_zone': str,
-                'koppen_climate_zone': str,
-                'extreme_cold_week': {}, // ladybug analysis period schema
-                'extreme_hot_week': {}, // ladybug analysis period schema
-                'typical_weeks': {}, // dict of ladybug analysis period schemas
-                'heating_dict': {}, // dict containing heating design conditions
-                'cooling_dict': {}, // dict containing cooling design conditions
-                "monthly_db_50": [],  // list of 12 float values for each month
-                "monthly_wb_50": [],  // list of 12 float values for each month
-                "monthly_db_range_50": [],  // list of 12 float values for each month
-                "monthly_wb_range_50": [],  // list of 12 float values for each month
-                "monthly_db_100": [],  // list of 12 float values for each month
-                "monthly_wb_100": [],  // list of 12 float values for each month
-                "monthly_db_20": [],  // list of 12 float values for each month
-                "monthly_wb_20": [],  // list of 12 float values for each month
-                "monthly_db_04": [],  // list of 12 float values for each month
-                "monthly_wb_04": [],  // list of 12 float values for each month
-                "monthly_wind": [],  // list of 12 float values for each month
-                "monthly_wind_dirs": [], // matrix with 12 cols for months of the year
-                    and 8 rows for the cardinal directions.
-                "standard_pressure_at_elev": float, // float value for pressure in Pa
-                "monthly_tau_beam":[], // list of 12 float values for each month
-                "monthly_tau_diffuse": [] // list of 12 float values for each month
-            }
+        Args:
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+                {
+                "location": {},  # ladybug location schema
+                "ashrae_climate_zone": ""5A,  # str
+                "koppen_climate_zone": "Dfa", # str
+                "extreme_cold_week": {},  # ladybug analysis period schema
+                "extreme_hot_week": {},  # ladybug analysis period schema
+                "typical_weeks": {},  # dict of ladybug analysis period schemas
+                "heating_dict": {},  # dict containing heating design conditions
+                "cooling_dict": {},  # dict containing cooling design conditions
+                "monthly_db_50": [],  # list of 12 float values for each month
+                "monthly_wb_50": [],  # list of 12 float values for each month
+                "monthly_db_range_50": [],  # list of 12 float values for each month
+                "monthly_wb_range_50": [],  # list of 12 float values for each month
+                "monthly_db_100": [],  # list of 12 float values for each month
+                "monthly_wb_100": [],  # list of 12 float values for each month
+                "monthly_db_20": [],  # list of 12 float values for each month
+                "monthly_wb_20": [],  # list of 12 float values for each month
+                "monthly_db_04": [],  # list of 12 float values for each month
+                "monthly_wb_04": [],  # list of 12 float values for each month
+                "monthly_wind": [],  # list of 12 float values for each month
+                "monthly_wind_dirs": [],  # matrix with 12 cols for months of the year
+                                          #and 8 rows for the cardinal directions.
+                "standard_pressure_at_elev": 101325,  # float value for pressure in Pa
+                "monthly_tau_beam":[],  # list of 12 float values for each month
+                "monthly_tau_diffuse": []  # list of 12 float values for each month
+                }
         """
         # Initialize the class with all data missing
         stat_ob = cls(None)

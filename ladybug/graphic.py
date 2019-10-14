@@ -12,35 +12,35 @@ from ladybug_geometry.geometry3d.plane import Plane
 class GraphicContainer(object):
     """Graphic container used to get legends, title locations, and colors for any graphic.
 
+    Args:
+        values: A List or Tuple of numerical values that will be used to
+            generate the legend and colors.
+        min_point: A Point3D object for the minimum of the bounding box
+            around the graphic geometry.
+        max_point: A Point3D object for the maximum of the  bounding box
+            around the graphic geometry.
+        legend_parameters: An Optional LegendParameter object to override
+            default parameters of the legend.
+        data_type: Optional DataType from the ladybug datatype module, which
+            will be used to assign default legend properties. (ie. Temperature())
+        unit: Optional text string for the units of the values. (ie. 'C')
+
     Properties:
-        values
-        min_point
-        max_point
-        legend_parameters
-        data_type
-        unit
-        legend
-        value_colors
-        lower_title_location
-        upper_title_location
+        * values
+        * min_point
+        * max_point
+        * legend_parameters
+        * data_type
+        * unit
+        * legend
+        * value_colors
+        * lower_title_location
+        * upper_title_location
     """
 
     def __init__(self, values, min_point, max_point,
                  legend_parameters=None, data_type=None, unit=None):
         """Initialize graphic container.
-
-        Args:
-            values: A List or Tuple of numerical values that will be used to
-                generate the legend and colors.
-            min_point: A Point3D object for the minimum of the bounding box
-                around the graphic geometry.
-            max_point: A Point3D object for the maximum of the  bounding box
-                around the graphic geometry.
-            legend_parameters: An Optional LegendParameter object to override
-                default parameters of the legend.
-            data_type: Optional DataType from the ladybug datatype module, which
-                will be used to assign default legend properties. (ie. Temperature())
-            unit: Optional text string for the units of the values. (ie. 'C')
         """
         # check the inputs
         assert isinstance(min_point, Point3D), \
@@ -111,13 +111,18 @@ class GraphicContainer(object):
         """Create a graphic container from a dictionary.
 
         Args:
-            data: {
-            "values": (0, 10),
+            data: A python dictionary in the following format
+
+        .. code-block:: python
+
+            {
+            "values": [0, 10],
             "min_point": {"x": 0, "y": 0, "z": 0},
-            "max_point": {"x": 10, "y": 10, "z": 0}],
+            "max_point": {"x": 10, "y": 10, "z": 0},
             "legend_parameters": None,
             "data_type": None,
-            "unit": None}
+            "unit": None
+            }
         """
         optional_keys = ('legend_parameters', 'data_type', 'unit')
         for key in optional_keys:

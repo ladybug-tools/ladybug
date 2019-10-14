@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Area(DataTypeBase):
-    """Area"""
+    """Area
+    """
     _units = ('m2', 'ft2', 'mm2', 'in2', 'km2', 'mi2', 'cm2', 'ha', 'acre')
     _si_units = ('m2', 'mm2', 'km2', 'cm2', 'ha')
     _ip_units = ('ft2', 'in2', 'mi2', 'acre')

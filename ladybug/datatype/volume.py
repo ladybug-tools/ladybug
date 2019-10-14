@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Volume(DataTypeBase):
-    """Volume"""
+    """Volume
+    """
     _units = ('m3', 'ft3', 'mm3', 'in3', 'km3', 'mi3', 'L', 'mL', 'gal', 'fl oz')
     _si_units = ('m3', 'mm3', 'km3', 'L', 'mL')
     _ip_units = ('ft3', 'in3', 'mi3', 'gal', 'fl oz')

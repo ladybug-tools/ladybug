@@ -6,7 +6,8 @@ from .base import DataTypeBase
 
 
 class Temperature(DataTypeBase):
-    """Temperature"""
+    """Temperature
+    """
     _units = ('C', 'F', 'K')
     _si_units = ('C', 'K')
     _ip_units = ('F')
