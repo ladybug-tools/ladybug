@@ -63,8 +63,6 @@ class HourlyDiscontinuousCollection(BaseCollection):
         * bounds
         * datetimes
         * header
-        * isDataCollection
-        * isHourly
         * is_continuous
         * is_mutable
         * max
@@ -543,7 +541,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
 
 class HourlyContinuousCollection(HourlyDiscontinuousCollection):
-    """Class for Continouus Data Collections at hourly or sub-hourly intervals.
+    """Class for Continuous Data Collections at hourly or sub-hourly intervals.
 
     Args:
         header: A Ladybug Header object.  Note that this header
@@ -558,8 +556,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         * datetimes
         * header
         * isContinuous
-        * isDataCollection
-        * isHourly
         * is_continuous
         * is_mutable
         * max
@@ -1008,9 +1004,6 @@ class DailyCollection(BaseCollection):
         * bounds
         * datetimes
         * header
-        * isDataCollection
-        * isMonthlyPerHour
-        * isHourly
         * is_continuous
         * is_mutable
         * max
@@ -1242,9 +1235,6 @@ class MonthlyCollection(BaseCollection):
         * bounds
         * datetimes
         * header
-        * isDataCollection
-        * isMonthlyPerHour
-        * isHourly
         * is_continuous
         * is_mutable
         * max
@@ -1395,9 +1385,6 @@ class MonthlyPerHourCollection(BaseCollection):
         * bounds
         * datetimes
         * header
-        * isDataCollection
-        * isMonthlyPerHour
-        * isHourly
         * is_continuous
         * is_mutable
         * max

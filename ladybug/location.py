@@ -24,7 +24,6 @@ class Location(object):
         * country
         * elevation
         * ep_style_location_string
-        * isLocation
         * latitude
         * longitude
         * meridian

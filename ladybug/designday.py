@@ -36,22 +36,9 @@ class DDY(object):
         design_days: A list of the design days in the ddy file.
 
     Properties:
-        * hourly_barometric_pressure
-        * hourly_datetimes
-        * hourly_dew_point
-        * hourly_dry_bulb
-        * hourly_horizontal_infrared
-        * hourly_relative_humidity
-        * hourly_sky_cover
-        * hourly_solar_radiation
-        * hourly_wind_direction
-        * hourly_wind_speed
-        * humidity_condition
-        * isDesignDay
+        * file_locatiom
         * location
-        * name
-        * sky_condition
-        * wind_condition
+        * design_days
     """
     _location_format = re.compile(
         r"(Site:Location,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
@@ -251,9 +238,20 @@ class DesignDay(object):
         * day_type
         * location
         * dry_bulb_condition
+        * hourly_barometric_pressure
+        * hourly_datetimes
+        * hourly_dew_point
+        * hourly_dry_bulb
+        * hourly_horizontal_infrared
+        * hourly_relative_humidity
+        * hourly_sky_cover
+        * hourly_solar_radiation
+        * hourly_wind_direction
+        * hourly_wind_speed
         * humidity_condition
-        * wind_condition
+        * name
         * sky_condition
+        * wind_condition
     """
     # possible day types
     day_types = ('SummerDesignDay', 'WinterDesignDay', 'Sunday', 'Monday',
@@ -807,7 +805,6 @@ class DryBulbCondition(object):
         * dry_bulb_max
         * dry_bulb_range
         * hourly_values
-        * isDryBulbCondition
         * temp_multipliers
     """
     def __init__(self, dry_bulb_max, dry_bulb_range,
@@ -927,7 +924,6 @@ class HumidityCondition(object):
         * wet_bulb_range
         * hourly_pressure
         * humid_types
-        * isHumidityCondition
     """
     def __init__(self, hum_type, hum_value, barometric_pressure=101325,
                  schedule='', wet_bulb_range=''):
@@ -1085,8 +1081,6 @@ class WindCondition(object):
         * snow_on_ground
         * hourly_values
         * hourly_wind_dirs
-        * isWindCondition
-
     """
     def __init__(self, wind_speed, wind_direction=0,
                  rain=False, snow_on_ground=False):
@@ -1227,7 +1221,6 @@ class SkyCondition(object):
         * month
         * day_of_month
         * hourly_sky_cover
-        * isSkyCondition
         * sky_types
         * solar_model
     """
@@ -1489,7 +1482,6 @@ class RevisedClearSkyCondition(SkyCondition):
     Properties:
         * day_of_month
         * hourly_sky_cover
-        * isSkyCondition
         * month
         * sky_types
         * solar_model

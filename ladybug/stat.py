@@ -57,7 +57,6 @@ class STAT(object):
         * monthly_clear_sky_conditions
         * monthly_tau_beam
         * monthly_tau_diffuse
-        * isStat
         * file_path
     """
     # categories used for parsing text

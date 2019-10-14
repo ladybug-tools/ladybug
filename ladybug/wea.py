@@ -58,7 +58,6 @@ class Wea(object):
         * global_horizontal_irradiance
         * header
         * hoys
-        * isWea
         * timestep
         * is_leap_year
     """

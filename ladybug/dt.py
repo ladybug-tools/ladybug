@@ -24,15 +24,10 @@ class DateTime(datetime):
         * doy
         * hoy
         * int_hoy
-        * max
-        * microsecond
-        * min
         * minute
         * moy
         * int_hoy
         * float_hour
-        * resolution
-        * second
         * tzinfo
         * year
     """
@@ -280,8 +275,6 @@ class Date(date):
         * day
         * doy
         * leap_year
-        * max
-        * min
         * month
         * year
     """
@@ -414,12 +407,8 @@ class Time(time):
 
     Properties:
         * hour
-        * max
-        * microsecond
-        * min
         * minute
         * mod
-        * resolution
         * second
         * tzinfo
     """

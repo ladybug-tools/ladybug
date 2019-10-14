@@ -26,7 +26,6 @@ class Header(object):
         * unit
         * analysis_period
         * metadata
-        * isHeader
     """
 
     __slots__ = ('_data_type', '_unit', '_analysis_period', '_metadata')
