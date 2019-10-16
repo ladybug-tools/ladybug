@@ -29,7 +29,7 @@ def test_unzip_file():
 
 def test_copy_files_to_folder():
     """Test the copy file to folder capability"""
-    existing_file = "./tests/ddy/chicago.ddy"
+    existing_file = "./tests/fixtures/ddy/chicago.ddy"
     target_dir = "./tests/zip"
     futil.copy_files_to_folder([existing_file], target_dir)
     final_file = os.path.join(target_dir, "chicago.ddy")
@@ -40,7 +40,7 @@ def test_copy_files_to_folder():
 
 def test_csv_to_matrix():
     """Test the csv_to_matrix functions."""
-    path = './tests/epw/tokyo.epw'
+    path = './tests/fixtures/epw/tokyo.epw'
     epw_mtx = futil.csv_to_matrix(path)
     assert len(epw_mtx) == 8768
 

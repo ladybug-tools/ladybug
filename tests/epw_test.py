@@ -10,7 +10,7 @@ import pytest
 
 def test_import_epw():
     """Test import standard epw."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     abs_path = os.path.abspath(relative_path)
     epw_rel = EPW(relative_path)
     epw = EPW(abs_path)
@@ -30,7 +30,7 @@ def test_import_epw():
 
 def test_import_tokyo_epw():
     """Test import standard epw from another location."""
-    path = './tests/epw/tokyo.epw'
+    path = './tests/fixtures/epw/tokyo.epw'
     epw = EPW(path)
     assert epw.is_header_loaded is False
     assert epw.location.city == 'Tokyo'
@@ -52,7 +52,7 @@ def test_epw_from_missing_values():
 
 def test_dict_methods():
     """Test JSON serialization methods"""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
 
     epw_dict = epw.to_dict()
@@ -62,12 +62,12 @@ def test_dict_methods():
 
 def test_invalid_epw():
     """Test the import of incorrect file type and a non-existent epw file."""
-    path = './tests/epw/non-exitent.epw'
+    path = './tests/fixtures/epw/non-exitent.epw'
     with pytest.raises(Exception):
         epw = EPW(path)
         epw.location
 
-    path = './tests/stat/chicago.stat'
+    path = './tests/fixtures/stat/chicago.stat'
     with pytest.raises(Exception):
         epw = EPW(path)
         epw.location
@@ -75,7 +75,7 @@ def test_invalid_epw():
 
 def test_import_data():
     """Test the imported data properties."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     assert isinstance(epw.years, HourlyContinuousCollection)
     assert isinstance(epw.dry_bulb_temperature, HourlyContinuousCollection)
@@ -112,7 +112,7 @@ def test_import_data():
 
 def test_convert_to_ip():
     """Test the method that converts the data to IP units."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
 
     assert epw.dry_bulb_temperature.header.unit == 'C'
@@ -127,7 +127,7 @@ def test_convert_to_ip():
 
 def test_set_data():
     """Test the ability to set the data of any of the epw hourly data."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     epw.dry_bulb_temperature[12] = 20
     assert epw.dry_bulb_temperature[12] == 20
@@ -141,7 +141,7 @@ def test_set_data():
 
 def test_import_design_conditions():
     """Test the functions that import design conditions."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     assert isinstance(epw.heating_design_condition_dictionary, dict)
     assert len(epw.heating_design_condition_dictionary.keys()) == 15
@@ -153,7 +153,7 @@ def test_import_design_conditions():
 
 def test_set_design_conditions():
     """Test the functions that set design conditions."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
 
     heat_dict = dict(epw.heating_design_condition_dictionary)
@@ -185,7 +185,7 @@ def test_set_design_conditions():
 
 def test_import_design_days():
     """Test the functions that import design days."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     assert isinstance(epw.annual_heating_design_day_996, DesignDay)
     assert epw.annual_heating_design_day_996.dry_bulb_condition.dry_bulb_max == -20.0
@@ -199,7 +199,7 @@ def test_import_design_days():
 
 def test_import_extreme_weeks():
     """Test the functions that import the extreme weeks."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     ext_cold = list(epw.extreme_cold_weeks.values())[0]
     ext_hot = list(epw.extreme_hot_weeks.values())[0]
@@ -215,7 +215,7 @@ def test_import_extreme_weeks():
 
 def test_import_typical_weeks():
     """Test the functions that import the typical weeks."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     typ_weeks = list(epw.typical_weeks.values())
     assert len(typ_weeks) == 4
@@ -226,7 +226,7 @@ def test_import_typical_weeks():
 
 def test_set_extreme_typical_weeks():
     """Test the functions that set the extreme  and typical weeks."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     a_per_cold = AnalysisPeriod(1, 1, 0, 1, 7, 23)
     a_per_hot = AnalysisPeriod(7, 1, 0, 7, 7, 23)
@@ -250,7 +250,7 @@ def test_set_extreme_typical_weeks():
 
 def test_import_ground_temperatures():
     """Test the functions that import ground temperature."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     assert len(epw.monthly_ground_temperature.keys()) == 3
     assert tuple(epw.monthly_ground_temperature.keys()) == (0.5, 2.0, 4.0)
@@ -268,7 +268,7 @@ def test_import_ground_temperatures():
 
 def test_set_ground_temperatures():
     """Test the functions that set ground temperature."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     grnd_dict = dict(epw.monthly_ground_temperature)
     grnd_dict[0.5].values = list(range(12))
@@ -284,7 +284,7 @@ def test_set_ground_temperatures():
 
 def test_epw_header():
     """Check that the process of parsing the EPW header hasn't changed it."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     for i in range(len(epw.header)):
         line1, line2 = epw.header[i], epw._header[i]
@@ -298,10 +298,10 @@ def test_epw_header():
 
 def test_save_epw():
     """Test save epw_rel."""
-    path = './tests/epw/tokyo.epw'
+    path = './tests/fixtures/epw/tokyo.epw'
     epw = EPW(path)
 
-    modified_path = './tests/epw/tokyo_modified.epw'
+    modified_path = './tests/fixtures/epw/tokyo_modified.epw'
     epw.save(modified_path)
     assert os.path.isfile(modified_path)
     assert os.stat(modified_path).st_size > 1
@@ -311,7 +311,7 @@ def test_save_epw():
 def test_save_epw_from_missing_values():
     """Test import custom epw with wrong types."""
     epw = EPW.from_missing_values()
-    file_path = './tests/epw/missing.epw'
+    file_path = './tests/fixtures/epw/missing.epw'
     epw.save(file_path)
     assert os.path.isfile(file_path)
     assert os.stat(file_path).st_size > 1
@@ -320,10 +320,10 @@ def test_save_epw_from_missing_values():
 
 def test_save_converted_epw():
     """Test that the saved EPW always has SI units."""
-    relative_path = './tests/epw/chicago.epw'
+    relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     epw.convert_to_ip()
-    modified_path = './tests/epw/chicago_modified.epw'
+    modified_path = './tests/fixtures/epw/chicago_modified.epw'
     epw.save(modified_path)
     assert epw.dry_bulb_temperature.header.unit == 'F'
     assert epw.dry_bulb_temperature.values[0] == pytest.approx(21.02, rel=1e-2)
@@ -336,9 +336,9 @@ def test_save_converted_epw():
 
 def test_save_wea():
     """Test save wea_rel."""
-    path = './tests/epw/chicago.epw'
+    path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(path)
-    wea_path = './tests/wea/chicago_epw.wea'
+    wea_path = './tests/fixtures/wea/chicago_epw.wea'
     epw.to_wea(wea_path)
     assert os.path.isfile(wea_path)
     assert os.stat(wea_path).st_size > 1

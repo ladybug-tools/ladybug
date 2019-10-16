@@ -9,7 +9,7 @@ import os
 
 def test_from_file():
     """Test import from wea file."""
-    wea_file = './tests/wea/san_francisco_10min.wea'
+    wea_file = './tests/fixtures/wea/san_francisco_10min.wea'
     with pytest.raises(Exception):
         Wea.from_file(wea_file)  # wrong timestep
 
@@ -22,7 +22,7 @@ def test_from_file():
 
 def test_from_epw():
     """Test import from epw"""
-    epw_path = './tests/epw/chicago.epw'
+    epw_path = './tests/fixtures/epw/chicago.epw'
     wea_from_epw = Wea.from_epw_file(epw_path)
 
     assert wea_from_epw.location.city == 'Chicago Ohare Intl Ap'
@@ -44,7 +44,7 @@ def test_from_epw():
 
 def test_from_stat():
     """Test import from stat"""
-    stat_path = './tests/stat/chicago.stat'
+    stat_path = './tests/fixtures/stat/chicago.stat'
     wea_from_stat = Wea.from_stat_file(stat_path)
 
     assert wea_from_stat.location.city == 'Chicago Ohare Intl Ap'
@@ -61,7 +61,7 @@ def test_from_stat():
 
 def test_from_stat_missing_optical():
     """Test import from a stat file that is missing optical data"""
-    stat_path = './tests/stat/santamonica.stat'
+    stat_path = './tests/fixtures/stat/santamonica.stat'
     with pytest.raises(ValueError,
                        match='Stat file contains no optical data.'):
         Wea.from_stat_file(stat_path)
@@ -87,7 +87,7 @@ def test_from_clear_sky():
 
 def test_from_zhang_huang():
     """Test from zhang huang solar model"""
-    path = './tests/epw/chicago.epw'
+    path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(path)
 
     wea_from_zh = Wea.from_zhang_huang_solar(epw.location,
@@ -112,7 +112,7 @@ def test_from_zhang_huang():
 def test_zhang_huang_accuracy():
     """Test zhang huang solar model to ensure that average error is within
     25% of actual solar."""
-    path = './tests/epw/chicago.epw'
+    path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(path)
 
     wea = Wea.from_zhang_huang_solar(epw.location,
@@ -150,7 +150,7 @@ def test_zhang_huang_accuracy():
 
 def test_dict_methods():
     """Test JSON serialization methods"""
-    epw_path = './tests/epw/chicago.epw'
+    epw_path = './tests/fixtures/epw/chicago.epw'
     wea = Wea.from_epw_file(epw_path)
 
     assert wea.to_dict() == Wea.from_dict(wea.to_dict()).to_dict()
@@ -158,7 +158,7 @@ def test_dict_methods():
 
 def test_import_epw():
     """Test to compare import from epw with its dict version."""
-    epw_path = './tests/epw/chicago.epw'
+    epw_path = './tests/fixtures/epw/chicago.epw'
 
     wea_from_epw = Wea.from_epw_file(epw_path)
 
@@ -172,7 +172,7 @@ def test_import_epw():
 
 def test_import_stat():
     """Test to compare import from stat with its dict version."""
-    stat_path = './tests/stat/chicago.stat'
+    stat_path = './tests/fixtures/stat/chicago.stat'
     wea_from_stat = Wea.from_stat_file(stat_path)
 
     wea_dict = wea_from_stat.to_dict()
@@ -185,11 +185,11 @@ def test_import_stat():
 
 def test_write_wea():
     """Test the write Wea file capability."""
-    stat_path = './tests/stat/chicago.stat'
+    stat_path = './tests/fixtures/stat/chicago.stat'
     wea_from_stat = Wea.from_stat_file(stat_path)
 
-    wea_path = './tests/wea/chicago_stat.wea'
-    hrs_path = './tests/wea/chicago_stat.hrs'
+    wea_path = './tests/fixtures/wea/chicago_stat.wea'
+    hrs_path = './tests/fixtures/wea/chicago_stat.hrs'
     hoys = range(8760)
     wea_from_stat.write(wea_path, hoys, True)
 
@@ -219,7 +219,7 @@ def test_write_wea():
 
 def test_global_and_direct_horizontal():
     """Test the global horizontal irradiance on method."""
-    stat_path = './tests/stat/chicago.stat'
+    stat_path = './tests/fixtures/stat/chicago.stat'
     wea_from_stat = Wea.from_stat_file(stat_path)
 
     diffuse_horiz_rad = wea_from_stat.diffuse_horizontal_irradiance
@@ -232,7 +232,7 @@ def test_global_and_direct_horizontal():
 
 def test_directional_irradiance():
     """Test the directinal irradiance method."""
-    stat_path = './tests/stat/chicago.stat'
+    stat_path = './tests/fixtures/stat/chicago.stat'
     wea_from_stat = Wea.from_stat_file(stat_path)
 
     srf_total, srf_direct, srf_diffuse, srf_reflect = \
@@ -249,7 +249,7 @@ def test_directional_irradiance():
 
 def test_estimate_illuminance():
     """Test the directinal irradiance method."""
-    epw_path = './tests/epw/chicago.epw'
+    epw_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(epw_path)
     wea = Wea.from_epw_file(epw_path)
 
