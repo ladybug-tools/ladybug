@@ -21,7 +21,7 @@ jobs:
   - stage: deploy
     if: branch = master AND (NOT type IN (pull_request))
     before_install:
-    - npm i -g npm@6.6.0
+    - nvm install lts/* --latest-npm
     python:
     - "3.6"
     install:
