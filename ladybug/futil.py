@@ -6,6 +6,7 @@ import os
 import shutil
 import zipfile
 import sys
+from distutils import dir_util
 
 if (sys.version_info < (3, 0)):
     import urllib2
@@ -18,10 +19,18 @@ else:
 
 
 def preparedir(target_dir, remove_content=True):
-    """Prepare a folder for analysis.
+    """Prepare a folder for files to be written into it.
 
-    This method creates the folder if it is not created, and removes the file in
-    the folder if the folder already existed.
+    This function creates the folder if it does not exist and removes the files in
+    the folder if the folder already exists.
+
+    Args:
+        target_dir: Target folder into which files will be written
+            (e.g. c:/ladybug/libs).
+        remove_content: Boolean to note whether any existing content within the
+            target_dir should be deleted. If False, only the directory creation
+            will happen if the target_dir does not exist (nothing will be deleted).
+            Default: True.
     """
     if os.path.isdir(target_dir):
         if remove_content:
@@ -39,6 +48,12 @@ def preparedir(target_dir, remove_content=True):
 def nukedir(target_dir, rmdir=False):
     """Delete all the files inside target_dir.
 
+    Args:
+        target_dir: Target folder to be deleted (e.g. c:/ladybug/libs).
+        rmdir: Boolean to note whether the target_dir itself should be deleted.
+            If False, only the files within the target_dir will be deleted.
+            Default: False.
+
     Usage:
 
     .. code-block:: python
@@ -46,12 +61,10 @@ def nukedir(target_dir, rmdir=False):
         nukedir("c:/ladybug/libs", True)
     """
     d = os.path.normpath(target_dir)
-
     if not os.path.isdir(d):
         return
 
     files = os.listdir(d)
-
     for f in files:
         if f == '.' or f == '..':
             continue
@@ -69,7 +82,10 @@ def nukedir(target_dir, rmdir=False):
         try:
             os.rmdir(d)
         except Exception:
-            print("Failed to remove %s" % d)
+            try:
+                dir_util.remove_tree(d)
+            except Exception:
+                print("Failed to remove %s" % d)
 
 
 def write_to_file_by_name(folder, fname, data, mkdir=False):
@@ -114,8 +130,15 @@ def write_to_file(file_path, data, mkdir=False):
 def copy_files_to_folder(files, target_folder, overwrite=True):
     """Copy a list of files to a new target folder.
 
+    Args:
+        files: A list of file paths to be copied to the target_folder.
+        target_folder: File path to a folder where the files will be copied to.
+        overwrite: Boolean to note whether an existing file with the same
+            name as one of the files in the target_folder should be overwritten.
+            Default: True.
+
     Returns:
-        A list of fullpath of the new files.
+        A list of full paths to the new files.
     """
     if not files:
         return []
@@ -123,13 +146,11 @@ def copy_files_to_folder(files, target_folder, overwrite=True):
     for f in files:
         target = os.path.join(target_folder, os.path.split(f)[-1])
 
-        if target == f:
-            # both file path are the same!
-            return target
+        if target == f:  # both file paths are the same!
+            return files
 
         if os.path.exists(target):
-            if overwrite:
-                # remove the file before copying
+            if overwrite:  # remove the file before copying
                 try:
                     os.remove(target)
                 except Exception:
@@ -144,34 +165,6 @@ def copy_files_to_folder(files, target_folder, overwrite=True):
             shutil.copy(f, target)
 
     return [os.path.join(target_folder, os.path.split(f)[-1]) for f in files]
-
-
-def bat_to_sh(file_path):
-    """Convert honeybee .bat file to .sh file.
-
-    WARNING: This is a very simple function and doesn't handle any edge cases.
-    """
-    sh_file = file_path[:-4] + '.sh'
-    with open(file_path, 'rb') as inf, open(sh_file, 'wb') as outf:
-        outf.write('#!/usr/bin/env bash\n\n')
-        for line in inf:
-            # pass the path lines, etc to get to the commands
-            if line.strip():
-                continue
-            else:
-                break
-
-        for line in inf:
-            if line.startswith('echo'):
-                continue
-            modified_line = line.replace('c:\\radiance\\bin\\', '').replace('\\', '/')
-            outf.write(modified_line)
-
-    print('bash file is created at:\n\t%s' % sh_file)
-    # Heroku - Make command.sh executable
-    st = os.stat(sh_file)
-    os.chmod(sh_file, st.st_mode | 0o111)
-    return sh_file
 
 
 def _download_py2(link, path, __hdr__):
