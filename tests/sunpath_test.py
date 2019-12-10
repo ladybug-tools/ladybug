@@ -2,6 +2,7 @@
 from ladybug.location import Location
 from ladybug.sunpath import Sunpath
 from ladybug.dt import DateTime
+from ladybug.analysisperiod import AnalysisPeriod
 
 
 def test_from_location():
@@ -42,12 +43,11 @@ def test_solar_hour():
 def test_daylight_saving():
     nyc = Location('New_York', 'USA', latitude=40.72, longitude=-74.02,
                    time_zone=-5)
-    sp = Sunpath.from_location(nyc)
+    daylight_saving = AnalysisPeriod(st_month=3, st_day=8, end_month=11, end_day=1)
+    sp = Sunpath.from_location(nyc, daylight_saving_period=daylight_saving)
     dt1 = DateTime(6, 21, 12, 0)
     dt2 = DateTime(12, 21, 12, 0)
-    # TODO(mostapha): This is not implemented yet
-    # assert sp.is_daylight_saving_hour(dt1) is True
-    assert sp.is_daylight_saving_hour(dt1) is False
+    assert sp.is_daylight_saving_hour(dt1) is True
     assert sp.is_daylight_saving_hour(dt2) is False
 
 
