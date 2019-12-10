@@ -1,7 +1,7 @@
 # coding=utf-8
 """Ladybug Data Collections.
 
-Collections have the following inheritence structure:
+Collections have the following inheritance structure:
 
 .. code-block:: shell
 
@@ -48,7 +48,7 @@ except ImportError:
 
 
 class HourlyDiscontinuousCollection(BaseCollection):
-    """Discontinous Data Collection at hourly or sub-hourly intervals.
+    """Discontinuous Data Collection at hourly or sub-hourly intervals.
 
     Args:
         header: A Ladybug Header object.  Note that this header

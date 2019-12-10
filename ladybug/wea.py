@@ -24,6 +24,7 @@ from ladybug_geometry.geometry3d.pointvector import Vector3D
 
 import math
 import os
+import warnings
 
 try:  # python 2
     from itertools import izip as zip
@@ -150,28 +151,25 @@ class Wea(object):
         return cls(location, direct_normal_irradiance,
                    diffuse_horizontal_irradiance, timestep, is_leap_year)
 
-    # TOD(mostapha): If decided that this is a good idea, also parse datetime from wea
-    # file. It is currently auto-generated based on timestep to ensure it will be
-    # consistent with other studies.
     @classmethod
-    def from_file(cls, weafile, timestep=1, is_leap_year=False):
+    def from_file(cls, wea_file, timestep=1, is_leap_year=False):
         """Create wea object from a wea file.
 
         Args:
-            weafile:Full path to wea file.
+            wea_file:Full path to wea file.
             timestep: An optional integer to set the number of time steps per hour.
                 Default is 1 for one value per hour. If the wea file has a time step
                 smaller than an hour adjust this input accordingly.
             is_leap_year: A boolean to indicate if values are representing a leap year.
                 Default is False.
         """
-        assert os.path.isfile(weafile), 'Failed to find {}'.format(weafile)
+        assert os.path.isfile(wea_file), 'Failed to find {}'.format(wea_file)
         location = Location()
-        with open(weafile, readmode) as weaf:
+        with open(wea_file, readmode) as weaf:
             first_line = weaf.readline()
             assert first_line.startswith('place'), \
                 'Failed to find place in header. ' \
-                '{} is not a valid wea file.'.format(weafile)
+                '{} is not a valid wea file.'.format(wea_file)
             location.city = ' '.join(first_line.split()[1:])
             # parse header
             location.latitude = float(weaf.readline().split()[-1])
@@ -192,11 +190,11 @@ class Wea(object):
                                diffuse_horizontal_irradiance, timestep, is_leap_year)
 
     @classmethod
-    def from_epw_file(cls, epwfile, timestep=1):
+    def from_epw_file(cls, epw_file, timestep=1):
         """Create a wea object using the solar irradiance values in an epw file.
 
         Args:
-            epwfile: Full path to epw weather file.
+            epw_file: Full path to epw weather file.
             timestep: An optional integer to set the number of time steps per hour.
                 Default is 1 for one value per hour. Note that this input
                 will only do a linear interpolation over the data in the EPW
@@ -208,15 +206,15 @@ class Wea(object):
         """
         is_leap_year = False  # epw file is always for 8760 hours
 
-        epw = EPW(epwfile)
+        epw = EPW(epw_file)
         direct_normal, diffuse_horizontal = \
             cls._get_data_collections(epw.direct_normal_radiation.values,
                                       epw.diffuse_horizontal_radiation.values,
                                       epw.metadata, 1, is_leap_year)
         if timestep != 1:
-            print("Note: timesteps greater than 1 on epw-generated Wea's \n" +
-                  "are suitable for thermal models but are not recommended \n" +
-                  "for daylight models.")
+            warnings.warn("Note: timesteps greater than 1 on epw-generated Wea's \n"
+                "are suitable for thermal models but are not recommended \n"
+                "for daylight models.")
             # interpolate the data
             direct_normal = direct_normal.interpolate_to_timestep(timestep)
             diffuse_horizontal = diffuse_horizontal.interpolate_to_timestep(timestep)
@@ -802,7 +800,7 @@ class Wea(object):
                 try:
                     dir_rad, dif_rad = self.get_irradiance_value_for_hoy(hoy)
                 except IndexError:
-                    print('Warn: Wea data for {} is not available!'.format(dt))
+                    warnings.warn('Wea data for {} is not available!'.format(dt))
                     continue
 
                 dt = DateTime.from_hoy(hoy, is_leap_year)

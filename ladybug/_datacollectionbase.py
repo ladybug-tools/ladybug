@@ -187,9 +187,9 @@ class BaseCollection(object):
 
         This is useful for situations where one needs to know the times of
         the year when the largest values of a data collection occur.  For example,
-        there is a European dayight code that requires an analysis for the hours
+        there is a European daylight code that requires an analysis for the hours
         of the year with the greatest exterior illuminance level.  This method
-        can be used to help build a shcedule for such a study.
+        can be used to help build a schedule for such a study.
 
         Args:
             count: Integer representing the number of highest values to account for.
@@ -202,7 +202,7 @@ class BaseCollection(object):
                 highest to lowest.
 
             -   highest_values_index:
-                Indicies of the n highest values in data
+                Indices of the n highest values in data
                 list, ordered from highest to lowest.
         """
         count = int(count)
@@ -233,7 +233,7 @@ class BaseCollection(object):
                 The n lowest values in data list, ordered from
                 lowest to lowest.
             -   lowest_values_index:
-                Indicies of the n lowest values in data
+                Indices of the n lowest values in data
                 list, ordered from lowest to lowest.
         """
         count = int(count)

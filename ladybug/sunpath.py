@@ -1,8 +1,10 @@
 # coding=utf-8
 from __future__ import division
+import ladybug
 
 from .location import Location
 from .dt import DateTime
+from .analysisperiod import AnalysisPeriod
 from ladybug_geometry.geometry3d.pointvector import Vector3D
 
 import math
@@ -11,7 +13,6 @@ import sys
 if (sys.version_info > (3, 0)):  # python 3
     xrange = range
 
-import ladybug
 try:
     import sunpathplus as plus
 except ImportError as e:
@@ -56,7 +57,7 @@ class Sunpath(object):
     """
 
     __slots__ = ('_longitude', '_latitude', 'north_angle', 'time_zone',
-                 'daylight_saving_period', '_is_leap_year')
+                 '_daylight_saving_period', '_is_leap_year')
     PI = math.pi
 
     def __init__(self, latitude=0, longitude=0, time_zone=0, north_angle=0,
@@ -72,7 +73,7 @@ class Sunpath(object):
 
     @classmethod
     def from_location(cls, location, north_angle=0, daylight_saving_period=None):
-        """Create a sun path from a LBlocation."""
+        """Create a sun path from a ladybug.location.Location."""
         location = Location.from_location(location)
         return cls(location.latitude, location.longitude,
                    location.time_zone, north_angle, daylight_saving_period)
@@ -114,11 +115,27 @@ class Sunpath(object):
         """set sunpath to be calculated for a leap year."""
         self._is_leap_year = bool(value)
 
+    @property
+    def daylight_saving_period(self):
+        """Get and set daylight saving period.
+
+        daylight saving period should be an AnalysisPeriod.
+        """
+        return self._daylight_saving_period
+
+    @daylight_saving_period.setter
+    def daylight_saving_period(self, value):
+        if value:
+            assert isinstance(value, AnalysisPeriod), \
+                'Daylight saving period should be an AnalysisPeriod not %s' % type(value)
+
+        self._daylight_saving_period = value
+
     def is_daylight_saving_hour(self, datetime):
         """Check if a datetime is a daylight saving time."""
         if not self.daylight_saving_period:
             return False
-        return self.daylight_saving_period.isTimeIncluded(datetime.hoy)
+        return self.daylight_saving_period.is_time_included(datetime)
 
     def calculate_sun(self, month, day, hour, is_solar_time=False):
         """Get Sun data for an hour of the year.
@@ -141,7 +158,7 @@ class Sunpath(object):
         """Get Sun data for an hour of the year.
 
         Args:
-            datetime: Ladybug datetime
+            hoy: An hour of the year.
             is_solar_time: A boolean to indicate if the input hour is solar time
                 (Default: False).
 
@@ -151,11 +168,24 @@ class Sunpath(object):
         datetime = DateTime.from_hoy(hoy, self.is_leap_year)
         return self.calculate_sun_from_date_time(datetime, is_solar_time)
 
+    def calculate_sun_from_moy(self, moy, is_solar_time=False):
+        """Get Sun data for a minute of the year.
+
+        Args:
+            moy: A minute of the year.
+            is_solar_time: A boolean to indicate if the input hour is solar time
+                (Default: False).
+
+        Returns:
+            A sun object for this particular time
+        """
+        datetime = DateTime.from_moy(moy, self.is_leap_year)
+        return self.calculate_sun_from_date_time(datetime, is_solar_time)
+
     def calculate_sun_from_date_time(self, datetime, is_solar_time=False):
         """Get Sun for an hour of the year.
 
-        This code is originally written by Trygve Wastvedt \
-         (Trygve.Wastvedt@gmail.com)
+        This code is originally written by Trygve Wastvedt (Trygve.Wastvedt@gmail.com)
         based on (NOAA) and modified by Chris Mackey and Mostapha Roudsari
 
         Args:
@@ -177,7 +207,7 @@ class Sunpath(object):
 
         is_daylight_saving = self.is_daylight_saving_hour(datetime.hoy)
 
-        hour = hour + 1 if self.is_daylight_saving_hour(datetime.hoy) else hour
+        hour = hour + 1 if is_daylight_saving else hour
 
         # minutes
         sol_time = self._calculate_solar_time(hour, eq_of_time, is_solar_time) * 60
@@ -709,7 +739,7 @@ class Sun(object):
     """
 
     __slots__ = ('_datetime', '_altitude', '_azimuth', '_is_solar_time',
-                 '_is_daylight_saving', '_north_angle', '_hourlyData', '_data',
+                 '_is_daylight_saving', '_north_angle', '_data',
                  '_sun_vector')
     PI = math.pi
 
@@ -737,7 +767,7 @@ class Sun(object):
         self._north_angle = north_angle
         self.data = data  # Place holder for hourly data
 
-        self._calculate_sun_vector()
+        self._sun_vector = self._calculate_sun_vector()
 
     @property
     def datetime(self):
@@ -820,15 +850,9 @@ class Sun(object):
             .rotate(z_axis, math.radians(-1 * self.north_angle))
 
         _sun_vector.normalize()
-        try:
-            _sun_vector.flip()
-        except AttributeError:
-            # euclid3
-            _sun_vector = Vector3D(-1 * _sun_vector.x,
-                                   -1 * _sun_vector.y,
-                                   -1 * _sun_vector.z)
+        _sun_vector = _sun_vector.reverse()
 
-        self._sun_vector = _sun_vector
+        return _sun_vector
 
     def ToString(self):
         """Overwrite .NET ToString method."""
