@@ -167,6 +167,47 @@ def copy_files_to_folder(files, target_folder, overwrite=True):
     return [os.path.join(target_folder, os.path.split(f)[-1]) for f in files]
 
 
+def copy_file_tree(source_folder, dest_folder, overwrite=True):
+    """Copy an entire file tree from a source_folder to a dest_folder.
+
+    Args:
+        source_folder: The source folder containing the files and folders to
+            be copied.
+        dest_folder: The destination folder into which all the files and folders
+            of the source_folder will be copied.
+        overwrite: Boolean to note whether an existing folder with the same
+            name as the source_folder in the dest_folder directory should be
+            overwritten. Default: True.
+    """
+    # make the dest_folder if it does not exist
+    if not os.path.isdir(dest_folder):
+        os.mkdir(dest_folder)
+
+    # recursively copy each sub-folder and file
+    for f in os.listdir(source_folder):
+        # get the source and destination file paths
+        src_file_path = os.path.join(source_folder, f)
+        dst_file_path = os.path.join(dest_folder, f)
+
+        # if overwrite is True, delete any existing files
+        if overwrite:
+            if os.path.isfile(dst_file_path):
+                try:
+                    os.remove(dst_file_path)
+                except Exception:
+                    raise IOError("Failed to remove %s" % f)
+            elif os.path.isdir(dst_file_path):
+                nukedir(dst_file_path, True)
+
+        # copy the files and folders to their correct location
+        if os.path.isfile(src_file_path):
+            shutil.copyfile(src_file_path, dst_file_path)
+        elif os.path.isdir(src_file_path):
+            if not os.path.isdir(dst_file_path):
+                os.mkdir(dst_file_path)
+            copy_file_tree(src_file_path, dst_file_path, overwrite)
+
+
 def _download_py2(link, path, __hdr__):
     """Download a file from a link in Python 2."""
     try:
