@@ -1,0 +1,4 @@
+{
+    "__comment__": "Add full paths to folders (eg. C:/epw_data, /usr/local/epw_data).",
+    "default_epw_folder": ""
+}
