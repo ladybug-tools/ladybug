@@ -2,7 +2,10 @@
 """Ladybug color, colorsets and colorrange."""
 from __future__ import division
 
-from collections import Iterable
+try:
+    from collections.abc import Iterable  # python < 3.7
+except ImportError:
+    from collections import Iterable  # python >= 3.8
 
 
 class Color(object):

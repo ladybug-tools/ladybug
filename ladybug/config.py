@@ -104,10 +104,8 @@ class Folders(object):
         
         An attempt will be made to create the directory if it does not already exist.
         """
-        try:  # windows
-            sim_folder = os.path.join(os.environ['USERPROFILE'], 'ladybug')
-        except KeyError:  # mac and linux
-            sim_folder = os.path.join(os.environ['HOME'], 'ladybug')
+        home_folder = os.getenv('HOME') or os.path.expanduser('~')
+        sim_folder = os.path.join(home_folder, 'ladybug')
         if not os.path.isdir(sim_folder):
             try:
                 os.makedirs(sim_folder)
