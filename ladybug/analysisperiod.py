@@ -29,6 +29,14 @@ class AnalysisPeriod(object):
             a leap year.
 
     Properties:
+        * st_month
+        * st_day
+        * end_hour
+        * end_month
+        * end_day
+        * end_hour
+        * timestep
+        * is_leap_year
         * st_time
         * end_time
         * datetimes
