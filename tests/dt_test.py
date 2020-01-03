@@ -1,5 +1,6 @@
 # coding=utf-8
 from ladybug.dt import DateTime, Date, Time
+import pickle
 
 
 def test_date_time_init():
@@ -195,3 +196,18 @@ def test_time_to_from_array():
     rebuilt_t = Time.from_array(t_arr)
     assert rebuilt_t == t1
     assert rebuilt_t.to_array() == t_arr
+
+
+def test_pickle_and_unpickle():
+    """Test the pickling and unpickling of DateTime, Date, and Time objects."""
+    dt1 = DateTime(6, 21, 12)
+    dt2 = Date(6, 21)
+    dt3 = Time(12, 30)
+
+    serialized_dt1 = pickle.dumps(dt1)
+    serialized_dt2 = pickle.dumps(dt2)
+    serialized_dt3 = pickle.dumps(dt3)
+
+    assert pickle.loads(serialized_dt1) == dt1
+    assert pickle.loads(serialized_dt2) == dt2
+    assert pickle.loads(serialized_dt3) == dt3
