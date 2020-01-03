@@ -46,6 +46,9 @@ class DateTime(datetime):
                 e, month, day, hour, minute
             ))
 
+    def __reduce_ex__(self, protocol):
+        return (type(self), (self.month, self.day, self.hour, self.minute))
+
     @classmethod
     def from_dict(cls, data):
         """Creat datetime from a dictionary.
@@ -293,6 +296,9 @@ class Date(date):
         except ValueError as e:
             raise ValueError("{}:\n\t({}/{})(m/d)".format(e, month, day))
 
+    def __reduce_ex__(self, protocol):
+        return (type(self), (self.month, self.day, self.leap_year))
+
     @classmethod
     def from_dict(cls, data):
         """Create date from a dictionary.
@@ -426,6 +432,8 @@ class Time(time):
             return time.__new__(cls, hour, minute)
         except ValueError as e:
             raise ValueError("{}:\n\t({}:{})(h:m)".format(e, hour, minute))
+    def __reduce_ex__(self, protocol):
+        return (type(self), (self.hour, self.minute))
 
     @classmethod
     def from_dict(cls, data):
