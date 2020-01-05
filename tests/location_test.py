@@ -112,6 +112,14 @@ def test_dict_methods():
     assert loc_from_dict.country == country
 
 
+def test_idf_methods():
+    """Test the to/from idf methods."""
+    loc = Location('Tehran', '', 'Iran', 36, 34, 3.5, 54)
+    loc_idf = loc.to_idf()
+    new_idf = Location.from_idf(loc_idf)
+    assert loc_idf == new_idf.to_idf()
+
+
 def test_duplicate():
     """Test the duplicate method."""
     city = 'Tehran'

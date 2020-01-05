@@ -1,6 +1,7 @@
 # coding=utf-8
 from ladybug.stat import STAT
-from ladybug.designday import DDY
+from ladybug.ddy import DDY
+from ladybug.designday import ASHRAEClearSky, ASHRAETau
 
 from pytest import approx
 import os
@@ -61,18 +62,18 @@ def test_annual_heating_design_days():
         ann_hdd_96.sky_condition.month == 1
     assert ann_hdd_96.analysis_period.st_day == \
         ann_hdd_96.analysis_period.end_day == 21
-    assert ann_hdd_96.humidity_condition.hum_type == 'Wetbulb'
+    assert ann_hdd_96.humidity_condition.humidity_type == 'Wetbulb'
     assert ann_hdd_96.dry_bulb_condition.dry_bulb_max == \
-        ann_hdd_96.humidity_condition.hum_value == -20
+        ann_hdd_96.humidity_condition.humidity_value == -20
     assert ann_hdd_96.dry_bulb_condition.dry_bulb_range == 0
     assert ann_hdd_96.wind_condition.wind_speed == 4.9
     assert ann_hdd_96.wind_condition.wind_direction == 270
-    assert ann_hdd_96.sky_condition.solar_model == 'ASHRAEClearSky'
+    assert isinstance(ann_hdd_96.sky_condition, ASHRAEClearSky)
     assert ann_hdd_96.sky_condition.clearness == 0
 
     assert ann_hdd_90.name == '99.0% Heating Design Day for Chicago Ohare Intl Ap'
     assert ann_hdd_90.dry_bulb_condition.dry_bulb_max == \
-        ann_hdd_90.humidity_condition.hum_value == -16.6
+        ann_hdd_90.humidity_condition.humidity_value == -16.6
 
 
 def test_annual_cooling_design_days():
@@ -89,19 +90,19 @@ def test_annual_cooling_design_days():
         ann_cdd_04.sky_condition.month == 8
     assert ann_cdd_04.analysis_period.st_day == \
         ann_cdd_04.analysis_period.end_day == 21
-    assert ann_cdd_04.humidity_condition.hum_type == 'Wetbulb'
+    assert ann_cdd_04.humidity_condition.humidity_type == 'Wetbulb'
     assert ann_cdd_04.dry_bulb_condition.dry_bulb_max == 32.1
-    assert ann_cdd_04.humidity_condition.hum_value == 26.0
+    assert ann_cdd_04.humidity_condition.humidity_value == 26.0
     assert ann_cdd_04.dry_bulb_condition.dry_bulb_range == 7.7
     assert ann_cdd_04.wind_condition.wind_speed == 4.8
     assert ann_cdd_04.wind_condition.wind_direction == 210
-    assert ann_cdd_04.sky_condition.solar_model == 'ASHRAETau'
+    assert isinstance(ann_cdd_04.sky_condition, ASHRAETau)
     assert ann_cdd_04.sky_condition.tau_b == 0.546
     assert ann_cdd_04.sky_condition.tau_d == 1.827
 
     assert ann_cdd_10.name == '1.0% Cooling Design Day for TOKYO HYAKURI'
     assert ann_cdd_10.dry_bulb_condition.dry_bulb_max == 30.9
-    assert ann_cdd_10.humidity_condition.hum_value == 25.8
+    assert ann_cdd_10.humidity_condition.humidity_value == 25.8
 
 
 def test_monthly_cooling_design_days():

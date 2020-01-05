@@ -391,7 +391,7 @@ class EPW(object):
     @heating_design_condition_dictionary.setter
     def heating_design_condition_dictionary(self, des_dict):
         self._load_header_check()
-        self._des_dict_check(des_dict, DesignDay.heating_keys,
+        self._des_dict_check(des_dict, DesignDay.HEATING_KEYS,
                              'heating_design_condition_dictionary')
         self._heating_dict = des_dict
 
@@ -404,7 +404,7 @@ class EPW(object):
     @cooling_design_condition_dictionary.setter
     def cooling_design_condition_dictionary(self, des_dict):
         self._load_header_check()
-        self._des_dict_check(des_dict, DesignDay.cooling_keys,
+        self._des_dict_check(des_dict, DesignDay.COOLING_KEYS,
                              'cooling_design_condition_dictionary')
         self._cooling_dict = des_dict
 
@@ -417,7 +417,7 @@ class EPW(object):
     @extreme_design_condition_dictionary.setter
     def extreme_design_condition_dictionary(self, des_dict):
         self._load_header_check()
-        self._des_dict_check(des_dict, DesignDay.extreme_keys,
+        self._des_dict_check(des_dict, DesignDay.EXTREME_KEYS,
                              'extreme_design_condition_dictionary')
         self._extremes_dict = des_dict
 
@@ -557,13 +557,13 @@ class EPW(object):
                 dday_data = self._header[1].strip().split(',')
                 if len(dday_data) >= 2 and int(dday_data[1]) == 1:
                     if dday_data[4] == 'Heating':
-                        for key, val in zip(DesignDay.heating_keys, dday_data[5:20]):
+                        for key, val in zip(DesignDay.HEATING_KEYS, dday_data[5:20]):
                             self._heating_dict[key] = val
                     if dday_data[20] == 'Cooling':
-                        for key, val in zip(DesignDay.cooling_keys, dday_data[21:53]):
+                        for key, val in zip(DesignDay.COOLING_KEYS, dday_data[21:53]):
                             self._cooling_dict[key] = val
                     if dday_data[53] == 'Extremes':
-                        for key, val in zip(DesignDay.extreme_keys, dday_data[54:70]):
+                        for key, val in zip(DesignDay.EXTREME_KEYS, dday_data[54:70]):
                             self._extremes_dict[key] = val
 
                 # parse typical and extreme periods into analysis periods.
@@ -686,9 +686,9 @@ class EPW(object):
         if winter_found and summer_found and extreme_found:
             des_str = 'DESIGN CONDITIONS,1,Climate Design Data 2009 ASHRAE Handbook,,'
             des_str = des_str + 'Heating,{},Cooling,{},Extremes,{}\n'.format(
-                ','.join([self._heating_dict[key] for key in DesignDay.heating_keys]),
-                ','.join([self._cooling_dict[key] for key in DesignDay.cooling_keys]),
-                ','.join([self._extremes_dict[key] for key in DesignDay.extreme_keys]))
+                ','.join([self._heating_dict[key] for key in DesignDay.HEATING_KEYS]),
+                ','.join([self._cooling_dict[key] for key in DesignDay.COOLING_KEYS]),
+                ','.join([self._extremes_dict[key] for key in DesignDay.EXTREME_KEYS]))
         else:
             des_str = 'DESIGN CONDITIONS,0\n'
         weeks = []
