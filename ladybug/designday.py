@@ -2,7 +2,7 @@
 from __future__ import division
 
 from .location import Location
-from .futil import write_to_file
+
 from .dt import DateTime
 from .header import Header
 from .analysisperiod import AnalysisPeriod
@@ -21,293 +21,98 @@ from .psychrometrics import rel_humid_from_db_dpt, dew_point_from_db_hr, \
 import math
 import os
 import re
-import codecs
-import platform
 import sys
 if (sys.version_info > (3, 0)):
     xrange = range
 
 
-class DDY(object):
-    """A DDY object containing all of the data of a .ddy file.
-
-    Args:
-        location: A Ladybug location object
-        design_days: A list of the design days in the ddy file.
-
-    Properties:
-        * file_locatiom
-        * location
-        * design_days
-    """
-    _location_format = re.compile(
-        r"(Site:Location,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
-    _design_day_format = re.compile(
-        r"(SizingPeriod:DesignDay,(.|\n)*?((;\s*!)|(;\s*\n)|(;\n)))")
-
-    def __init__(self, location, design_days):
-        """Initalize the class."""
-        assert hasattr(location, 'isLocation'), 'Expected' \
-            ' Location type. Got {}'.format(type(location))
-
-        self._location = location
-        self.design_days = design_days
-        self._file_path = None
-
-    @classmethod
-    def from_dict(cls, data):
-        """Create a DDY from a dictionary.
-
-        Args:
-            data: A python dictionary in the following format
-
-        .. code-block:: python
-
-            {
-            "location": {}  # ladybug Location schema,
-            "design_days": []  # list of ladybug DesignDay schemas
-            }
-        """
-        required_keys = ('location', 'design_days')
-        for key in required_keys:
-            assert key in data, 'Required key "{}" is missing!'.format(key)
-
-        return cls(Location.from_dict(data['location']),
-                   [DesignDay.from_dict(des_day) for des_day in data['design_days']])
-
-    @classmethod
-    def from_ddy_file(cls, file_path):
-        """Initalize from a ddy file object from an existing ddy file.
-
-        Args:
-            file_path: A string representing a complete path to the .ddy file.
-        """
-        # check that the file is there
-        if not os.path.isfile(file_path):
-            raise ValueError(
-                'Cannot find a .ddy file at {}'.format(file_path))
-        if not file_path.lower().endswith('.ddy'):
-            raise ValueError(
-                'DDY file does not have a .ddy extension.')
-
-        # check the python version and open the file
-        try:
-            iron_python = True if platform.python_implementation() == 'IronPython' \
-                else False
-        except Exception:
-            iron_python = True
-
-        if iron_python:
-            ddywin = codecs.open(file_path, 'r')
-        else:
-            ddywin = codecs.open(file_path, 'r', encoding='utf-8', errors='ignore')
-
-        try:
-            ddytxt = ddywin.read()
-            location_matches = cls._location_format.findall(ddytxt)
-            des_day_matches = cls._design_day_format.findall(ddytxt)
-        except Exception as e:
-            import traceback
-            raise Exception('{}\n{}'.format(e, traceback.format_exc()))
-        else:
-            # check to be sure location was found
-            assert len(location_matches) > 0, 'No location objects found ' \
-                'in .ddy file.'
-
-            # build design day and location objects
-            location = Location.from_location(location_matches[0][0])
-            design_days = [DesignDay.from_ep_string(
-                match[0], location) for match in des_day_matches]
-        finally:
-            ddywin.close()
-
-        cls_ = cls(location, design_days)
-        cls_._file_path = os.path.normpath(file_path)
-        return cls_
-
-    @classmethod
-    def from_design_day(cls, design_day):
-        """Initalize from a ddy file object from a ladybug design day object.
-
-        Args:
-            design_day: A Ladybug DesignDay object.
-        """
-        return cls(design_day.location, [design_day])
-
-    def save(self, file_path):
-        """Save ddy object as a .ddy file.
-
-        Args:
-            file_path: A string representing the path to write the ddy file to.
-        """
-        # write all data into the file
-        # write the file
-        data = self.location.ep_style_location_string + '\n\n'
-        for d_day in self.design_days:
-            data = data + d_day.ep_style_string + '\n\n'
-        write_to_file(file_path, data, True)
-
-    def filter_by_keyword(self, keyword):
-        """Return a list of ddys that have a certain keyword in their name.
-
-        This is useful for selecting out design days from a ddy file that are
-        for a specific type of condition (for example, .4% cooling design days)
-        """
-        filtered_days = []
-        for des_day in self.design_days:
-            if keyword in des_day.name:
-                filtered_days.append(des_day)
-        return filtered_days
-
-    @property
-    def file_path(self):
-        """Return the current ddy ddy file."""
-        return self._file_path
-
-    @property
-    def location(self):
-        """Get or set the location."""
-        return self._location
-
-    @location.setter
-    def location(self, data):
-        assert hasattr(data, 'isLocation'), 'Expected' \
-            ' Location type. Got {}'.format(type(data))
-        self._location = data
-        for dd in self._design_days:
-            if dd.location != self._location:
-                dd.location = self._location
-                print('Updating location of {} to {}.'.format(dd, self._location))
-
-    @property
-    def design_days(self):
-        """Get or set the design_days."""
-        return self._design_days
-
-    @design_days.setter
-    def design_days(self, data):
-        assert isinstance(data, list), 'Expected' \
-            ' a list of design days. Got {}'.format(type(data))
-        for item in data:
-            assert hasattr(item, 'isDesignDay'), 'Expected' \
-                ' DesignDay type. Got {}'.format(type(item))
-        self._design_days = data
-        for dd in self._design_days:
-            if dd.location != self._location:
-                dd.location = self._location
-                print('Updating location of {} to {}.'.format(dd, self._location))
-
-    @property
-    def isDdy(self):
-        """Return True."""
-        return True
-
-    def to_dict(self):
-        """Convert the Design Day to a dictionary."""
-        return {
-            'location': self.location.to_dict(),
-            'design_days': [des_d.to_dict() for des_d in self.design_days],
-            'type': 'DDY'
-        }
-
-    def ToString(self):
-        """Overwrite .NET ToString."""
-        return self.__repr__()
-
-    def __repr__(self):
-        """Ddy object representation."""
-        return "Ddy File - {} [# days: {}]".format(
-            self.location.city, str(len(self._design_days)))
-
-
-# TODO: add a property for hourly horizontal infrared radiation.
 class DesignDay(object):
     """An object representing design day conditions.
 
     Args:
         name: A text string to set the name of the design day
         day_type: Choose from 'SummerDesignDay', 'WinterDesignDay' or other
-            EnergyPlus days visible under the day_types property of this object.
-        location: Location object for the design day
-        dry_bulb_condition: Ladyubug DryBulbCondition object
-        humidity_condition: Ladyubug HumidityCondition object
-        wind_condition: Ladyubug WindCondition object
-        sky_condition: Ladybug SkyCondition object
+            EnergyPlus days visible under the DAY_TYPES property of this object.
+        location: Location object for the design day.
+        dry_bulb_condition: Ladyubug DryBulbCondition object.
+        humidity_condition: Ladyubug HumidityCondition object.
+        wind_condition: Ladyubug WindCondition object.
+        sky_condition: Ladybug SkyCondition object (either ASHRAEClearSky or ASHRAETau).
 
     Properties:
         * name
         * day_type
         * location
         * dry_bulb_condition
-        * hourly_barometric_pressure
-        * hourly_datetimes
-        * hourly_dew_point
-        * hourly_dry_bulb
-        * hourly_horizontal_infrared
-        * hourly_relative_humidity
-        * hourly_sky_cover
-        * hourly_solar_radiation
-        * hourly_wind_direction
-        * hourly_wind_speed
         * humidity_condition
-        * name
-        * sky_condition
         * wind_condition
+        * sky_condition
+        * analysis_period
+        * hourly_datetimes
+        * hourly_dry_bulb
+        * hourly_dew_point
+        * hourly_relative_humidity
+        * hourly_barometric_pressure
+        * hourly_wind_speed
+        * hourly_wind_direction
+        * hourly_solar_radiation
+        * hourly_sky_cover
+        * hourly_horizontal_infrared
     """
+    __slots__ = ('_name', '_day_type', '_location', '_dry_bulb_condition',
+                 '_humidity_condition', '_wind_condition', '_sky_condition')
+
     # possible day types
-    day_types = ('SummerDesignDay', 'WinterDesignDay', 'Sunday', 'Monday',
+    DAY_TYPES = ('SummerDesignDay', 'WinterDesignDay', 'Sunday', 'Monday',
                  'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Holiday',
                  'CustomDay1', 'CustomDay2')
 
     # keys denoting the values from which design days are derived
     # these keys and their order com from Climate Design Data of ASHRAE Handbook
-    heating_keys = ('Month', 'DB996', 'DB990', 'DP996', 'HR_DP996', 'DB_DP996',
+    HEATING_KEYS = ('Month', 'DB996', 'DB990', 'DP996', 'HR_DP996', 'DB_DP996',
                     'DP990', 'HR_DP990', 'DB_DP990', 'WS004c', 'DB_WS004c',
                     'WS010c', 'DB_WS010c', 'WS_DB996', 'WD_DB996')
-    cooling_keys = ('Month', 'DBR', 'DB004', 'WB_DB004', 'DB010', 'WB_DB010',
+    COOLING_KEYS = ('Month', 'DBR', 'DB004', 'WB_DB004', 'DB010', 'WB_DB010',
                     'DB020', 'WB_DB020', 'WB004', 'DB_WB004', 'WB010', 'DB_WB010',
                     'WB020', 'DB_WB020', 'WS_DB004', 'WD_DB004', 'DP004',
                     'HR_DP004', 'DB_DP004', 'DP010', 'HR_DP010', 'DB_DP010',
                     'DP020', 'HR_DP020', 'DB_DP020', 'EN004', 'DB_EN004',
                     'EN010', 'DB_EN010', 'EN020', 'DB_EN020', 'Hrs_8-4_&_DB')
-    extreme_keys = ('WS010', 'WS025', 'WS050', 'WBmax', 'DBmin_mean', 'DBmax_mean',
+    EXTREME_KEYS = ('WS010', 'WS025', 'WS050', 'WBmax', 'DBmin_mean', 'DBmax_mean',
                     'DBmin_stddev', 'DBmax_stddev', 'DBmin05years', 'DBmax05years',
                     'DBmin10years', 'DBmax10years', 'DBmin20years', 'DBmax20years',
                     'DBmin50years', 'DBmax50years')
 
-    # comments that go along with the EP string representation of the design day
-    comments = ('!- Name',
-                '!- Month',
-                '!- Day of Month',
-                '!- Day Type',
-                '!- Max Dry-Bulb Temp [C]',
-                '!- Daily Dry-Bulb Temp Range [C]',
-                '!- Dry-Bulb Temp Range Modifier Type',
-                '!- Dry-Bulb Temp Range Modifier Schedule Name',
-                '!- Humidity Condition Type',
-                '!- Wetbulb/Dewpoint at Max Dry-Bulb [C]',
-                '!- Humidity Indicating Day Schedule Name',
-                '!- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}',
-                '!- Enthalpy at Maximum Dry-Bulb {J/kg}',
-                '!- Daily Wet-Bulb Temperature Range [deltaC]',
-                '!- Barometric Pressure [Pa]',
-                '!- Wind Speed {m/s}',
-                '!- Wind Direction [Degrees; N=0, S=180]',
-                '!- Rain [Yes/No]',
-                '!- Snow on ground [Yes/No]',
-                '!- Daylight Savings Time Indicator',
-                '!- Solar Model Indicator',
-                '!- Beam Solar Day Schedule Name',
-                '!- Diffuse Solar Day Schedule Name',
-                '!- ASHRAE Clear Sky Optical Depth for Beam Irradiance (taub)',
-                '!- ASHRAE Clear Sky Optical Depth for Diffuse Irradiance (taud)',
-                '!- Clearness [0.0 to 1.2]')
+    # comments that go along with the IDF string representation of the design day
+    IDF_COMMENTS = ('!- Name',
+                    '!- Month',
+                    '!- Day of Month',
+                    '!- Day Type',
+                    '!- Max Dry-Bulb Temp {C}',
+                    '!- Daily Dry-Bulb Temp Range {C}',
+                    '!- Dry-Bulb Temp Range Modifier Type',
+                    '!- Dry-Bulb Temp Range Modifier Schedule Name',
+                    '!- Humidity Condition Type',
+                    '!- Wetbulb/Dewpoint at Max Dry-Bulb {C}',
+                    '!- Humidity Indicating Day Schedule Name',
+                    '!- Humidity Ratio at Maximum Dry-Bulb {kgWater/kgDryAir}',
+                    '!- Enthalpy at Maximum Dry-Bulb {J/kg}',
+                    '!- Daily Wet-Bulb Temperature Range {deltaC}',
+                    '!- Barometric Pressure {Pa}',
+                    '!- Wind Speed {m/s}',
+                    '!- Wind Direction {Degrees; N=0, S=180}',
+                    '!- Rain {Yes/No}',
+                    '!- Snow on ground {Yes/No}',
+                    '!- Daylight Savings Time Indicator {Yes/No}',
+                    '!- Solar Model Indicator',
+                    '!- Beam Solar Day Schedule Name',
+                    '!- Diffuse Solar Day Schedule Name',
+                    '!- ASHRAE Clear Sky Beam Optical Depth (taub)',
+                    '!- ASHRAE Clear Sky Diffuse Optical Depth (taud)',
+                    '!- Clearness (0.0 to 1.2)')
 
-    def __init__(self, name, day_type, location,
-                 dry_bulb_condition, humidity_condition,
+    def __init__(self, name, day_type, location, dry_bulb_condition, humidity_condition,
                  wind_condition, sky_condition):
-        """Initalize the class
-        """
         self.name = str(name)
         self.day_type = day_type
         self.location = location
@@ -326,85 +131,88 @@ class DesignDay(object):
         .. code-block:: python
 
             {
+            "type": "DesignDay",
             "name": "",  # string
             "day_type": "",  # string
-            "location": {},  # ladybug Location schema
-            "dry_bulb_condition": {},  # ladybug DryBulbCondition schema
-            "humidity_condition": {},  # ladybug HumidityCondition schema
-            "wind_condition": {},  # ladybug WindCondition schema
-            "sky_condition": {}  # ladybug SkyCondition schema
+            "location": {},  # optional ladybug Location dictionary
+            "dry_bulb_condition": {},  # ladybug DryBulbCondition dictionary
+            "humidity_condition": {},  # ladybug HumidityCondition dictionary
+            "wind_condition": {},  # ladybug WindCondition dictionary
+            "sky_condition": {}  # ladybug ASHRAEClearSky or ASHRAETau dictionary
             }
         """
-        required_keys = ('name', 'day_type', 'location', 'dry_bulb_condition',
+        required_keys = ('name', 'day_type', 'dry_bulb_condition',
                          'humidity_condition', 'wind_condition', 'sky_condition')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
+        
+        if 'location' in data and data['location'] is not None:
+            loc = Location.from_dict(data['location'])
+        else:
+            loc = Location()
 
-        return cls(data['name'], data['day_type'], Location.from_dict(data['location']),
+        return cls(data['name'], data['day_type'], loc,
                    DryBulbCondition.from_dict(data['dry_bulb_condition']),
                    HumidityCondition.from_dict(data['humidity_condition']),
                    WindCondition.from_dict(data['wind_condition']),
-                   SkyCondition.from_dict(data['sky_condition']))
+                   _SkyCondition.from_dict(data['sky_condition']))
 
     @classmethod
-    def from_ep_string(cls, ep_string, location):
-        """Initalize from an EnergyPlus string of a SizingPeriod:DesignDay.
+    def from_idf(cls, idf_string, location):
+        """Initalize from an EnergyPlus IDF string of a SizingPeriod:DesignDay.
 
         Args:
-            ep_string: A full string representing a SizingPeriod:DesignDay.
+            idf_string: A full IDF string representing a SizingPeriod:DesignDay.
+            location: A Ladybug Location object, used to interpret the sky condition
+                over the course of the design day.
         """
         # format the object into a list of properties
-        ep_string = ep_string.strip()
-        if '\n' in ep_string:
-            ep_lines = ep_string.split('\n')
-        else:
-            ep_lines = ep_string.split('\r')
-        lines = [l.split('!')[0].strip().replace(',', '') for l in ep_lines]
-
-        # check to be sure that we have a valid ddy object
-        assert len(lines) == 27 or len(lines) == 26, "Number " \
-            "of lines of text [{}] does not correspond" \
-            " to an EP Design Day [26 or 27]".format(
-                len(lines))
-        lines[-1] = lines[-1].split(';')[0]
+        idf_string = idf_string.strip()
+        assert idf_string.startswith('SizingPeriod:DesignDay'), 'Expected SizingPeriod' \
+            ':DesignDay but received a differet object: {}'.format(idf_string)
+        idf_string = idf_string.replace(';', ',')
+        idf_string = re.sub(r'!.*\n', '', idf_string)
+        ep_fields = [e_str.strip() for e_str in idf_string.split(',')]
 
         # extract primary properties
-        name = lines[1]
-        day_type = lines[4]
+        name = ep_fields[1]
+        day_type = ep_fields[4]
 
         # extract dry bulb temperatures
         dry_bulb_condition = DryBulbCondition(
-            float(lines[5]), float(lines[6]), lines[7], lines[8])
+            float(ep_fields[5]), float(ep_fields[6]), ep_fields[7], ep_fields[8])
 
         # extract humidity conditions
-        h_type = lines[9]
-        h_val = 0 if lines[10] == '' else float(lines[10])
+        h_type = ep_fields[9]
+        h_val = 0 if ep_fields[10] == '' else float(ep_fields[10])
+        rain = True if ep_fields[18].lower() == 'yes' else False
+        snow = True if ep_fields[19].lower() == 'yes' else False
         if h_type == 'HumidityRatio':
-            h_val = float(lines[12])
+            h_val = float(ep_fields[12])
         elif h_type == 'Enthalpy':
-            h_val = float(lines[13])
+            h_val = float(ep_fields[13])
         humidity_condition = HumidityCondition(
-            h_type, h_val, float(lines[15]), lines[11])
+            h_type, h_val, float(ep_fields[15]), rain, snow, ep_fields[11])
 
         # extract wind conditions
-        wind_condition = WindCondition(
-            float(lines[16]), float(lines[17]), lines[18], lines[19])
+        wind_condition = WindCondition(float(ep_fields[16]), float(ep_fields[17]))
 
         # extract the sky conditions
-        sky_model = lines[21]
+        sky_model = ep_fields[21]
+        dl_save = True if ep_fields[20].lower() == 'yes' else False
         if sky_model == 'ASHRAEClearSky':
-            sky_condition = OriginalClearSkyCondition(
-                int(lines[2]), int(lines[3]), float(lines[26]), lines[20])
+            sky_condition = ASHRAEClearSky(
+                int(ep_fields[2]), int(ep_fields[3]), float(ep_fields[26]), dl_save)
         elif sky_model == 'ASHRAETau':
-            sky_condition = RevisedClearSkyCondition(
-                int(lines[2]), int(lines[3]), float(lines[24]),
-                float(lines[25]), lines[20])
+            sky_condition = ASHRAETau(
+                int(ep_fields[2]), int(ep_fields[3]), float(ep_fields[24]),
+                float(ep_fields[25]), dl_save)
         else:
-            sky_condition = SkyCondition(
-                sky_model, int(lines[2]), int(lines[3]), lines[20])
+            sky_condition = _SkyCondition(
+                sky_model, int(ep_fields[2]), int(ep_fields[3]), dl_save)
         if sky_model == 'Schedule':
-            sky_condition.beam_shced = lines[22]
-            sky_condition.diff_shced = lines[23]
+            sky_condition.beam_shcedule = ep_fields[22]
+            sky_condition.diff_shced = ep_fields[23]
 
         return cls(name, day_type, location, dry_bulb_condition,
                    humidity_condition, wind_condition, sky_condition)
@@ -412,7 +220,7 @@ class DesignDay(object):
     @classmethod
     def from_design_day_properties(cls, name, day_type, location, analysis_period,
                                    dry_bulb_max, dry_bulb_range, humidity_type,
-                                   humidity_value, barometric_p, wind_speed, wind_dir,
+                                   humidity_value, pressure, wind_speed, wind_dir,
                                    sky_model, sky_properties):
         """Create a design day object from various key properties.
 
@@ -427,26 +235,24 @@ class DesignDay(object):
             humidity_type: Type of humidity to use. Choose from
                 Wetbulb, Dewpoint, HumidityRatio, Enthalpy
             humidity_value: The value of the condition above.
-            barometric_p: Barometric pressure in Pa.
+            pressure: Barometric pressure in Pa.
             wind_speed: Wind speed over the design day in m/s.
             wind_dir: Wind direction over the design day in degrees.
-            sky_model: Type of solar model to use.  Choose from
+            sky_model: Type of solar model to use.  Choose from:
                 ASHRAEClearSky, ASHRAETau
             sky_properties: A list of properties describing the sky above.
                 For ASHRAEClearSky this is a single value for clearness
                 For ASHRAETau, this is the tau_beam and tau_diffuse
         """
-        dry_bulb_condition = DryBulbCondition(
-            dry_bulb_max, dry_bulb_range)
+        dry_bulb_condition = DryBulbCondition(dry_bulb_max, dry_bulb_range)
         humidity_condition = HumidityCondition(
-            humidity_type, humidity_value, barometric_p)
-        wind_condition = WindCondition(
-            wind_speed, wind_dir)
+            humidity_type, humidity_value, pressure)
+        wind_condition = WindCondition(wind_speed, wind_dir)
         if sky_model == 'ASHRAEClearSky':
-            sky_condition = OriginalClearSkyCondition.from_analysis_period(
+            sky_condition = ASHRAEClearSky.from_analysis_period(
                 analysis_period, sky_properties[0])
         elif sky_model == 'ASHRAETau':
-            sky_condition = RevisedClearSkyCondition.from_analysis_period(
+            sky_condition = ASHRAETau.from_analysis_period(
                 analysis_period, sky_properties[0], sky_properties[-1])
         return cls(name, day_type, location, dry_bulb_condition,
                    humidity_condition, wind_condition, sky_condition)
@@ -458,7 +264,7 @@ class DesignDay(object):
 
         Args:
             ashrae_dict: A dictionary with 15 keys that match those in the
-                heating_keys property of this object. Each key should
+                HEATING_KEYS property of this object. Each key should
                 correspond to a value.
             location: Location object for the design day
             use_990: Boolean to denote what type of design day to create
@@ -475,7 +281,7 @@ class DesignDay(object):
         hu_cond = HumidityCondition('Wetbulb', float(ashrae_dict[db_key]), pressure)
         ws_cond = WindCondition(float(ashrae_dict['WS_DB996']),
                                 float(ashrae_dict['WD_DB996']))
-        sky_cond = OriginalClearSkyCondition(int(ashrae_dict['Month']), 21, 0)
+        sky_cond = ASHRAEClearSky(int(ashrae_dict['Month']), 21, 0)
         name = '{}% Heating Design Day for {}'.format(perc_str, location.city)
         return cls(name, 'WinterDesignDay', location,
                    db_cond, hu_cond, ws_cond, sky_cond)
@@ -487,7 +293,7 @@ class DesignDay(object):
 
         Args:
             ashrae_dict: A dictionary with 32 keys that match those in the
-                cooling_keys property of this object. Each key should
+                COOLING_KEYS property of this object. Each key should
                 correspond to a value.
             location: Location object for the design day
             use_010: Boolean to denote what type of design day to create
@@ -512,68 +318,12 @@ class DesignDay(object):
                                 float(ashrae_dict['WD_DB004']))
         month_num = int(ashrae_dict['Month'])
         if tau is not None:
-            sky_cond = RevisedClearSkyCondition(month_num, 21, tau[0], tau[1])
+            sky_cond = ASHRAETau(month_num, 21, tau[0], tau[1])
         else:
-            sky_cond = OriginalClearSkyCondition(month_num, 21)
+            sky_cond = ASHRAEClearSky(month_num, 21)
         name = '{}% Cooling Design Day for {}'.format(perc_str, location.city)
         return cls(name, 'SummerDesignDay', location,
                    db_cond, hu_cond, ws_cond, sky_cond)
-
-    @property
-    def ep_style_string(self):
-        """Serialize object to an EnerygPlus SizingPeriod:DesignDay.
-
-        Returns:
-            ep_string -- A full string representing a SizingPeriod:DesignDay.
-        """
-        # Put together the values in the order that they exist in the ddy file
-        ep_vals = [self.name,
-                   self.sky_condition.month,
-                   self.sky_condition.day_of_month,
-                   self.day_type,
-                   self.dry_bulb_condition.dry_bulb_max,
-                   self.dry_bulb_condition.dry_bulb_range,
-                   self.dry_bulb_condition.modifier_type,
-                   self.dry_bulb_condition.modifier_schedule,
-                   self.humidity_condition.hum_type, '',
-                   self.humidity_condition.schedule, '', '',
-                   self.humidity_condition.wet_bulb_range,
-                   self.humidity_condition.barometric_pressure,
-                   self.wind_condition.wind_speed,
-                   self.wind_condition.wind_direction,
-                   self.wind_condition.rain,
-                   self.wind_condition.snow_on_ground,
-                   self.sky_condition.daylight_savings_indicator,
-                   self.sky_condition.solar_model,
-                   self.sky_condition.beam_shced,
-                   self.sky_condition.diff_sched, '', '', '']
-
-        # assign humidity values based on the type of criteria
-        if self.humidity_condition.hum_type == 'Wetbulb' or \
-                self.humidity_condition.hum_type == 'Dewpoint':
-                    ep_vals[9] = self.humidity_condition.hum_value
-        elif self.humidity_condition.hum_type == 'HumidityRatio':
-            ep_vals[11] = self.humidity_condition.hum_value
-        elif self.humidity_condition.hum_type == 'Enthalpy':
-            ep_vals[12] = self.humidity_condition.hum_value
-
-        # assign sky condition values based on the solar model
-        if self.sky_condition.solar_model == 'ASHRAEClearSky':
-            ep_vals[25] = self.sky_condition.clearness
-        if self.sky_condition.solar_model == 'ASHRAETau':
-            ep_vals[23] = self.sky_condition.tau_b
-            ep_vals[24] = self.sky_condition._tau_d
-            ep_vals.pop()
-
-        # put everything together into one string
-        comented_str = ['  {},{}{}\n'.format(
-            str(val), ' ' * (60 - len(str(val))), self.comments[i])
-                        for i, val in enumerate(ep_vals)]
-        comented_str[-1] = comented_str[-1].replace(',', ';')
-        comented_str.insert(0, 'SizingPeriod:DesignDay,\n')
-        comented_str.append('\n')
-
-        return ''.join(comented_str)
 
     @property
     def name(self):
@@ -593,7 +343,7 @@ class DesignDay(object):
 
     @day_type.setter
     def day_type(self, data):
-        assert data in self.day_types, 'day_type {} is not' \
+        assert data in self.DAY_TYPES, 'day_type {} is not' \
             ' recognized'.format(data)
         self._day_type = data
 
@@ -604,7 +354,7 @@ class DesignDay(object):
 
     @location.setter
     def location(self, data):
-        assert hasattr(data, 'isLocation'), 'Expected' \
+        assert isinstance(data, Location), 'Expected' \
             ' Location type. Got {}'.format(type(data))
         self._location = data
 
@@ -615,7 +365,7 @@ class DesignDay(object):
 
     @dry_bulb_condition.setter
     def dry_bulb_condition(self, data):
-        assert hasattr(data, 'isDryBulbCondition'), 'Expected' \
+        assert isinstance(data, DryBulbCondition), 'Expected' \
             ' DryBulbCondition type. Got {}'.format(type(data))
         self._dry_bulb_condition = data
 
@@ -626,7 +376,7 @@ class DesignDay(object):
 
     @humidity_condition.setter
     def humidity_condition(self, data):
-        assert hasattr(data, 'isHumidityCondition'), 'Expected' \
+        assert isinstance(data, HumidityCondition), 'Expected' \
             ' HumidityCondition type. Got {}'.format(type(data))
         self._humidity_condition = data
 
@@ -637,7 +387,7 @@ class DesignDay(object):
 
     @wind_condition.setter
     def wind_condition(self, data):
-        assert hasattr(data, 'isWindCondition'), 'Expected' \
+        assert isinstance(data, WindCondition), 'Expected' \
             ' WindCondition type. Got {}'.format(type(data))
         self._wind_condition = data
 
@@ -648,13 +398,13 @@ class DesignDay(object):
 
     @sky_condition.setter
     def sky_condition(self, data):
-        assert hasattr(data, 'isSkyCondition'), 'Expected' \
-            ' SkyCondition type. Got {}'.format(type(data))
+        assert isinstance(data, _SkyCondition), 'Expected ASHRAEClearSky or' \
+            ' ASHRAETau type. Got {}'.format(type(data))
         self._sky_condition = data
 
     @property
     def analysis_period(self):
-        """The analysisperiod of the design day."""
+        """Get the analysisperiod of the design day."""
         return AnalysisPeriod(
             self.sky_condition.month,
             self.sky_condition.day_of_month,
@@ -665,7 +415,9 @@ class DesignDay(object):
 
     @property
     def hourly_datetimes(self):
-        return self._sky_condition._get_datetimes()
+        """Get a list of hourly DateTime objects for the DesignDay."""
+        start_moy = DateTime(self._month, self._day_of_month).moy
+        return tuple(DateTime.from_moy(start_moy + (i * 60)) for i in xrange(24))
 
     @property
     def hourly_dry_bulb(self):
@@ -750,24 +502,63 @@ class DesignDay(object):
 
         return self._get_daily_data_collections(
             energyflux.HorizontalInfraredRadiationIntensity(), 'W/m2', horiz_ir)
+    
+    def to_idf(self):
+        """Get this object as an EnerygPlus IDF SizingPeriod:DesignDay string."""
+        # Put together the values in the order that they exist in the ddy file
+        ep_vals = [self.name,
+                   self.sky_condition.month,
+                   self.sky_condition.day_of_month,
+                   self.day_type,
+                   self.dry_bulb_condition.dry_bulb_max,
+                   self.dry_bulb_condition.dry_bulb_range,
+                   self.dry_bulb_condition.modifier_type,
+                   self.dry_bulb_condition.modifier_schedule,
+                   self.humidity_condition.humidity_type, '',
+                   self.humidity_condition.schedule, '', '',
+                   self.humidity_condition.wet_bulb_range,
+                   self.humidity_condition.barometric_pressure,
+                   self.wind_condition.wind_speed,
+                   self.wind_condition.wind_direction,
+                   'Yes' if self.humidity_condition.rain else 'No',
+                   'Yes' if self.humidity_condition.snow_on_ground else 'No',
+                   'Yes' if self.sky_condition.daylight_savings else 'No',
+                   'ASHRAEClearSky',
+                   self.sky_condition.beam_shcedule,
+                   self.sky_condition.diffuse_schedule, '', '', '']
 
-    def _get_daily_data_collections(self, data_type, unit, values):
-        """Return an empty data collection."""
-        data_header = Header(data_type=data_type, unit=unit,
-                             analysis_period=self.analysis_period,
-                             metadata={'source': self._location.source,
-                                       'country': self._location.country,
-                                       'city': self._location.city})
-        return HourlyContinuousCollection(data_header, values)
+        # assign humidity values based on the type of criteria
+        if self.humidity_condition.humidity_type == 'Wetbulb' or \
+                self.humidity_condition.humidity_type == 'Dewpoint':
+                    ep_vals[9] = self.humidity_condition.humidity_value
+        elif self.humidity_condition.humidity_type == 'HumidityRatio':
+            ep_vals[11] = self.humidity_condition.humidity_value
+        elif self.humidity_condition.humidity_type == 'Enthalpy':
+            ep_vals[12] = self.humidity_condition.humidity_value
 
-    @property
-    def isDesignDay(self):
-        """Return True."""
-        return True
+        # assign sky condition values based on the solar model
+        if isinstance(self.sky_condition, ASHRAEClearSky):
+            ep_vals[25] = self.sky_condition.clearness
+        if isinstance(self.sky_condition, ASHRAETau):
+            ep_vals[20] = 'ASHRAETau'
+            ep_vals[23] = self.sky_condition.tau_b
+            ep_vals[24] = self.sky_condition._tau_d
+            ep_vals.pop()
+
+        # put everything together into one string
+        comented_str = ['  {},{}{}\n'.format(
+            str(val), ' ' * (60 - len(str(val))), self.IDF_COMMENTS[i])
+                        for i, val in enumerate(ep_vals)]
+        comented_str[-1] = comented_str[-1].replace(',', ';')
+        comented_str.insert(0, 'SizingPeriod:DesignDay,\n')
+        comented_str.append('\n')
+
+        return ''.join(comented_str)
 
     def to_dict(self):
         """Convert the Design Day to a dictionary."""
         return {
+            'type': 'DesignDay',
             'name': self.name,
             'day_type': self.day_type,
             'location': self.location.to_dict(),
@@ -777,15 +568,48 @@ class DesignDay(object):
             'sky_condition': self.sky_condition.to_dict(),
             'type': 'DesignDay'
         }
+    
+    def _get_daily_data_collections(self, data_type, unit, values):
+        """Return an empty data collection."""
+        data_header = Header(data_type=data_type, unit=unit,
+                             analysis_period=self.analysis_period,
+                             metadata={'source': self._location.source,
+                                       'country': self._location.country,
+                                       'city': self._location.city})
+        return HourlyContinuousCollection(data_header, values)
+
+    def duplicate(self):
+        """Get a copy of this object."""
+        return self.__copy__()
 
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
 
+    def __copy__(self):
+        return DesignDay(
+            self._name, self._day_type, self._location.duplicate(),
+            self._dry_bulb_condition.duplicate(), self._humidity_condition.duplicate(),
+            self._wind_condition.duplicate(), self._sky_condition.duplicate())
+
+    def __key(self):
+        """A tuple based on the object properties, useful for hashing."""
+        return (self._name, self._day_type, hash(self._location),
+                hash(self._dry_bulb_condition), hash(self._humidity_condition),
+                hash(self._wind_condition), hash(self._sky_condition))
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, DesignDay) and self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __repr__(self):
         """Design day representation."""
-        return "Design Day - {} [{}]".format(
-            self.name, self._day_type)
+        return "Design Day - {} [{}]".format(self.name, self._day_type)
 
 
 class DryBulbCondition(object):
@@ -795,7 +619,7 @@ class DryBulbCondition(object):
         dry_bulb_max: The maximum dry bulb temperature on the design day [C].
         dry_bulb_range: The difference between mina dn max temperatures on the
             design day [C].
-        modifier_type: Text string for the type of modifier used to estimate
+        modifier_type: Optional string for the type of modifier used to estimate
             temperature at a given timestep. Choose from the following:
             'DefaultMultipliers', 'MultiplierSchedule', 'DifferenceSchedule',
             'TemperatureProfileSchedule'. Default: 'DefaultMultipliers'
@@ -806,12 +630,18 @@ class DryBulbCondition(object):
     Properties:
         * dry_bulb_max
         * dry_bulb_range
+        * modifier_type
+        * modifier_schedule
         * hourly_values
-        * temp_multipliers
     """
+    __slots__ = ('_dry_bulb_max', '_dry_bulb_range', 'modifier_type',
+                 'modifier_schedule')
+    HOURLY_MULTIPLIERS = (0.82, 0.88, 0.92, 0.95, 0.98, 1, 0.98, 0.91, 0.74, 0.55,
+                          0.38, 0.23, 0.13, 0.05, 0, 0, 0.06, 0.14, 0.24, 0.39, 0.5,
+                          0.59, 0.68, 0.75)
+
     def __init__(self, dry_bulb_max, dry_bulb_range,
                  modifier_type='DefaultMultipliers', modifier_schedule=''):
-        """Initalize the class."""
         self.dry_bulb_max = dry_bulb_max
         self.dry_bulb_range = dry_bulb_range
         self.modifier_type = str(modifier_type)
@@ -827,30 +657,28 @@ class DryBulbCondition(object):
         .. code-block:: python
 
             {
-            "dry_bulb_max": 0.0  # float,
-            "dry_bulb_range": 0.0  # float,
-            "modifier_type": ""  # string,
-            "modifier_schedule": ""  # string
+            "type": "DryBulbCondition",
+            "dry_bulb_max": 0.0,  # float
+            "dry_bulb_range": 0.0  # float
             }
         """
-        # Check required and optional keys
+        # check required keys
         required_keys = ('dry_bulb_max', 'dry_bulb_range')
-        optional_keys = {'modifier_type': 'DefaultMultipliers',
-                         'modifier_schedule': ''}
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
-        for key, val in optional_keys.items():
-            if key not in data:
-                data[key] = val
+        
+        # set defaults for optional keys
+        mod_type = data['modifier_type'] if 'modifier_type' in data \
+                else 'DefaultMultipliers'
+        mod_schedule = data['modifier_schedule'] if 'modifier_schedule' in data else ''
 
-        return cls(data['dry_bulb_max'], data['dry_bulb_range'], data['modifier_type'],
-                   data['modifier_schedule'])
+        return cls(data['dry_bulb_max'], data['dry_bulb_range'], mod_type, mod_schedule)
 
     @property
     def hourly_values(self):
-        """A list of temperature values for each hour over the design day."""
+        """Get a list of temperature values for each hour over the design day."""
         return [self._dry_bulb_max - self._dry_bulb_range * x for
-                x in self.temp_multipliers]
+                x in self.HOURLY_MULTIPLIERS]
 
     @property
     def dry_bulb_max(self):
@@ -876,34 +704,42 @@ class DryBulbCondition(object):
             ' zero. Got {}'.format(data)
         self._dry_bulb_range = data
 
-    @property
-    def temp_multipliers(self):
-        """Fractional multipliers for temperature change over the design day."""
-        return (0.82, 0.88, 0.92, 0.95, 0.98, 1, 0.98, 0.91, 0.74, 0.55,
-                0.38, 0.23, 0.13, 0.05, 0, 0, 0.06, 0.14, 0.24, 0.39, 0.5,
-                0.59, 0.68, 0.75)
-
-    @property
-    def isDryBulbCondition(self):
-        """Return True."""
-        return True
-
     def to_dict(self):
         """Convert the Dry Bulb Condition to a dictionary."""
         return {
+            'type': 'DryBulbCondition',
             'dry_bulb_max': self.dry_bulb_max,
-            'dry_bulb_range': self.dry_bulb_range,
-            'modifier_type': self.modifier_type,
-            'modifier_schedule': self.modifier_schedule,
-            'type': 'DryBulbCondition'
+            'dry_bulb_range': self.dry_bulb_range
         }
+
+    def duplicate(self):
+        """Get a copy of this object."""
+        return self.__copy__()
 
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
+    
+    def __copy__(self):
+        return DryBulbCondition(self._dry_bulb_max, self._dry_bulb_range,
+                                self.modifier_type, self.modifier_schedule)
+
+    def __key(self):
+        """A tuple based on the object properties, useful for hashing."""
+        return (self._dry_bulb_max, self._dry_bulb_range,
+                self.modifier_type, self.modifier_schedule)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, DryBulbCondition) and self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __repr__(self):
-        """dry bulb condition representation."""
+        """Dry bulb condition representation."""
         return "Dry Bulb Condition [Max: {}, Range: {}]".format(
             str(self._dry_bulb_max), str(self._dry_bulb_range))
 
@@ -912,28 +748,33 @@ class HumidityCondition(object):
     """Represents humidity conditions on the design day.
 
     Args:
-        hum_type: Choose from
-            Wetbulb, Dewpoint, HumidityRatio, Enthalpy
-        hum_value: The value of the condition above
+        humidity_type: Choose from: Wetbulb, Dewpoint, HumidityRatio, Enthalpy
+        humidity_value: The value of the condition above
         barometric_pressure: Default is to use pressure at sea level
         schedule: Optional humidity schedule
         wet_bulb_range: Optional wet bulb temperature range
 
     Properties:
-        * hum_type
-        * hum_value
+        * humidity_type
+        * humidity_value
         * barometric_pressure
+        * rain
+        * snow_on_ground
         * schedule
         * wet_bulb_range
         * hourly_pressure
-        * humid_types
     """
-    def __init__(self, hum_type, hum_value, barometric_pressure=101325,
-                 schedule='', wet_bulb_range=''):
-        """Initalize the class."""
-        self.hum_type = hum_type
-        self.hum_value = hum_value
+    __slots__ = ('_humidity_type', '_humidity_value', '_barometric_pressure',
+                 '_rain', '_snow_on_ground', 'schedule', 'wet_bulb_range')
+    HUMIDITY_TYPES = ('Wetbulb', 'Dewpoint', 'HumidityRatio', 'Enthalpy')
+
+    def __init__(self, humidity_type, humidity_value, barometric_pressure=101325,
+                 rain=False, snow_on_ground=False, schedule='', wet_bulb_range=''):
+        self.humidity_type = humidity_type
+        self.humidity_value = humidity_value
         self.barometric_pressure = barometric_pressure
+        self.rain = rain
+        self.snow_on_ground = snow_on_ground
         self.schedule = schedule
         self.wet_bulb_range = wet_bulb_range
 
@@ -947,25 +788,84 @@ class HumidityCondition(object):
         .. code-block:: python
 
             {
-            "hum_type": ""  # string,
-            "hum_value": 0.0  # float,
-            "barometric_pressure": 0.0  # float,
-            "schedule": {}  # string,
-            "wet_bulb_range": ""  # string
+            "type": "HumidityCondition",
+            "humidity_type": "",  # string
+            "humidity_value": 0.0,  # float
+            "barometric_pressure": 0.0,  # float
+            "rain": False,  # bool
+            "snow_on_ground": False  # bool
             }
         """
-        # Check required and optional keys
-        required_keys = ('hum_type', 'hum_value')
-        optional_keys = {'barometric_pressure': 101325,
-                         'schedule': '', 'wet_bulb_range': ''}
+        # check required keys
+        required_keys = ('humidity_type', 'humidity_value')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
-        for key, val in optional_keys.items():
-            if key not in data:
-                data[key] = val
 
-        return cls(data['hum_type'], data['hum_value'], data['barometric_pressure'],
-                   data['schedule'], data['wet_bulb_range'])
+        # set defaults for optional keys
+        press = data['barometric_pressure'] if 'barometric_pressure' in data else 101325
+        rain = data['rain'] if 'rain' in data else False
+        snow_on_ground = data['snow_on_ground'] if 'snow_on_ground' in data else False
+        sched = data['schedule'] if 'schedule' in data else ''
+        wet_bulb_range = data['wet_bulb_range'] if 'wet_bulb_range' in data else ''
+
+        return cls(data['humidity_type'], data['humidity_value'], press,
+                   rain, snow_on_ground, sched, wet_bulb_range)
+
+    @property
+    def humidity_type(self):
+        """Get or set the humidity condition type."""
+        return self._humidity_type
+
+    @humidity_type.setter
+    def humidity_type(self, data):
+        assert data in self.HUMIDITY_TYPES, 'humidity_type {} is not' \
+            ' recognized'.format(data)
+        self._humidity_type = data
+
+    @property
+    def humidity_value(self):
+        """Get or set the value of the humidity."""
+        return self._humidity_value
+
+    @humidity_value.setter
+    def humidity_value(self, data):
+        assert isinstance(data, (float, int)), 'humidity_value must be a' \
+            ' number. Got {}'.format(type(data))
+        self._humidity_value = data
+
+    @property
+    def barometric_pressure(self):
+        """Get or set the value of the barometric pressure."""
+        return self._barometric_pressure
+
+    @barometric_pressure.setter
+    def barometric_pressure(self, data):
+        assert isinstance(data, (float, int)), 'barometric_pressure must be a' \
+            ' number. Got {}'.format(type(data))
+        self._barometric_pressure = data
+
+    @property
+    def rain(self):
+        """Get or set a boolean for the presence of rain."""
+        return self._rain
+
+    @rain.setter
+    def rain(self, data):
+        self._rain = bool(data)
+
+    @property
+    def snow_on_ground(self):
+        """Get or set a boolean for the presence of snow on the ground."""
+        return self._snow_on_ground
+
+    @snow_on_ground.setter
+    def snow_on_ground(self, data):
+        self._snow_on_ground = bool(data)
+
+    @property
+    def hourly_pressure(self):
+        """Get a list of barometric pressures for each hour over the design day."""
+        return [self._barometric_pressure] * 24
 
     def hourly_dew_point_values(self, dry_bulb_condition):
         """Get a list of dew points (C) at each hour over the design day.
@@ -988,85 +888,60 @@ class HumidityCondition(object):
         Args:
             db: The maximum dry bulb temperature over the day.
         """
-        if self._hum_type == 'Dewpoint':
-            return self._hum_value
-        elif self._hum_type == 'Wetbulb':
+        if self._humidity_type == 'Dewpoint':
+            return self._humidity_value
+        elif self._humidity_type == 'Wetbulb':
             return dew_point_from_db_wb(
-                db, self._hum_value, self._barometric_pressure)
-        elif self._hum_type == 'HumidityRatio':
+                db, self._humidity_value, self._barometric_pressure)
+        elif self._humidity_type == 'HumidityRatio':
             return dew_point_from_db_hr(
-                db, self._hum_value, self._barometric_pressure)
-        elif self._hum_type == 'Enthalpy':
+                db, self._humidity_value, self._barometric_pressure)
+        elif self._humidity_type == 'Enthalpy':
             return dew_point_from_db_enth(
-                db, self._hum_value / 1000,  self._barometric_pressure)
-
-    @property
-    def hourly_pressure(self):
-        """A list of barometric pressures for each hour over the design day."""
-        return [self._barometric_pressure] * 24
-
-    @property
-    def hum_type(self):
-        """Get or set the humidity condition type."""
-        return self._hum_type
-
-    @hum_type.setter
-    def hum_type(self, data):
-        assert data in self.humid_types, 'hum_type {} is not' \
-            ' recognized'.format(data)
-        self._hum_type = data
-
-    @property
-    def hum_value(self):
-        """Get or set the value of the humidity."""
-        return self._hum_value
-
-    @hum_value.setter
-    def hum_value(self, data):
-        assert isinstance(data, (float, int)), 'hum_value must be a' \
-            ' number. Got {}'.format(type(data))
-        self._hum_value = data
-
-    @property
-    def barometric_pressure(self):
-        """Get or set the value of the barometric pressure."""
-        return self._barometric_pressure
-
-    @barometric_pressure.setter
-    def barometric_pressure(self, data):
-        assert isinstance(data, (float, int)), 'barometric_pressure must be a' \
-            ' number. Got {}'.format(type(data))
-        self._barometric_pressure = data
-
-    @property
-    def humid_types(self):
-        """Types of humidity conditions."""
-        return ('Wetbulb', 'Dewpoint', 'HumidityRatio', 'Enthalpy')
-
-    @property
-    def isHumidityCondition(self):
-        """Return True."""
-        return True
+                db, self._humidity_value / 1000,  self._barometric_pressure)
 
     def to_dict(self):
         """Convert the Humidity Condition to a dictionary."""
         return {
-            'hum_type': self.hum_type,
-            'hum_value': self.hum_value,
+            'type': 'HumidityCondition',
+            'humidity_type': self.humidity_type,
+            'humidity_value': self.humidity_value,
             'barometric_pressure': self.barometric_pressure,
-            'schedule': self.schedule,
-            'wet_bulb_range': self.wet_bulb_range,
-            'type': 'HumidityCondition'
+            'rain': self.rain,
+            'snow_on_ground': self.snow_on_ground
         }
+
+    def duplicate(self):
+        """Get a copy of this object."""
+        return self.__copy__()
 
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
+    
+    def __copy__(self):
+        return HumidityCondition(
+            self._humidity_type, self._humidity_value, self._barometric_pressure,
+            self._rain, self._snow_on_ground, self.schedule, self.wet_bulb_range)
+
+    def __key(self):
+        """A tuple based on the object properties, useful for hashing."""
+        return (self._humidity_type, self._humidity_value, self._barometric_pressure,
+                self._rain, self._snow_on_ground, self.schedule, self.wet_bulb_range)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, HumidityCondition) and self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __repr__(self):
-        """humidity condition representation."""
+        """Humidity condition representation."""
         return "HumidityCondition [{}: {}]".format(
-            self._hum_type, str(self._hum_value))
+            self._humidity_type, str(self._humidity_value))
 
 
 class WindCondition(object):
@@ -1081,18 +956,15 @@ class WindCondition(object):
     Properties:
         * wind_speed
         * wind_direction
-        * rain
-        * snow_on_ground
         * hourly_values
         * hourly_wind_dirs
     """
-    def __init__(self, wind_speed, wind_direction=0,
-                 rain=False, snow_on_ground=False):
+    __slots__ = ('_wind_speed', '_wind_direction')
+
+    def __init__(self, wind_speed, wind_direction=0):
         """Initalize the class."""
         self.wind_speed = wind_speed
         self.wind_direction = wind_direction
-        self.rain = rain
-        self.snow_on_ground = snow_on_ground
 
     @classmethod
     def from_dict(cls, data):
@@ -1104,21 +976,19 @@ class WindCondition(object):
         .. code-block:: python
 
             {
-            "wind_speed": 0.0  # float,
-            "wind_direction": 0.0  # float,
-            "rain": False  # bool,
-            "snow_on_ground": False  # bool
+            "type": "WindCondition",
+            "wind_speed": 3.0,  # float
+            "wind_direction": 0.0  # float
             }
         """
-        # Check required and optional keys
-        optional_keys = {'wind_direction': 0, 'rain': False, 'snow_on_ground': False}
+        # check required and optional keys
         assert 'wind_speed' in data, 'Required key "wind_speed" is missing!'
-        for key, val in optional_keys.items():
-            if key not in data:
-                data[key] = val
 
-        return cls(data['wind_speed'], data['wind_direction'], data['rain'],
-                   data['snow_on_ground'])
+        # set defaults for the optional keys
+        optional_keys = {'wind_direction': 0, 'rain': False, 'snow_on_ground': False}
+        wind_direction = data['wind_direction'] if 'wind_direction' in data else 0
+
+        return cls(data['wind_speed'], wind_direction)
 
     @property
     def hourly_values(self):
@@ -1154,91 +1024,79 @@ class WindCondition(object):
             ' 0 and 360'.format(data)
         self._wind_direction = data
 
-    @property
-    def rain(self):
-        """Get or set the presence of rain."""
-        return self._rain
-
-    @rain.setter
-    def rain(self, data):
-        if isinstance(data, bool):
-            if data is True:
-                data = 'Yes'
-            else:
-                data = 'No'
-        self._rain = data
-
-    @property
-    def snow_on_ground(self):
-        """Get or set the presence of snow on the ground."""
-        return self._snow_on_ground
-
-    @snow_on_ground.setter
-    def snow_on_ground(self, data):
-        if isinstance(data, bool):
-            if data is True:
-                data = 'Yes'
-            else:
-                data = 'No'
-        self._snow_on_ground = data
-
-    @property
-    def isWindCondition(self):
-        """Return True."""
-        return True
-
     def to_dict(self):
         """Convert the Wind Condition to a dictionary."""
         return {
+            'type': 'WindCondition',
             'wind_speed': self.wind_speed,
-            'wind_direction': self.wind_direction,
-            'rain': self.rain,
-            'snow_on_ground': self.snow_on_ground,
-            'type': 'WindCondition'
+            'wind_direction': self.wind_direction
         }
+
+    def duplicate(self):
+        """Get a copy of this object."""
+        return self.__copy__()
 
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
 
+    def __copy__(self):
+        return WindCondition(self._wind_speed, self._wind_direction)
+
+    def __key(self):
+        """A tuple based on the object properties, useful for hashing."""
+        return (self._wind_speed, self._wind_direction)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, WindCondition) and self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __repr__(self):
-        """wind condition representation."""
+        """Wind condition representation."""
         return "WindCondition [Speed: {}; Dir: {}]".format(
-            str(self._wind_speed), str(self._wind_direction))
+            self.wind_speed, self.wind_direction)
 
 
-class SkyCondition(object):
+class _SkyCondition(object):
     """An object representing a sky on the design day.
 
+    This is a base class for all solar models and the class of the specific desired
+    solar model should typically be used instead of this one.
+
     Args:
-        solar_model: Text for the name of the solar model to use. Choose from the
-            following: 'ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule'
         month: Month in which the design day occurs.
         day_of_month: Day of the month on which the design day occurs.
-        daylight_savings_indicator: Text ('Yes' or 'No'), for whether daylight savings
-            time is active. Default: 'No'
-        beam_shced: Schedule name for beam irradiance. Shoulb be an empty string unless
-            solar_model is 'Schedule'.
-        diff_sched: Schedule name for diffuse irradiance. Shoulb be an empty string
-            unless solar_model is 'Schedule'.
+        daylight_savings: Boolean to indicate whether daylight savings
+            time is active. Default: False
+        beam_shcedule: Schedule name for beam irradiance. Shoulb be an empty
+            string unless the solar model is 'Schedule'.
+        diffuse_schedule: Schedule name for diffuse irradiance. Shoulb be an
+            empty string unless solar model is 'Schedule'.
 
     Properties:
         * month
         * day_of_month
+        * daylight_savings
+        * beam_shcedule
+        * diffuse_schedule
         * hourly_sky_cover
-        * sky_types
-        * solar_model
     """
-    def __init__(self, solar_model, month, day_of_month,
-                 daylight_savings_indicator='No',
-                 beam_shced='', diff_sched=''):
-        """Initalize the class."""
-        self.solar_model = solar_model
+    __slots__ = ('_month', '_day_of_month', '_daylight_savings',
+                 'beam_shcedule', 'diffuse_schedule')
+    SOLAR_MODELS = ('ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule')
+
+    def __init__(self, month, day_of_month, daylight_savings=False,
+                 beam_shcedule='', diffuse_schedule=''):
         self.month = month
         self.day_of_month = day_of_month
-        self.daylight_savings_indicator = daylight_savings_indicator
-        self.beam_shced = beam_shced
-        self.diff_sched = diff_sched
+        self.daylight_savings = daylight_savings
+        self.beam_shcedule = beam_shcedule
+        self.diffuse_schedule = diffuse_schedule
 
     @classmethod
     def from_dict(cls, data):
@@ -1250,43 +1108,31 @@ class SkyCondition(object):
         .. code-block:: python
 
             {
-            "solar_model": ""  # string,
-            "month": 1  # int,
-            "day_of_month": 1  # int,
-            "daylight_savings_indicator": "No"  # string // "Yes" or "No"
+            "type": "SkyCondition",
+            "month": 1,  # int
+            "day_of_month": 1,  # int
+            "daylight_savings": False  # bool
             }
         """
-        # Check required and optional keys
-        required_keys = ('solar_model', 'month', 'day_of_month')
+        # process more detailed solar models into their respective classes
+        if data['type'] == 'ASHRAEClearSky':
+            return ASHRAEClearSky.from_dict(data)
+        if data['type'] == 'ASHRAETau':
+            return ASHRAETau.from_dict(data)
+
+        # check required keys
+        required_keys = ('month', 'day_of_month')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
 
-        if data['solar_model'] == 'ASHRAEClearSky':
-            return OriginalClearSkyCondition.from_dict(data)
-        if data['solar_model'] == 'ASHRAETau':
-            return RevisedClearSkyCondition.from_dict(data)
+        # assign defaults for optional keys
+        dl_save = data['daylight_savings'] if 'daylight_savings' \
+            in data else False
+        beam_shcedule = data['beam_shcedule'] if 'beam_shcedule' in data else ''
+        diffuse_schedule = data['diffuse_schedule'] if 'diffuse_schedule' in data else ''
 
-        if 'daylight_savings_indicator' not in data:
-            data['daylight_savings_indicator'] = 'No'
-        optional_keys = ('beam_shced', 'diff_sched')
-        for key in optional_keys:
-            if key not in data:
-                data[key] = ''
-
-        return cls(data['month'], data['day_of_month'], data['clearness'],
-                   data['daylight_savings_indicator'],
-                   data['beam_shced'], data['diff_sched'])
-
-    @property
-    def solar_model(self):
-        """Get or set the type of solar model."""
-        return self._solar_model
-
-    @solar_model.setter
-    def solar_model(self, data):
-        assert data in self.sky_types, 'solar_model {} is not' \
-            ' recognized as a valid solar model type'.format(data)
-        self._solar_model = data
+        return cls(data['month'], data['day_of_month'], dl_save,
+                   beam_shcedule, diffuse_schedule)
 
     @property
     def month(self):
@@ -1313,57 +1159,93 @@ class SkyCondition(object):
         assert 1 <= data <= 31, 'day_of_month {} is not between' \
             ' 1 and 31'.format(data)
         self._day_of_month = data
+    
+    @property
+    def daylight_savings(self):
+        """Get or set a boolean to indicate whether daylight savings time is active."""
+        return self._daylight_savings
+
+    @daylight_savings.setter
+    def daylight_savings(self, data):
+        self._daylight_savings = bool(data)
 
     @property
     def hourly_sky_cover(self):
-        """Lists of sky cover values in tenths.
-        """
+        """Get a lists of hourly sky cover values in tenths."""
         return [0] * 24
-
-    def _get_datetimes(self, timestep=1):
-        """List of datetimes based on design day date and timestep."""
-        start_moy = DateTime(self._month, self._day_of_month).moy
-        if timestep == 1:
-            start_moy = start_moy + 30
-        num_moys = 24 * timestep
-        return tuple(
-            DateTime.from_moy(start_moy + (i * (1 / timestep) * 60))
-            for i in xrange(num_moys)
-        )
-
-    @property
-    def sky_types(self):
-        """A list of possible sky types that can be associated with design days."""
-        return ('ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule')
-
-    @property
-    def isSkyCondition(self):
-        """Return True."""
-        return True
 
     def to_dict(self):
         """Convert the Sky Condition to a dictionary."""
         return {
-            'solar_model': self.solar_model,
+            'type': 'SkyCondition',
             'month': self.month,
             'day_of_month': self.day_of_month,
-            'daylight_savings_indicator': self.daylight_savings_indicator,
-            'beam_shced': self.beam_shced,
-            'diff_sched': self.diff_sched,
-            'type': 'SkyCondition'
+            'daylight_savings': self.daylight_savings,
+            'beam_shcedule': self.beam_shcedule,
+            'diffuse_schedule': self.diffuse_schedule
         }
+
+    def duplicate(self):
+        """Get a copy of this object."""
+        return self.__copy__()
+
+    def _get_datetimes(self, timestep=1):
+        """List of datetimes based on design day date and timestep.
+        
+        Note that these datetimes are always in standard time in order to be used
+        for solar positions. In other words, they correct from daylight savings time.
+        """
+        start_moy = DateTime(self._month, self._day_of_month).moy
+        if self._daylight_savings:  # spring time forward! (or move the sun back)
+            start_moy = start_moy - 60
+        if timestep == 1:
+            start_moy = start_moy + 30
+        num_moys = 24 * timestep
+        return tuple(DateTime.from_moy(start_moy + (i * (1 / timestep) * 60))
+                     for i in xrange(num_moys))
+    
+    @staticmethod
+    def _check_analysis_period(analysis_period):
+        """Check an AnalysisPeriod to be sure that it's suitable for a design day."""
+        assert isinstance(analysis_period, AnalysisPeriod), 'Expected' \
+            ' AnalysisPeriod type. Got {}'.format(type(analysis_period))
+        assert analysis_period.st_month == analysis_period.end_month and \
+            analysis_period.st_day == analysis_period.end_day and \
+            analysis_period.st_hour == 0 and analysis_period.end_hour == 23, \
+            'analysis_period "{}" does not represent a single day'.format(
+                analysis_period)
 
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
 
+    def __copy__(self):
+        return _SkyCondition(
+            self._month, self._day_of_month, self._daylight_savings,
+            self.beam_shcedule, self.diffuse_schedule)
+
+    def __key(self):
+        """A tuple based on the object properties, useful for hashing."""
+        return (self._month, self._day_of_month,
+                self._daylight_savings, self.beam_shcedule,
+                self.diffuse_schedule)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, _SkyCondition) and self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __repr__(self):
-        """sky condition representation."""
-        return "SkyCondition {} [Month: {}, Day: {}]".format(
-            self._solar_model, str(self._month), str(self._day_of_month))
+        """Sky condition representation."""
+        return "SkyCondition [Month: {}, Day: {}]".format(
+            str(self._month), str(self._day_of_month))
 
 
-class OriginalClearSkyCondition(SkyCondition):
+class ASHRAEClearSky(_SkyCondition):
     """An object representing an original ASHRAE Clear Sky.
 
     Args:
@@ -1371,33 +1253,31 @@ class OriginalClearSkyCondition(SkyCondition):
         day_of_month: Day of the month on which the design day occurs.
         clearness: Value between 0 and 1.2 that will get multiplied by the model's
             irradinace to correct for factors like elevation.
-        daylight_savings_indicator: Text ('Yes' or 'No'), for whether daylight savings
-            time is active. Default: 'No'
+        daylight_savings: Boolean to indicate whether daylight savings
+            time is active. Default: False
 
     Properties:
         * month
         * day_of_month
         * clearness
-        * daylight_savings_indicator
+        * daylight_savings
     """
-    def __init__(self, month, day_of_month, clearness=1,
-                 daylight_savings_indicator='No'):
-        """Init class."""
+    __slots__ = ('_clearness',)
+
+    def __init__(self, month, day_of_month, clearness=1, daylight_savings=False):
+        _SkyCondition.__init__(self, month, day_of_month, daylight_savings)
         self.clearness = clearness
-        SkyCondition.__init__(self, 'ASHRAEClearSky', month, day_of_month,
-                              daylight_savings_indicator)
 
     @classmethod
-    def from_analysis_period(cls, analysis_period, clearness=1,
-                             daylight_savings_indicator='No'):
-        """"Initialize a OriginalClearSkyCondition from an analysis_period"""
-        _check_analysis_period(analysis_period)
+    def from_analysis_period(cls, analysis_period, clearness=1, daylight_savings=False):
+        """"Initialize a ASHRAEClearSky from an analysis_period"""
+        cls._check_analysis_period(analysis_period)
         return cls(analysis_period.st_month, analysis_period.st_day, clearness,
-                   daylight_savings_indicator)
+                   daylight_savings)
 
     @classmethod
     def from_dict(cls, data):
-        """Create a Sky Condition from a dictionary.
+        """Create an ASHRAEClearSky condition from a dictionary.
 
         Args:
             data: A python dictionary in the following format
@@ -1405,22 +1285,23 @@ class OriginalClearSkyCondition(SkyCondition):
         .. code-block:: python
 
             {
-            "solar_model": ""  # string,
+            "type": "ASHRAEClearSky"
             "month": 1  # int,
             "day_of_month": 1  # int,
             "clearness": 0.0  # float,
-            "daylight_savings_indicator": "No"  # string // "Yes" or "No"
+            "daylight_savings": False  # bool
             }
         """
-        # Check required and optional keys
-        required_keys = ('solar_model', 'month', 'day_of_month', 'clearness')
+        # check required and optional keys
+        required_keys = ('type', 'month', 'day_of_month', 'clearness')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
-        if 'daylight_savings_indicator' not in data:
-            data['daylight_savings_indicator'] = 'No'
 
-        return cls(data['month'], data['day_of_month'], data['clearness'],
-                   data['daylight_savings_indicator'])
+        # assign defaults for optional keys
+        dl_save = data['daylight_savings'] if 'daylight_savings' \
+            in data else False
+
+        return cls(data['month'], data['day_of_month'], data['clearness'], dl_save)
 
     @property
     def clearness(self):
@@ -1431,23 +1312,17 @@ class OriginalClearSkyCondition(SkyCondition):
     def clearness(self, data):
         assert isinstance(data, (float, int)), 'clearness must be a' \
             ' number. Got {}'.format(type(data))
-        assert 0 <= data <= 1.2, 'clearness {} is not between' \
-            ' 0 and 1.2'.format(data)
+        assert 0 <= data <= 1.2, 'clearness {} is not between 0 and 1.2'.format(data)
         self._clearness = data
 
     @property
     def hourly_sky_cover(self):
-        """Lists of sky cover values in tenths.
-        """
-        if self._clearness > 1:
-            cover = 0
-        else:
-            cover = (1 - self._clearness) * 10
+        """Lists of sky cover values in tenths."""
+        cover = 0 if self._clearness > 1 else (1 - self._clearness) * 10
         return [cover] * 24
 
     def radiation_values(self, location, timestep=1):
-        """Lists of driect normal, diffuse horiz, and global horiz rad at each timestep.
-        """
+        """Get arrays of driect, diffuse, and global radiation at each timestep."""
         # create sunpath and get altitude at every timestep of the design day
         sp = Sunpath.from_location(location)
         altitudes = []
@@ -1462,18 +1337,39 @@ class OriginalClearSkyCondition(SkyCondition):
         return dir_norm, diff_horiz, glob_horiz
 
     def to_dict(self):
-        """Convert the Sky Condition to a dictionary."""
+        """Convert the ASHRAEClearSky to a dictionary."""
         return {
-            'solar_model': self.solar_model,
+            'type': 'ASHRAEClearSky',
             'month': self.month,
             'day_of_month': self.day_of_month,
             'clearness': self.clearness,
-            'daylight_savings_indicator': self.daylight_savings_indicator,
-            'type': 'OriginalClearSkyCondition'
+            'daylight_savings': self.daylight_savings,
         }
+    
+    def __copy__(self):
+        return ASHRAEClearSky(
+            self._month, self._day_of_month, self._clearness, self._daylight_savings)
+
+    def __key(self):
+        """A tuple based on the object properties, useful for hashing."""
+        return (self._month, self._day_of_month, self._clearness, self._daylight_savings)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, ASHRAEClearSky) and self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        """sky condition representation."""
+        return "ASHRAEClearSky [Month: {}, Day: {}]".format(
+            str(self._month), str(self._day_of_month))
 
 
-class RevisedClearSkyCondition(SkyCondition):
+class ASHRAETau(_SkyCondition):
     """An object representing an ASHRAE Revised Clear Sky (Tau model).
 
     Args:
@@ -1483,37 +1379,34 @@ class RevisedClearSkyCondition(SkyCondition):
             found in .stat files.
         tau_d: Value for the 'diffuse' term in the Tau model. Typically
             found in .stat files.
-        daylight_savings_indicator: Text ('Yes' or 'No'), for whether daylight savings
-            time is active. Default: 'No'
+        daylight_savings: Boolean to indicate whether daylight savings
+            time is active. Default: False
 
     Properties:
-        * day_of_month
-        * hourly_sky_cover
         * month
-        * sky_types
-        * solar_model
+        * day_of_month
         * tau_b
         * tau_d
+        * daylight_savings
+        * hourly_sky_cover
     """
-    def __init__(self, month, day_of_month, tau_b, tau_d,
-                 daylight_savings_indicator='No'):
-        """Init class."""
+    __slots__ = ('_tau_b', '_tau_d')
+
+    def __init__(self, month, day_of_month, tau_b, tau_d, daylight_savings=False):
+        _SkyCondition.__init__(self, month, day_of_month, daylight_savings)
         self.tau_b = tau_b
         self.tau_d = tau_d
-        SkyCondition.__init__(self, 'ASHRAETau', month, day_of_month,
-                              daylight_savings_indicator)
 
     @classmethod
-    def from_analysis_period(cls, analysis_period, tau_b, tau_d,
-                             daylight_savings_indicator='No'):
-        """"Initialize a RevisedClearSkyCondition from an analysis_period"""
-        _check_analysis_period(analysis_period)
+    def from_analysis_period(cls, analysis_period, tau_b, tau_d, daylight_savings=False):
+        """"Initialize a ASHRAETau sky condition from an analysis_period"""
+        cls._check_analysis_period(analysis_period)
         return cls(analysis_period.st_month, analysis_period.st_day, tau_b, tau_d,
-                   daylight_savings_indicator)
+                   daylight_savings)
 
     @classmethod
     def from_dict(cls, data):
-        """Create a Sky Condition from a dictionary.
+        """Create a ASHRAETau sky condition from a dictionary.
 
         Args:
             data: A python dictionary in the following format
@@ -1521,23 +1414,25 @@ class RevisedClearSkyCondition(SkyCondition):
         .. code-block:: python
 
             {
-            "solar_model": ""  # string,
-            "month": 1  # int,
-            "day_of_month": 1  # int,
-            "tau_b": 0.0  # float,
-            "tau_d": 0.0  # float,
-            "daylight_savings_indicator": "No"  #string // "Yes" or "No"
+            "type": "ASHRAETau",
+            "month": 1,  # int
+            "day_of_month": 1,  # int
+            "tau_b": 0.0,  # float
+            "tau_d": 0.0,  # float
+            "daylight_savings": False  # bool
             }
         """
-        # Check required and optional keys
-        required_keys = ('solar_model', 'month', 'day_of_month', 'tau_b', 'tau_d')
+        # check required keys
+        required_keys = ('month', 'day_of_month', 'tau_b', 'tau_d')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
-        if 'daylight_savings_indicator' not in data:
-            data['daylight_savings_indicator'] = 'No'
+        
+        # assign defaults for optional keys
+        dl_save = data['daylight_savings'] if 'daylight_savings' \
+            in data else False
 
         return cls(data['month'], data['day_of_month'], data['tau_b'], data['tau_d'],
-                   data['daylight_savings_indicator'])
+                   dl_save)
 
     @property
     def tau_b(self):
@@ -1562,8 +1457,7 @@ class RevisedClearSkyCondition(SkyCondition):
         self._tau_d = data
 
     def radiation_values(self, location, timestep=1):
-        """Lists of driect normal, diffuse horiz, and global horiz rad at each timestep.
-        """
+        """Gat arrays of driect, diffuse, and global radiation at each timestep."""
         # create sunpath and get altitude at every timestep of the design day
         sp = Sunpath.from_location(location)
         altitudes = []
@@ -1580,21 +1474,33 @@ class RevisedClearSkyCondition(SkyCondition):
     def to_dict(self):
         """Convert the Sky Condition to a dictionary."""
         return {
-            'solar_model': self.solar_model,
+            'type': 'ASHRAETau',
             'month': self.month,
             'day_of_month': self.day_of_month,
             'tau_b': self.tau_b,
             'tau_d': self.tau_d,
-            'daylight_savings_indicator': self.daylight_savings_indicator,
-            'type': 'RevisedClearSkyCondition'
+            'daylight_savings': self.daylight_savings
         }
 
+    def __copy__(self):
+        return ASHRAETau(self._month, self._day_of_month, self._tau_b, self._tau_d,
+                         self._daylight_savings)
 
-def _check_analysis_period(analysis_period):
-    assert hasattr(analysis_period, 'isAnalysisPeriod'), 'Expected' \
-        ' AnalysisPeriod type. Got {}'.format(type(analysis_period))
-    assert analysis_period.st_month == analysis_period.end_month and \
-        analysis_period.st_day == analysis_period.end_day and \
-        analysis_period.st_hour == 0 and analysis_period.end_hour == 23, \
-        'analysis_period "{}" does not represent a single day'.format(
-            analysis_period)
+    def __key(self):
+        """A tuple based on the object properties, useful for hashing."""
+        return (self._month, self._day_of_month, self._tau_b, self._tau_d,
+                self._daylight_savings)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, ASHRAETau) and self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        """sky condition representation."""
+        return "ASHRAETau [Month: {}, Day: {}]".format(
+            str(self._month), str(self._day_of_month))

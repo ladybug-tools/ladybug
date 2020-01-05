@@ -7,8 +7,8 @@ from .designday import DesignDay
 from .designday import DryBulbCondition
 from .designday import HumidityCondition
 from .designday import WindCondition
-from .designday import RevisedClearSkyCondition
-from .designday import OriginalClearSkyCondition
+from .designday import ASHRAETau
+from .designday import ASHRAEClearSky
 
 import os
 import re
@@ -296,10 +296,10 @@ class STAT(object):
 
             # pull out annual design days
             winter_vals = self._regex_parse(self._heat_pattern)
-            for key, val in zip(DesignDay.heating_keys, winter_vals):
+            for key, val in zip(DesignDay.HEATING_KEYS, winter_vals):
                 self._winter_des_day_dict[key] = val
             summer_vals = self._regex_parse(self._cool_pattern)
-            for key, val in zip(DesignDay.cooling_keys, summer_vals):
+            for key, val in zip(DesignDay.COOLING_KEYS, summer_vals):
                 self._summer_des_day_dict[key] = val
 
             # Pull out relevant monthly information
@@ -640,8 +640,8 @@ class STAT(object):
     def monthly_clear_sky_conditions(self):
         """A list of 12 monthly clear sky conditions that are used on the design days."""
         if self._monthly_tau_diffuse is [] or self._monthly_tau_beam is []:
-            return [OriginalClearSkyCondition(i, 21) for i in xrange(1, 13)]
-        return [RevisedClearSkyCondition(i, 21, x, y) for i, x, y in zip(
+            return [ASHRAEClearSky(i, 21) for i in xrange(1, 13)]
+        return [ASHRAETau(i, 21, x, y) for i, x, y in zip(
             list(xrange(1, 13)), self._monthly_tau_beam, self._monthly_tau_diffuse)]
 
     @property

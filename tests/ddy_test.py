@@ -3,7 +3,8 @@ from pytest import approx
 import os
 from ladybug.location import Location
 from ladybug.analysisperiod import AnalysisPeriod
-from ladybug.designday import DDY, DesignDay
+from ladybug.designday import DesignDay
+from ladybug.ddy import DDY
 
 
 def test_import_ddy():
@@ -27,6 +28,8 @@ def test_dict_methods():
     ddy_dict = ddy.to_dict()
     reconstructed_ddy = DDY.from_dict(ddy_dict)
     assert ddy_dict == reconstructed_ddy.to_dict()
+    for dday1, dday2 in zip(ddy.design_days, reconstructed_ddy.design_days):
+        assert dday1 == dday2
 
 
 def test_ddy_from_design_day():
@@ -42,7 +45,7 @@ def test_write_ddy():
     """Test write ddy."""
     relative_path = './tests/fixtures/ddy/chicago.ddy'
     ddy = DDY.from_ddy_file(relative_path)
-    new_file_path = './tests/ddy/chicago_edited.ddy'
+    new_file_path = './tests/fixtures/ddy/chicago_edited.ddy'
     ddy.save(new_file_path)
 
 
@@ -61,9 +64,37 @@ def test_standard_ddy_properties():
 
     assert len(ddy.design_days) == 18
     for des_day in ddy.design_days:
-        assert hasattr(des_day, 'isDesignDay')
+        assert isinstance(des_day, DesignDay)
     assert len(ddy.filter_by_keyword('.4%')) == 4
     assert len(ddy.filter_by_keyword('99.6%')) == 3
+
+
+def test_duplicate():
+    """Test duplicate method for the DDY object."""
+    relative_path = './tests/fixtures/ddy/chicago_monthly.ddy'
+    ddy = DDY.from_ddy_file(relative_path)
+    ddy_dup = ddy.duplicate()
+
+    assert ddy is ddy
+    assert ddy is not ddy_dup
+    assert ddy == ddy_dup
+    ddy_dup[0].dry_bulb_condition.dry_bulb_max = 40
+    assert ddy != ddy_dup
+
+
+def test_duplicate_design_day():
+    """Test duplicate method for the DesignDay object."""
+    relative_path = './tests/fixtures/ddy/chicago_monthly.ddy'
+    ddy = DDY.from_ddy_file(relative_path)
+
+    des_day = ddy[0]
+    des_day_dup = des_day.duplicate()
+
+    assert des_day is des_day
+    assert des_day is not des_day_dup
+    assert des_day == des_day_dup
+    des_day_dup.dry_bulb_condition.dry_bulb_max = 40
+    assert des_day != des_day_dup
 
 
 def test_monthly_ddy_properties():
@@ -80,7 +111,7 @@ def test_monthly_ddy_properties():
 
     assert len(ddy.design_days) == 12
     for des_day in ddy.design_days:
-        assert hasattr(des_day, 'isDesignDay')
+        assert isinstance(des_day, DesignDay)
         assert des_day.day_type == 'SummerDesignDay'
 
 

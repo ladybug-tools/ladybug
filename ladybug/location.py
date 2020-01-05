@@ -23,7 +23,6 @@ class Location(object):
         * city
         * country
         * elevation
-        * ep_style_location_string
         * latitude
         * longitude
         * meridian
@@ -103,9 +102,7 @@ class Location(object):
                            longitude=location.Longitude)
 
             elif location.startswith('Site:'):
-                loc, city, latitude, longitude, time_zone, elevation = \
-                    [x.strip() for x in re.findall(r'\r*\n*([^\r\n]*)[,|;]',
-                                                   location, re.DOTALL)]
+                return cls.from_idf(location)
             else:
                 try:
                     city, latitude, longitude, time_zone, elevation = \
@@ -122,6 +119,24 @@ class Location(object):
         except Exception as e:
             raise ValueError(
                 "Failed to create a Location from %s!\n%s" % (location, e))
+    
+    @classmethod
+    def from_idf(cls, idf_string):
+        """Create a Ladybug location from an EnergyPlus IDF string.
+
+        Args:
+            idf_string: A full IDF string representing a Site:Location.
+        """
+        # format the object into a list of properties
+        idf_string = idf_string.strip()
+        assert idf_string.startswith('Site:Location'), 'Expected Site' \
+            ':Location but received a differet object: {}'.format(idf_string)
+        idf_string = idf_string.replace(';', ',')
+        idf_string = re.sub(r'!.*\n', '', idf_string)
+        ep_fields = [e_str.strip() for e_str in idf_string.split(',')]
+        ep_fields.pop(0)  # reomve the EnergyPlus ojbect name
+        return cls(city=ep_fields[0], latitude=ep_fields[1], longitude=ep_fields[2],
+                   time_zone=ep_fields[3], elevation=ep_fields[4])
 
     @property
     def isLocation(self):
@@ -174,30 +189,27 @@ class Location(object):
     def meridian(self):
         """Location meridian west of Greenwich."""
         return -15 * self.time_zone
+    
+    @property
+    def ep_style_location_string(self):
+        """Get an EnergyPlus location string.
+        
+        DO NOT USE THIS METHOD AS IT WILL BE DEPRECATED SOON. Use to_idf instead.
+        """
+        return self.to_idf()
 
     def duplicate(self):
         """Duplicate location."""
-        return Location(self.city, self.state, self.country,
-                        self.latitude, self.longitude, self.time_zone, self.elevation,
-                        self.station_id, self.source)
+        return self.__copy__()
 
-    @property
-    def ep_style_location_string(self):
-        """Return EnergyPlus's location string."""
+    def to_idf(self):
+        """Get the Location as an EnergyPlus IDF string."""
         return "Site:Location,\n  " + \
             self.city + ',\n  ' + \
             str(self.latitude) + ',      !Latitude\n  ' + \
             str(self.longitude) + ',     !Longitude\n  ' + \
             str(self.time_zone) + ',     !Time Zone\n  ' + \
             str(self.elevation) + ';       !Elevation'
-
-    def __str__(self):
-        """Return location as a string."""
-        return "%s" % (self.ep_style_location_string)
-
-    def ToString(self):
-        """Overwrite .NET ToString."""
-        return self.__repr__()
 
     def to_dict(self):
         """Get location as a a dictionary."""
@@ -213,6 +225,33 @@ class Location(object):
             "source": self.source,
             "type": 'Location'
         }
+    
+    def ToString(self):
+        """Overwrite .NET ToString."""
+        return self.__repr__()
+
+    def __copy__(self):
+        return Location(self.city, self.state, self.country,
+                        self.latitude, self.longitude, self.time_zone, self.elevation,
+                        self.station_id, self.source)
+
+    def __key(self):
+        """A tuple based on the object properties, useful for hashing."""
+        return (self.city, self.state, self.country, self.latitude, self.longitude,
+                self.time_zone, self.elevation, self.station_id, self.source)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, Location) and self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __str__(self):
+        """Return location as a string."""
+        return "%s" % (self.to_idf())
 
     def __repr__(self):
         """Return location as a string."""
