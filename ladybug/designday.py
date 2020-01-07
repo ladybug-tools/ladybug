@@ -274,8 +274,8 @@ class DesignDay(object):
                 creation of the humidity condition. Default is 101325 Pa
                 for pressure at sea level.
         """
-        db_key = 'DB996' if use_990 is False else 'DB990'
-        perc_str = '99.6' if use_990 is False else '99.0'
+        db_key = 'DB996' if not use_990 else 'DB990'
+        perc_str = '99.6' if not use_990 else '99.0'
         pressure = pressure if pressure is not None else 101325
         db_cond = DryBulbCondition(float(ashrae_dict[db_key]), 0)
         hu_cond = HumidityCondition('Wetbulb', float(ashrae_dict[db_key]), pressure)
@@ -308,9 +308,9 @@ class DesignDay(object):
                 and the second is for the tau diffuse value.  Default is
                 None, which will default to the original ASHRAE Clear Sky.
         """
-        db_key = 'DB004' if use_010 is False else 'DB010'
-        wb_key = 'WB_DB004' if use_010 is False else 'WB_DB010'
-        perc_str = '0.4' if use_010 is False else '1.0'
+        db_key = 'DB004' if not use_010 else 'DB010'
+        wb_key = 'WB_DB004' if not use_010 else 'WB_DB010'
+        perc_str = '0.4' if not use_010 else '1.0'
         pressure = pressure if pressure is not None else 101325
         db_cond = DryBulbCondition(float(ashrae_dict[db_key]), float(ashrae_dict['DBR']))
         hu_cond = HumidityCondition('Wetbulb', float(ashrae_dict[wb_key]), pressure)

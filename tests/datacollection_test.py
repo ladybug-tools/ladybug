@@ -69,7 +69,7 @@ def test_init_hourly():
     assert dc1.datetimes == (dt1, dt2)
     assert dc1.values == (v1, v2)
     assert dc1.average == avg
-    assert dc1.is_continuous is False
+    assert not dc1.is_continuous
     str(dc1)  # Test the string representation of the collection
     str(dc1.header)  # Test the string representation of the header
 
@@ -86,7 +86,7 @@ def test_init_daily():
     assert dc1.datetimes == tuple(a_per.doys_int)
     assert dc1.values == (v1, v2)
     assert dc1.average == avg
-    assert dc1.is_continuous is False
+    assert not dc1.is_continuous
     str(dc1)  # Test the string representation of the collection
     str(dc1.header)  # Test the string representation of the header
 
@@ -103,7 +103,7 @@ def test_init_monthly():
     assert dc1.datetimes == tuple(a_per.months_int)
     assert dc1.values == (v1, v2)
     assert dc1.average == avg
-    assert dc1.is_continuous is False
+    assert not dc1.is_continuous
     str(dc1)  # Test the string representation of the collection
     str(dc1.header)  # Test the string representation of the header
 
@@ -120,7 +120,7 @@ def test_init_monthly_per_hour():
     assert dc1.datetimes == tuple(a_per.months_per_hour)
     assert dc1.values == tuple(vals)
     assert dc1.average == avg
-    assert dc1.is_continuous is False
+    assert not dc1.is_continuous
     str(dc1)  # Test the string representation of the collection
     str(dc1.header)  # Test the string representation of the header
 
@@ -135,7 +135,7 @@ def test_init_continuous():
     assert len(dc1.datetimes) == 8760
     assert list(dc1.values) == list(xrange(8760))
     assert dc1.average == 4379.5
-    assert dc1.is_continuous is True
+    assert dc1.is_continuous
     str(dc1)  # Test the string representation of the collection
     str(dc1.header)  # Test the string representation of the header
 
@@ -200,8 +200,8 @@ def test_validate_a_period_hourly():
     dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
                                         [v1, v2], [dt2, dt1])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
     assert dc1.datetimes == (dt2, dt1)
     assert dc1_new.datetimes == (dt1, dt2)
 
@@ -210,8 +210,8 @@ def test_validate_a_period_hourly():
     dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per_2),
                                         [v1, v2], [dt1, dt2])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
     assert dc1.header.analysis_period == a_per_2
     assert dc1_new.header.analysis_period == AnalysisPeriod(
         6, 20, 12, 6, 21, 23)
@@ -240,8 +240,8 @@ def test_validate_a_period_hourly():
     dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
                                         [v1, v2, v2], [dt1, dt3, dt2])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
     assert dc1.header.analysis_period.timestep == 1
     assert dc1_new.header.analysis_period.timestep == 2
 
@@ -250,10 +250,10 @@ def test_validate_a_period_hourly():
     dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
                                         [v1, v2, v2], [dt1, dt4, dt2])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
-    assert dc1.header.analysis_period.is_leap_year is False
-    assert dc1_new.header.analysis_period.is_leap_year is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
+    assert not dc1.header.analysis_period.is_leap_year
+    assert dc1_new.header.analysis_period.is_leap_year
 
     # Test that duplicated datetimes are caught
     dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
@@ -272,8 +272,8 @@ def test_validate_a_period_daily():
     dc1 = DailyCollection(Header(Temperature(), 'C', a_per),
                           [v1, v2], [dt2, dt1])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
     assert dc1.datetimes == (dt2, dt1)
     assert dc1_new.datetimes == (dt1, dt2)
 
@@ -282,8 +282,8 @@ def test_validate_a_period_daily():
     dc1 = DailyCollection(Header(Temperature(), 'C', a_per_2),
                           [v1, v2], [dt1, dt2])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
     assert dc1.header.analysis_period == a_per_2
     assert dc1_new.header.analysis_period == AnalysisPeriod(
         6, 20, 0, 6, 22, 23)
@@ -312,10 +312,10 @@ def test_validate_a_period_daily():
     dc1 = DailyCollection(Header(Temperature(), 'C', a_per),
                           [v1, v2, v2], [dt1, dt2, 366])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
-    assert dc1.header.analysis_period.is_leap_year is False
-    assert dc1_new.header.analysis_period.is_leap_year is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
+    assert not dc1.header.analysis_period.is_leap_year
+    assert dc1_new.header.analysis_period.is_leap_year
 
     # Test that duplicated datetimes are caught
     dc1 = DailyCollection(Header(Temperature(), 'C', a_per),
@@ -334,8 +334,8 @@ def test_validate_a_period_monthly():
     dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per),
                             [v1, v2], [dt2, dt1])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
     assert dc1.datetimes == (dt2, dt1)
     assert dc1_new.datetimes == (dt1, dt2)
 
@@ -344,8 +344,8 @@ def test_validate_a_period_monthly():
     dc1 = MonthlyCollection(Header(Temperature(), 'C', a_per_2),
                             [v1, v2], [dt1, dt2])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
     assert dc1.header.analysis_period == a_per_2
     assert dc1_new.header.analysis_period == AnalysisPeriod(
         6, 1, 0, 7, 31, 23)
@@ -391,8 +391,8 @@ def test_validate_a_period_monthly_per_hour():
     dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per),
                                    [v1, v2], [dt2, dt1])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
     assert dc1.datetimes == (dt2, dt1)
     assert dc1_new.datetimes == (dt1, dt2)
 
@@ -401,8 +401,8 @@ def test_validate_a_period_monthly_per_hour():
     dc1 = MonthlyPerHourCollection(Header(Temperature(), 'C', a_per_2),
                                    [v1, v2], [dt1, dt2])
     dc1_new = dc1.validate_analysis_period()
-    assert dc1.validated_a_period is False
-    assert dc1_new.validated_a_period is True
+    assert not dc1.validated_a_period
+    assert dc1_new.validated_a_period
     assert dc1.header.analysis_period == a_per_2
     assert dc1_new.header.analysis_period == AnalysisPeriod(
         6, 1, 12, 7, 31, 23)
@@ -742,7 +742,7 @@ def test_average_daily():
     assert len(new_dc) == 365
     assert new_dc.datetimes[0] == 1
     assert new_dc.datetimes[-1] == 365
-    assert new_dc.is_continuous is True
+    assert new_dc.is_continuous
     for i, val in dc.group_by_day().items():
         assert new_dc[i - 1] == sum(val) / len(val)
 
@@ -757,7 +757,7 @@ def test_total_daily():
     assert len(new_dc) == 365
     assert new_dc.datetimes[0] == 1
     assert new_dc.datetimes[-1] == 365
-    assert new_dc.is_continuous is True
+    assert new_dc.is_continuous
     for i, val in dc.group_by_day().items():
         assert new_dc[i - 1] == sum(val)
 
@@ -772,7 +772,7 @@ def test_percentile_daily():
     assert len(new_dc) == 365
     assert new_dc.datetimes[0] == 1
     assert new_dc.datetimes[-1] == 365
-    assert new_dc.is_continuous is True
+    assert new_dc.is_continuous
     for i, val in dc.group_by_day().items():
         assert new_dc[i - 1] == 5.75
 
@@ -787,7 +787,7 @@ def test_average_monthly():
     assert len(new_dc) == 12
     assert new_dc.datetimes[0] == 1
     assert new_dc.datetimes[-1] == 12
-    assert new_dc.is_continuous is True
+    assert new_dc.is_continuous
     for i, val in dc.group_by_month().items():
         assert new_dc[i - 1] == sum(val) / len(val)
 
@@ -802,7 +802,7 @@ def test_total_monthly():
     assert len(new_dc) == 12
     assert new_dc.datetimes[0] == 1
     assert new_dc.datetimes[-1] == 12
-    assert new_dc.is_continuous is True
+    assert new_dc.is_continuous
     for i, val in dc.group_by_month().items():
         assert new_dc[i - 1] == sum(val)
 
@@ -817,7 +817,7 @@ def test_percentile_monthly():
     assert len(new_dc) == 12
     assert new_dc.datetimes[0] == 1
     assert new_dc.datetimes[-1] == 12
-    assert new_dc.is_continuous is True
+    assert new_dc.is_continuous
     for i, val in dc.group_by_month().items():
         assert new_dc[i - 1] == 50
 
@@ -872,7 +872,7 @@ def test_average_monthly_per_hour():
     assert len(new_dc) == 12 * 24
     assert new_dc.datetimes[0] == (1, 0)
     assert new_dc.datetimes[-1] == (12, 23)
-    assert new_dc.is_continuous is True
+    assert new_dc.is_continuous
     for i, val in enumerate(dc.group_by_month_per_hour().values()):
         assert new_dc[i] == sum(val) / len(val)
 
@@ -887,7 +887,7 @@ def test_total_monthly_per_hour():
     assert len(new_dc) == 12 * 24
     assert new_dc.datetimes[0] == (1, 0)
     assert new_dc.datetimes[-1] == (12, 23)
-    assert new_dc.is_continuous is True
+    assert new_dc.is_continuous
     for i, val in enumerate(dc.group_by_month_per_hour().values()):
         assert new_dc[i] == sum(val)
 
@@ -902,7 +902,7 @@ def test_percentile_monthly_per_hour():
     assert len(new_dc) == 12 * 24
     assert new_dc.datetimes[0] == (1, 0)
     assert new_dc.datetimes[-1] == (12, 23)
-    assert new_dc.is_continuous is True
+    assert new_dc.is_continuous
     pct_vals = list(xrange(24)) * 12
     for i, val in enumerate(pct_vals):
         assert new_dc[i] == val
@@ -1193,7 +1193,7 @@ def test_is_in_range_data_type():
     dc2 = HourlyContinuousCollection(header1, val2)
     dc3 = HourlyContinuousCollection(header2, val3)
     dc4 = HourlyContinuousCollection(header2, val4)
-    assert dc1.is_in_data_type_range(raise_exception=False) is True
-    assert dc2.is_in_data_type_range(raise_exception=False) is False
-    assert dc3.is_in_data_type_range(raise_exception=False) is True
-    assert dc4.is_in_data_type_range(raise_exception=False) is False
+    assert dc1.is_in_data_type_range(raise_exception=False)
+    assert not dc2.is_in_data_type_range(raise_exception=False)
+    assert dc3.is_in_data_type_range(raise_exception=False)
+    assert not dc4.is_in_data_type_range(raise_exception=False)

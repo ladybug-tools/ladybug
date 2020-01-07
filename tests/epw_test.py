@@ -20,10 +20,10 @@ def test_import_epw():
     assert epw.file_path == abs_path
     assert epw.location.city == 'Chicago Ohare Intl Ap'
     # Check that calling location getter only retrieves location
-    assert epw.is_data_loaded is False
+    assert not epw.is_data_loaded
     dbt = epw.dry_bulb_temperature
     skyt = epw.sky_temperature  # test sky temperature calculation
-    assert epw.is_data_loaded is True
+    assert epw.is_data_loaded
     assert len(dbt) == 8760
     assert len(skyt) == 8760
 
@@ -32,20 +32,20 @@ def test_import_tokyo_epw():
     """Test import standard epw from another location."""
     path = './tests/fixtures/epw/tokyo.epw'
     epw = EPW(path)
-    assert epw.is_header_loaded is False
+    assert not epw.is_header_loaded
     assert epw.location.city == 'Tokyo'
-    assert epw.is_header_loaded is True
-    assert epw.is_data_loaded is False
+    assert epw.is_header_loaded
+    assert not epw.is_data_loaded
     dbt = epw.dry_bulb_temperature
-    assert epw.is_data_loaded is True
+    assert epw.is_data_loaded
     assert len(dbt) == 8760
 
 
 def test_epw_from_missing_values():
     """Test import custom epw with wrong types."""
     epw = EPW.from_missing_values()
-    assert epw.is_header_loaded is True
-    assert epw.is_data_loaded is True
+    assert epw.is_header_loaded
+    assert epw.is_data_loaded
     assert len(epw.dry_bulb_temperature) == 8760
     assert list(epw.dry_bulb_temperature.values) == [99.9] * 8760
 

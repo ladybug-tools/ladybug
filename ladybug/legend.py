@@ -314,7 +314,7 @@ class Legend(object):
         """Point2D for the title in the 2D space of the legend."""
         _l_par = self.legend_parameters
         if _l_par.vertical:
-            offset = 0.5 if self.legend_parameters.continuous_legend is True else 0.25
+            offset = 0.5 if self.legend_parameters.continuous_legend else 0.25
             return Point2D(0, _l_par.segment_height * (self.segment_length + offset))
         else:
             return Point2D(-_l_par.segment_width * self.segment_length,
@@ -616,7 +616,7 @@ class LegendParameters(object):
 
         If True, the colors generated from the corresponding legend will be in a
         continuous gradient. If False, they will be categorized in incremental
-        groups according to the segment_count. Default is True for continuous colors.
+        groups according to the segment_count. Default: True for continuous colors.
         """
         return self._continuous_colors
 
@@ -636,7 +636,7 @@ class LegendParameters(object):
         If True, the legend mesh will be drawn vertex-by-vertex resulting in a
         continuous gradient instead of discrete segments. If False, the mesh will be
         generated with one face for each of the segment_counts.
-        Default is False for depicting discrete categories.
+        Default: False for depicting discrete categories.
         """
         return self._continuous_legend
 
@@ -712,7 +712,7 @@ class LegendParameters(object):
     def include_larger_smaller(self):
         """Boolean noting whether > and < should be included in legend segment text.
 
-         Default is False.
+         Default: False.
          """
         return self._include_larger_smaller
 
@@ -724,7 +724,7 @@ class LegendParameters(object):
     def vertical(self):
         """Boolean noting whether legend is vertical (True) of horizontal (False).
 
-        Default is True for a vertically-oriented legend.
+        Default: True for a vertically-oriented legend.
         """
         return self._vertical
 

@@ -356,7 +356,7 @@ class BaseCollection(object):
         else:
             if self._enumeration is None:
                 self._get_mutable_enumeration()
-            if mutable is False:
+            if not mutable:
                 col_obj = self._enumeration['immutable'][self._collection_type]
             else:
                 col_obj = self._enumeration['mutable'][self._collection_type]
@@ -456,7 +456,7 @@ class BaseCollection(object):
             first_coll = data_collections[0]
             for coll in data_collections[1:]:
                 if not first_coll.is_collection_aligned(coll):
-                    if raise_exception is True:
+                    if raise_exception:
                         error_msg = '{} Data Collection is not aligned with '\
                             '{} Data Collection.'.format(
                                 first_coll.header.data_type, coll.header.data_type)
@@ -666,7 +666,7 @@ class BaseCollection(object):
     def _get_mutable_enumeration(self):
         self._enumeration = {'mutable': {}, 'immutable': {}}
         for clss in self._all_subclasses(BaseCollection):
-            if clss._mutable is True:
+            if clss._mutable:
                 self._enumeration['mutable'][clss._collection_type] = clss
             else:
                 self._enumeration['immutable'][clss._collection_type] = clss

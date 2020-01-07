@@ -49,7 +49,7 @@ class Wea(object):
         timestep: An integer to set the number of time steps per hour.
             Default is 1 for one value per hour.
         is_leap_year: A boolean to indicate if values are representing a leap year.
-            Default is False.
+            Default: False.
 
     Properties:
         * datetimes
@@ -161,7 +161,7 @@ class Wea(object):
                 Default is 1 for one value per hour. If the wea file has a time step
                 smaller than an hour adjust this input accordingly.
             is_leap_year: A boolean to indicate if values are representing a leap year.
-                Default is False.
+                Default: False.
         """
         assert os.path.isfile(wea_file), 'Failed to find {}'.format(wea_file)
         location = Location()
@@ -241,7 +241,7 @@ class Wea(object):
             timestep: An optional integer to set the number of time steps per
                 hour. Default is 1 for one value per hour.
             is_leap_year: A boolean to indicate if values are representing a leap year.
-                Default is False.
+                Default: False.
         """
         stat = STAT(statfile)
 
@@ -284,7 +284,7 @@ class Wea(object):
             timestep: An optional integer to set the number of time steps per
                 hour. Default is 1 for one value per hour.
             is_leap_year: A boolean to indicate if values are representing a leap year.
-                Default is False.
+                Default: False.
         """
         # extract metadata
         metadata = {'source': location.source, 'country': location.country,
@@ -340,7 +340,7 @@ class Wea(object):
             timestep: An optional integer to set the number of time steps per
                 hour. Default is 1 for one value per hour.
             is_leap_year: A boolean to indicate if values are representing a leap year.
-                Default is False.
+                Default: False.
         """
         # extract metadata
         metadata = {'source': location.source, 'country': location.country,
@@ -403,9 +403,9 @@ class Wea(object):
             timestep: An optional integer to set the number of time steps per
                 hour. Default is 1 for one value per hour.
             is_leap_year: A boolean to indicate if values are representing a leap year.
-                Default is False.
+                Default: False.
             use_disc: Set to True to use the original DISC model as opposed to the
-                newer and more accurate DIRINT model. Default is False.
+                newer and more accurate DIRINT model. Default: False.
         """
         # check input data
         assert len(cloud_cover) == len(relative_humidity) == \
@@ -652,7 +652,7 @@ class Wea(object):
                 srf_dir = dnr * math.cos(vec_angle)
 
             # diffuse irradiance on surface
-            if isotrophic is True:
+            if isotrophic:
                 srf_dif = dhr * ((math.sin(math.radians(altitude)) / 2) + 0.5)
             else:
                 y = max(0.45, 0.55 + (0.437 * math.cos(vec_angle)) + 0.313 *

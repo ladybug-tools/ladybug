@@ -18,7 +18,7 @@ def test_default_values():
     assert ap.st_day == 1
     assert ap.end_day == 31
     assert ap.timestep == 1
-    assert ap.is_leap_year is False
+    assert not ap.is_leap_year
     assert len(ap.datetimes) == 8760
 
 

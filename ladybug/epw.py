@@ -338,7 +338,7 @@ class EPW(object):
     def annual_heating_design_day_996(self):
         """A design day object representing the annual 99.6% heating design day."""
         self._load_header_check()
-        if bool(self._heating_dict) is True:
+        if bool(self._heating_dict):
             avg_press = self.atmospheric_station_pressure.average
             avg_press = None if avg_press == 999999 else avg_press
             return DesignDay.from_ashrae_dict_heating(
@@ -350,7 +350,7 @@ class EPW(object):
     def annual_heating_design_day_990(self):
         """A design day object representing the annual 99.0% heating design day."""
         self._load_header_check()
-        if bool(self._heating_dict) is True:
+        if bool(self._heating_dict):
             avg_press = self.atmospheric_station_pressure.average
             avg_press = None if avg_press == 999999 else avg_press
             return DesignDay.from_ashrae_dict_heating(
@@ -362,7 +362,7 @@ class EPW(object):
     def annual_cooling_design_day_004(self):
         """A design day object representing the annual 0.4% cooling design day."""
         self._load_header_check()
-        if bool(self._cooling_dict) is True:
+        if bool(self._cooling_dict):
             avg_press = self.atmospheric_station_pressure.average
             avg_press = None if avg_press == 999999 else avg_press
             return DesignDay.from_ashrae_dict_cooling(
@@ -374,7 +374,7 @@ class EPW(object):
     def annual_cooling_design_day_010(self):
         """A design day object representing the annual 1.0% cooling design day."""
         self._load_header_check()
-        if bool(self._cooling_dict) is True:
+        if bool(self._cooling_dict):
             avg_press = self.atmospheric_station_pressure.average
             avg_press = None if avg_press == 999999 else avg_press
             return DesignDay.from_ashrae_dict_cooling(
@@ -472,7 +472,7 @@ class EPW(object):
         self._load_header_check()
         assert isinstance(data, dict), 'monthly_ground_temperature' \
             ' must be an OrderedDict. Got {}.'.format(type(data))
-        if bool(data) is True:
+        if bool(data):
             for val in data.values():
                 assert isinstance(val, MonthlyCollection), 'monthly_ground_temperature' \
                     ' must contain MonthlyCollection objects. Got {}.'.format(type(val))
@@ -493,7 +493,7 @@ class EPW(object):
         """Check if an input design condition dictionary is acceptable."""
         assert isinstance(des_dict, dict), '{}' \
             ' must be a dictionary. Got {}.'.format(cond_name, type(des_dict))
-        if bool(des_dict) is True:
+        if bool(des_dict):
             input_keys = list(des_dict.keys())
             for key in req_keys:
                 assert key in input_keys, 'Required key "{}" was not found in ' \
@@ -503,7 +503,7 @@ class EPW(object):
         """Check if input for the typical/extreme weeks of the header is correct."""
         assert isinstance(data, dict), '{}' \
             ' must be an OrderedDict. Got {}.'.format(week_type, type(data))
-        if bool(data) is True:
+        if bool(data):
             for val in data.values():
                 assert isinstance(val, AnalysisPeriod), '{} dictionary must contain' \
                     ' AnalysisPeriod objects. Got {}.'.format(week_type, type(val))
@@ -621,7 +621,7 @@ class EPW(object):
                 return
 
             # read first line of data to overwrite the number of fields
-            if original_header_load is True:
+            if original_header_load:
                 for i in xrange(7):
                     epwin.readline()
             line = epwin.readline()
@@ -661,7 +661,7 @@ class EPW(object):
             # if the first value is at 1 AM, move last item to start position
             for field_number in xrange(self._num_of_fields):
                 point_in_time = headers[field_number].data_type.point_in_time
-                if point_in_time is True:
+                if point_in_time:
                     # move the last hour to first position
                     last_hour = self._data[field_number].pop()
                     self._data[field_number].insert(0, last_hour)
@@ -692,7 +692,7 @@ class EPW(object):
         else:
             des_str = 'DESIGN CONDITIONS,0\n'
         weeks = []
-        if bool(self.extreme_hot_weeks) is True:
+        if bool(self.extreme_hot_weeks):
             for wk_name, a_per in self.extreme_hot_weeks.items():
                 weeks.append(self._format_week(wk_name, 'Extreme', a_per))
         if bool(self.extreme_cold_weeks):
@@ -708,7 +708,7 @@ class EPW(object):
             grnd_st = grnd_st + ',{},{}'.format(
                 depth, self._format_grndt(self._monthly_ground_temps[depth]))
         grnd_st = grnd_st + '\n'
-        leap_yr = 'Yes' if self._is_leap_year is True else 'No'
+        leap_yr = 'Yes' if self._is_leap_year else 'No'
         leap_str = 'HOLIDAYS/DAYLIGHT SAVINGS,{},{},{},0\n'.format(
             leap_yr, self.daylight_savings_start, self.daylight_savings_end)
         c_str1 = 'COMMENTS 1,{}\n'.format(self.comments_1)
@@ -740,7 +740,7 @@ class EPW(object):
         if not self.is_data_loaded:
             self._import_data()
         originally_ip = False
-        if self.is_ip is True:
+        if self.is_ip:
             self.convert_to_si()
             originally_ip = True
 
@@ -750,7 +750,7 @@ class EPW(object):
             # if the first value is at 1AM, move first item to end position
             for field in xrange(0, self._num_of_fields):
                 point_in_time = self._data[field].header.data_type.point_in_time
-                if point_in_time is True:
+                if point_in_time:
                     first_hour = self._data[field]._values.pop(0)
                     self._data[field]._values.append(first_hour)
 
@@ -773,11 +773,11 @@ class EPW(object):
             # move last item to start position for fields on the hour
             for field in xrange(0, self._num_of_fields):
                 point_in_time = self._data[field].header.data_type.point_in_time
-                if point_in_time is True:
+                if point_in_time:
                     last_hour = self._data[field]._values.pop()
                     self._data[field]._values.insert(0, last_hour)
 
-        if originally_ip is True:
+        if originally_ip:
             self.convert_to_ip()
 
         return file_path
@@ -789,7 +789,7 @@ class EPW(object):
         EPW should be in Imperial units."""
         if not self.is_data_loaded:
             self._import_data()
-        if self.is_ip is False:
+        if not self.is_ip:
             for coll in self._data:
                 coll.convert_to_ip()
         self._is_ip = True
@@ -802,7 +802,7 @@ class EPW(object):
         from EPW data."""
         if not self.is_data_loaded:
             self._import_data()
-        if self.is_ip is True:
+        if self.is_ip:
             for coll in self._data:
                 coll.convert_to_si()
         self._is_ip = False
@@ -1326,7 +1326,7 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
             file_path += '.wea'
 
         originally_ip = False
-        if self.is_ip is True:
+        if self.is_ip:
             self.convert_to_si()
             originally_ip = True
 
@@ -1347,7 +1347,7 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         file_data = ''.join(lines)
         write_to_file(file_path, file_data, True)
 
-        if originally_ip is True:
+        if originally_ip:
             self.convert_to_ip()
 
         return file_path

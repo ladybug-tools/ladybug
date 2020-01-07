@@ -47,8 +47,8 @@ def test_daylight_saving():
     sp = Sunpath.from_location(nyc, daylight_saving_period=daylight_saving)
     dt1 = DateTime(6, 21, 12, 0)
     dt2 = DateTime(12, 21, 12, 0)
-    assert sp.is_daylight_saving_hour(dt1) is True
-    assert sp.is_daylight_saving_hour(dt2) is False
+    assert sp.is_daylight_saving_hour(dt1)
+    assert not sp.is_daylight_saving_hour(dt2)
 
 
 def test_leap_year():

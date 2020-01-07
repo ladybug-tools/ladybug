@@ -62,15 +62,15 @@ class GraphicContainer(object):
                 unit = data_type.units[0] if unit is None else unit
                 data_type.is_unit_acceptable(unit)
                 self.legend_parameters.title = unit if \
-                    self.legend_parameters.vertical is True \
+                    self.legend_parameters.vertical \
                     else '{} ({})'.format(data_type.name, unit)
             if data_type.unit_descr is not None and \
                     self.legend_parameters.ordinal_dictionary is None:
                 self.legend_parameters.ordinal_dictionary = data_type.unit_descr
                 sorted_keys = sorted(data_type.unit_descr.keys())
-                if self.legend.is_min_default is True:
+                if self.legend.is_min_default:
                     self.legend_parameters.min = sorted_keys[0]
-                if self.legend.is_max_default is True:
+                if self.legend.is_max_default:
                     self.legend_parameters.max = sorted_keys[-1]
                 if self.legend_parameters.is_segment_count_default:
                     try:  # try to set the number of segments to align with ordinal text
