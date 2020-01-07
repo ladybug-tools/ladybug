@@ -50,8 +50,8 @@ class GenericType(DataTypeBase):
             'boolean. Got {}.'.format(type(point_in_time))
         assert isinstance(cumulative, bool), 'cumulative must be a ' \
             'boolean. Got {}.'.format(type(cumulative))
-        if point_in_time is True:
-            assert cumulative is False, 'cumulative cannot be True when ' \
+        if point_in_time:
+            assert not cumulative, 'cumulative cannot be True when ' \
                 'point_in_time is also True.'
 
         self._name = name

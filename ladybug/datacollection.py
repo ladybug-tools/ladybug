@@ -282,7 +282,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
             linear interpolation.
         """
         # validate analysis_period and use the resulting period to generate datetimes
-        assert self.validated_a_period is True, 'validated_a_period property must be' \
+        assert self.validated_a_period, 'validated_a_period property must be' \
             ' True to use interpolate_holes(). Run validate_analysis_period().'
         mins_per_step = int(60 / self.header.analysis_period.timestep)
         new_datetimes = self.header.analysis_period.datetimes
@@ -419,7 +419,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 n_ap[6] = int(60 / mins_per_step)
 
         # check that the analysis_period leap_year is correct.
-        if a_per.is_leap_year is False:
+        if not a_per.is_leap_year:
             for date_t in sort_datetimes:
                 if date_t.month == 2 and date_t.day == 29:
                     n_ap[7] = True
@@ -655,12 +655,12 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
         # divide cumulative values by the timestep
         native_cumulative = self.header.data_type.cumulative
-        if cumulative is True or (cumulative is None and native_cumulative):
+        if cumulative or (cumulative is None and native_cumulative):
             for i, d in enumerate(_new_values):
                 _new_values[i] = d / timestep
 
         # shift data by a half-hour if data is averaged or cumulative over an hour
-        if self.header.data_type.point_in_time is False:
+        if not self.header.data_type.point_in_time:
             shift_dist = int(timestep / 2)
             _new_values = _new_values[-shift_dist:] + _new_values[:-shift_dist]
 
@@ -763,10 +763,10 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """
         t_s = 60 / self.header.analysis_period.timestep
         st_ind = self.header.analysis_period.st_time.moy / t_s
-        if self.header.analysis_period.is_reversed is False:
+        if not self.header.analysis_period.is_reversed:
             _filt_indices = [int(moy / t_s - st_ind) for moy in moys]
         else:
-            if self.header.analysis_period.is_leap_year is False:
+            if not self.header.analysis_period.is_leap_year:
                 eoy_ind = 8759 * self.header.analysis_period.timestep - st_ind
             else:
                 eoy_ind = 8783 * self.header.analysis_period.timestep - st_ind
@@ -881,7 +881,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         else:
             if self._enumeration is None:
                 self._get_mutable_enumeration()
-            if mutable is False:
+            if not mutable:
                 col_obj = self._enumeration['immutable'][self._collection_type]
             else:
                 col_obj = self._enumeration['mutable'][self._collection_type]
@@ -954,10 +954,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             n_ap[3] = self.header.analysis_period.end_month
             n_ap[4] = self.header.analysis_period.end_day
             new_needed = True
-        if new_needed is False:
+        if not new_needed:
             return a_per
-        else:
-            return AnalysisPeriod(*n_ap)
+        return AnalysisPeriod(*n_ap)
 
     def _check_values(self, values):
         """Check values whenever they come through the values setter."""
@@ -966,7 +965,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             'values should be a list or tuple. Got {}'.format(type(values))
         if self.header.analysis_period.is_annual:
             a_period_len = 8760 * self.header.analysis_period.timestep
-            if self.header.analysis_period.is_leap_year is True:
+            if self.header.analysis_period.is_leap_year:
                 a_period_len = a_period_len + 24 * self.header.analysis_period.timestep
         else:
             a_period_len = len(self.header.analysis_period.moys)
@@ -1118,7 +1117,7 @@ class DailyCollection(BaseCollection):
                 a_per.end_day, a_per.end_hour, a_per.timestep, a_per.is_leap_year]
 
         # check that the analysis_period leap_year is correct.
-        if a_per.is_leap_year is False:
+        if not a_per.is_leap_year:
             for date_t in self.datetimes:
                 if date_t == 366:
                     n_ap[7] = True
@@ -1203,7 +1202,7 @@ class DailyCollection(BaseCollection):
     @property
     def is_continuous(self):
         """Boolean denoting whether the data collection is continuous."""
-        if self._validated_a_period is True and \
+        if self._validated_a_period and \
                 len(self.values) == len(self.header.analysis_period.doys_int):
             return True
         else:
@@ -1353,7 +1352,7 @@ class MonthlyCollection(BaseCollection):
     @property
     def is_continuous(self):
         """Boolean denoting whether the data collection is continuous."""
-        if self._validated_a_period is True and \
+        if self._validated_a_period and \
                 len(self.values) == len(self.header.analysis_period.months_int):
             return True
         else:
@@ -1518,7 +1517,7 @@ class MonthlyPerHourCollection(BaseCollection):
     def is_continuous(self):
         """Boolean denoting whether the data collection is continuous."""
         a_per = self.header.analysis_period
-        if self._validated_a_period is True and a_per.st_hour == 0 and a_per.end_hour \
+        if self._validated_a_period and a_per.st_hour == 0 and a_per.end_hour \
                 == 23 and len(self.values) == len(a_per.months_per_hour):
             return True
         else:

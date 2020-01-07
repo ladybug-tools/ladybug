@@ -467,7 +467,7 @@ class STAT(object):
     @property
     def annual_heating_design_day_996(self):
         """A design day object representing the annual 99.6% heating design day."""
-        if bool(self._winter_des_day_dict) is True:
+        if bool(self._winter_des_day_dict):
             return DesignDay.from_ashrae_dict_heating(
                 self._winter_des_day_dict, self.location, False,
                 self._stand_press_at_elev)
@@ -477,7 +477,7 @@ class STAT(object):
     @property
     def annual_heating_design_day_990(self):
         """A design day object representing the annual 99.0% heating design day."""
-        if bool(self._winter_des_day_dict) is True:
+        if bool(self._winter_des_day_dict):
             return DesignDay.from_ashrae_dict_heating(
                 self._winter_des_day_dict, self.location, True,
                 self._stand_press_at_elev)
@@ -487,7 +487,7 @@ class STAT(object):
     @property
     def annual_cooling_design_day_004(self):
         """A design day object representing the annual 0.4% cooling design day."""
-        if bool(self._summer_des_day_dict) is True:
+        if bool(self._summer_des_day_dict):
             tau = None
             month_num = int(self._summer_des_day_dict['Month'])
             if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
@@ -504,7 +504,7 @@ class STAT(object):
     @property
     def annual_cooling_design_day_010(self):
         """A design day object representing the annual 1.0% cooling design day."""
-        if bool(self._summer_des_day_dict) is True:
+        if bool(self._summer_des_day_dict):
             tau = None
             month_num = int(self._summer_des_day_dict['Month'])
             if self._monthly_tau_beam != [] and self._monthly_tau_diffuse != [] \
@@ -521,7 +521,7 @@ class STAT(object):
     @property
     def monthly_cooling_design_days_050(self):
         """A list of 12 objects representing monthly 5.0% cooling design days."""
-        if self.monthly_found is False or self._monthly_db_50 == [] \
+        if not self.monthly_found or self._monthly_db_50 == [] \
                 or self._monthly_wb_50 == []:
             return []
         else:
@@ -540,7 +540,7 @@ class STAT(object):
     @property
     def monthly_cooling_design_days_100(self):
         """A list of 12 objects representing monthly 10.0% cooling design days."""
-        if self.monthly_found is False or self._monthly_db_100 == [] \
+        if not self.monthly_found or self._monthly_db_100 == [] \
                 or self._monthly_wb_100 == []:
             return []
         else:
@@ -559,7 +559,7 @@ class STAT(object):
     @property
     def monthly_cooling_design_days_020(self):
         """A list of 12 objects representing monthly 2.0% cooling design days."""
-        if self.monthly_found is False or self._monthly_db_20 == [] \
+        if not self.monthly_found or self._monthly_db_20 == [] \
                 or self._monthly_wb_20 == []:
             return []
         else:
@@ -578,7 +578,7 @@ class STAT(object):
     @property
     def monthly_cooling_design_days_004(self):
         """A list of 12 objects representing monthly 0.4% cooling design days."""
-        if self.monthly_found is False or self._monthly_db_04 == [] \
+        if not self.monthly_found or self._monthly_db_04 == [] \
                 or self._monthly_wb_04 == []:
             return []
         else:

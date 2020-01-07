@@ -98,7 +98,7 @@ def ashrae_revised_clear_sky(altitudes, tb, td, use_2017_model=False):
     dir_norm_rad = []
     dif_horiz_rad = []
 
-    if use_2017_model is True:
+    if use_2017_model:
         ab = 1.454 - (0.406 * tb) - (0.268 * td) - (0.021 * tb * td)
         ad = 0.507 + (0.205 * tb) - (0.080 * td) - (0.190 * tb * td)
     else:
@@ -197,7 +197,7 @@ def zhang_huang_solar_split(altitudes, doys, cloud_cover, relative_humidity,
         atm_pressure: A list of float values that represent the
             atmospheric pressure in Pa.
         use_disc: Set to True to use the original DISC model as opposed to the
-            newer and more accurate DIRINT model. Default is False.
+            newer and more accurate DIRINT model. Default: False.
 
     Returns:
         A tuple with two elements
@@ -215,7 +215,7 @@ def zhang_huang_solar_split(altitudes, doys, cloud_cover, relative_humidity,
                                 dry_bulb_present[i], dry_bulb_t3_hrs[i], wind_speed[i])
         glob_ir.append(ghi)
 
-    if use_disc is False:
+    if not use_disc:
         # Calculate dew point temperature to improve the splitting of direct + diffuse
         temp_dew = [dew_point_from_db_rh(dry_bulb_present[i], relative_humidity[i])
                     for i in xrange(len(glob_ir))]
@@ -517,7 +517,7 @@ def dirint(ghi, altitudes, doys, pressures, use_delta_kt_prime=True,
         disc_dni.append(dni)
 
     # calculate delta_kt_prime values
-    if use_delta_kt_prime is True:
+    if use_delta_kt_prime:
         delta_kt_prime = []
         for i in xrange(len(kt_primes)):
             try:

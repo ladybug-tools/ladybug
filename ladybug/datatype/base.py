@@ -89,8 +89,7 @@ class DataTypeBase(object):
             raise_exception: Set to True to raise an exception if not acceptable.
         """
         _is_acceptable = unit in self.units
-
-        if _is_acceptable or raise_exception is False:
+        if _is_acceptable or not raise_exception:
             return _is_acceptable
         else:
             raise ValueError(
@@ -316,7 +315,7 @@ class _DataTypeEnumeration(object):
     _GENERICTYPE = None
 
     def __init__(self, import_modules=True):
-        if import_modules is True:
+        if import_modules:
             self._import_modules()
 
         for clss in DataTypeBase.__subclasses__():

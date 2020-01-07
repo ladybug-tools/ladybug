@@ -33,10 +33,10 @@ def test_init_graphic_con():
     assert isinstance(graphic_con.legend, Legend)
     assert graphic_con.value_colors == graphic_con.legend.value_colors
 
-    assert graphic_con.legend_parameters.is_base_plane_default is False
-    assert graphic_con.legend_parameters.is_segment_height_default is False
-    assert graphic_con.legend_parameters.is_segment_width_default is True
-    assert graphic_con.legend_parameters.is_text_height_default is True
+    assert not graphic_con.legend_parameters.is_base_plane_default
+    assert not graphic_con.legend_parameters.is_segment_height_default
+    assert graphic_con.legend_parameters.is_segment_width_default
+    assert graphic_con.legend_parameters.is_text_height_default
     assert graphic_con.legend_parameters.base_plane != Plane()
 
     assert isinstance(graphic_con.lower_title_location, Plane)
@@ -97,11 +97,11 @@ def test_init_graphic_con_legend_parameters():
     legend_par.text_height = 0.15
     graphic_con = GraphicContainer(data, mesh3d.min, mesh3d.max, legend_par)
 
-    assert graphic_con.legend_parameters.is_base_plane_default is False
-    assert graphic_con.legend_parameters.is_segment_height_default is False
-    assert graphic_con.legend_parameters.is_segment_width_default is False
-    assert graphic_con.legend_parameters.is_text_height_default is False
-    assert graphic_con.legend_parameters.vertical is False
+    assert not graphic_con.legend_parameters.is_base_plane_default
+    assert not graphic_con.legend_parameters.is_segment_height_default
+    assert not graphic_con.legend_parameters.is_segment_width_default
+    assert not graphic_con.legend_parameters.is_text_height_default
+    assert not graphic_con.legend_parameters.vertical
     assert graphic_con.legend_parameters.base_plane.o == Point3D(2, 2, 0)
     assert graphic_con.legend_parameters.segment_height == 0.25
     assert graphic_con.legend_parameters.segment_width == 0.5
@@ -116,7 +116,7 @@ def test_init_graphic_con_data_type():
     graphic_con = GraphicContainer(data, mesh3d.min, mesh3d.max,
                                    data_type=Temperature())
 
-    assert graphic_con.legend_parameters.is_title_default is False
+    assert not graphic_con.legend_parameters.is_title_default
     assert graphic_con.legend_parameters.title == 'C'
 
     legend_par = LegendParameters()
@@ -124,7 +124,7 @@ def test_init_graphic_con_data_type():
     graphic_con = GraphicContainer(data, mesh3d.min, mesh3d.max,
                                    legend_par, data_type=Temperature())
 
-    assert graphic_con.legend_parameters.is_title_default is False
+    assert not graphic_con.legend_parameters.is_title_default
     assert graphic_con.legend_parameters.title == 'Temperature (C)'
 
 
@@ -139,7 +139,7 @@ def test_init_graphic_con_data_type_ordinal():
     assert graphic_con.legend_parameters.min == -3
     assert graphic_con.legend_parameters.max == 3
     assert graphic_con.legend_parameters.segment_count == 7
-    assert graphic_con.legend_parameters.is_title_default is False
+    assert not graphic_con.legend_parameters.is_title_default
     assert graphic_con.legend_parameters.title == 'PMV'
     assert graphic_con.legend.segment_text == ['Cold', 'Cool', 'Slightly Cool',
                                                'Neutral',

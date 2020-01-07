@@ -390,7 +390,7 @@ class ColorRange(object):
         continuous_colors: Boolean. If True, the colors generated from the
             color range will be in a continuous gradient. If False,
             they will be categorized in incremental groups according to the
-            number_of_segments. Default is True for continuous colors.
+            number_of_segments. Default: True for continuous colors.
 
     Properties:
         * colors
