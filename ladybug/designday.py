@@ -555,19 +555,30 @@ class DesignDay(object):
 
         return ''.join(comented_str)
 
-    def to_dict(self):
-        """Convert the Design Day to a dictionary."""
-        return {
+    def to_dict(self, include_location=True):
+        """Convert the Design Day to a dictionary.
+        
+        Args:
+            include_location: If True, the location dictionary will be included in the
+                returned dictionary. This ensures that the sky condition contained
+                in any re-serialized design day can produce accurate radiation values.
+                However, this location is not necessary when exporting design days
+                for energy simulation since the EPW simulated with the model already
+                contains location information. Default: True.
+        """
+        des_day_dict = {
             'type': 'DesignDay',
             'name': self.name,
             'day_type': self.day_type,
-            'location': self.location.to_dict(),
             'dry_bulb_condition': self.dry_bulb_condition.to_dict(),
             'humidity_condition': self.humidity_condition.to_dict(),
             'wind_condition': self.wind_condition.to_dict(),
             'sky_condition': self.sky_condition.to_dict(),
             'type': 'DesignDay'
-        }
+            }
+        if include_location:
+            des_day_dict['location'] = self.location.to_dict()
+        return des_day_dict
     
     def _get_daily_data_collections(self, data_type, unit, values):
         """Return an empty data collection."""
