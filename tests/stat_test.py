@@ -59,7 +59,7 @@ def test_annual_heating_design_days():
     assert ann_hdd_96.name == '99.6% Heating Design Day for Chicago Ohare Intl Ap'
     assert ann_hdd_96.analysis_period.st_month == \
         ann_hdd_96.analysis_period.end_month == \
-        ann_hdd_96.sky_condition.month == 1
+        ann_hdd_96.sky_condition.date.month == 1
     assert ann_hdd_96.analysis_period.st_day == \
         ann_hdd_96.analysis_period.end_day == 21
     assert ann_hdd_96.humidity_condition.humidity_type == 'Wetbulb'
@@ -87,7 +87,7 @@ def test_annual_cooling_design_days():
     assert ann_cdd_04.name == '0.4% Cooling Design Day for TOKYO HYAKURI'
     assert ann_cdd_04.analysis_period.st_month == \
         ann_cdd_04.analysis_period.end_month == \
-        ann_cdd_04.sky_condition.month == 8
+        ann_cdd_04.sky_condition.date.month == 8
     assert ann_cdd_04.analysis_period.st_day == \
         ann_cdd_04.analysis_period.end_day == 21
     assert ann_cdd_04.humidity_condition.humidity_type == 'Wetbulb'

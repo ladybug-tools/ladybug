@@ -3,7 +3,7 @@ from __future__ import division
 
 from .location import Location
 
-from .dt import DateTime
+from .dt import DateTime, Date
 from .header import Header
 from .analysisperiod import AnalysisPeriod
 from .datacollection import HourlyContinuousCollection
@@ -200,16 +200,14 @@ class DesignDay(object):
         # extract the sky conditions
         sky_model = ep_fields[21]
         dl_save = True if ep_fields[20].lower() == 'yes' else False
+        date_obj = Date(int(ep_fields[2]), int(ep_fields[3]))
         if sky_model == 'ASHRAEClearSky':
-            sky_condition = ASHRAEClearSky(
-                int(ep_fields[2]), int(ep_fields[3]), float(ep_fields[26]), dl_save)
+            sky_condition = ASHRAEClearSky(date_obj, float(ep_fields[26]), dl_save)
         elif sky_model == 'ASHRAETau':
-            sky_condition = ASHRAETau(
-                int(ep_fields[2]), int(ep_fields[3]), float(ep_fields[24]),
-                float(ep_fields[25]), dl_save)
+            sky_condition = ASHRAETau(date_obj, float(ep_fields[24]),
+                                      float(ep_fields[25]), dl_save)
         else:
-            sky_condition = _SkyCondition(
-                sky_model, int(ep_fields[2]), int(ep_fields[3]), dl_save)
+            sky_condition = _SkyCondition(date_obj, dl_save)
         if sky_model == 'Schedule':
             sky_condition.beam_shcedule = ep_fields[22]
             sky_condition.diff_shced = ep_fields[23]
@@ -218,7 +216,7 @@ class DesignDay(object):
                    humidity_condition, wind_condition, sky_condition)
 
     @classmethod
-    def from_design_day_properties(cls, name, day_type, location, analysis_period,
+    def from_design_day_properties(cls, name, day_type, location, date,
                                    dry_bulb_max, dry_bulb_range, humidity_type,
                                    humidity_value, pressure, wind_speed, wind_dir,
                                    sky_model, sky_properties):
@@ -229,7 +227,7 @@ class DesignDay(object):
             day_type: Choose from 'SummerDesignDay', 'WinterDesignDay' or other
                 EnergyPlus days
             location: Location for the design day
-            analysis_period: Analysis period for the design day
+            date: Ladybug Date object for the design day.
             dry_bulb_max: Maximum dry bulb temperature over the design day (in C).
             dry_bulb_range: Dry bulb range over the design day (in C).
             humidity_type: Type of humidity to use. Choose from
@@ -249,11 +247,9 @@ class DesignDay(object):
             humidity_type, humidity_value, pressure)
         wind_condition = WindCondition(wind_speed, wind_dir)
         if sky_model == 'ASHRAEClearSky':
-            sky_condition = ASHRAEClearSky.from_analysis_period(
-                analysis_period, sky_properties[0])
+            sky_condition = ASHRAEClearSky(date, sky_properties[0])
         elif sky_model == 'ASHRAETau':
-            sky_condition = ASHRAETau.from_analysis_period(
-                analysis_period, sky_properties[0], sky_properties[-1])
+            sky_condition = ASHRAETau(date, sky_properties[0], sky_properties[-1])
         return cls(name, day_type, location, dry_bulb_condition,
                    humidity_condition, wind_condition, sky_condition)
 
@@ -281,7 +277,8 @@ class DesignDay(object):
         hu_cond = HumidityCondition('Wetbulb', float(ashrae_dict[db_key]), pressure)
         ws_cond = WindCondition(float(ashrae_dict['WS_DB996']),
                                 float(ashrae_dict['WD_DB996']))
-        sky_cond = ASHRAEClearSky(int(ashrae_dict['Month']), 21, 0)
+        date_obj = Date(int(ashrae_dict['Month']), 21)
+        sky_cond = ASHRAEClearSky(date_obj, 0)
         name = '{}% Heating Design Day for {}'.format(perc_str, location.city)
         return cls(name, 'WinterDesignDay', location,
                    db_cond, hu_cond, ws_cond, sky_cond)
@@ -316,11 +313,11 @@ class DesignDay(object):
         hu_cond = HumidityCondition('Wetbulb', float(ashrae_dict[wb_key]), pressure)
         ws_cond = WindCondition(float(ashrae_dict['WS_DB004']),
                                 float(ashrae_dict['WD_DB004']))
-        month_num = int(ashrae_dict['Month'])
+        date_obj = Date(int(ashrae_dict['Month']), 21)
         if tau is not None:
-            sky_cond = ASHRAETau(month_num, 21, tau[0], tau[1])
+            sky_cond = ASHRAETau(date_obj, tau[0], tau[1])
         else:
-            sky_cond = ASHRAEClearSky(month_num, 21)
+            sky_cond = ASHRAEClearSky(date_obj)
         name = '{}% Cooling Design Day for {}'.format(perc_str, location.city)
         return cls(name, 'SummerDesignDay', location,
                    db_cond, hu_cond, ws_cond, sky_cond)
@@ -406,18 +403,19 @@ class DesignDay(object):
     def analysis_period(self):
         """Get the analysisperiod of the design day."""
         return AnalysisPeriod(
-            self.sky_condition.month,
-            self.sky_condition.day_of_month,
+            self.sky_condition.date.month,
+            self.sky_condition.date.day,
             0,
-            self.sky_condition.month,
-            self.sky_condition.day_of_month,
+            self.sky_condition.date.month,
+            self.sky_condition.date.day,
             23)
 
     @property
     def hourly_datetimes(self):
         """Get a list of hourly DateTime objects for the DesignDay."""
-        start_moy = DateTime(self._month, self._day_of_month).moy
-        return tuple(DateTime.from_moy(start_moy + (i * 60)) for i in xrange(24))
+        start_moy = self.sky_condition.date.doy * 1440
+        lp_yr = self.sky_condition.date.leap_year
+        return tuple(DateTime.from_moy(start_moy + (i * 60), lp_yr) for i in xrange(24))
 
     @property
     def hourly_dry_bulb(self):
@@ -507,8 +505,8 @@ class DesignDay(object):
         """Get this object as an EnerygPlus IDF SizingPeriod:DesignDay string."""
         # Put together the values in the order that they exist in the ddy file
         ep_vals = [self.name,
-                   self.sky_condition.month,
-                   self.sky_condition.day_of_month,
+                   self.sky_condition.date.month,
+                   self.sky_condition.date.day,
                    self.day_type,
                    self.dry_bulb_condition.dry_bulb_max,
                    self.dry_bulb_condition.dry_bulb_range,
@@ -628,7 +626,7 @@ class DryBulbCondition(object):
 
     Args:
         dry_bulb_max: The maximum dry bulb temperature on the design day [C].
-        dry_bulb_range: The difference between mina dn max temperatures on the
+        dry_bulb_range: The difference between min and max temperatures on the
             design day [C].
         modifier_type: Optional string for the type of modifier used to estimate
             temperature at a given timestep. Choose from the following:
@@ -756,12 +754,14 @@ class DryBulbCondition(object):
 
 
 class HumidityCondition(object):
-    """Represents humidity conditions on the design day.
+    """Represents humidity and precipitation conditions on the design day.
 
     Args:
         humidity_type: Choose from: Wetbulb, Dewpoint, HumidityRatio, Enthalpy
-        humidity_value: The value of the condition above
+        humidity_value: The value correcponding to the humidity_type
         barometric_pressure: Default is to use pressure at sea level
+        rain: Boolean to indicate rain on the design day. Default: False.
+        snow_on_ground: Boolean to indicate snow on the design day. Default: False.
         schedule: Optional humidity schedule
         wet_bulb_range: Optional wet bulb temperature range
 
@@ -956,13 +956,11 @@ class HumidityCondition(object):
 
 
 class WindCondition(object):
-    """Represents wind and rain conditions on the design day.
+    """Represents wind conditions on the design day.
 
     Args:
         wind_speed: Wind speed on the design day [m/s].
         wind_direction: Wind direction on the design day [degrees]. Default: 0
-        rain: Boolean to indicate rain on the design day. Default: False.
-        snow_on_ground: Boolean to indicate snow on the design day. Default: False.
 
     Properties:
         * wind_speed
@@ -996,7 +994,6 @@ class WindCondition(object):
         assert 'wind_speed' in data, 'Required key "wind_speed" is missing!'
 
         # set defaults for the optional keys
-        optional_keys = {'wind_direction': 0, 'rain': False, 'snow_on_ground': False}
         wind_direction = data['wind_direction'] if 'wind_direction' in data else 0
 
         return cls(data['wind_speed'], wind_direction)
@@ -1080,8 +1077,8 @@ class _SkyCondition(object):
     solar model should typically be used instead of this one.
 
     Args:
-        month: Month in which the design day occurs.
-        day_of_month: Day of the month on which the design day occurs.
+        date: Ladybug Date object for the day of the year on which the design
+            day occurs.
         daylight_savings: Boolean to indicate whether daylight savings
             time is active. Default: False
         beam_shcedule: Schedule name for beam irradiance. Shoulb be an empty
@@ -1090,21 +1087,18 @@ class _SkyCondition(object):
             empty string unless solar model is 'Schedule'.
 
     Properties:
-        * month
-        * day_of_month
+        * date
         * daylight_savings
         * beam_shcedule
         * diffuse_schedule
         * hourly_sky_cover
     """
-    __slots__ = ('_month', '_day_of_month', '_daylight_savings',
-                 'beam_shcedule', 'diffuse_schedule')
+    __slots__ = ('_date', '_daylight_savings', 'beam_shcedule', 'diffuse_schedule')
     SOLAR_MODELS = ('ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule')
 
-    def __init__(self, month, day_of_month, daylight_savings=False,
-                 beam_shcedule='', diffuse_schedule=''):
-        self.month = month
-        self.day_of_month = day_of_month
+    def __init__(self, date, daylight_savings=False, beam_shcedule='',
+                 diffuse_schedule=''):
+        self.date = date
         self.daylight_savings = daylight_savings
         self.beam_shcedule = beam_shcedule
         self.diffuse_schedule = diffuse_schedule
@@ -1120,8 +1114,7 @@ class _SkyCondition(object):
 
             {
             "type": "SkyCondition",
-            "month": 1,  # int
-            "day_of_month": 1,  # int
+            "date": {"type": "Date", "month": 7, "day": 21},
             "daylight_savings": False  # bool
             }
         """
@@ -1132,9 +1125,7 @@ class _SkyCondition(object):
             return ASHRAETau.from_dict(data)
 
         # check required keys
-        required_keys = ('month', 'day_of_month')
-        for key in required_keys:
-            assert key in data, 'Required key "{}" is missing!'.format(key)
+        assert 'date' in data, 'Required key "date" is missing!'
 
         # assign defaults for optional keys
         dl_save = data['daylight_savings'] if 'daylight_savings' \
@@ -1142,35 +1133,20 @@ class _SkyCondition(object):
         beam_shcedule = data['beam_shcedule'] if 'beam_shcedule' in data else ''
         diffuse_schedule = data['diffuse_schedule'] if 'diffuse_schedule' in data else ''
 
-        return cls(data['month'], data['day_of_month'], dl_save,
-                   beam_shcedule, diffuse_schedule)
+        return cls(Date.from_dict(data['date']), dl_save, beam_shcedule,
+                   diffuse_schedule)
 
     @property
-    def month(self):
-        """Get or set the month of the design day."""
-        return self._month
+    def date(self):
+        """Get or set a Ladybug Date object for the date of the design day."""
+        return self._date
 
-    @month.setter
-    def month(self, data):
-        assert isinstance(data, int), 'month must be a' \
-            ' integer. Got {}'.format(type(data))
-        assert 1 <= data <= 12, 'month {} is not between' \
-            ' 1 and 12'.format(data)
-        self._month = data
+    @date.setter
+    def date(self, data):
+        assert isinstance(data, Date), 'DesignDay.sky_condition.date must be a' \
+            ' Ladybug Date object. Got {}'.format(type(data))
+        self._date = data
 
-    @property
-    def day_of_month(self):
-        """Get or set the day of the month of the design day."""
-        return self._day_of_month
-
-    @day_of_month.setter
-    def day_of_month(self, data):
-        assert isinstance(data, int), 'day_of_month must be a' \
-            ' integer. Got {}'.format(type(data))
-        assert 1 <= data <= 31, 'day_of_month {} is not between' \
-            ' 1 and 31'.format(data)
-        self._day_of_month = data
-    
     @property
     def daylight_savings(self):
         """Get or set a boolean to indicate whether daylight savings time is active."""
@@ -1189,8 +1165,7 @@ class _SkyCondition(object):
         """Convert the Sky Condition to a dictionary."""
         return {
             'type': 'SkyCondition',
-            'month': self.month,
-            'day_of_month': self.day_of_month,
+            'date': self.date.to_dict(),
             'daylight_savings': self.daylight_savings,
             'beam_shcedule': self.beam_shcedule,
             'diffuse_schedule': self.diffuse_schedule
@@ -1206,13 +1181,14 @@ class _SkyCondition(object):
         Note that these datetimes are always in standard time in order to be used
         for solar positions. In other words, they correct from daylight savings time.
         """
-        start_moy = DateTime(self._month, self._day_of_month).moy
+        start_moy = self._date.doy * 1440  # convert doy to moy
         if self._daylight_savings:  # spring time forward! (or move the sun back)
             start_moy = start_moy - 60
         if timestep == 1:
             start_moy = start_moy + 30
         num_moys = 24 * timestep
-        return tuple(DateTime.from_moy(start_moy + (i * (1 / timestep) * 60))
+        lp_yr = self._date.leap_year
+        return tuple(DateTime.from_moy(start_moy + (i * (1 / timestep) * 60), lp_yr)
                      for i in xrange(num_moys))
     
     @staticmethod
@@ -1231,14 +1207,12 @@ class _SkyCondition(object):
         return self.__repr__()
 
     def __copy__(self):
-        return _SkyCondition(
-            self._month, self._day_of_month, self._daylight_savings,
-            self.beam_shcedule, self.diffuse_schedule)
+        return _SkyCondition(self._date, self._daylight_savings, self.beam_shcedule,
+                             self.diffuse_schedule)
 
     def __key(self):
         """A tuple based on the object properties, useful for hashing."""
-        return (self._month, self._day_of_month,
-                self._daylight_savings, self.beam_shcedule,
+        return (hash(self._date), self._daylight_savings, self.beam_shcedule,
                 self.diffuse_schedule)
 
     def __hash__(self):
@@ -1252,38 +1226,37 @@ class _SkyCondition(object):
 
     def __repr__(self):
         """Sky condition representation."""
-        return "SkyCondition [Month: {}, Day: {}]".format(
-            str(self._month), str(self._day_of_month))
+        return 'SkyCondition [{}]'.format(self._date)
 
 
 class ASHRAEClearSky(_SkyCondition):
     """An object representing an original ASHRAE Clear Sky.
 
     Args:
-        month: Month in which the design day occurs.
-        day_of_month: Day of the month on which the design day occurs.
+        date: Ladybug Date object for the day of the year on which the design
+            day occurs.
         clearness: Value between 0 and 1.2 that will get multiplied by the model's
             irradinace to correct for factors like elevation.
         daylight_savings: Boolean to indicate whether daylight savings
-            time is active. Default: False
+            time is active. Default: False.
 
     Properties:
-        * month
-        * day_of_month
+        * date
         * clearness
         * daylight_savings
     """
     __slots__ = ('_clearness',)
 
-    def __init__(self, month, day_of_month, clearness=1, daylight_savings=False):
-        _SkyCondition.__init__(self, month, day_of_month, daylight_savings)
+    def __init__(self, date, clearness=1, daylight_savings=False):
+        _SkyCondition.__init__(self, date, daylight_savings)
         self.clearness = clearness
 
     @classmethod
     def from_analysis_period(cls, analysis_period, clearness=1, daylight_savings=False):
         """"Initialize a ASHRAEClearSky from an analysis_period"""
         cls._check_analysis_period(analysis_period)
-        return cls(analysis_period.st_month, analysis_period.st_day, clearness,
+        st_dt = analysis_period.st_time
+        return cls(Date(st_dt.month, st_dt.day, st_dt.leap_year), clearness,
                    daylight_savings)
 
     @classmethod
@@ -1297,14 +1270,13 @@ class ASHRAEClearSky(_SkyCondition):
 
             {
             "type": "ASHRAEClearSky"
-            "month": 1  # int,
-            "day_of_month": 1  # int,
+            "date": {"type": "Date", "month": 7, "day": 21},
             "clearness": 0.0  # float,
             "daylight_savings": False  # bool
             }
         """
         # check required and optional keys
-        required_keys = ('type', 'month', 'day_of_month', 'clearness')
+        required_keys = ('type', 'date', 'clearness')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
 
@@ -1312,7 +1284,7 @@ class ASHRAEClearSky(_SkyCondition):
         dl_save = data['daylight_savings'] if 'daylight_savings' \
             in data else False
 
-        return cls(data['month'], data['day_of_month'], data['clearness'], dl_save)
+        return cls(Date.from_dict(data['date']), data['clearness'], dl_save)
 
     @property
     def clearness(self):
@@ -1342,7 +1314,7 @@ class ASHRAEClearSky(_SkyCondition):
             sun = sp.calculate_sun_from_date_time(t_date)
             altitudes.append(sun.altitude)
         dir_norm, diff_horiz = ashrae_clear_sky(
-            altitudes, self._month, self._clearness)
+            altitudes, self._date.month, self._clearness)
         glob_horiz = [dhr + dnr * math.sin(math.radians(alt)) for
                       alt, dnr, dhr in zip(altitudes, dir_norm, diff_horiz)]
         return dir_norm, diff_horiz, glob_horiz
@@ -1351,19 +1323,17 @@ class ASHRAEClearSky(_SkyCondition):
         """Convert the ASHRAEClearSky to a dictionary."""
         return {
             'type': 'ASHRAEClearSky',
-            'month': self.month,
-            'day_of_month': self.day_of_month,
+            'date': self.date.to_dict(),
             'clearness': self.clearness,
             'daylight_savings': self.daylight_savings,
         }
     
     def __copy__(self):
-        return ASHRAEClearSky(
-            self._month, self._day_of_month, self._clearness, self._daylight_savings)
+        return ASHRAEClearSky(self._date, self._clearness, self._daylight_savings)
 
     def __key(self):
         """A tuple based on the object properties, useful for hashing."""
-        return (self._month, self._day_of_month, self._clearness, self._daylight_savings)
+        return (hash(self._date), self._clearness, self._daylight_savings)
 
     def __hash__(self):
         return hash(self.__key())
@@ -1376,26 +1346,22 @@ class ASHRAEClearSky(_SkyCondition):
 
     def __repr__(self):
         """sky condition representation."""
-        return "ASHRAEClearSky [Month: {}, Day: {}]".format(
-            str(self._month), str(self._day_of_month))
+        return 'ASHRAEClearSky [{}]'.format(self._date)
 
 
 class ASHRAETau(_SkyCondition):
     """An object representing an ASHRAE Revised Clear Sky (Tau model).
 
     Args:
-        month: Month in which the design day occurs.
-        day_of_month: Day of the month on which the design day occurs.
-        tau_b: Value for the 'beam' term in the Tau model. Typically
-            found in .stat files.
-        tau_d: Value for the 'diffuse' term in the Tau model. Typically
-            found in .stat files.
+        date: Ladybug Date object for the day of the year on which the design
+            day occurs.
+        tau_b: Value for the beam optical depths. Typically found in .stat files.
+        tau_d: Value for the diffuse optical depth. Typically found in .stat files.
         daylight_savings: Boolean to indicate whether daylight savings
             time is active. Default: False
 
     Properties:
-        * month
-        * day_of_month
+        * date
         * tau_b
         * tau_d
         * daylight_savings
@@ -1403,8 +1369,8 @@ class ASHRAETau(_SkyCondition):
     """
     __slots__ = ('_tau_b', '_tau_d')
 
-    def __init__(self, month, day_of_month, tau_b, tau_d, daylight_savings=False):
-        _SkyCondition.__init__(self, month, day_of_month, daylight_savings)
+    def __init__(self, date, tau_b, tau_d, daylight_savings=False):
+        _SkyCondition.__init__(self, date, daylight_savings)
         self.tau_b = tau_b
         self.tau_d = tau_d
 
@@ -1412,7 +1378,8 @@ class ASHRAETau(_SkyCondition):
     def from_analysis_period(cls, analysis_period, tau_b, tau_d, daylight_savings=False):
         """"Initialize a ASHRAETau sky condition from an analysis_period"""
         cls._check_analysis_period(analysis_period)
-        return cls(analysis_period.st_month, analysis_period.st_day, tau_b, tau_d,
+        st_dt = analysis_period.st_time
+        return cls(Date(st_dt.month, st_dt.day, st_dt.leap_year), tau_b, tau_d,
                    daylight_savings)
 
     @classmethod
@@ -1426,15 +1393,14 @@ class ASHRAETau(_SkyCondition):
 
             {
             "type": "ASHRAETau",
-            "month": 1,  # int
-            "day_of_month": 1,  # int
+            "date": {"type": "Date", "month": 7, "day": 21},
             "tau_b": 0.0,  # float
             "tau_d": 0.0,  # float
             "daylight_savings": False  # bool
             }
         """
         # check required keys
-        required_keys = ('month', 'day_of_month', 'tau_b', 'tau_d')
+        required_keys = ('date', 'tau_b', 'tau_d')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
         
@@ -1442,8 +1408,7 @@ class ASHRAETau(_SkyCondition):
         dl_save = data['daylight_savings'] if 'daylight_savings' \
             in data else False
 
-        return cls(data['month'], data['day_of_month'], data['tau_b'], data['tau_d'],
-                   dl_save)
+        return cls(Date.from_dict(data['date']), data['tau_b'], data['tau_d'], dl_save)
 
     @property
     def tau_b(self):
@@ -1486,21 +1451,18 @@ class ASHRAETau(_SkyCondition):
         """Convert the Sky Condition to a dictionary."""
         return {
             'type': 'ASHRAETau',
-            'month': self.month,
-            'day_of_month': self.day_of_month,
+            'date': self.date.to_dict(),
             'tau_b': self.tau_b,
             'tau_d': self.tau_d,
             'daylight_savings': self.daylight_savings
         }
 
     def __copy__(self):
-        return ASHRAETau(self._month, self._day_of_month, self._tau_b, self._tau_d,
-                         self._daylight_savings)
+        return ASHRAETau(self._date, self._tau_b, self._tau_d, self._daylight_savings)
 
     def __key(self):
         """A tuple based on the object properties, useful for hashing."""
-        return (self._month, self._day_of_month, self._tau_b, self._tau_d,
-                self._daylight_savings)
+        return (hash(self._date), self._tau_b, self._tau_d, self._daylight_savings)
 
     def __hash__(self):
         return hash(self.__key())
@@ -1513,5 +1475,4 @@ class ASHRAETau(_SkyCondition):
 
     def __repr__(self):
         """sky condition representation."""
-        return "ASHRAETau [Month: {}, Day: {}]".format(
-            str(self._month), str(self._day_of_month))
+        return 'ASHRAETau [{}]'.format(self._date)

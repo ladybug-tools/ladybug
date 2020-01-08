@@ -2,6 +2,7 @@
 from __future__ import division
 
 from .location import Location
+from .dt import Date
 from .analysisperiod import AnalysisPeriod
 from .designday import DesignDay
 from .designday import DryBulbCondition
@@ -640,8 +641,8 @@ class STAT(object):
     def monthly_clear_sky_conditions(self):
         """A list of 12 monthly clear sky conditions that are used on the design days."""
         if self._monthly_tau_diffuse is [] or self._monthly_tau_beam is []:
-            return [ASHRAEClearSky(i, 21) for i in xrange(1, 13)]
-        return [ASHRAETau(i, 21, x, y) for i, x, y in zip(
+            return [ASHRAEClearSky(Date(i, 21)) for i in xrange(1, 13)]
+        return [ASHRAETau(Date(i, 21), x, y) for i, x, y in zip(
             list(xrange(1, 13)), self._monthly_tau_beam, self._monthly_tau_diffuse)]
 
     @property

@@ -2,6 +2,7 @@
 from pytest import approx
 import os
 from ladybug.location import Location
+from ladybug.dt import Date
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.designday import DesignDay
 from ladybug.ddy import DDY
@@ -119,10 +120,10 @@ def test_design_day_from_properties():
     """Test hourly data properties of a standard ddy."""
     location = Location('Test City', '-', 'USA', 34.20, -118.35, -8, 226)
     a_period = AnalysisPeriod(12, 21, 0, 12, 21, 23)
-    des_day = DesignDay.from_design_day_properties('Test Day', 'WinterDesignDay',
-                                                   location, a_period, 3.9, 0,
-                                                   'Wetbulb', 3.9, 98639, 0.8, 330,
-                                                   'ASHRAEClearSky', [0])
+    date = Date(12, 21)
+    des_day = DesignDay.from_design_day_properties(
+        'Test Day', 'WinterDesignDay', location, date, 3.9, 0,
+        'Wetbulb', 3.9, 98639, 0.8, 330, 'ASHRAEClearSky', [0])
     assert des_day.location == location
     new_period = des_day.analysis_period
     assert new_period.st_month == a_period.st_month
@@ -136,11 +137,10 @@ def test_design_day_from_properties():
 def test_design_day_hourly_data():
     """Test hourly data properties of a standard ddy."""
     location = Location('Test City', '-', 'USA', 34.20, -118.35, -8, 226)
-    a_period = AnalysisPeriod(8, 21, 0, 8, 21, 23)
-    des_day = DesignDay.from_design_day_properties('Test Day', 'SummerDesignDay',
-                                                   location, a_period, 36.8, 13.2,
-                                                   'Wetbulb', 20.5, 98639, 3.9, 170,
-                                                   'ASHRAETau', [0.436, 2.106])
+    date = Date(8, 21)
+    des_day = DesignDay.from_design_day_properties(
+        'Test Day', 'SummerDesignDay', location, date, 36.8, 13.2,
+        'Wetbulb', 20.5, 98639, 3.9, 170, 'ASHRAETau', [0.436, 2.106])
     # dry bulb values
     db_data_collect = des_day.hourly_dry_bulb
     assert db_data_collect[5] == approx(23.6, rel=1e-1)

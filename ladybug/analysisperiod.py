@@ -243,7 +243,7 @@ class AnalysisPeriod(object):
 
     @property
     def datetimes(self):
-        """A sorted list of datetimes in this analysis period."""
+        """A sorted list of hourly datetimes in this analysis period."""
         if self._timestamps_data is None:
             self._calculate_timestamps()
         return tuple(DateTime.from_moy(moy, self.is_leap_year)
@@ -251,7 +251,8 @@ class AnalysisPeriod(object):
 
     @property
     def moys(self):
-        """A sorted list of minutes of year in this analysis period as integers."""
+        """A sorted list of hourly minutes of year in this analysis period as integers.
+        """
         if self._timestamps_data is None:
             self._calculate_timestamps()
         return self._timestamps_data
