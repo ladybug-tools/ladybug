@@ -1108,13 +1108,13 @@ class _SkyCondition(object):
         """Create a Sky Condition from a dictionary.
 
         Args:
-            data: A python dictionary in the following format
+            data: A python dictionary in the following format.
 
         .. code-block:: python
 
             {
             "type": "SkyCondition",
-            "date": {"type": "Date", "month": 7, "day": 21},
+            "date": [7, 21],
             "daylight_savings": False  # bool
             }
         """
@@ -1133,7 +1133,7 @@ class _SkyCondition(object):
         beam_shcedule = data['beam_shcedule'] if 'beam_shcedule' in data else ''
         diffuse_schedule = data['diffuse_schedule'] if 'diffuse_schedule' in data else ''
 
-        return cls(Date.from_dict(data['date']), dl_save, beam_shcedule,
+        return cls(Date.from_array(data['date']), dl_save, beam_shcedule,
                    diffuse_schedule)
 
     @property
@@ -1165,7 +1165,7 @@ class _SkyCondition(object):
         """Convert the Sky Condition to a dictionary."""
         return {
             'type': 'SkyCondition',
-            'date': self.date.to_dict(),
+            'date': self.date.to_array(),
             'daylight_savings': self.daylight_savings,
             'beam_shcedule': self.beam_shcedule,
             'diffuse_schedule': self.diffuse_schedule
@@ -1264,13 +1264,13 @@ class ASHRAEClearSky(_SkyCondition):
         """Create an ASHRAEClearSky condition from a dictionary.
 
         Args:
-            data: A python dictionary in the following format
+            data: A python dictionary in the following format.
 
         .. code-block:: python
 
             {
             "type": "ASHRAEClearSky"
-            "date": {"type": "Date", "month": 7, "day": 21},
+            "date": [7, 21],
             "clearness": 0.0  # float,
             "daylight_savings": False  # bool
             }
@@ -1284,7 +1284,7 @@ class ASHRAEClearSky(_SkyCondition):
         dl_save = data['daylight_savings'] if 'daylight_savings' \
             in data else False
 
-        return cls(Date.from_dict(data['date']), data['clearness'], dl_save)
+        return cls(Date.from_array(data['date']), data['clearness'], dl_save)
 
     @property
     def clearness(self):
@@ -1323,7 +1323,7 @@ class ASHRAEClearSky(_SkyCondition):
         """Convert the ASHRAEClearSky to a dictionary."""
         return {
             'type': 'ASHRAEClearSky',
-            'date': self.date.to_dict(),
+            'date': self.date.to_array(),
             'clearness': self.clearness,
             'daylight_savings': self.daylight_savings,
         }
@@ -1387,13 +1387,13 @@ class ASHRAETau(_SkyCondition):
         """Create a ASHRAETau sky condition from a dictionary.
 
         Args:
-            data: A python dictionary in the following format
+            data: A python dictionary in the following format.
 
         .. code-block:: python
 
             {
             "type": "ASHRAETau",
-            "date": {"type": "Date", "month": 7, "day": 21},
+            "date": [7, 21],
             "tau_b": 0.0,  # float
             "tau_d": 0.0,  # float
             "daylight_savings": False  # bool
@@ -1408,7 +1408,7 @@ class ASHRAETau(_SkyCondition):
         dl_save = data['daylight_savings'] if 'daylight_savings' \
             in data else False
 
-        return cls(Date.from_dict(data['date']), data['tau_b'], data['tau_d'], dl_save)
+        return cls(Date.from_array(data['date']), data['tau_b'], data['tau_d'], dl_save)
 
     @property
     def tau_b(self):
@@ -1451,7 +1451,7 @@ class ASHRAETau(_SkyCondition):
         """Convert the Sky Condition to a dictionary."""
         return {
             'type': 'ASHRAETau',
-            'date': self.date.to_dict(),
+            'date': self.date.to_array(),
             'tau_b': self.tau_b,
             'tau_d': self.tau_d,
             'daylight_savings': self.daylight_savings
