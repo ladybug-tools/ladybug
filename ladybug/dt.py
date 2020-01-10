@@ -196,10 +196,12 @@ class DateTime(datetime):
         """
         return (self.doy - 1) * 24 + self.hour
 
+    @property
     def date(self):
         """Get a Date object associated with this DateTime."""
         return Date(self.month, self.day, self.leap_year)
 
+    @property
     def time(self):
         """Get a Time object associated with this DateTime."""
         return Time(self.hour, self.minute)

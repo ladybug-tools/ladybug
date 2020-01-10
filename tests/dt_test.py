@@ -22,8 +22,8 @@ def test_date_time_init():
     assert isinstance(dt1.int_hoy, int)
     assert dt1.int_hoy == 4116
     assert dt1.float_hour == 12.0
-    assert dt1.date() == Date(6, 21)
-    assert dt1.time() == Time(12, 0)
+    assert dt1.date == Date(6, 21)
+    assert dt1.time == Time(12, 0)
 
     assert dt1 == dt2
     assert dt1 != dt3
