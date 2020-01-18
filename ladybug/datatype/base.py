@@ -2,9 +2,8 @@
 """Base data type."""
 from __future__ import division
 
-from os.path import dirname, basename, isfile, join
-from os import listdir
-from importlib import import_module
+import os
+import importlib
 import re
 
 
@@ -358,15 +357,15 @@ class _DataTypeEnumeration(object):
         return self._TYPES
 
     def _import_modules(self):
-        root_dir = dirname(__file__)
-        modules = listdir(dirname(__file__))
-        modules = [join(root_dir, mod) for mod in modules]
-        importable = ['.{}'.format(basename(f)[:-3]) for f in modules
-                      if isfile(f) and f.endswith('.py')
+        root_dir = os.path.dirname(__file__)
+        modules = os.listdir(os.path.dirname(__file__))
+        modules = [os.path.join(root_dir, mod) for mod in modules]
+        importable = ['.{}'.format(os.path.basename(f)[:-3]) for f in modules
+                      if os.path.isfile(f) and f.endswith('.py')
                       and not f.endswith('__init__.py')
                       and not f.endswith('base.py')]
         for mod in importable:
-            import_module(mod, 'ladybug.datatype')
+            importlib.import_module(mod, 'ladybug.datatype')
 
     def _all_subclasses(self, clss):
         return set(clss.__subclasses__()).union(
