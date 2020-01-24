@@ -530,10 +530,6 @@ class HourlyDiscontinuousCollection(BaseCollection):
         collection._validated_a_period = True
         return collection
 
-    @property
-    def isHourly(self):
-        return True
-
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""
         return "{} Discontinuous Data Collection\n{}\n{} ({})\n...{} values...".format(
@@ -978,10 +974,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """Boolean denoting whether the data collection is continuous."""
         return True
 
-    @property
-    def isContinuous(self):
-        return True
-
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""
         return "{} Continuous Data Collection\n{}\n{} ({})\n...{} values...".format(
@@ -1202,15 +1194,8 @@ class DailyCollection(BaseCollection):
     @property
     def is_continuous(self):
         """Boolean denoting whether the data collection is continuous."""
-        if self._validated_a_period and \
-                len(self.values) == len(self.header.analysis_period.doys_int):
-            return True
-        else:
-            return False
-
-    @property
-    def isDaily(self):
-        return True
+        return self._validated_a_period and \
+            len(self.values) == len(self.header.analysis_period.doys_int)
 
     def __repr__(self):
         """Daily Collection representation."""
@@ -1352,15 +1337,8 @@ class MonthlyCollection(BaseCollection):
     @property
     def is_continuous(self):
         """Boolean denoting whether the data collection is continuous."""
-        if self._validated_a_period and \
-                len(self.values) == len(self.header.analysis_period.months_int):
-            return True
-        else:
-            return False
-
-    @property
-    def isMonthly(self):
-        return True
+        return self._validated_a_period and \
+            len(self.values) == len(self.header.analysis_period.months_int)
 
     def __repr__(self):
         """Monthly Collection representation."""
@@ -1517,15 +1495,8 @@ class MonthlyPerHourCollection(BaseCollection):
     def is_continuous(self):
         """Boolean denoting whether the data collection is continuous."""
         a_per = self.header.analysis_period
-        if self._validated_a_period and a_per.st_hour == 0 and a_per.end_hour \
-                == 23 and len(self.values) == len(a_per.months_per_hour):
-            return True
-        else:
-            return False
-
-    @property
-    def isMonthlyPerHour(self):
-        return True
+        return self._validated_a_period and a_per.st_hour == 0 and a_per.end_hour \
+                == 23 and len(self.values) == len(a_per.months_per_hour)
 
     def __repr__(self):
         """Monthly Per Hour Collection representation."""

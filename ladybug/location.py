@@ -139,11 +139,6 @@ class Location(object):
                    time_zone=ep_fields[3], elevation=ep_fields[4])
 
     @property
-    def isLocation(self):
-        """Return Ture."""
-        return True
-
-    @property
     def latitude(self):
         """Location latitude."""
         return self._lat

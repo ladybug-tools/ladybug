@@ -76,11 +76,6 @@ class Distance(DataTypeBase):
         else:
             return self.to_unit(values, 'm', from_unit), 'm'
 
-    @property
-    def isDistance(self):
-        """Return True."""
-        return True
-
 
 class Visibility(Distance):
     """Visibility

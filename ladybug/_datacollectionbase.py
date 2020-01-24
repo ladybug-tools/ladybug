@@ -700,11 +700,6 @@ class BaseCollection(object):
         """Boolean denoting whether the data collection is mutable."""
         return self._mutable
 
-    @property
-    def isDataCollection(self):
-        """Return True."""
-        return True
-
     def ToString(self):
         """Overwrite .NET ToString method."""
         return self.__repr__()

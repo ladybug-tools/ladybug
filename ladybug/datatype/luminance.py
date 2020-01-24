@@ -39,11 +39,6 @@ class Luminance(DataTypeBase):
         else:
             return self.to_unit(values, 'cd/m2', from_unit), 'cd/m2'
 
-    @property
-    def isLuminance(self):
-        """Return True."""
-        return True
-
 
 class ZenithLuminance(Luminance):
     _abbreviation = 'ZL'

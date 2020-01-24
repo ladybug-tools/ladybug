@@ -187,11 +187,6 @@ class AnalysisPeriod(object):
             raise ValueError(str(e))
 
     @property
-    def isAnalysisPeriod(self):
-        """Return True."""
-        return True
-
-    @property
     def st_month(self):
         """Start month."""
         return self.st_time.month

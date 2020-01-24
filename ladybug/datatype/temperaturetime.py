@@ -53,11 +53,6 @@ class TemperatureTime(DataTypeBase):
         else:
             return self.to_unit(values, 'degC-days', from_unit), 'degC-days'
 
-    @property
-    def isTemperatureTime(self):
-        """Return True."""
-        return True
-
 
 class CoolingDegreeTime(TemperatureTime):
     _abbreviation = 'coolTime'

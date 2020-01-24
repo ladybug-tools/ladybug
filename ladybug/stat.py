@@ -704,11 +704,6 @@ class STAT(object):
             "type": 'STAT'
         }
 
-    @property
-    def isStat(self):
-        """Return True."""
-        return True
-
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()

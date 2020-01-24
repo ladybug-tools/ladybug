@@ -66,11 +66,6 @@ class Power(DataTypeBase):
         else:
             return self.to_unit(values, 'W', from_unit), 'W'
 
-    @property
-    def isPower(self):
-        """Return True."""
-        return True
-
 
 class ActivityLevel(Power):
     _abbreviation = 'Activity'

@@ -53,8 +53,3 @@ class MassFlowRate(DataTypeBase):
             return self.to_unit(values, 'g/s', from_unit), 'g/s'
         else:
             return self.to_unit(values, 'kg/s', from_unit), 'kg/s'
-
-    @property
-    def isMassFlowRate(self):
-        """Return True."""
-        return True
