@@ -56,11 +56,6 @@ class Speed(DataTypeBase):
         else:
             return self.to_unit(values, 'm/s', from_unit), 'm/s'
 
-    @property
-    def isSpeed(self):
-        """Return True."""
-        return True
-
 
 class WindSpeed(Speed):
     _abbreviation = 'WS'

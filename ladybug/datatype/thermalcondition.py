@@ -34,11 +34,6 @@ class ThermalCondition(DataTypeBase):
         """Return values in SI and the units to which the values have been converted."""
         return values, from_unit
 
-    @property
-    def isThermalCondition(self):
-        """Return True."""
-        return True
-
 
 class PredictedMeanVote(ThermalCondition):
     _min = float('-inf')

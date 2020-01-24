@@ -34,11 +34,6 @@ class Angle(DataTypeBase):
         """Return values in SI and the units to which the values have been converted."""
         return values, from_unit
 
-    @property
-    def isAngle(self):
-        """Return True."""
-        return True
-
 
 class WindDirection(Angle):
     _name = 'Wind Direction'

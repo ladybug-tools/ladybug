@@ -292,11 +292,6 @@ class DataTypeBase(object):
         """
         return self._cumulative
 
-    @property
-    def isDataType(self):
-        """Return True."""
-        return True
-
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()

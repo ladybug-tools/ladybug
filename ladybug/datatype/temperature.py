@@ -44,11 +44,6 @@ class Temperature(DataTypeBase):
         else:
             return self.to_unit(values, 'C', from_unit), 'C'
 
-    @property
-    def isTemperature(self):
-        """Return True."""
-        return True
-
 
 class DryBulbTemperature(Temperature):
     _abbreviation = 'DBT'

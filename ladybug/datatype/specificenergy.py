@@ -67,11 +67,6 @@ class SpecificEnergy(DataTypeBase):
         else:
             return self.to_unit(values, 'kWh/kg', from_unit), 'kWh/kg'
 
-    @property
-    def isSpecificEnergy(self):
-        """Return True."""
-        return True
-
 
 class Enthalpy(SpecificEnergy):
     _abbreviation = 'Enth'

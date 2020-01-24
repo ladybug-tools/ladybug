@@ -100,11 +100,6 @@ class Header(object):
         """Metadata associated with the Header."""
         return self._metadata
 
-    @property
-    def isHeader(self):
-        """Return True."""
-        return True
-
     def duplicate(self):
         """Return a copy of the header."""
         a_per = self.analysis_period.duplicate() if self.analysis_period else None

@@ -68,11 +68,6 @@ class Pressure(DataTypeBase):
         else:
             return self.to_unit(values, 'Pa', from_unit), 'Pa'
 
-    @property
-    def isPressure(self):
-        """Return True."""
-        return True
-
 
 class AtmosphericStationPressure(Pressure):
     _min = 0

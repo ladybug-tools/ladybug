@@ -66,11 +66,6 @@ class EnergyFlux(DataTypeBase):
         else:
             return self.to_unit(values, 'W/m2', from_unit), 'W/m2'
 
-    @property
-    def isEnergyFlux(self):
-        """Return True."""
-        return True
-
 
 class MetabolicRate(EnergyFlux):
     _min = 0
@@ -84,11 +79,6 @@ class EffectiveRadiantField(EnergyFlux):
 class Irradiance(EnergyFlux):
     _min = 0
     _abbreviation = 'Qsolar'
-
-    @property
-    def isIrradiance(self):
-        """Return True."""
-        return True
 
 
 class GlobalHorizontalIrradiance(Irradiance):
