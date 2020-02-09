@@ -455,6 +455,7 @@ class AnalysisPeriod(object):
 
     def __key(self):
         return(self.st_time, self.end_time, self.timestep, self.is_leap_year)
+
     
     def __hash__(self):
         return hash(self.__key())
