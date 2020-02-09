@@ -180,3 +180,11 @@ def test_0_end_hour():
     ap = AnalysisPeriod(*params)
     assert ap.end_hour == 0
     assert len(ap) == 24
+
+def test_equality():
+    ap_one = AnalysisPeriod()
+    ap_two= AnalysisPeriod()
+    ap_three = AnalysisPeriod(st_month=2, end_month=6)
+
+    assert ap_one == ap_two
+    assert ap_one != ap_three
