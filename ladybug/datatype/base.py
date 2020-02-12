@@ -164,8 +164,6 @@ class DataTypeBase(object):
             'type': 'DataTypeBase'
         }
 
-    # TODO: Un-comment the numeric check once we have gotten rid of the DataPoint class
-    # Presently, I can't add a check for DataPoint type because it's outside the module
     def _is_numeric(self, values):
         """Check to be sure values are numbers before doing numerical operations."""
         if len(values) > 0:
