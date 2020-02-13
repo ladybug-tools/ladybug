@@ -183,8 +183,11 @@ def test_0_end_hour():
 
 def test_equality():
     ap_one = AnalysisPeriod()
-    ap_two= AnalysisPeriod()
-    ap_three = AnalysisPeriod(st_month=2, end_month=6)
+    ap_one_duplicate = AnalysisPeriod()
+    ap_two = AnalysisPeriod(st_month=2, end_month=6)
 
-    assert ap_one == ap_two
-    assert ap_one != ap_three
+    assert ap_one is ap_one
+    assert ap_one == ap_one_duplicate
+    assert ap_one is not ap_two
+    assert hash(ap_one) == hash(ap_one_duplicate)
+    assert hash(ap_one) != hash(ap_two)
