@@ -426,17 +426,6 @@ class AnalysisPeriod(object):
         end_doy = sum(self._num_of_days_each_month[:end_time.month-1]) + end_time.day + 1
         return list(range(start_doy, end_doy))
 
-    def __eq__(self, other):
-        """Whether the inputs match between two analysis periods."""
-        if isinstance(other, self.__class__):
-            if (self.st_time, self.end_time, self.timestep, self.is_leap_year) == \
-                    (other.st_time, other.end_time, other.timestep, other.is_leap_year):
-                return True
-        return False
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     def __len__(self):
         """Number of hours of the year.
 
@@ -463,3 +452,16 @@ class AnalysisPeriod(object):
              self.end_time.month, self.end_time.day,
              self.st_time.hour, self.end_time.hour,
              self.timestep)
+
+    def __key(self):
+        return(self.st_time, self.end_time, self.timestep, self.is_leap_year)
+
+    
+    def __hash__(self):
+        return hash(self.__key())
+    
+    def __eq__(self, other):
+        return isinstance(other, AnalysisPeriod) and self.__key() == other.__key()
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
