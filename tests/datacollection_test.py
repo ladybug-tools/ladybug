@@ -148,6 +148,99 @@ def test_init_continuous_incorrect():
         HourlyContinuousCollection(header, values)
 
 
+def test_operators_hourly_discontinuous():
+    """Test the operators for dicontinuous collections."""
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
+    v1, v2 = 20, 25
+    dc1 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
+                                        [v1, v2], [dt1, dt2])
+    dc2 = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per),
+                                        [v2, v1], [dt1, dt2])
+
+    add = dc1 + dc2
+    assert isinstance(add, HourlyDiscontinuousCollection)
+    assert add.values == (v1 + v2, v2 + v1)
+
+    sub = dc1 - dc2
+    assert isinstance(sub, HourlyDiscontinuousCollection)
+    assert sub.values == (v1 - v2, v2 - v1)
+
+    mul = dc1 * dc2
+    assert isinstance(mul, HourlyDiscontinuousCollection)
+    assert mul.values == (v1 * v2, v2 * v1)
+
+    div = dc1 / dc2
+    assert isinstance(div, HourlyDiscontinuousCollection)
+    assert div.values == (v1 / v2, v2 / v1)
+
+    add = dc1 + 2
+    assert isinstance(add, HourlyDiscontinuousCollection)
+    assert add.values == (v1 + 2, v2 + 2)
+
+    sub = dc1 - 2
+    assert isinstance(sub, HourlyDiscontinuousCollection)
+    assert sub.values == (v1 - 2, v2 - 2)
+
+    mul = dc1 * 2
+    assert isinstance(mul, HourlyDiscontinuousCollection)
+    assert mul.values == (v1 * 2, v2 * 2)
+
+    div = dc1 / 2
+    assert isinstance(div, HourlyDiscontinuousCollection)
+    assert div.values == (v1 / 2, v2 / 2)
+
+    neg = -dc1
+    assert isinstance(neg, HourlyDiscontinuousCollection)
+    assert neg.values == (-v1, -v2)
+
+
+def test_operators_hourly_continuous():
+    """Test the operators for dicontinuous collections."""
+    v1 = 20
+    vals = [v1] * 24
+    a_per = AnalysisPeriod(6, 21, 0, 6, 21, 23)
+    # Setup data collection
+    dc1 = HourlyContinuousCollection(Header(Temperature(), 'C', a_per), vals)
+    dc2 = HourlyContinuousCollection(Header(Temperature(), 'C', a_per), vals)
+
+    add = dc1 + dc2
+    assert isinstance(add, HourlyContinuousCollection)
+    assert add[0] == v1 + v1
+
+    sub = dc1 - dc2
+    assert isinstance(sub, HourlyContinuousCollection)
+    assert sub[0] == v1 - v1
+
+    mul = dc1 * dc2
+    assert isinstance(mul, HourlyContinuousCollection)
+    assert mul[0] == v1 * v1
+
+    div = dc1 / dc2
+    assert isinstance(div, HourlyContinuousCollection)
+    assert div[0] == v1 / v1
+
+    add = dc1 + 2
+    assert isinstance(add, HourlyContinuousCollection)
+    assert add[0] == v1 + 2
+
+    sub = dc1 - 2
+    assert isinstance(sub, HourlyContinuousCollection)
+    assert sub[0] == v1 - 2
+
+    mul = dc1 * 2
+    assert isinstance(mul, HourlyContinuousCollection)
+    assert mul[0] == v1 * 2
+
+    div = dc1 / 2
+    assert isinstance(div, HourlyContinuousCollection)
+    assert div[0] == v1 / 2
+
+    neg = -dc1
+    assert isinstance(neg, HourlyContinuousCollection)
+    assert neg[0] == -v1
+
+
 def test_setting_values():
     """Test the methods for setting values on the data collection"""
     header = Header(Temperature(), 'C', AnalysisPeriod())
