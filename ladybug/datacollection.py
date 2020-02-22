@@ -541,10 +541,10 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     """Class for Continuous Data Collections at hourly or sub-hourly intervals.
 
     Args:
-        header: A Ladybug Header object.  Note that this header
+        header: A Ladybug Header object. Note that this header
             must have an AnalysisPeriod on it that aligns with the
             list of values.
-        values: A list of values.  Note that the length of this list
+        values: A list of values. Note that the length of this list
             must align with the AnalysisPeriod on the header.
 
     Properties:
@@ -973,6 +973,30 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     def is_continuous(self):
         """Boolean denoting whether the data collection is continuous."""
         return True
+
+    def __add__(self, other):
+        new_vals = self._add_values(other)
+        return self.__class__(self.header, new_vals)
+
+    def __sub__(self, other):
+        new_vals = self._sub_values(other)
+        return self.__class__(self.header, new_vals)
+
+    def __mul__(self, other):
+        new_vals = self._mul_values(other)
+        return self.__class__(self.header, new_vals)
+
+    def __div__(self, other):
+        new_vals = self._div_values(other)
+        return self.__class__(self.header, new_vals)
+
+    def __truediv__(self, other):
+        new_vals = self._div_values(other)
+        return self.__class__(self.header, new_vals)
+
+    def __neg__(self):
+        new_vals = [-v_1 for v_1 in self._values]
+        return self.__class__(self.header, new_vals)
 
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""

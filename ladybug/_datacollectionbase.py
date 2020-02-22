@@ -13,8 +13,10 @@ except ImportError:
 from string import ascii_lowercase
 import math
 import sys
-if (sys.version_info >= (3, 0)):
-    xrange = range
+try:
+    from itertools import izip as zip  # python 2
+except ImportError:
+    xrange = range  # python 3
 
 
 class BaseCollection(object):
@@ -689,6 +691,74 @@ class BaseCollection(object):
 
     def __contains__(self, item):
         return item in self._values
+
+    def __add__(self, other):
+        new_vals = self._add_values(other)
+        return self.__class__(self.header, new_vals, self.datetimes)
+
+    def __sub__(self, other):
+        new_vals = self._sub_values(other)
+        return self.__class__(self.header, new_vals, self.datetimes)
+
+    def __mul__(self, other):
+        new_vals = self._mul_values(other)
+        return self.__class__(self.header, new_vals, self.datetimes)
+
+    def __div__(self, other):
+        new_vals = self._div_values(other)
+        return self.__class__(self.header, new_vals, self.datetimes)
+
+    def __truediv__(self, other):
+        new_vals = self._div_values(other)
+        return self.__class__(self.header, new_vals, self.datetimes)
+
+    def __neg__(self):
+        new_vals = [-v_1 for v_1 in self._values]
+        return self.__class__(self.header, new_vals, self.datetimes)
+
+    def _add_values(self, other):
+        if isinstance(other, (int, float)):
+            new_vals = [v_1 + other for v_1 in self._values]
+        else:
+            assert self._collection_type == other._collection_type, \
+                '{} cannot be added to {}'.format(self.__class__, other.__class__)
+            assert len(self) == len(other), 'Length of DataCollections must match in ' \
+                'order to add them together. {} != {}'.format(len(self), len(other))
+            new_vals = [v_1 + v_2 for v_1, v_2 in zip(self._values, other._values)]
+        return new_vals
+
+    def _sub_values(self, other):
+        if isinstance(other, (int, float)):
+            new_vals = [v_1 - other for v_1 in self._values]
+        else:
+            assert self._collection_type == other._collection_type, \
+                '{} cannot be subtrated from {}'.format(other.__class__, self.__class__)
+            assert len(self) == len(other), 'Length of DataCollections must match ' \
+                'to subtract one from the other. {} != {}'.format(len(self), len(other))
+            new_vals = [v_1 - v_2 for v_1, v_2 in zip(self._values, other._values)]
+        return new_vals
+
+    def _mul_values(self, other):
+        if isinstance(other, (int, float)):
+            new_vals = [v_1 * other for v_1 in self._values]
+        else:
+            assert self._collection_type == other._collection_type, \
+                '{} cannot be multiplied by {}'.format(other.__class__, self.__class__)
+            assert len(self) == len(other), 'Length of DataCollections must match ' \
+                'to multiply them together. {} != {}'.format(len(self), len(other))
+            new_vals = [v_1 * v_2 for v_1, v_2 in zip(self._values, other._values)]
+        return new_vals
+
+    def _div_values(self, other):
+        if isinstance(other, (int, float)):
+            new_vals = [v_1 / other for v_1 in self._values]
+        else:
+            assert self._collection_type == other._collection_type, \
+                '{} cannot be divided by {}'.format(other.__class__, self.__class__)
+            assert len(self) == len(other), 'Length of DataCollections must match ' \
+                'to divide them. {} != {}'.format(len(self), len(other))
+            new_vals = [v_1 / v_2 for v_1, v_2 in zip(self._values, other._values)]
+        return new_vals
 
     @property
     def is_continuous(self):
