@@ -106,6 +106,7 @@ class Legend(object):
         >> ['Slightly Cool', '', 'Neutral', '', 'Slightly Warm']
         >> ['Cool', 'Slightly Cool', 'Neutral', 'Slightly Warm', 'Warm']
     """
+    __slots__ = ('_values', '_legend_par', '_is_min_default', '_is_max_default')
 
     def __init__(self, values, legend_parameters=None):
         """Initalize Ladybug Legend.
@@ -135,6 +136,7 @@ class Legend(object):
             self._legend_par.segment_width = self._legend_par.text_height * \
                 (len(str(int(self._legend_par.max))) +
                  self._legend_par.decimal_count + 2)
+            self._legend_par._is_segment_width_default = True  # it's been auto-assigned
 
     @classmethod
     def from_dict(cls, data):
@@ -452,6 +454,13 @@ class LegendParameters(object):
         lp.vertical = False
         lp.segment_width = 5
     """
+    __slots__ = ('_min', '_max', '_segment_count', '_colors', '_continuous_colors',
+                 '_continuous_legend', '_title', '_ordinal_dictionary',
+                 '_decimal_count', '_include_larger_smaller', '_vertical',
+                 '_base_plane', '_segment_height', '_segment_width', '_text_height',
+                 '_font', '_is_segment_count_default', '_is_title_default',
+                 '_is_base_plane_default', '_is_segment_height_default',
+                 '_is_segment_width_default', '_is_text_height_default')
 
     def __init__(self, min=None, max=None, segment_count=None,
                  colors=None, title=None, base_plane=None):
