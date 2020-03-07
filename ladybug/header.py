@@ -16,8 +16,8 @@ class Header(object):
 
     Args:
         data_type: A DataType object. (e.g. Temperature)
-        unit: data_type unit (Default: None).
-        analysis_period: A Ladybug analysis period (Defualt: None)
+        unit: data_type unit (e.g. 'C').
+        analysis_period: A Ladybug AnalysisPeriod object.
         metadata: Optional dictionary of additional metadata,
             containing information such as 'source', 'city', or 'zone'.
 
@@ -30,20 +30,15 @@ class Header(object):
 
     __slots__ = ('_data_type', '_unit', '_analysis_period', '_metadata')
 
-    def __init__(self, data_type, unit=None,
-                 analysis_period=None, metadata=None):
+    def __init__(self, data_type, unit, analysis_period, metadata=None):
         """Initiate Ladybug header for lists.
         """
         assert isinstance(data_type, DataTypeBase), \
             'data_type must be a Ladybug DataType. Got {}'.format(type(data_type))
-        if unit is None:
-            unit = data_type.units[0]
-        else:
-            data_type.is_unit_acceptable(unit)
-        if analysis_period is not None:
-            assert isinstance(analysis_period, AnalysisPeriod), \
-                'analysis_period must be a Ladybug AnalysisPeriod. Got {}'.format(
-                    type(analysis_period))
+        data_type.is_unit_acceptable(unit)
+        assert isinstance(analysis_period, AnalysisPeriod), \
+            'analysis_period must be a Ladybug AnalysisPeriod. Got {}'.format(
+                type(analysis_period))
         if metadata is not None:
             assert isinstance(metadata, dict), \
                 'metadata must be a dictionary. Got {}'.format(type(metadata))
@@ -70,15 +65,15 @@ class Header(object):
                 }
         """
         # assign default values
-        assert 'data_type' in data, 'Required keyword "data_type" is missing!'
-        keys = ('data_type', 'unit', 'analysis_period', 'metadata')
-        for key in keys:
-            if key not in data:
-                data[key] = None
+        assert 'data_type' in data, 'Required Header key "data_type" is missing!'
+        assert 'unit' in data, 'Required Header key "unit" is missing!'
+        assert 'analysis_period' in data, \
+            'Required Header key "analysis_period" is missing!'
 
         data_type = DataTypeBase.from_dict(data['data_type'])
         ap = AnalysisPeriod.from_dict(data['analysis_period'])
-        return cls(data_type, data['unit'], ap, data['metadata'])
+        metadata = data['metadata'] if 'metadata' in data else None
+        return cls(data_type, data['unit'], ap, metadata)
 
     @property
     def data_type(self):
@@ -97,7 +92,7 @@ class Header(object):
 
     @property
     def metadata(self):
-        """Metadata associated with the Header."""
+        """Dictionary of metadata associated with the Header."""
         return self._metadata
 
     def duplicate(self):

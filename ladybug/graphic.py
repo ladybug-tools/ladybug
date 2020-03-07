@@ -37,6 +37,7 @@ class GraphicContainer(object):
         * lower_title_location
         * upper_title_location
     """
+    __slots__ = ('_legend', '_min_point', '_max_point', '_data_type', '_unit')
 
     def __init__(self, values, min_point, max_point,
                  legend_parameters=None, data_type=None, unit=None):
@@ -87,11 +88,25 @@ class GraphicContainer(object):
 
         # set the default segment_height
         if self.legend_parameters.is_segment_height_default:
+            s_count = self.legend_parameters.segment_count
+            denom = s_count if s_count >= 5 else 5 
             if self.legend_parameters.vertical:
-                seg_height = float((self._max_point.y - self._min_point.y) / 20)
+                seg_height = float((self._max_point.y - self._min_point.y) / denom)
             else:
-                seg_height = float((self._max_point.x - self._min_point.x) / 20)
+                seg_height = float((self._max_point.x - self._min_point.x) / (denom * 2))
             self.legend_parameters.segment_height = seg_height
+            self.legend_parameters._is_segment_height_default = True
+
+        # set the default segment_width
+        if self.legend_parameters.is_segment_width_default:
+            if self.legend_parameters.vertical:
+                seg_width = self.legend_parameters.segment_height / 2
+            else:
+                seg_width = self.legend_parameters.text_height * \
+                    (len(str(int(self.legend_parameters.max))) + \
+                    self.legend_parameters.decimal_count + 2)
+            self.legend_parameters.segment_width = seg_width
+            self.legend_parameters._is_segment_width_default = True
 
         # set the default base point
         if self.legend_parameters.is_base_plane_default:
@@ -105,6 +120,7 @@ class GraphicContainer(object):
                     3 * self.legend_parameters.text_height,
                     self._min_point.z)
             self.legend_parameters.base_plane = Plane(o=base_pt)
+            self.legend_parameters._is_base_plane_default = True
 
     @classmethod
     def from_dict(cls, data):

@@ -688,6 +688,19 @@ def test_filter_by_pattern_continuous():
     assert not isinstance(dc2, HourlyContinuousCollection)
 
 
+def test_filter_by_analysis_period_sub_hourly():
+    """Test filtering by analysis period on sub-hourly continuous collection."""
+    header = Header(Temperature(), 'C', AnalysisPeriod())
+    values = list(range(8760))
+    dc1 = HourlyContinuousCollection(header, values)
+    dc2 = dc1.interpolate_to_timestep(4)
+
+    dc3 = dc2.filter_by_analysis_period(AnalysisPeriod(st_month=7, end_month=7, timestep=4))
+    assert len(dc3) == 2976
+    dc4 = dc2.filter_by_analysis_period(AnalysisPeriod(st_hour=9, end_hour=17, timestep=4))
+    assert len(dc4) == 12045
+
+
 def test_filter_by_analysis_period_hourly():
     """Test filtering by analysis period on hourly discontinuous collection."""
     header = Header(Temperature(), 'C', AnalysisPeriod())

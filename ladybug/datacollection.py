@@ -82,8 +82,6 @@ class HourlyDiscontinuousCollection(BaseCollection):
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
-        assert isinstance(header.analysis_period, AnalysisPeriod), \
-            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
@@ -572,8 +570,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
-        assert isinstance(header.analysis_period, AnalysisPeriod), \
-            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
         assert header.analysis_period.st_hour == 0, \
             'analysis_period start hour of {} must be 0. Got {}'.format(
                 self.__class__.__name__, header.analysis_period.st_hour)
@@ -720,7 +716,8 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             st_ind = int((analysis_period.st_time.moy / t_s) -
                          (self.header.analysis_period.st_time.moy / t_s))
             end_ind = int((analysis_period.end_time.moy / t_s) -
-                          (analysis_period.st_time.moy / t_s) + st_ind + 1)
+                          (analysis_period.st_time.moy / t_s) + st_ind +
+                          analysis_period.timestep)
             if end_ind > st_ind:
                 _filt_values = self._values[st_ind:end_ind]
             else:
@@ -1037,8 +1034,6 @@ class DailyCollection(BaseCollection):
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
-        assert isinstance(header.analysis_period, AnalysisPeriod), \
-            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
@@ -1262,8 +1257,6 @@ class MonthlyCollection(BaseCollection):
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
-        assert isinstance(header.analysis_period, AnalysisPeriod), \
-            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))
@@ -1405,8 +1398,6 @@ class MonthlyPerHourCollection(BaseCollection):
         """
         assert isinstance(header, Header), \
             'header must be a Ladybug Header object. Got {}'.format(type(header))
-        assert isinstance(header.analysis_period, AnalysisPeriod), \
-            'header of {} must have an analysis_period.'.format(self.__class__.__name__)
         assert isinstance(datetimes, Iterable) \
             and not isinstance(datetimes, (str, dict, bytes, bytearray)), \
             'datetimes should be a list or tuple. Got {}'.format(type(datetimes))

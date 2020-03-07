@@ -33,8 +33,8 @@ def test_init_graphic_con():
     assert isinstance(graphic_con.legend, Legend)
     assert graphic_con.value_colors == graphic_con.legend.value_colors
 
-    assert not graphic_con.legend_parameters.is_base_plane_default
-    assert not graphic_con.legend_parameters.is_segment_height_default
+    assert graphic_con.legend_parameters.is_base_plane_default
+    assert graphic_con.legend_parameters.is_segment_height_default
     assert graphic_con.legend_parameters.is_segment_width_default
     assert graphic_con.legend_parameters.is_text_height_default
     assert graphic_con.legend_parameters.base_plane != Plane()
