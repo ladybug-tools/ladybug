@@ -67,9 +67,8 @@ class HourlyPlot(object):
         * colors
     """
     __slots__ = ('_data_collection', '_base_point', '_x_dim', '_y_dim', '_z_dim',
-                 '_num_y', '_num_x', '_container', '_colored_mesh2d', '_colored_mesh3d',
-                 '_hour_points', '_hour_text', '_month_points', '_month_label_points',
-                 '_month_text')
+                 '_num_y', '_num_x', '_container', '_hour_points', '_hour_text',
+                 '_month_points', '_month_label_points', '_month_text')
 
     HOUR_LABELS = (0, 6, 12, 18, 24)
 
@@ -98,8 +97,6 @@ class HourlyPlot(object):
             self._z_dim = self._check_dim(z_dim, 'z_dim')
 
         # set properties to None that will be computed later
-        self._colored_mesh2d = None
-        self._colored_mesh3d = None
         self._hour_points = None
         self._hour_text = None
         self._month_points = None
@@ -180,9 +177,7 @@ class HourlyPlot(object):
     @property
     def colored_mesh2d(self):
         """Get a colored Mesh2D for this graphic."""
-        if not self._colored_mesh2d:
-            self._compute_colored_mesh2d()
-        return self._colored_mesh2d
+        return self._compute_colored_mesh2d()
 
     @property
     def colored_mesh3d(self):
@@ -191,9 +186,7 @@ class HourlyPlot(object):
         Note that this will be the same as the colored_mesh2d if the z_dim
         value is 0.
         """
-        if not self._colored_mesh3d:
-            self._compute_colored_mesh3d()
-        return self._colored_mesh3d
+        return self._compute_colored_mesh3d()
 
     @property
     def legend(self):
@@ -396,7 +389,7 @@ class HourlyPlot(object):
     def _compute_colored_mesh2d(self):
         """Compute a colored mesh from this object's data collection."""
         # generate the base mesh as a stanadard grid
-        self._colored_mesh2d = Mesh2D.from_grid(
+        _colored_mesh2d = Mesh2D.from_grid(
             self.base_point, self._num_x, self._num_y, self.x_dim, self.y_dim)
 
         # reomve any faces in the base mesh that do not represent the data
@@ -412,18 +405,20 @@ class HourlyPlot(object):
                     found_i += 1
                 else:
                     mesh_pattern.append(False)
-            self._colored_mesh2d = self._colored_mesh2d.remove_faces_only(mesh_pattern)
+            _colored_mesh2d = _colored_mesh2d.remove_faces_only(mesh_pattern)
 
         # assign the colors to the mesh
-        self._colored_mesh2d.colors = self.colors
+        _colored_mesh2d.colors = self.colors
+        return _colored_mesh2d
 
     def _compute_colored_mesh3d(self):
         """Compute a colored mesh from this object's data collection."""
-        self._colored_mesh3d = Mesh3D.from_mesh2d(
+        _colored_mesh3d = Mesh3D.from_mesh2d(
             self.colored_mesh2d, Plane(o=Point3D(0, 0, self._container.min_point.z)))
         if self.z_dim != 0:
-            self._colored_mesh3d = self._colored_mesh3d.height_field_mesh(
+            _colored_mesh3d = _colored_mesh3d.height_field_mesh(
                 self.data_collection.values, (0, self.z_dim))
+        return _colored_mesh3d
 
     def _compute_static_hour_line_pts(self):
         """Compute the points for the hour lines and labels."""
