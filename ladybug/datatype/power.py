@@ -3,6 +3,7 @@
 from __future__ import division
 
 from .base import DataTypeBase
+from .energyflux import EnergyFlux
 
 
 class Power(DataTypeBase):
@@ -13,6 +14,7 @@ class Power(DataTypeBase):
     _ip_units = ('Btu/h', 'kBtu/h', 'TR', 'hp')
     _abbreviation = 'Q'
     _point_in_time = False
+    _normalized_type = EnergyFlux
 
     def _W_to_Btu_h(self, value):
         return value * 3.41214

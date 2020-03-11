@@ -3,6 +3,7 @@
 from __future__ import division
 
 from .base import DataTypeBase
+from .energyintensity import EnergyIntensity
 
 
 class Energy(DataTypeBase):
@@ -15,6 +16,7 @@ class Energy(DataTypeBase):
     _abbreviation = 'E'
     _point_in_time = False
     _cumulative = True
+    _normalized_type = EnergyIntensity
 
     def _kWh_to_kBtu(self, value):
         return value * 3.41214
