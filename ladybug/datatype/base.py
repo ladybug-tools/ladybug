@@ -24,6 +24,7 @@ class DataTypeBase(object):
         *   unit_descr
         *   point_in_time
         *   cumulative
+        *   normalized_type
     """
     _name = None
     _units = [None]
@@ -36,6 +37,7 @@ class DataTypeBase(object):
     _unit_descr = None
     _point_in_time = True
     _cumulative = False
+    _normalized_type = None
 
     _type_enumeration = None
 
@@ -228,19 +230,17 @@ class DataTypeBase(object):
 
     @property
     def min(self):
-        """Lower limit for the data type.
+        """Number for the lower limit for the data type.
 
-        Values below lower limit should be physically
-        or mathematically impossible. (Default: -inf)
+        Values below this limit should be physically or mathematically impossible.
         """
         return self._min
 
     @property
     def max(self):
-        """ Upper limit for the data type.
+        """Number for the upper limit for the data type.
 
-        Values above upper limit should be physically
-        or mathematically impossible. (Default: +inf)
+        Values above this limit should be physically or mathematically impossible.
         """
         return self._max
 
@@ -256,22 +256,19 @@ class DataTypeBase(object):
 
     @property
     def unit_descr(self):
-        """A description of the data type units
+        """A dictionary that matches numerical values to text categories.
 
-        A dictionary is used to describe categories that the numerical values of
-        the units relate to.
-        This is useful if numerical values of the units relate to specific categories.
-        (eg. -1 = Cold, 0 = Neutral, +1 = Hot) (eg. 0 = False, 1 = True).
+        This will be None if there are no text categories that the data type can be
+        mapped to. (eg. -1 = Cold, 0 = Neutral, +1 = Hot) (eg. 0 = False, 1 = True).
         """
         return self._unit_descr
 
     @property
     def point_in_time(self):
-        """Whether the data type is point_in_time.
+        """Boolean to note whether data type is for a single instant in time.
 
-        A Boolean indicates that the data type represents conditions
-        at a single instant in time (True) or at an average or
-        accumulation over time (False) when found in hourly lists of data.
+        If False, the data type is meant to represent an average or accumulation
+        over time whenenever found in an array of time series data.
         (True Examples: Temperature, WindSpeed)
         (False Examples: Energy, Radiation, Illuminance)
         """
@@ -279,16 +276,23 @@ class DataTypeBase(object):
 
     @property
     def cumulative(self):
-        """Whether the data type is cumulative.
+        """Boolean to note if data type can be summed over time to yield meaningful data.
 
-        A Boolean indicates that the data type can be cumulative when it
-        is represented over time (True) or it can only be averaged over time
-        to be meaningful (False). Note that cumulative cannot be True
-        when point_in_time is also True.
+        If False, this data type can only be averaged over time to be meaningful.
+        Note that cumulative cannot be True when point_in_time is also True.
         (False Examples: Temperature, Irradiance, Illuminance)
         (True Examples: Energy, Radiation)
         """
         return self._cumulative
+    
+    @property
+    def normalized_type(self):
+        """A data type object representing the area-normalized version of this data type.
+
+        This will be None if the data type cannot be normalized per unit area to
+        yeild a meaningful data type.
+        """
+        return self._normalized_type
 
     def ToString(self):
         """Overwrite .NET ToString."""

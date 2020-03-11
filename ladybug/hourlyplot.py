@@ -501,5 +501,5 @@ class HourlyPlot(object):
         return dim_value
 
     def __repr__(self):
-        """Hourly Plot Collection representation."""
+        """Hourly Plot representation."""
         return 'Hourly Plot:\n{}'.format(self.data_collection.header)
