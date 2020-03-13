@@ -18,6 +18,9 @@ from ladybug_geometry.geometry3d.polyline import Polyline3D
 from ladybug_geometry.geometry3d.mesh import Mesh3D
 
 
+from math import pi, cos, sin, log
+
+
 class WindRose(object):
     """Module for visualization of wind data collection by orientation.
     Args:
@@ -188,42 +191,78 @@ class WindRose(object):
         Returns:
             A list of numbers defining bin intervals across bin range.
         """
-
         range_delta = bin_range[1] - bin_range[0]
 
         return [i * (range_delta / bin_num) + bin_range[0] for i in range(bin_num + 1)]
 
     @staticmethod
-    def histogram(values, bin_array):
+    def _bin_polar(bin_arr):
+        """Compute the polar coordinates for the histogram bins of values.
+
+        Args:
+            # TODO
+
+        Returns:
+            # TODO
+        """
+
+        # Init polar matrix
+        polar_mtx = [None] * (len(bin_arr) - 1)
+        t = 180.0 / pi  # for degrees to radian conversion
+
+        for i in range(len(bin_arr) - 1):
+
+            # Get polar args for bin edges
+            theta1, theta2 = bin_arr[i] + 90., bin_arr[i + 1] + 90.
+
+            # Solve for unit x, y vectors
+            polar_mtx[i] = (Vector2D(cos(theta1 / t), sin(theta1 / t)),
+                            Vector2D(cos(theta2 / t), sin(theta2 / t)))
+
+        return polar_mtx
+
+    @staticmethod
+    def histogram_bins(values, bin_arr, key = None):
         """Compute the histogram from this object's data collection.
 
-        The data is binned inclusive of the lower bound and exclusive of the upper bound.
+        The data is binned inclusive of the lower bound but exclusive of the
+        upper bound for intervals.
+
+        Example of where we lose 3 because of exclusive upper bound:
+        histogram([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
+        >>> [[0, 0, 0.9], [1, 1.5, 1.99], [2]]
 
         Args:
             values: list of numerical data to bin.
-            bin_array: A list of bin bounds.
+            bin_arr: A list of bin bounds.
+            key: Optional parameter to pass function to identify key for sorting
+                histogram.
 
         Returns:
             A list of lists representing the ordered values binned by frequency.
                 Example: histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]
         """
-        vals = sorted(values)
-        bin_bound_num = len(bin_array)
+        if key is None:
+            key = lambda v: v
+
+        vals = sorted(values, key=key)
+        bin_bound_num = len(bin_arr)
 
         # Init histogram bins
         hist = [[] for i in range(bin_bound_num - 1)]
         bin_index = 0
         for val in vals:
 
+            k = key(val)
             # Ignore values out of range
-            if val < bin_array[0] or val >= bin_array[-1]:
+            if k < bin_arr[0] or k >= bin_arr[-1]:
                 continue
 
             # This loop will iterate through the bin upper bounds.
             # If the value is within the bounds, the lower bound
             # of the bin_index is updated, and the loop is broken
             for i in range(bin_index, bin_bound_num - 1):
-                if val < bin_array[i + 1]:
+                if k < bin_arr[i + 1]:
                     hist[i].append(val)
                     bin_index = i
                     break
@@ -231,8 +270,59 @@ class WindRose(object):
         return hist
 
     @staticmethod
-    def _polar_histogram(data_collection, bin_num=4):
-        """Compute the polar histogram from the data collection.
+    def histogram_polar(values, bin_arr, key=None, yticks=10):
+        """Polar histogram.
+
+        Args:
+            # TODO
+
+        Returns:
+            # TODO
+        """
+        # Compute histogram data
+        hist = WindRose.histogram_bins(values, bin_arr, key=key)
+
+        # Compute polar edges
+        polar_mtx = WindRose._bin_polar(bin_arr)
+
+        # Get histogram properties for plotting
+        num_vals = sum([len(bar) for bar in hist])
+        vec_cpt = Vector2D(0, 0)
+        max_radius = max([len(bar)/num_vals for bar in hist])
+
+        # Init lists for coordinates
+        polar_hist = []
+        grid_xticks = []
+        grid_yticks = []
+
+        for polar_vecs, bar in zip(polar_mtx, hist):
+            radius = len(bar) / num_vals
+            vec1, vec2 = polar_vecs
+
+            # Plot histogram bar in polar coordinates
+            pts = [v.to_array() for v in [vec_cpt, radius * vec1, radius * vec2]]
+            polar_hist.append(Polygon2D.from_array(pts))
+
+            # Abstractable: polar_mtx, hist
+            # Plot x-axis bin boundaries in polar coordinates
+            grid_xticks.extend([LineSegment2D.from_array([v.to_array() for v in
+                                                         [vec_cpt, max_radius * vec1]]),
+                                LineSegment2D.from_array([v.to_array() for v in
+                                                         [vec_cpt, max_radius * vec2]])])
+
+        # Abstractable: maxradius, yticks, polar_mtx
+        # Plot y-axis in polar coordinates
+        for i in range(1, yticks + 1):
+            radius = (i / yticks) * max_radius
+            segs = Polygon2D.from_array([(vecs[0] * radius).to_array()
+                                        for vecs in polar_mtx]).segments
+            grid_yticks.extend(segs)
+
+        return polar_hist, grid_xticks, grid_yticks
+
+    @staticmethod
+    def histogram_plot(bars, intervals, grid_xticks, grid_yticks):
+         """Plot histogram.
 
         Args:
             # TODO
@@ -241,11 +331,32 @@ class WindRose(object):
             # TODO
         """
 
-        bin_arr = WindRose._bin_array(bin_num, (0, 361))
+        for polar_vecs, bar in zip(polar_mtx, hist):
+            radius = len(bar) / num_vals
+            vec1, vec2 = polar_vecs
 
-        hist = WindRose._compute_histogram(data_collection.values, bin_arr)
+            # Abstractable: maxradius, yticks, polar_mtx, hist, vector_lst
+            # Plot histogram bar in polar coordinates
+            pts = [v.to_array() for v in [vec_cpt, radius * vec1, radius * vec2]]
+            polar_hist.append(Polygon2D.from_array(pts))
 
-        pass
+            # Abstractable: polar_mtx, hist
+            # Plot x-axis bin boundaries in polar coordinates
+            grid_xticks.extend([LineSegment2D.from_array([v.to_array() for v in
+                                                         [vec_cpt, max_radius * vec1]]),
+                                LineSegment2D.from_array([v.to_array() for v in
+                                                         [vec_cpt, max_radius * vec2]])])
+
+        # Abstractable: maxradius, yticks, polar_mtx
+        # Plot y-axis in polar coordinates
+        for i in range(1, yticks + 1):
+            radius = (i / yticks) * max_radius
+            segs = Polygon2D.from_array([(vecs[0] * radius).to_array()
+                                        for vecs in polar_mtx]).segments
+            grid_yticks.extend(segs)
+
+        return polar_hist, grid_xticks, grid_yticks
+
 
     @staticmethod
     def _compute_colored_mesh():
@@ -272,6 +383,8 @@ class WindRose(object):
 
         # # assign the colors to the mesh
         # self._colored_mesh2d.colors = self.value_colors
+
+
 
     @staticmethod
     def _check_dim(dim_value, dim_name):
