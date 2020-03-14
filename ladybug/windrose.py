@@ -18,7 +18,7 @@ from ladybug_geometry.geometry3d.polyline import Polyline3D
 from ladybug_geometry.geometry3d.mesh import Mesh3D
 
 
-from math import pi, cos, sin, log
+from math import pi, cos, sin, log, ceil
 
 
 class WindRose(object):
@@ -222,7 +222,7 @@ class WindRose(object):
         return polar_mtx
 
     @staticmethod
-    def histogram_bins(values, bin_arr, key = None):
+    def histogram_bins(values, bin_arr, key=None):
         """Compute the histogram from this object's data collection.
 
         The data is binned inclusive of the lower bound but exclusive of the
@@ -235,24 +235,24 @@ class WindRose(object):
         Args:
             values: list of numerical data to bin.
             bin_arr: A list of bin bounds.
-            key: Optional parameter to pass function to identify key for sorting
-                histogram.
+            is_gradient: Optional boolean parameter to pass to nest datas for histogram gradient
 
         Returns:
             A list of lists representing the ordered values binned by frequency.
                 Example: histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]
         """
+
         if key is None:
             key = lambda v: v
 
         vals = sorted(values, key=key)
+
         bin_bound_num = len(bin_arr)
 
         # Init histogram bins
         hist = [[] for i in range(bin_bound_num - 1)]
         bin_index = 0
         for val in vals:
-
             k = key(val)
             # Ignore values out of range
             if k < bin_arr[0] or k >= bin_arr[-1]:
@@ -270,7 +270,7 @@ class WindRose(object):
         return hist
 
     @staticmethod
-    def histogram_polar(values, bin_arr, key=None, yticks=10):
+    def histogram_polar_coords(bin_values, sec_values=None, bin_arr=None,  yticks=10):
         """Polar histogram.
 
         Args:
@@ -279,8 +279,16 @@ class WindRose(object):
         Returns:
             # TODO
         """
-        # Compute histogram data
-        hist = WindRose.histogram_bins(values, bin_arr, key=key)
+
+        if bin_arr is None:
+            bin_arr = (0, 45, 90, 135, 180, 225, 270, 315, 360)
+
+        # Compute histogram data differently based on wheter we need nested data or not
+        if sec_values is None:
+            hist = WindRose.histogram_bins(bin_values, bin_arr)
+        else:
+            hist = WindRose.histogram_bins(zip(bin_values, sec_values), bin_arr,
+                                           key=lambda v: v[0])
 
         # Compute polar edges
         polar_mtx = WindRose._bin_polar(bin_arr)
@@ -288,41 +296,68 @@ class WindRose(object):
         # Get histogram properties for plotting
         num_vals = sum([len(bar) for bar in hist])
         vec_cpt = Vector2D(0, 0)
-        max_radius = max([len(bar)/num_vals for bar in hist])
+        max_radius = 1.0
+        max_bar = max([len(bar) for bar in hist])
+        y_dist = max_radius / (yticks-1)  # Length of 1 y-tick
 
-        # Init lists for coordinates
-        polar_hist = []
-        grid_xticks = []
-        grid_yticks = []
+        #from pprint import pprint as pp
+        #pp(hist)
+        #print(max_radius, y_dist)
 
-        for polar_vecs, bar in zip(polar_mtx, hist):
-            radius = len(bar) / num_vals
-            vec1, vec2 = polar_vecs
 
-            # Plot histogram bar in polar coordinates
-            pts = [v.to_array() for v in [vec_cpt, radius * vec1, radius * vec2]]
-            polar_hist.append(Polygon2D.from_array(pts))
+        # Plot histogram bar in polar coordinates
+        hist_coords = []
+        bar_coords = []
+        c = 0
+        for (vec1, vec2), bar in zip(polar_mtx, hist):
+            #if c == 0:
+            #    print(bar)
+            # Define the max edges of the wedge
+            max_bar_num = len(bar)
+            max_bar_radius = max_radius/max_bar * max_bar_num
 
-            # Abstractable: polar_mtx, hist
-            # Plot x-axis bin boundaries in polar coordinates
-            grid_xticks.extend([LineSegment2D.from_array([v.to_array() for v in
-                                                         [vec_cpt, max_radius * vec1]]),
-                                LineSegment2D.from_array([v.to_array() for v in
-                                                         [vec_cpt, max_radius * vec2]])])
+            if sec_values is not None:
+                #bar_coords = []
+                base_coords = [vec_cpt]
+                #y_intervals = WindRose._bin_array(yticks, (0, num_vals))
+                bar_yticks = ceil(max_bar_radius / max_radius * yticks)
 
-        # Abstractable: maxradius, yticks, polar_mtx
+                for i in range(1, bar_yticks+1):
+                    # Stack vectors for interval wedges
+                    y_dist_inc = i * y_dist
+
+                    if y_dist_inc > max_bar_radius:
+                        y_dist_inc = ((i-1) * y_dist) + ((i * y_dist) % max_bar_radius)
+                    bar_coords.append([*base_coords,
+                                       vec1 * y_dist_inc,
+                                       vec2 * y_dist_inc])
+                    base_coords = bar_coords[-1][-2:][::-1]
+
+                #hist_coords.append(bar_coords)
+
+            else:
+                hist_coords.append((vec_cpt,
+                                    vec1 * max_bar_radius,
+                                    vec2 * max_bar_radius))
+            c += 1
+        if sec_values is not None:
+            hist_coords = bar_coords
+        # Plot x-axis bin boundaries in polar coordinates
+        grid_xticks = (([vec_cpt, max_radius * vec1], [vec_cpt, max_radius * vec2])
+                       for (vec1, vec2), bar in zip(polar_mtx, hist))
+        # Flatten list
+        grid_xticks = (xtick for xticks in grid_xticks for xtick in xticks)
+
         # Plot y-axis in polar coordinates
-        for i in range(1, yticks + 1):
-            radius = (i / yticks) * max_radius
-            segs = Polygon2D.from_array([(vecs[0] * radius).to_array()
-                                        for vecs in polar_mtx]).segments
-            grid_yticks.extend(segs)
+        polar_mtx_loop = polar_mtx + [polar_mtx[0]]
+        grid_yticks = ([vecs[0] * i * y_dist for vecs in polar_mtx_loop]
+                       for i in range(1, yticks + 1))
 
-        return polar_hist, grid_xticks, grid_yticks
+        return hist_coords, grid_xticks, grid_yticks
 
     @staticmethod
-    def histogram_plot(bars, intervals, grid_xticks, grid_yticks):
-         """Plot histogram.
+    def plot_histogram(bars, grid_xticks, grid_yticks, base_point=None, scale=None):
+        """Plot histogram.
 
         Args:
             # TODO
@@ -330,32 +365,20 @@ class WindRose(object):
         Returns:
             # TODO
         """
+        # TODO: Add/sclae vectors here
+        # Plot histogram bar in polar coordinates
+        hist = [Polygon2D.from_array([v.to_array() for v in vecs]) for vecs in bars]
 
-        for polar_vecs, bar in zip(polar_mtx, hist):
-            radius = len(bar) / num_vals
-            vec1, vec2 = polar_vecs
+        # Plot x-axis bin boundaries in polar coordinates w/ stacked list comprehensions
+        grid_xticks = [LineSegment2D.from_array((v.to_array() for v in vecs))
+                       for vecs in grid_xticks]
 
-            # Abstractable: maxradius, yticks, polar_mtx, hist, vector_lst
-            # Plot histogram bar in polar coordinates
-            pts = [v.to_array() for v in [vec_cpt, radius * vec1, radius * vec2]]
-            polar_hist.append(Polygon2D.from_array(pts))
-
-            # Abstractable: polar_mtx, hist
-            # Plot x-axis bin boundaries in polar coordinates
-            grid_xticks.extend([LineSegment2D.from_array([v.to_array() for v in
-                                                         [vec_cpt, max_radius * vec1]]),
-                                LineSegment2D.from_array([v.to_array() for v in
-                                                         [vec_cpt, max_radius * vec2]])])
-
-        # Abstractable: maxradius, yticks, polar_mtx
         # Plot y-axis in polar coordinates
-        for i in range(1, yticks + 1):
-            radius = (i / yticks) * max_radius
-            segs = Polygon2D.from_array([(vecs[0] * radius).to_array()
-                                        for vecs in polar_mtx]).segments
-            grid_yticks.extend(segs)
+        # TODO: Is there a way to generalize Polyine2d for rect and polar hist?
+        grid_yticks = [Polyline2D.from_array((v.to_array() for v in vecs))
+                       for vecs in grid_yticks]
 
-        return polar_hist, grid_xticks, grid_yticks
+        return hist, grid_xticks, grid_yticks
 
 
     @staticmethod

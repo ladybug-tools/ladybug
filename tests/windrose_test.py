@@ -51,23 +51,23 @@ def test_histogram():
     # Test out of bounds with 3 divisions
     bin_arr = WindRose._bin_array(3, (0, 3))
     vals = [0, 0, 0, 1, 1, 1, 2, 2]
-    hist = WindRose.histogram(vals, bin_arr)
+    hist = WindRose.histogram_bins(vals, bin_arr)
     assert hist == [[0, 0, 0], [1, 1, 1], [2, 2]]
 
     # Test out of bounds with 2 divisions
     bin_arr = WindRose._bin_array(2, (0, 3))
     vals = [-1, -2, 10, 0, 0, 0, 1, 1, 1, 2, 2, 34]
-    hist = WindRose.histogram(vals, bin_arr)
+    hist = WindRose.histogram_bins(vals, bin_arr)
     assert hist == [[0, 0, 0, 1, 1, 1], [2, 2]], hist
 
     # Test edge bounds
     bin_arr = WindRose._bin_array(2, (0, 3))
     vals = [0, 0, 0, 1, 1, 1, 2, 2, 3, 3]
-    hist = WindRose.histogram(vals, bin_arr)
+    hist = WindRose.histogram_bins(vals, bin_arr)
     assert hist == [[0, 0, 0, 1, 1, 1], [2, 2]], hist
 
     # Test edge bounds 2
-    hist = WindRose.histogram([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
+    hist = WindRose.histogram_bins([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
     assert hist == [[0, 0, 0.9], [1, 1.5, 1.99], [2]], hist
 
 
@@ -96,26 +96,27 @@ def test_bin_polar():
 
 
 def test_polar_histogram():
-    # Init
-    #path = './tests/fixtures/epw/tokyo.epw'
-    #epw = EPW(path)
-
-    # epw.wind_direction.values
-    # epw.wind_speed.values
-
     # Init simple dir set divided by 4
     bin_arr = (0, 90, 180, 270, 360)
     dir_vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
     vel_vals = [10, 10, 30, 10, 5, 9, 9, 17, 25, 28]
-    phist = WindRose.histogram_polar(zip(dir_vals, vel_vals), bin_arr, key=lambda k: k[0])
+    phist, xticks, yticks = WindRose.histogram_polar_coords(dir_vals, vel_vals, bin_arr)
 
-    r1, r2, r3, r4 = 0.5, 0.3, 0.0, 0.2  # radius
+    #pp(phist)
+    #r1, r2, r3, r4 = 0.5, 0.3, 0.0, 0.2  # radius
+    #pp(phist)
 
-    pp(phist)
+def test_plot_polar_histogram():
+    # Plot histogram
+    bin_arr = (0, 90, 180, 270, 360)
+    dir_vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
+    vel_vals = [10, 10, 30, 10, 5, 9, 9, 17, 25, 28]
+    phist, xticks, yticks = WindRose.histogram_polar_coords(dir_vals, vel_vals, bin_arr)
+
+    #phist, xticks, yticks = WindRose.plot_histogram(phist, xyticks, yticks)
 
 
 if __name__ == '__main__':
-
     test_bin_array()
     test_histogram()
     test_bin_polar()
