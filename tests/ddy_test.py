@@ -180,3 +180,9 @@ def test_design_day_hourly_data():
     assert diffuse_horizontal_rad[11] == approx(165.32, rel=1e-1)
     assert global_horizontal_rad[0] == 0
     assert global_horizontal_rad[11] == approx(985.05, rel=1e-1)
+
+    # sky cover values
+    sc_data_collect = des_day.hourly_sky_cover
+
+    # sky cover values
+    hi_data_collect = des_day.hourly_horizontal_infrared

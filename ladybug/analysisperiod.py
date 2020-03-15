@@ -340,8 +340,10 @@ class AnalysisPeriod(object):
     def is_time_included(self, time):
         """Check if time is included in analysis period.
 
-        Return True if time is inside this analysis period,
-        otherwise return False
+        Note that time filtering in Ladybug Tools is slightly different than "normal"
+        filtering since start hour and end hour will be applied for every day.
+        For instance 2/20 9am to 2/22 5pm means hour between 9-17 during 20, 21
+        and 22 of Feb.
 
         Args:
             time: A DateTime to be tested
@@ -351,10 +353,6 @@ class AnalysisPeriod(object):
         """
         if self._timestamps_data is None:
             self._calculate_timestamps()
-        # time filtering in Ladybug Tools is slightly different than "normal"
-        # filtering since start hour and end hour will be applied for every day.
-        # For instance 2/20 9am to 2/22 5pm means hour between 9-17
-        # during 20, 21 and 22 of Feb.
         return time.moy in self._timestamps_data
 
     def duplicate(self):

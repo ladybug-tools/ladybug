@@ -18,6 +18,7 @@ def test_init():
                    longitude=longitude, time_zone=time_zone,
                    elevation=elevation, station_id=station_id, source=source)
 
+    str(loc)  # test the string representation
     assert loc.city == city
     assert loc.country == country
     assert loc.latitude == latitude
