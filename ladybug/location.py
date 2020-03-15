@@ -14,8 +14,10 @@ class Location(object):
         country: Name of the country as a string.
         latitude: Location latitude between -90 and 90 (Default: 0).
         longitude: Location longitude between -180 (west) and 180 (east) (Default: 0).
-        time_zone: Time zone between -12 hours (west) and 12 hours (east) (Default: 0).
-        elevation: A number for elevation of the location.
+        time_zone: Time zone between -12 hours (west) and +14 hours (east). If None,
+            the time zone will be an estimated integer value derived from the
+            longitude in accordance with solar time (Default: None).
+        elevation: A number for elevation of the location in meters. (Default: 0).
         station_id: ID of the location if the location is represnting a weather station.
         source: Source of data (e.g. TMY, TMY3).
 
@@ -36,14 +38,14 @@ class Location(object):
                  "station_id", "source")
 
     def __init__(self, city=None, state=None, country=None, latitude=0, longitude=0,
-                 time_zone=0, elevation=0, station_id=None, source=None):
+                 time_zone=None, elevation=0, station_id=None, source=None):
         """Create a Ladybug location."""
         self.city = '-' if not city else str(city)
         self.state = '-' if not state else str(state)
         self.country = '-' if not country else str(country)
         self.latitude = latitude or 0
         self.longitude = longitude or 0
-        self.time_zone = time_zone or 0
+        self.time_zone = time_zone
         self.elevation = elevation or 0
         self.station_id = None if not station_id else str(station_id)
         self.source = source
@@ -140,37 +142,40 @@ class Location(object):
 
     @property
     def latitude(self):
-        """Location latitude."""
+        """Get or set the location latitude in degrees."""
         return self._lat
 
     @latitude.setter
     def latitude(self, lat):
         self._lat = 0 if not lat else float(lat)
-        assert -90 <= self._lat <= 90, "latitude should be between -90..90."
+        assert -90 <= self._lat <= 90, \
+            'latitude must be between -90 and 90. Got {}.'.format(self._lat)
 
     @property
     def longitude(self):
-        """Location longitude."""
+        """Get or set the location longitude in degrees."""
         return self._lon
 
     @longitude.setter
     def longitude(self, lon):
         self._lon = 0 if not lon else float(lon)
-        assert -180 <= self._lon <= 180, "longitude should be between -180..180."
+        assert -180 <= self._lon <= 180, \
+            'longitude must be between -180 and 180. Got {}.'.format(self._lon)
 
     @property
     def time_zone(self):
-        """Location time zone."""
+        """Get or set the location time zone as a number between -12 and +14."""
         return self._tz
 
     @time_zone.setter
     def time_zone(self, tz):
-        self._tz = 0 if not tz else float(tz)
-        assert -12 <= self._tz <= 12, "Time zone should be between -12.0..12.0"
+        self._tz = round(self._lon / 15) if tz is None else float(tz)
+        assert -12 <= self._tz <= 14, \
+            'Time zone must be between -12 and +14 Got {}.'.format(self._tz)
 
     @property
     def elevation(self):
-        """Location elevation."""
+        """Get or set a number for the location elevation in meters."""
         return self._elev
 
     @elevation.setter
@@ -182,9 +187,9 @@ class Location(object):
 
     @property
     def meridian(self):
-        """Location meridian west of Greenwich."""
+        """Get a number between -180 and +180 for the meridian west of Greenwich."""
         return -15 * self.time_zone
-    
+
     @property
     def ep_style_location_string(self):
         """Get an EnergyPlus location string.
