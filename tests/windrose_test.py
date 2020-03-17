@@ -21,6 +21,7 @@ def _polar_to_rect(theta, radius):
     theta += 90
     return radius * cos(theta/t), radius * sin(theta/t)
 
+
 def test_bin_array():
     """Test the generatin of bin array from bin range and num"""
 
@@ -76,8 +77,9 @@ def test_bin_polar():
 
     # Init simple dir set divided by 4
     bin_arr = (0, 90, 180, 270, 360)
-    vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
-    hist = [[0, 0, 0, 10, 85], [90, 95, 170], [], [285, 288]]
+
+    #vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
+    #hist = [[0, 0, 0, 10, 85], [90, 95, 170], [], [285, 288]]
 
     phist = WindRose._bin_polar(bin_arr)
     r1, r2, r3, r4 = 0.5, 0.3, 0.0, 0.2  # radius
@@ -106,18 +108,43 @@ def test_polar_histogram():
     #r1, r2, r3, r4 = 0.5, 0.3, 0.0, 0.2  # radius
     #pp(phist)
 
+
 def test_plot_polar_histogram():
     # Plot histogram
-    bin_arr = (0, 90, 180, 270, 360)
+    bin_arr  = (0, 90, 180, 270, 360)
     dir_vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
     vel_vals = [10, 10, 30, 10, 5, 9, 9, 17, 25, 28]
+
     phist, xticks, yticks = WindRose.histogram_polar_coords(dir_vals, vel_vals, bin_arr)
 
     #phist, xticks, yticks = WindRose.plot_histogram(phist, xyticks, yticks)
 
 
+def test_histogram_interval_color():
+
+    bin_arr = (0, 90, 180, 270, 360)
+    dir_vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
+    vel_vals = [10, 10, 30, 10, 5, 9, 9, 17, 25, 28]
+    yticks = 3
+
+    # Compute
+    hist_data = WindRose.histogram_data(zip(dir_vals, vel_vals), bin_arr,
+                                        key=lambda v: v[0])
+    hist_coords, xgrid, ygrid = WindRose.histogram_coords_polar(
+        hist_data, vel_vals, bin_arr, yticks)
+
+    # Bins
+    # 0-90:    [10, 10, 30, 10, 5]
+    # 90-180:  [9, 9, 17]
+    # 180-270: []
+    # 270-360: [25, 28]
+
+    # Colors
+    colors = WindRose._compute_bar_interval_colors(hist_data, hist_coords)
+
 if __name__ == '__main__':
-    test_bin_array()
-    test_histogram()
-    test_bin_polar()
-    test_polar_histogram()
+    # test_bin_array()
+    # test_histogram()
+    # test_bin_polar()
+    # test_polar_histogram()
+    test_histogram_interval_color()

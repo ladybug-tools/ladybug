@@ -191,38 +191,14 @@ class WindRose(object):
         Returns:
             A list of numbers defining bin intervals across bin range.
         """
-        range_delta = bin_range[1] - bin_range[0]
-
-        return [i * (range_delta / bin_num) + bin_range[0] for i in range(bin_num + 1)]
-
-    @staticmethod
-    def _bin_polar(bin_arr):
-        """Compute the polar coordinates for the histogram bins of values.
-
-        Args:
-            # TODO
-
-        Returns:
-            # TODO
-        """
-
-        # Init polar matrix
-        polar_mtx = [None] * (len(bin_arr) - 1)
-        t = 180.0 / pi  # for degrees to radian conversion
-
-        for i in range(len(bin_arr) - 1):
-
-            # Get polar args for bin edges
-            theta1, theta2 = bin_arr[i] + 90., bin_arr[i + 1] + 90.
-
-            # Solve for unit x, y vectors
-            polar_mtx[i] = (Vector2D(cos(theta1 / t), sin(theta1 / t)),
-                            Vector2D(cos(theta2 / t), sin(theta2 / t)))
-
-        return polar_mtx
+        try:
+            range_delta = bin_range[1] - bin_range[0]
+            return [i * (range_delta / bin_num) + bin_range[0] for i in range(bin_num + 1)]
+        except ZeroDivisionError:
+            return []
 
     @staticmethod
-    def histogram_bins(values, bin_arr, key=None):
+    def histogram_data(values, bin_arr, key=None):
         """Compute the histogram from this object's data collection.
 
         The data is binned inclusive of the lower bound but exclusive of the
@@ -270,7 +246,93 @@ class WindRose(object):
         return hist
 
     @staticmethod
-    def histogram_polar_coords(bin_values, sec_values=None, bin_arr=None,  yticks=10):
+    def _compute_bar_interval_vecs(base_vec_stack, vec1, vec2, curr_bar_radius,
+                                   min_bar_radius, max_bar_radius, ytick_num, ytick_dist):
+        """Compute the vectors for intervals of the histogram bars.
+
+        Args:
+            # TODO
+
+        Returns:
+            # TODO
+        """
+        bar_interval_vecs = []
+
+        bar_radius = max_bar_radius - min_bar_radius
+        # Identify maximum yticks
+        max_yticks = ceil(curr_bar_radius / bar_radius * ytick_num)
+
+        for i in range(1, max_yticks + 1):
+
+            # Stack vectors for interval wedges
+            ytick_dist_inc = i * ytick_dist
+            if ytick_dist_inc > curr_bar_radius:
+                ytick_dist_inc = ((i - 1) * ytick_dist) + \
+                    (ytick_dist_inc % curr_bar_radius)
+
+            ytick_dist_inc += min_bar_radius
+
+            # Vector multiplication with y_dist_inc and add to bar_coords
+            bar_interval_vecs.append([*base_vec_stack,
+                                     (vec1[0] * ytick_dist_inc,
+                                      vec1[1] * ytick_dist_inc),
+                                     (vec2[0] * ytick_dist_inc,
+                                      vec2[1] * ytick_dist_inc)])
+
+            base_vec_stack = bar_interval_vecs[-1][-2:][::-1]
+
+        return bar_interval_vecs
+
+    @staticmethod
+    def _compute_bar_interval_colors(hist_data, hist_coords):
+
+        colors = []
+
+        for data, vecs in zip(hist_data, hist_coords):
+            bar_data_num = len(vecs)
+            bar_data_val = [x[1] for x in data]
+            g = [x[0] for x in data]
+            #print('len', bar_data_num)
+            #print(bar_data_val)
+            #print('--')
+            #print(g)
+
+            if bar_data_val:
+                crange = (min(bar_data_val), max(bar_data_val))
+                #print('cra', crange)
+                color_arr = WindRose._bin_array(bar_data_num - 1, crange)
+                if not color_arr:
+                    #print('alert')
+                    # print(bar_data_num)
+                    # print(bar_data_val)
+                    # print(crange)
+                    color_arr = [sum(bar_data_val)/len(bar_data_val)]
+                #print('arr:', color_arr)
+                colors.extend(color_arr)
+            #print('----')
+        return colors
+
+    @staticmethod
+    def _compute_bar_vecs_polar(bin_theta_bound_1, bin_theta_bound_2):
+        """Compute the polar coordinates for the histogram bins of values.
+
+        Args:
+            # TODO
+
+        Returns:
+            # TODO
+        """
+        t = 180.0 / pi  # for degrees to radian conversion
+
+        # Correct range
+        theta1, theta2 = bin_theta_bound_1 - 22.5/2 + 90., bin_theta_bound_2 - 22.5/2 + 90.
+
+        # Solve for unit x, y vectors
+        return ((cos(theta1 / t), sin(theta1 / t)),
+                (cos(theta2 / t), sin(theta2 / t)))
+
+    @staticmethod
+    def histogram_coords_polar(hist, sec_values, zerosnum, bin_arr,  radius_arr, ytick_num):
         """Polar histogram.
 
         Args:
@@ -280,78 +342,60 @@ class WindRose(object):
             # TODO
         """
 
-        if bin_arr is None:
-            bin_arr = (0, 45, 90, 135, 180, 225, 270, 315, 360)
+        # Get histogram properties for plotting bars
+        vec_cpt = (0, 0)
+        min_bar_radius, max_bar_radius = radius_arr
+        bar_radius = max_bar_radius - min_bar_radius
+        max_bar_num = max([len(bar) for bar in hist])
+        ytick_dist = bar_radius / ytick_num  # Length of 1 y-tick
 
-        # Compute histogram data differently based on wheter we need nested data or not
-        if sec_values is None:
-            hist = WindRose.histogram_bins(bin_values, bin_arr)
-        else:
-            hist = WindRose.histogram_bins(zip(bin_values, sec_values), bin_arr,
-                                           key=lambda v: v[0])
-
-        # Compute polar edges
-        polar_mtx = WindRose._bin_polar(bin_arr)
-
-        # Get histogram properties for plotting
-        num_vals = sum([len(bar) for bar in hist])
-        vec_cpt = Vector2D(0, 0)
-        max_radius = 1.0
-        max_bar = max([len(bar) for bar in hist])
-        y_dist = max_radius / (yticks-1)  # Length of 1 y-tick
-
-        #from pprint import pprint as pp
-        #pp(hist)
-        #print(max_radius, y_dist)
-
+        # Compute the vectors for bar edges based on bin theta
+        bar_edge_vecs = [WindRose._compute_bar_vecs_polar(bin_arr[i], bin_arr[i + 1])
+                         for i in range(len(bin_arr) - 1)[::-1]]
 
         # Plot histogram bar in polar coordinates
         hist_coords = []
-        bar_coords = []
-        c = 0
-        for (vec1, vec2), bar in zip(polar_mtx, hist):
-            #if c == 0:
-            #    print(bar)
-            # Define the max edges of the wedge
-            max_bar_num = len(bar)
-            max_bar_radius = max_radius/max_bar * max_bar_num
+        for i, curr_bar in enumerate(hist):
+            # Compute the current bar radius
+            curr_bar_radius = bar_radius / max_bar_num * len(curr_bar)
+
+            (vec1, vec2) = bar_edge_vecs[i]
 
             if sec_values is not None:
-                #bar_coords = []
-                base_coords = [vec_cpt]
-                #y_intervals = WindRose._bin_array(yticks, (0, num_vals))
-                bar_yticks = ceil(max_bar_radius / max_radius * yticks)
-
-                for i in range(1, bar_yticks+1):
-                    # Stack vectors for interval wedges
-                    y_dist_inc = i * y_dist
-
-                    if y_dist_inc > max_bar_radius:
-                        y_dist_inc = ((i-1) * y_dist) + ((i * y_dist) % max_bar_radius)
-                    bar_coords.append([*base_coords,
-                                       vec1 * y_dist_inc,
-                                       vec2 * y_dist_inc])
-                    base_coords = bar_coords[-1][-2:][::-1]
-
-                #hist_coords.append(bar_coords)
-
+                if min_bar_radius > 0.0:
+                    base = [(vec1[0] * min_bar_radius, vec1[1] * min_bar_radius),
+                            (vec2[0] * min_bar_radius, vec2[1] * min_bar_radius)][::-1]
+                else:
+                    base = [vec_cpt]
+                bar_vecs = WindRose._compute_bar_interval_vecs(
+                    base, vec1, vec2, curr_bar_radius, min_bar_radius, max_bar_radius, ytick_num,
+                    ytick_dist)
+                hist_coords.append(bar_vecs)
             else:
-                hist_coords.append((vec_cpt,
-                                    vec1 * max_bar_radius,
-                                    vec2 * max_bar_radius))
-            c += 1
-        if sec_values is not None:
-            hist_coords = bar_coords
-        # Plot x-axis bin boundaries in polar coordinates
-        grid_xticks = (([vec_cpt, max_radius * vec1], [vec_cpt, max_radius * vec2])
-                       for (vec1, vec2), bar in zip(polar_mtx, hist))
+                bar_vecs = (vec_cpt,
+                            (vec1[0] * curr_bar_radius,
+                             vec1[1] * curr_bar_radius),
+                            (vec2[0] * curr_bar_radius,
+                             vec2[1] * curr_bar_radius))
+                hist_coords.append(bar_vecs)
+
+        # Compute x-axis bin boundaries in polar coordinates
+        # Vector multiplication with max_bar_radius
+        grid_xticks = (([vec_cpt,
+                         (max_bar_radius * vec1[0], max_bar_radius * vec1[1])],
+                        [vec_cpt,
+                         (max_bar_radius * vec2[0], max_bar_radius * vec2[1])])
+                       for (vec1, vec2) in bar_edge_vecs)
         # Flatten list
         grid_xticks = (xtick for xticks in grid_xticks for xtick in xticks)
 
-        # Plot y-axis in polar coordinates
-        polar_mtx_loop = polar_mtx + [polar_mtx[0]]
-        grid_yticks = ([vecs[0] * i * y_dist for vecs in polar_mtx_loop]
-                       for i in range(1, yticks + 1))
+        # Compute y-axis in polar coordinates, vector multiplication with max_bar_radius
+        bar_edge_loop = bar_edge_vecs + [bar_edge_vecs[0]]
+
+        ytick_dist = max_bar_radius / ytick_num  # Length of 1 y-tick
+        grid_yticks = (((vec1[0] * i * ytick_dist, vec1[1] * i * ytick_dist)
+                        for (vec1, _) in bar_edge_loop)
+                       for i in range(1, ytick_num + 1))
 
         return hist_coords, grid_xticks, grid_yticks
 
@@ -367,19 +411,97 @@ class WindRose(object):
         """
         # TODO: Add/sclae vectors here
         # Plot histogram bar in polar coordinates
-        hist = [Polygon2D.from_array([v.to_array() for v in vecs]) for vecs in bars]
+        hist = [Polygon2D.from_array(vecs) for vecs in bars]
 
         # Plot x-axis bin boundaries in polar coordinates w/ stacked list comprehensions
-        grid_xticks = [LineSegment2D.from_array((v.to_array() for v in vecs))
+        grid_xticks = [LineSegment2D.from_array((v for v in vecs))
                        for vecs in grid_xticks]
 
         # Plot y-axis in polar coordinates
         # TODO: Is there a way to generalize Polyine2d for rect and polar hist?
-        grid_yticks = [Polyline2D.from_array((v.to_array() for v in vecs))
+        grid_yticks = [Polyline2D.from_array((v for v in vecs))
                        for vecs in grid_yticks]
 
         return hist, grid_xticks, grid_yticks
 
+    @staticmethod
+    def main(bin_values, sec_values, bin_intervals, bin_range, bar_intervals=None,
+             is_sec_values=True, yticks=None, xticks=None):
+        """Plot histogram.
+
+        Args:
+            # TODO: Make a lot of these args a OOP state
+
+        Returns:
+            # TODO
+        """
+        # Filter out zero values
+        _bin_values = []
+        _sec_values = []
+        for d, v in zip(bin_values, sec_values):
+            if v > 1.5:
+                _bin_values.append(d)
+                _sec_values.append(v)
+
+        num_zeros = len(sec_values) - len(_sec_values)
+        zeros_per_bin = num_zeros / bin_intervals
+
+        # Define the bin arange
+        bin_arr = WindRose._bin_array(bin_intervals, bin_range)
+
+        # Compute histogram data differently based on wheter we need nested data or not
+        if sec_values is None:
+            hist_data = WindRose.histogram_data(_bin_values, bin_arr)
+        else:
+            hist_data = WindRose.histogram_data(zip(_bin_values, _sec_values), bin_arr,
+                                                key=lambda v: v[0])
+
+        # Calm wind rose
+        max_bar_radius = 1.0
+        max_bar_num = max([len(bar) for bar in hist_data]) + zeros_per_bin
+        ytick_dist = max_bar_radius / yticks  # Length of 1 y-tick
+        calmrose_radius = max_bar_radius / max_bar_num * zeros_per_bin
+
+        # ### CALM ROSE
+        # calm_hist_data = WindRose.histogram_data(bin_arr, bin_arr)
+        # calm_hist_coords, xgrid, ygrid = WindRose.histogram_coords_polar(
+        #     calm_hist_data, None, 0, bin_arr, (0.0, calmrose_radius), yticks)
+        print('calmrose-radius', calmrose_radius)
+
+        # ### REGULAR ROSE
+        # Compute polar coordinates
+        hist_coords, xgrid, ygrid = WindRose.histogram_coords_polar(
+            hist_data, _sec_values, zeros_per_bin, bin_arr, (calmrose_radius, 1.0), yticks)
+
+        #print(len(hist_data))
+        #print(len(hist_coords))
+        # TODO: temp flattening
+        colors = []
+        if sec_values is not None:
+            colors = WindRose._compute_bar_interval_colors(hist_data, hist_coords)
+            hist_coords = [interval for bar in hist_coords for interval in bar]
+            #print(len(hist_coords))
+        else:
+            colors = [0 for i in range(len(hist_data))]
+
+        plotted = WindRose.plot_histogram(hist_coords, grid_xticks=xgrid,
+                                          grid_yticks=ygrid, base_point=None, scale=None)
+
+        #colors = None
+        return plotted, colors
+
+    @staticmethod
+    def windrose(data_collection, bin_intervals, bin_range, bar_intervals=None,
+             is_sec_values=True, yticks=10, xticks=None):
+
+        # Get wind values from epw
+        sec_values = data_collection.wind_speed.values
+        bin_values = data_collection.wind_direction.values
+
+        plotted, colors = WindRose.main(bin_values, sec_values, bin_intervals, bin_range, bar_intervals=None,
+             is_sec_values=True, yticks=yticks, xticks=None)
+
+        return plotted, colors
 
     @staticmethod
     def _compute_colored_mesh():
