@@ -45,6 +45,25 @@ def test_bin_array():
     bin_arr = WindRose._bin_array(3, (180, 360))
     assert [180.0, 240.0, 300.0, 360.0] == bin_arr, bin_arr
 
+    """
+    0.0 - 60.0
+    734
+    --
+    60.0 - 120.0
+    849
+    --
+    120.0 - 180.0
+    509
+    --
+    180.0 - 240.0
+    1262
+    --
+    240.0 - 300.0
+    185
+    --
+    300.0 - 360.0
+    1624
+    """
 
 def test_histogram():
     """Test the windrose histogram."""

@@ -18,7 +18,7 @@ from ladybug_geometry.geometry3d.polyline import Polyline3D
 from ladybug_geometry.geometry3d.mesh import Mesh3D
 
 
-from math import pi, cos, sin, log, ceil
+from math import pi, cos, sin, atan2, log, ceil
 
 
 class WindRose(object):
@@ -245,6 +245,61 @@ class WindRose(object):
 
         return hist
 
+
+    @staticmethod
+    def histogram_data_polar(values, bin_arr, bin_range, key=None):
+        """Compute the histogram from this object's data collection.
+
+        The data is binned inclusive of the lower bound but exclusive of the
+        upper bound for intervals.
+
+        Example of where we lose 3 because of exclusive upper bound:
+        histogram([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
+        >>> [[0, 0, 0.9], [1, 1.5, 1.99], [2]]
+
+        Args:
+            values: list of numerical data to bin.
+            bin_arr: A list of bin bounds.
+            is_gradient: Optional boolean parameter to pass to nest datas for histogram gradient
+
+        Returns:
+            A list of lists representing the ordered values binned by frequency.
+                Example: histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]
+        """
+
+        if key is None:
+            key = lambda v: v
+
+        vals = sorted(values, key=key)
+
+        bin_bound_num = len(bin_arr)
+
+        # Init histogram bins
+        hist = [[] for i in range(bin_bound_num - 1)]
+        bin_index = 0
+        for val in vals:
+            k = key(val)
+            # Ignore values out of range
+            if k < bin_range[0] or k >= bin_range[1]:
+                continue
+
+            # This loop will iterate through the bin upper bounds.
+            # If the value is within the bounds, the lower bound
+            # of the bin_index is updated, and the loop is broken
+            for i in range(bin_index, bin_bound_num - 1):
+                if bin_arr[i] > bin_arr[i + 1]:
+                    if k > bin_arr[i] or k < bin_arr[i + 1]:
+                        hist[i].append(val)
+                        #bin_index = i
+                        #break
+                else:
+                    if k < bin_arr[i + 1]:
+                        hist[i].append(val)
+                        #bin_index = i
+                        #break
+
+        return hist
+
     @staticmethod
     def _compute_bar_interval_vecs(base_vec_stack, vec1, vec2, curr_bar_radius,
                                    min_bar_radius, max_bar_radius, ytick_num, ytick_dist):
@@ -316,6 +371,9 @@ class WindRose(object):
     def _compute_bar_vecs_polar(bin_theta_bound_1, bin_theta_bound_2):
         """Compute the polar coordinates for the histogram bins of values.
 
+        This component will re-orient angles so that 0 degrees starts at the top,
+        and increases in a clockwise direction.
+
         Args:
             # TODO
 
@@ -325,11 +383,13 @@ class WindRose(object):
         t = 180.0 / pi  # for degrees to radian conversion
 
         # Correct range
-        theta1, theta2 = bin_theta_bound_1 - 22.5/2 + 90., bin_theta_bound_2 - 22.5/2 + 90.
+        theta1 = bin_theta_bound_1 - 90.
+        theta2 = bin_theta_bound_2 - 90.
 
         # Solve for unit x, y vectors
-        return ((cos(theta1 / t), sin(theta1 / t)),
-                (cos(theta2 / t), sin(theta2 / t)))
+        # Flip y-component to ensure clockwise orietnation
+        return ((cos(theta1 / t), -sin(theta1 / t)),
+                (cos(theta2 / t), -sin(theta2 / t)))
 
     @staticmethod
     def histogram_coords_polar(hist, sec_values, zerosnum, bin_arr,  radius_arr, ytick_num):
@@ -350,8 +410,9 @@ class WindRose(object):
         ytick_dist = bar_radius / ytick_num  # Length of 1 y-tick
 
         # Compute the vectors for bar edges based on bin theta
+        theta_correction = 0.0#(360.0 / (len(bin_arr) - 1) / 2) + 90.0
         bar_edge_vecs = [WindRose._compute_bar_vecs_polar(bin_arr[i], bin_arr[i + 1])
-                         for i in range(len(bin_arr) - 1)[::-1]]
+                         for i in range(len(bin_arr) - 1)]
 
         # Plot histogram bar in polar coordinates
         hist_coords = []
@@ -448,13 +509,30 @@ class WindRose(object):
 
         # Define the bin arange
         bin_arr = WindRose._bin_array(bin_intervals, bin_range)
+        print(bin_arr)
+        # Midpoint correction
+        phi = 360. / bin_intervals / 2.
+        #print('phi', phi)
+        bin_arr = [t - phi if (t - phi) >= 0.0 else t - phi + 360.
+                   for t in bin_arr]
+        print(bin_arr)
+        #bin_arr = [theta - phi for theta in bin_arr]
+        #_bin_values = (theta - phi for theta in _bin_values)
 
         # Compute histogram data differently based on wheter we need nested data or not
         if sec_values is None:
-            hist_data = WindRose.histogram_data(_bin_values, bin_arr)
+            hist_data = WindRose.histogram_data_polar(_bin_values_polar, bin_arr, bin_range)
         else:
-            hist_data = WindRose.histogram_data(zip(_bin_values, _sec_values), bin_arr,
+            hist_data = WindRose.histogram_data_polar(zip(_bin_values, _sec_values), bin_arr, bin_range,
                                                 key=lambda v: v[0])
+        #from pprint import pprint as pp
+        #pp(hist_data)
+        print('-- check bins --')
+        for i,h in enumerate(hist_data):
+            print(bin_arr[i], bin_arr[i+1])
+            print(len(h))
+            print([n[0] for n in h])
+            print('--')
 
         # Calm wind rose
         max_bar_radius = 1.0
@@ -491,12 +569,13 @@ class WindRose(object):
         return plotted, colors
 
     @staticmethod
-    def windrose(data_collection, bin_intervals, bin_range, bar_intervals=None,
+    def windrose(tmp1, tmp2, bin_intervals, bin_range, bar_intervals=None,
              is_sec_values=True, yticks=10, xticks=None):
 
         # Get wind values from epw
-        sec_values = data_collection.wind_speed.values
-        bin_values = data_collection.wind_direction.values
+        sec_values = tmp2 #data_collection.wind_speed.values
+        bin_values = tmp1 #data_collection.wind_direction.values
+
 
         plotted, colors = WindRose.main(bin_values, sec_values, bin_intervals, bin_range, bar_intervals=None,
              is_sec_values=True, yticks=yticks, xticks=None)
