@@ -332,7 +332,7 @@ class HourlyPlot(object):
 
     def custom_hour_lines2d(self, hour_labels):
         """Get a list of LineSegment2D for a list of numbers representing hour labels.
-        
+
         Args:
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
@@ -343,7 +343,7 @@ class HourlyPlot(object):
 
     def custom_hour_lines3d(self, hour_labels):
         """Get a list of LineSegment3D for the 6-hour intervals of the chart.
-        
+
         Args:
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
@@ -355,7 +355,7 @@ class HourlyPlot(object):
 
     def custom_hour_label_points2d(self, hour_labels):
         """Get a list of Point2Ds for the 6-hour text labels for the chart.
-        
+
         Args:
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
@@ -366,7 +366,7 @@ class HourlyPlot(object):
 
     def custom_hour_label_points3d(self, hour_labels):
         """Get a list of Point3Ds for the 6-hour text labels for the chart.
-        
+
         Args:
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
@@ -378,7 +378,7 @@ class HourlyPlot(object):
 
     def custom_hour_labels(self, hour_labels):
         """Get a list of text strings for the 6-hour labels for the chart.
-        
+
         Args:
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
