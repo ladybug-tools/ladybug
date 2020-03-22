@@ -317,10 +317,15 @@ class Legend(object):
         _l_par = self.legend_parameters
         if _l_par.vertical:
             offset = 0.5 if self.legend_parameters.continuous_legend else 0.25
-            return Point2D(0, _l_par.segment_height * (self.segment_length + offset))
+            base = Point2D(0, _l_par.segment_height * (self.segment_length + offset))
         else:
-            return Point2D(-_l_par.segment_width * self.segment_length,
+            base = Point2D(-_l_par.segment_width * self.segment_length,
                            _l_par.segment_height * 1.25)
+        ln_break_count = self.legend_parameters.title.count('\n')
+        if ln_break_count != 0:  # offset the text so that it's not over the legend
+            offset = ln_break_count * self.legend_parameters.text_height * 1.5
+            return Point2D(base.x, base.y + offset)
+        return base
 
     def _segment_point_2d(self):
         """Point2D for the segment text in the 2D space of the legend."""
