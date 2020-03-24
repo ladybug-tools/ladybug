@@ -64,26 +64,20 @@ class Legend(object):
 
         2.
         data = [100, 300, 500, 1000, 2000, 3000]
-        legend_par = LegendParameters(min=300, max=2000, segment_count=3)
-        legend_par.ordinal_dictionary = {300: 'low', 1150: 'desired',
-            2000: 'too much'}
+        leg_colors = [Color(0, 0, 255), Color(0, 255, 0), Color(255, 0, 0)]
+        legend_par = LegendParametersCategorized([300, 2000], leg_colors)
+        legend_par.category_names = ['low', 'desired', 'too much']
+        legend_par.continuous_colors = False  # get data in only 3 colors
         legend = Legend(data, legend_par)
         print(legend.segment_text)
         print(legend.segment_mesh)
         print(legend.segment_colors)
-        print(legend.value_colors)  # colors in between dict categories
-            are interpolated
-        legend.legend_parameters.continuous_colors = False  # get data in
-            only 3 colors
-        print(legend.value_colors)  # data colors align with segment_count
-
+        print(legend.value_colors)
         >> ['low', 'desired', 'too much']
         >> Mesh3D (3 faces) (8 vertices)
-        >> ((R:75, G:107, B:169), (R:249, G:235, B:89), (R:234, G:38, B:0))
-        >> ((R:75, G:107, B:169), (R:75, G:107, B:169), (R:118, G:150, B:205),
-            (R:230, G:231, B:134), (R:234, G:38, B:0), (R:234, G:38, B:0))
-        >> ((R:75, G:107, B:169), (R:115, G:147, B:202), (R:115, G:147, B:202),
-            (R:115, G:147, B:202), (R:115, G:147, B:202), (R:234, G:38, B:0))
+        >> ((R:0, G:0, B:255), (R:0, G:255, B:0), (R:255, G:0, B:0))
+        >> ((R:0, G:0, B:255), (R:0, G:255, B:0), (R:0, G:255, B:0),
+            (R:0, G:255, B:0), (R:0, G:255, B:0), (R:255, G:0, B:0))
 
         3.
         data = [-0.5, 0, 0.5]
@@ -152,18 +146,19 @@ class Legend(object):
             "legend_parameters": None
             }
         """
-        if 'legend_parameters' not in data:
-            data['legend_parameters'] = None
         legend_parameters = None
-        if data['legend_parameters'] is not None:
-            legend_parameters = LegendParameters.from_dict(data['legend_parameters'])
-        for key in ('is_min_default', 'is_max_default'):
-            if key not in data:
-                data[key] = False
+        if 'legend_parameters' in data and data['legend_parameters'] is not None:
+            if data['legend_parameters']['type'] == 'LegendParametersCategorized':
+                legend_parameters = LegendParametersCategorized.from_dict(
+                    data['legend_parameters'])
+            else:
+                legend_parameters = LegendParameters.from_dict(data['legend_parameters'])
 
         legend = cls(data['values'], legend_parameters)
-        legend._is_min_default = data['is_min_default']
-        legend._is_max_default = data['is_max_default']
+        legend._is_min_default = data['is_min_default'] if 'is_min_default' in data \
+            else False
+        legend._is_max_default = data['is_max_default'] if 'is_max_default' in data \
+            else False
         return legend
 
     @property
@@ -208,21 +203,24 @@ class Legend(object):
     def segment_text(self):
         """A list of text strings for the segment labels of the legend."""
         _l_par = self.legend_parameters
-        if _l_par.ordinal_dictionary is None:
-            format_str = '%.{}f'.format(_l_par.decimal_count)
-            seg_txt = [format_str % x for x in self.segment_numbers]
-            if _l_par.include_larger_smaller:
-                seg_txt[0] = '<' + seg_txt[0]
-                seg_txt[-1] = '>' + seg_txt[-1]
-            return seg_txt
+        if isinstance(_l_par, LegendParametersCategorized):
+            return _l_par.category_names
         else:
-            seg_txt = []
-            for x in self.segment_numbers:
-                try:
-                    seg_txt.append(_l_par.ordinal_dictionary[x])
-                except KeyError:
-                    seg_txt.append('')
-        return seg_txt
+            if _l_par.ordinal_dictionary is None:
+                format_str = '%.{}f'.format(_l_par.decimal_count)
+                seg_txt = [format_str % x for x in self.segment_numbers]
+                if _l_par.include_larger_smaller:
+                    seg_txt[0] = '<' + seg_txt[0]
+                    seg_txt[-1] = '>' + seg_txt[-1]
+                return seg_txt
+            else:
+                seg_txt = []
+                for x in self.segment_numbers:
+                    try:
+                        seg_txt.append(_l_par.ordinal_dictionary[x])
+                    except KeyError:
+                        seg_txt.append('')
+            return seg_txt
 
     @property
     def segment_text_location(self):
@@ -257,11 +255,14 @@ class Legend(object):
     def color_range(self):
         """The color range associated with this legend."""
         _l_par = self.legend_parameters
-        return ColorRange(_l_par.colors, (_l_par.min, _l_par.max),
-                          _l_par.continuous_colors)
+        if isinstance(_l_par, LegendParametersCategorized):
+            return ColorRange(_l_par.colors, _l_par.domain, _l_par.continuous_colors)
+        else:
+            return ColorRange(_l_par.colors, (_l_par.min, _l_par.max))
 
     @property
     def segment_numbers(self):
+        """Get a list of numbers along a linear scale from the min to max."""
         _l_par = self.legend_parameters
         _seg_stp = (_l_par.max - _l_par.min) / (_l_par.segment_count - 1)
         return tuple(_l_par.min + i * _seg_stp
@@ -269,7 +270,9 @@ class Legend(object):
 
     @property
     def segment_colors(self):
-        """A List of colors associated with the legend segments."""
+        """A list of colors associated with the legend segments."""
+        if isinstance(self.legend_parameters, LegendParametersCategorized):
+            return self.legend_parameters.colors
         _color_range = self.color_range
         return tuple(_color_range.color(val) for val in self.segment_numbers)
 
@@ -431,7 +434,6 @@ class LegendParameters(object):
         * max
         * segment_count
         * colors
-        * continuous_colors
         * continuous_legend
         * title
         * ordinal_dictionary
@@ -459,7 +461,7 @@ class LegendParameters(object):
         lp.vertical = False
         lp.segment_width = 5
     """
-    __slots__ = ('_min', '_max', '_segment_count', '_colors', '_continuous_colors',
+    __slots__ = ('_min', '_max', '_segment_count', '_colors',
                  '_continuous_legend', '_title', '_ordinal_dictionary',
                  '_decimal_count', '_include_larger_smaller', '_vertical',
                  '_base_plane', '_segment_height', '_segment_width', '_text_height',
@@ -480,7 +482,6 @@ class LegendParameters(object):
         self.title = title
         self.base_plane = base_plane
 
-        self.continuous_colors = None
         self.continuous_legend = None
         self.ordinal_dictionary = None
         self.decimal_count = None
@@ -493,7 +494,7 @@ class LegendParameters(object):
 
     @classmethod
     def from_dict(cls, data):
-        """Create a color range from a dictionary.
+        """Create LegendParameters from a dictionary.
 
     Args:
         data: A python dictionary in the following format
@@ -506,8 +507,11 @@ class LegendParameters(object):
             "segment_count": 7
             }
         """
+        data = data.copy()  # copy to avoid mutating the input dictionary
+        assert data['type'] == 'LegendParameters', \
+            'Expected LegendParameters. Got {}.'.format(data['type'])
         optional_keys = ('min', 'max', 'segment_count',
-                         'colors', 'continuous_colors', 'continuous_legend',
+                         'colors', 'continuous_legend',
                          'title', 'ordinal_dictionary',
                          'decimal_count', 'include_larger_smaller',
                          'vertical', 'base_plane', 'segment_height',
@@ -531,7 +535,6 @@ class LegendParameters(object):
 
         leg_par = cls(data['min'], data['max'], data['segment_count'],
                       colors, data['title'], base_plane)
-        leg_par.continuous_colors = data['continuous_colors']
         leg_par.continuous_legend = data['continuous_legend']
         leg_par.ordinal_dictionary = data['ordinal_dictionary']
         leg_par.decimal_count = data['decimal_count']
@@ -610,38 +613,11 @@ class LegendParameters(object):
             assert isinstance(cols, Iterable) \
                 and not isinstance(cols, (str, dict, bytes, bytearray)), \
                 'Colors should be a list or tuple. Got {}'.format(type(cols))
-            assert len(cols) > 1, 'There must be at least two colors to make a legend.'
-            try:
-                cols = tuple(col if isinstance(col, Color) else Color(
-                    col.R, col.G, col.B) for col in cols)
-            except Exception:
-                try:
-                    cols = tuple(Color(col.Red, col.Green, col.Blue)
-                                 for col in cols)
-                except Exception:
-                    raise ValueError("{} is not a valid list of colors".format(cols))
-            self._colors = cols
+            self._colors = self._convert_colors(cols)
+            assert len(self._colors) > 1, \
+                'There must be at least two colors to make a legend.'
         else:
             self._colors = Colorset.original()
-
-    @property
-    def continuous_colors(self):
-        """Boolean noting whether colors generated are continuous or discrete.
-
-        If True, the colors generated from the corresponding legend will be in a
-        continuous gradient. If False, they will be categorized in incremental
-        groups according to the segment_count. Default: True for continuous colors.
-        """
-        return self._continuous_colors
-
-    @continuous_colors.setter
-    def continuous_colors(self, cont_cols):
-        if cont_cols is not None:
-            assert isinstance(cont_cols, bool), \
-                'Expected boolean for continuous_colors. Got {}.'.format(type(cont_cols))
-            self._continuous_colors = cont_cols
-        else:
-            self._continuous_colors = True
 
     @property
     def continuous_legend(self):
@@ -724,10 +700,7 @@ class LegendParameters(object):
 
     @property
     def include_larger_smaller(self):
-        """Boolean noting whether > and < should be included in legend segment text.
-
-         Default: False.
-         """
+        """Boolean noting whether > and < should be included in legend segment text."""
         return self._include_larger_smaller
 
     @include_larger_smaller.setter
@@ -891,37 +864,56 @@ class LegendParameters(object):
 
     def to_dict(self):
         """Get legend parameters as a dictionary."""
-        seg = None if self.is_segment_count_default else self.segment_count
+        base = self._base_dict()
+        base['min'] = self.min
+        base['max'] = self.max
+        base['segment_count'] = None if self.is_segment_count_default else \
+            self.segment_count
+        base['ordinal_dictionary'] = self.ordinal_dictionary
+        base['is_segment_count_default'] = self.is_segment_count_default
+        base['type'] = 'LegendParameters'
+        return base
+    
+    def _base_dict(self):
+        """Get a dictionary with the base properties shared by all LegendParemeters."""
         title = None if self.is_title_default else self.title
         base_plane = None if self.is_base_plane_default else self.base_plane.to_dict()
         seg_h = None if self.is_segment_height_default else self.segment_height
         seg_w = None if self.is_segment_width_default else self.segment_width
         txt_h = None if self.is_text_height_default else self.text_height
         return {
-            'min': self.min, 'max': self.max, 'segment_count': seg,
             'colors': [col.to_dict() for col in self.colors],
-            'continuous_colors': self.continuous_colors,
             'continuous_legend': self.continuous_legend, 'title': title,
-            'ordinal_dictionary': self.ordinal_dictionary,
             'decimal_count': self.decimal_count,
             'include_larger_smaller': self.include_larger_smaller,
             'vertical': self.vertical,
             'base_plane': base_plane,
             'segment_height': seg_h, 'segment_width': seg_w,
             'text_height': txt_h, 'font': self.font,
-            'is_segment_count_default': self.is_segment_count_default,
             'is_title_default': self.is_title_default,
             'is_base_plane_default': self.is_base_plane_default,
             'is_segment_height_default': self.is_segment_height_default,
             'is_segment_width_default': self.is_segment_width_default,
-            'is_text_height_default': self.is_text_height_default,
-            'type': 'LegendParameters'
+            'is_text_height_default': self.is_text_height_default
         }
+
+    @staticmethod
+    def _convert_colors(cols):
+        """Convert a list of colors into ladybug Color objects."""
+        try:
+            cols = tuple(col if isinstance(col, Color) else Color(
+                col.R, col.G, col.B) for col in cols)
+        except Exception:
+            try:
+                cols = tuple(Color(col.Red, col.Green, col.Blue)
+                                for col in cols)
+            except Exception:
+                raise ValueError("{} is not a valid list of colors".format(cols))
+        return cols
 
     def __copy__(self):
         new_par = LegendParameters(self.min, self.max, self.segment_count,
                                    self.colors, self.title, self.base_plane)
-        new_par._continuous_colors = self._continuous_colors
         new_par._continuous_legend = self._continuous_legend
         new_par._ordinal_dictionary = self._ordinal_dictionary
         new_par._decimal_count = self._decimal_count
@@ -955,13 +947,325 @@ class LegendParameters(object):
         seg_w = '[default]' if self.is_segment_width_default else self.segment_width
         txt_h = '[default]' if self.is_text_height_default else self.text_height
         return 'Legend Parameters\n minimum: {}\n maximum: {}\n segments: {}\n' \
-            ' colors:\n  {}\n continuous colors: {}\n continuous legend: {}\n' \
+            ' colors:\n  {}\n continuous legend: {}\n' \
             ' title: {}\n ordinal text: {}\n number decimals: {}\n' \
             ' include < >: {}\n vertical: {}\n base point:\n  {}\n' \
             ' segment height: {}\n segment width: {}\n' \
             ' text height: {}\n font: {}'.format(
                 min, max, seg, '\n  '.join([str(c) for c in self.colors]),
-                self.continuous_colors, self.continuous_legend, title,
+                self.continuous_legend, title,
+                self.ordinal_dictionary, self.decimal_count,
+                self.include_larger_smaller, self.vertical,
+                base_pt, seg_h, seg_w, txt_h, self.font)
+
+
+class LegendParametersCategorized(LegendParameters):
+    """Ladybug legend parameters used to customize legends.
+
+    These legend parameters have more limitations than the base LegendParameters
+    class. However, these legend parameters will do auto-categorization of data,
+    binning values into groups based on custom ranges.
+
+    Args:
+        domain: A list of one or more numbers noting the bondaries of the data
+            categories. For example, [100, 2000] creates three categories of
+            (<100, 100-2000, >2000). Values must always be ordered from lowest
+            to highest.
+        colors: An list of color objects with a length equal to the number of items
+            in the domain + 1. These are used to color each of the categories of data.
+        category_names: An optional list of text strings with a length equal to the
+            colors. These will be used to name each of the categories in the legend.
+            If None, the legend text will simply mark the numerical ranges of the
+            categories. (Default: None).
+        title: Text string for Legend title. Typically, the units of the data are
+            used here but the type of data might also be used. Default is
+            an empty string.
+        base_plane: A Ladybug Plane object to note the starting point from
+            where the legend will be genrated. The default is the world XY plane
+            at origin (0, 0, 0).
+
+    Properties:
+        * domain
+        * colors
+        * category_names
+        * continuous_colors
+        * continuous_legend
+        * title
+        * ordinal_dictionary
+        * decimal_count
+        * include_larger_smaller
+        * vertical
+        * base_plane
+        * segment_height
+        * segment_width
+        * text_height
+        * font
+        * min
+        * max
+        * segment_count
+
+        * is_title_default
+        * is_base_plane_default
+        * is_segment_height_default
+        * is_segment_width_default
+        * is_text_height_default
+    """
+    __slots__ = ('_domain', '_category_names', '_continuous_colors',)
+
+    def __init__(self, domain, colors, category_names=None, title=None, base_plane=None):
+        """Initalize Ladybug Legend Parameters Categorized."""
+        # set the domain after verifying that it is correct
+        assert isinstance(domain, Iterable) \
+            and not isinstance(domain, (str, dict, bytes, bytearray)), \
+            'Domain should be a list or tuple. Got {}'.format(type(domain))
+        self._domain = tuple(float(x) for x in sorted(domain))
+        assert len(self._domain) > 0, \
+            'LegendParametersCategorized doimain must have at least one value.'
+        self._min = self._domain[0]
+        self._max = self._domain[-1]
+        self._segment_count = len(self._domain) + 1
+
+        # set the other input arguments
+        self.colors = colors
+        self.category_names = category_names
+        self.title = title
+        self.base_plane = base_plane
+
+        ## set all of the other inputs to None for now.
+        self.continuous_colors = None
+        self.continuous_legend = None
+        self.decimal_count = None
+        self.include_larger_smaller = None
+        self.vertical = None
+        self.segment_height = None
+        self.segment_width = None
+        self.text_height = None
+        self.font = None
+
+        # properties that have no meaning for this class
+        self._ordinal_dictionary = None
+        self._is_segment_count_default = True
+
+    @classmethod
+    def from_dict(cls, data):
+        """Create LegendParametersCategorized from a dictionary.
+
+    Args:
+        data: A python dictionary in the following format
+
+    .. code-block:: python
+
+            {
+            "domain": [100, 2000],
+            "colors": [{'r': 0, 'g': 0, 'b': 0},
+                       {'r': 0, 'g': 0, 'b': 100},
+                       {'r': 255, 'g': 0, 'b': 0}],
+            "category_names": ["low", "desired", "too much"]
+            }
+        """
+        data = data.copy()  # copy to avoid mutating the input dictionary
+        assert data['type'] == 'LegendParametersCategorized', \
+            'Expected LegendParametersCategorized. Got {}.'.format(data['type'])
+        optional_keys = ('category_names', 'continuous_legend', 'continuous_colors',
+                         'title', 'ordinal_dictionary',
+                         'decimal_count', 'include_larger_smaller',
+                         'vertical', 'base_plane', 'segment_height',
+                         'segment_width', 'text_height', 'font')
+        default_keys = ('is_title_default', 'is_base_plane_default',
+                        'is_segment_height_default', 'is_segment_width_default',
+                        'is_text_height_default')
+        for key in optional_keys:
+            if key not in data:
+                data[key] = None
+        for key in default_keys:
+            if key not in data:
+                data[key] = False
+
+        colors = [Color.from_dict(col) for col in data['colors']]
+        base_plane = None
+        if data['base_plane'] is not None:
+            base_plane = Plane.from_dict(data['base_plane'])
+
+        leg_par = cls(data['domain'], colors, data['category_names'],
+                      data['title'], base_plane)
+        leg_par.continuous_colors = data['continuous_colors']
+        leg_par.continuous_legend = data['continuous_legend']
+        leg_par.decimal_count = data['decimal_count']
+        leg_par.include_larger_smaller = data['include_larger_smaller']
+        leg_par.vertical = data['vertical']
+        leg_par.segment_height = data['segment_height']
+        leg_par.segment_width = data['segment_width']
+        leg_par.text_height = data['text_height']
+        leg_par.font = data['font']
+        leg_par._is_title_default = data['is_title_default']
+        leg_par._is_base_plane_default = data['is_base_plane_default']
+        leg_par._is_segment_height_default = data['is_segment_height_default']
+        leg_par._is_segment_width_default = data['is_segment_width_default']
+        leg_par._is_text_height_default = data['is_text_height_default']
+        return leg_par
+
+    @property
+    def domain(self):
+        """Get or set a list of numbers noting the boundaries of the data categories."""
+        return self._domain
+
+    @domain.setter
+    def domain(self, dom):
+        assert isinstance(dom, Iterable) \
+            and not isinstance(dom, (str, dict, bytes, bytearray)), \
+            'Domain should be a list or tuple. Got {}'.format(type(dom))
+        self._domain = tuple(float(x) for x in sorted(dom))
+        assert len(self._domain) == len(self._colors) - 1, 'The length of domain must' \
+            'be one less than length of the colors for a LegendParametersCategorized.' \
+            '{} != {} - 1'.format(len(self._domain), len(self._colors))
+        self._min = self._domain[0]
+        self._max = self._domain[-1]
+        self._segment_count = len(self._domain) + 1
+
+    @property
+    def colors(self):
+        """Get or set the colors defining the legend."""
+        return self._colors
+
+    @colors.setter
+    def colors(self, cols):
+        assert isinstance(cols, Iterable) \
+            and not isinstance(cols, (str, dict, bytes, bytearray)), \
+            'Colors should be a list or tuple. Got {}'.format(type(cols))
+        self._colors = self._convert_colors(cols)
+        assert len(self._colors) == len(self._domain) + 1, 'The length of colors must ' \
+            'be one more than the length of domain for a LegendParametersCategorized.' \
+            '{} != {} + 1'.format(len(self._colors), len(self._domain))
+
+    @property
+    def category_names(self):
+        """Get or set a list of text for the names of the categories."""
+        if self._category_names:  # user-specified category names
+            return self._category_names
+        # generate the category names based on the domain
+        format_str = '%.{}f'.format(self.decimal_count)
+        nums = [format_str % x for x in self.domain]
+        mid_nums = tuple('{} - {}'.format(nums[i], nums[i + 1])
+                         for i in xrange(len(nums) - 1))
+        if self.include_larger_smaller:
+            return ('<' + nums[0],) + mid_nums + ('>' + nums[-1],)
+        return (nums[0],) + mid_nums + (nums[-1],)
+
+    @category_names.setter
+    def category_names(self, categories):
+        if categories is not None:
+            assert isinstance(categories, Iterable) \
+                and not isinstance(categories, (str, dict, bytes, bytearray)), \
+                'Category names should be a list or tuple. Got {}'.format(type(categories))
+            self._category_names = tuple(str(x) for x in categories)
+            assert len(self._category_names) == len(self._domain) + 1, 'The length of ' \
+                'category_names must be one more than length of the colors for a ' \
+                'LegendParametersCategorized.{} != {} - 1'.format(
+                    len(self._domain), len(self._colors))
+        else:
+            self._category_names = None
+
+    @property
+    def continuous_colors(self):
+        """Boolean noting whether colors generated are continuous or discrete.
+
+        If True, the colors generated from the corresponding legend will be in a
+        continuous gradient. If False, they will be categorized in incremental
+        groups according to the segment_count. (Default: False).
+        """
+        return self._continuous_colors
+
+    @continuous_colors.setter
+    def continuous_colors(self, cont_cols):
+        if cont_cols is not None:
+            assert isinstance(cont_cols, bool), \
+                'Expected boolean for continuous_colors. Got {}.'.format(type(cont_cols))
+            self._continuous_colors = cont_cols
+        else:
+            self._continuous_colors = False
+
+    @property
+    def include_larger_smaller(self):
+        """Boolean noting whether > and < should be included in legend segment text."""
+        return self._include_larger_smaller
+
+    @include_larger_smaller.setter
+    def include_larger_smaller(self, lg_sm):
+        if lg_sm is not None:
+            assert isinstance(lg_sm, bool), 'Expected boolean for ' \
+                'include_larger_smaller. Got {}.'.format(type(lg_sm))
+            self._include_larger_smaller = lg_sm
+        else:
+            self._include_larger_smaller = True
+
+    @property
+    def min(self):
+        """Get legend minimum. This is derived from the domain."""
+        return self._min
+
+    @property
+    def max(self):
+        """Get legend maximum. This is derived from the domain."""
+        return self._max
+
+    @property
+    def segment_count(self):
+        """Get the number of segments in the legend.
+        
+        This is always equal to one more than the length of the domain."""
+        return self._segment_count
+
+    @property
+    def ordinal_dictionary(self):
+        """Always None for a LegendParametersCategorized."""
+        return self._ordinal_dictionary
+
+    def to_dict(self):
+        """Get legend parameters categorized as a dictionary."""
+        base = self._base_dict()
+        base['domain'] = self.domain
+        base['category_names'] = self.category_names
+        base['continuous_colors'] = self.continuous_colors
+        base['type'] = 'LegendParametersCategorized'
+        return base
+
+    def __copy__(self):
+        new_par = LegendParametersCategorized(
+            self._domain, self._colors, self._category_names, self.title,
+            self.base_plane)
+        new_par._continuous_colors = self._continuous_colors
+        new_par._continuous_legend = self._continuous_legend
+        new_par._decimal_count = self._decimal_count
+        new_par._include_larger_smaller = self._include_larger_smaller
+        new_par._vertical = self._vertical
+        new_par._segment_height = self._segment_height
+        new_par._segment_width = self._segment_width
+        new_par._text_height = self._text_height
+        new_par._font = self._font
+        new_par._is_title_default = self._is_title_default
+        new_par._is_base_plane_default = self._is_base_plane_default
+        new_par._is_segment_height_default = self._is_segment_height_default
+        new_par._is_segment_width_default = self._is_segment_width_default
+        new_par._is_text_height_default = self._is_text_height_default
+        return new_par
+
+    def __repr__(self):
+        """Legend parameter representation."""
+        title = '[default]' if self.is_title_default else self.title
+        base_pt = '[default]' if self.is_base_plane_default else self.base_plane.o
+        seg_h = '[default]' if self.is_segment_height_default else self.segment_height
+        seg_w = '[default]' if self.is_segment_width_default else self.segment_width
+        txt_h = '[default]' if self.is_text_height_default else self.text_height
+        return 'Legend Parameters Categorized\n domain: {}\n colors: {}\n' \
+            ' category names\n  {}\n continuous legend: {}\n' \
+            ' title: {}\n ordinal text: {}\n number decimals: {}\n' \
+            ' include < >: {}\n vertical: {}\n base point:\n  {}\n' \
+            ' segment height: {}\n segment width: {}\n' \
+            ' text height: {}\n font: {}'.format(
+                self.domain, 
+                '\n  '.join([str(c) for c in self.colors]),
+                '\n  '.join([str(c) for c in self.category_names]),
+                self.continuous_legend, title,
                 self.ordinal_dictionary, self.decimal_count,
                 self.include_larger_smaller, self.vertical,
                 base_pt, seg_h, seg_w, txt_h, self.font)

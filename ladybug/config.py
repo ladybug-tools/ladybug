@@ -24,6 +24,7 @@ class Folders(object):
             class. Default: True.
 
     Properties:
+        * ladybug_tools_folder
         * default_epw_folder
         * config_file
         * mute
@@ -35,6 +36,22 @@ class Folders(object):
 
         # load paths from the config JSON file 
         self.config_file  = config_file
+
+    @property
+    def ladybug_tools_folder(self):
+        """Get or set the path to the ladybug tools installation folder."""
+        return self._ladybug_tools_folder
+    
+    @ladybug_tools_folder.setter
+    def ladybug_tools_folder(self, path):
+        if not path:  # check the default location for epw files
+            path = self._find_default_ladybug_tools_folder()
+
+        self._ladybug_tools_folder = path
+
+        if not self.mute and self._ladybug_tools_folder:
+            print('Path to the ladybug tools installation folder is set to: '
+                  '{}'.format(self._ladybug_tools_folder))
 
     @property
     def default_epw_folder(self):
@@ -81,6 +98,7 @@ class Folders(object):
 
         # set the default paths to be all blank
         default_path = {
+            "ladybug_tools_folder": r'',
             "default_epw_folder": r''
         }
 
@@ -95,24 +113,39 @@ class Folders(object):
                     if not key.startswith('__') and p.strip():
                         default_path[key] = p.strip()
 
-        # set paths for the default_epw_folder
+        # set paths for the ladybug_tools_folder and default_epw_folder
+        self.ladybug_tools_folder = default_path["ladybug_tools_folder"]
         self.default_epw_folder = default_path["default_epw_folder"]
 
-    @staticmethod
-    def _find_default_epw_folder():
+    def _find_default_epw_folder(self):
         """Find the the default EPW folder in its usual location.
         
         An attempt will be made to create the directory if it does not already exist.
         """
-        home_folder = os.getenv('HOME') or os.path.expanduser('~')
-        sim_folder = os.path.join(home_folder, 'ladybug')
-        if not os.path.isdir(sim_folder):
+        epw_folder = os.path.join(self.ladybug_tools_folder, 'resources', 'weather')
+        if not os.path.isdir(epw_folder):
             try:
-                os.makedirs(sim_folder)
+                os.makedirs(epw_folder)
             except Exception as e:
                 raise OSError('Failed to create default epw '
-                              'folder: %s\n%s' % (sim_folder, e))
-        return sim_folder
+                              'folder: %s\n%s' % (epw_folder, e))
+        return epw_folder
+
+    @staticmethod
+    def _find_default_ladybug_tools_folder():
+        """Find the the default ladybug_tools folder in its usual location.
+        
+        An attempt will be made to create the directory if it does not already exist.
+        """
+        home_folder = os.getenv('HOME') or os.path.expanduser('~')
+        install_folder = os.path.join(home_folder, 'ladybug_tools')
+        if not os.path.isdir(install_folder):
+            try:
+                os.makedirs(install_folder)
+            except Exception as e:
+                raise OSError('Failed to create default ladybug tools installation '
+                              'folder: %s\n%s' % (install_folder, e))
+        return install_folder
 
 
 """Object possesing all key folders within the configuration."""

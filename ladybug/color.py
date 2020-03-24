@@ -424,7 +424,7 @@ class ColorRange(object):
             >> (R:245, G:239, B:103)
     """
 
-    def __init__(self, colors=None, domain=None, continuous_colors=None):
+    def __init__(self, colors=None, domain=None, continuous_colors=True):
         """Initiate Ladybug color range.
         """
         self._continuous_colors = True if continuous_colors is None \
@@ -514,12 +514,11 @@ class ColorRange(object):
                 _n = dom[0]
                 dom = tuple(_n + c * _step for c in range(len(self._colors)))
             else:
-                assert len(self._colors) == len(dom), \
+                assert len(self._colors) >= len(dom), \
                     "For a continuous color range, the length of the domain should " \
-                    "be 2 or equal to number of colors."
+                    "be 2 or greater than the number of colors."
         else:  # segmented
-            # Number of colors should be at least one more than number
-            # of domain values
+            # Number of colors should be at least one more than number of domain values
             assert len(self._colors) > len(dom), \
                 "For a segmented color range, the length of colors " + \
                 "should be more than the number of domain values ."
