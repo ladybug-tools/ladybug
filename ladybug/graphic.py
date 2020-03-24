@@ -1,7 +1,7 @@
 # coding=utf-8
 from __future__ import division
 
-from .legend import Legend, LegendParameters
+from .legend import Legend, LegendParameters, LegendParametersCategorized
 
 from .datatype.base import DataTypeBase
 
@@ -66,7 +66,8 @@ class GraphicContainer(object):
                     self.legend_parameters.vertical \
                     else '{} ({})'.format(data_type.name, unit)
             if data_type.unit_descr is not None and \
-                    self.legend_parameters.ordinal_dictionary is None:
+                    self.legend_parameters.ordinal_dictionary is None and not \
+                    isinstance(self.legend_parameters, LegendParametersCategorized):
                 self.legend_parameters.ordinal_dictionary = data_type.unit_descr
                 sorted_keys = sorted(data_type.unit_descr.keys())
                 if self.legend.is_min_default:
@@ -140,20 +141,22 @@ class GraphicContainer(object):
             "unit": None
             }
         """
-        optional_keys = ('legend_parameters', 'data_type', 'unit')
-        for key in optional_keys:
-            if key not in data:
-                data[key] = None
         legend_parameters = None
-        if data['legend_parameters'] is not None:
-            legend_parameters = LegendParameters.from_dict(data['legend_parameters'])
+        if 'legend_parameters' in data and data['legend_parameters'] is not None:
+            if data['legend_parameters']['type'] == 'LegendParametersCategorized':
+                legend_parameters = LegendParametersCategorized.from_dict(
+                    data['legend_parameters'])
+            else:
+                legend_parameters = LegendParameters.from_dict(data['legend_parameters'])
+
         data_type = None
-        if data['data_type'] is not None:
+        if 'data_type' in data and data['data_type'] is not None:
             data_type = DataTypeBase.from_dict(data['data_type'])
+        unit = data['unit'] if 'unit' in data else None
 
         return cls(data['values'], Point3D.from_dict(data['min_point']),
                    Point3D.from_dict(data['max_point']),
-                   legend_parameters, data_type, data['unit'])
+                   legend_parameters, data_type, unit)
 
     @property
     def values(self):

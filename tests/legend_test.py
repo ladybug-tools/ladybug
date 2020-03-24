@@ -1,7 +1,7 @@
 # coding=utf-8
 from __future__ import division
 
-from ladybug.legend import Legend, LegendParameters
+from ladybug.legend import Legend, LegendParameters, LegendParametersCategorized
 from ladybug.color import Color, Colorset, ColorRange
 from ladybug.datatype.thermalcondition import PredictedMeanVote
 
@@ -62,24 +62,6 @@ def test_colors():
         leg_par = LegendParameters(colors=[0, 1])
     with pytest.raises(Exception):
         leg_par.colors = [0, 1]
-
-
-def test_continuous_colors():
-    """Test the LegendParameter continuous_colors property."""
-    leg_par = LegendParameters()
-    leg_par.continuous_colors = False
-
-    assert not leg_par.continuous_colors
-    leg_par_copy = leg_par.duplicate()
-    assert not leg_par_copy.continuous_colors
-
-    leg_par.continuous_colors = True
-    assert leg_par.continuous_colors
-
-    with pytest.raises(Exception):
-        leg_par = LegendParameters(continuous_colors='yes')
-    with pytest.raises(Exception):
-        leg_par.continuous_colors = 'yes'
 
 
 def test_continuous_legend():
@@ -387,14 +369,6 @@ def test_segment_text_ordinal_dictionary():
     assert legend.segment_text == ['low', 'desired', 'too much']
     assert len(set(legend.value_colors)) > 100
 
-    legend = Legend(results, LegendParameters(min=300, max=2000, segment_count=3))
-    legend.legend_parameters.ordinal_dictionary = ordinal_dict
-    legend.legend_parameters.continuous_colors = False
-
-    assert len(legend.segment_text_location) == len(legend.segment_text) == 3
-    assert legend.segment_text == ['low', 'desired', 'too much']
-    assert len(set(legend.value_colors)) == 3
-
 
 def test_segment_text_ordinal_dictionary_large():
     """Test the segment_text property with another larger ordinal dictionary."""
@@ -448,3 +422,71 @@ def test_segment_mesh_2d():
     legend.legend_parameters.vertical = True
     assert len(legend.segment_mesh_2d.faces) == 5
     assert len(legend.segment_mesh_2d.vertices) == 12
+
+
+def test_init_legend_parameters_categorized():
+    """Test the initialization of LegendParametersCategorized objects."""
+    leg_colors = [Color(0, 0, 255), Color(0, 255, 0), Color(255, 0, 0)]
+    leg_par = LegendParametersCategorized([300, 2000], leg_colors)
+    leg_par.decimal_count = 0
+    str(leg_par)  # Test the LegendParametersCategorized representation
+
+    assert leg_par.domain == (300, 2000)
+    assert leg_par.colors == tuple(leg_colors)
+    assert leg_par.category_names == ('<300', '300 - 2000', '>2000')
+    assert leg_par.min == 300
+    assert leg_par.max == 2000
+    assert leg_par.is_segment_count_default
+    assert leg_par.is_title_default
+    assert leg_par.is_base_plane_default
+    assert leg_par.is_segment_height_default
+    assert leg_par.is_segment_width_default
+    assert leg_par.is_text_height_default
+
+    leg_par_copy = leg_par.duplicate()
+    assert leg_par_copy.domain == leg_par.domain
+    assert leg_par_copy.colors == leg_par.colors
+    assert leg_par_copy.category_names == leg_par.category_names
+
+
+def test_categorized_to_from_dict():
+    """Test the LegendParametersCategorized to/from dict methods."""
+    leg_colors = [Color(0, 0, 255), Color(0, 255, 0), Color(255, 0, 0)]
+    leg_par = LegendParametersCategorized([300, 2000], leg_colors)
+    leg_par_dict = leg_par.to_dict()
+    new_leg_par = LegendParametersCategorized.from_dict(leg_par_dict)
+    assert new_leg_par.to_dict() == leg_par_dict
+
+
+def test_categorized_colors():
+    """Test the LegendParametersCategorized colors property."""
+    data = [100, 300, 500, 1000, 2000, 3000]
+    leg_colors = [Color(0, 0, 255), Color(0, 255, 0), Color(255, 0, 0)]
+    legend_par = LegendParametersCategorized([300, 2000], leg_colors)
+
+    legend = Legend(data, legend_par)
+    assert legend.segment_colors == tuple(leg_colors)
+    assert legend.value_colors == \
+        (Color(0, 0, 255), Color(0, 255, 0), Color(0, 255, 0), Color(0, 255, 0),
+         Color(0, 255, 0), Color(255, 0, 0))
+
+    legend.legend_parameters.continuous_colors = True
+    assert legend.value_colors == \
+        (Color(0, 0, 255), Color(0, 0, 255), Color(0, 60, 195), Color(0, 210, 45),
+         Color(255, 0, 0), Color(255, 0, 0))
+
+
+def test_categorized_category_names():
+    """Test the LegendParametersCategorized category_names property."""
+    data = [100, 300, 500, 1000, 2000, 3000]
+    leg_colors = [Color(0, 0, 255), Color(0, 255, 0), Color(255, 0, 0)]
+    legend_par = LegendParametersCategorized([300, 2000], leg_colors)
+    cat_names = ['low', 'desired', 'too much']
+    legend_par.category_names = cat_names
+    legend = Legend(data, legend_par)
+
+    assert legend_par.category_names == tuple(cat_names)
+    assert legend.segment_text == tuple(cat_names)
+
+    with pytest.raises(AssertionError):
+        legend_par.category_names = ['low', 'desired', 'too much', 'not a category']
