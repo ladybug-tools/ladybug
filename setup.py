@@ -19,6 +19,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/ladybug-tools/ladybug",
     packages=setuptools.find_packages(exclude=["tests"]),
+    include_package_data=True,
     install_requires=requirements,
     classifiers=[
         "Programming Language :: Python :: 2.7",
