@@ -785,6 +785,7 @@ class WindRose(object):
                 plot.
         """
         real_freq_max = max([len(d) for d in self.data])
+        scale_freq_max = True
 
         if base_point is None:
             base_point = Point3D() if self.base_point is None else self.base_point
@@ -804,6 +805,8 @@ class WindRose(object):
                 else self.frequency_spacing_distance
         self.frequency_spacing_distance = frequency_spacing_distance
 
+        if (frequency_maximum is not None) or (self.frequency_maximum is not None):
+            scale_freq_max = False
         if frequency_maximum is None:
             frequency_maximum = real_freq_max \
                 if self.frequency_maximum is None else self.frequency_maximum
@@ -840,9 +843,11 @@ class WindRose(object):
         if self.show_zeros:
             zeros_per_bin = float(self._zero_count) / (len(self.bin_angles) - 1)
             real_freq_max += zeros_per_bin
-            self.frequency_maximum += zeros_per_bin
-            self.legend_parameters.segment_count += \
-                ceil(zeros_per_bin / self.frequency_maximum)
+
+            if scale_freq_max:
+                self.frequency_maximum += zeros_per_bin
+                self.legend_parameters.segment_count += \
+                    ceil(zeros_per_bin / self.frequency_maximum)
 
         # Calculate radius from frequencing spacing
         ytick_num = self.legend_parameters.segment_count
