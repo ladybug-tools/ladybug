@@ -641,7 +641,7 @@ class WindRose(object):
         _direction_values = []
         _analysis_values = []
         for d, v in zip(direction_values, analysis_values):
-            if v > 2:#1e-10:
+            if v > 1e-10:
                 _direction_values.append(d)
                 _analysis_values.append(v)
 
