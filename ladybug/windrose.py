@@ -3,7 +3,7 @@ from __future__ import division
 
 from .datacollection import HourlyContinuousCollection, HourlyDiscontinuousCollection
 from .graphic import GraphicContainer
-from .legend import LegendParameters
+from .legend import LegendParameters, Legend
 from .compass import Compass
 
 from ladybug_geometry.geometry2d.pointvector import Point2D, Vector2D
@@ -187,11 +187,10 @@ class WindRose(object):
         * analysis_period
         * data
         * zero_count
-        * bin_angles
+        * angles
         * legend
         * legend_parameters
         * base_point
-        * radius
         * colored_mesh
         * orientation_lines
         * frequency_lines
@@ -201,21 +200,8 @@ class WindRose(object):
         * frequency_maximum
         * label_point_size_factor
         * label_tick_size_factor
+        * orientation_labels
         """
-
-    _VIZ_ASSERTION_ERROR = 'Windrose visualization properties have not been set. ' \
-        'Use the "set_visualization_properties" method to set them before ' \
-        'calling this property.'
-
-    __slots__ = ('_direction_data_collection', '_analysis_data_collection',
-                 '_number_of_directions', '_bin_angles', '_data',
-                 '_zero_count', 'legend', 'legend_parameters', '_radius',
-                 'frequency_spacing_distance', 'label_point_size_factor',
-                 'label_tick_size_factor', 'show_stack', 'show_zeros', '_viz_set',
-                 '_base_point', '_colored_mesh', '_bin_vectors',
-                 '_all_boundary_circles', '_inner_boundary_circle',
-                 '_orientation_lines', '_frequency_lines', '_compass', '_container',
-                 'frequency_maximum', '_wind_radius')
 
     def __init__(self, direction_data_collection, analysis_data_collection,
                  number_of_directions=8):
@@ -246,34 +232,203 @@ class WindRose(object):
         self._number_of_directions = number_of_directions
 
         # Compute the windrose data and associated read-only properties
-        self._bin_angles = linspace(0, 360, number_of_directions + 1)
+        self._angles = linspace(0, 360, number_of_directions + 1)
         self._data, self._zero_count = \
             WindRose._compute_windrose_data(self.direction_values, self.analysis_values,
-                                            number_of_directions, self.bin_angles,
+                                            number_of_directions, self.angles,
                                             (0, 360))
 
-        # Editable properties computed for visualization
-        self.legend = None
-        self.legend_parameters = None
-        self.frequency_spacing_distance = None
-        self.frequency_maximum = None
-        self.label_point_size_factor = None
-        self.label_tick_size_factor = None
-        self.show_stack = None
-        self.show_zeros = None
-
-        # Read only properties computed for visualization
-        self._viz_set = False
+        # Editable public properties for visualization
+        self._legend = None
+        self._legend_parameters = None
+        self._frequency_spacing_distance = None
+        self._frequency_maximum = None
+        self._label_point_size_factor = None
+        self._label_tick_size_factor = None
+        self._show_stack = None
+        self._show_zeros = None
         self._base_point = None
-        self._radius = None
-        self._colored_mesh = None
-        self._all_boundary_circles = None
-        self._inner_boundary_circle = None
-        self._orientation_lines = None
-        self._frequency_lines = None
-        self._compass = None
-        self._container = None
-        self._bin_vectors = WindRose._bin_vectors_radial(self.bin_angles)
+
+        # Fixed properties for visualization that only need to be computed once
+        self._bin_vectors = None
+        self._zeros_per_bin = None
+        self._orientation_labels = None
+        self._real_freq_max = None
+
+    @property
+    def base_point(self):
+        """An optional Point3D used as the bottom left corner of the windrose geometry.
+
+        Default is Point3D(0, 0, 0)).
+        """
+        if self._base_point is None:
+            self._base_point = Point3D()
+        return self._base_point
+
+    @base_point.setter
+    def base_point(self, base_point):
+        """Set the base point with a Point3D object."""
+        assert isinstance(base_point, type(Point3D())), 'base_point must be a Point3D. ' \
+            'Got {}.'.format(type(base_point))
+        self._base_point = base_point
+
+    @property
+    def show_stack(self):
+        """Property to control if windrose displays stacked histogram or not.
+
+        Default is True.
+        """
+        if self._show_stack is None:
+            self._show_stack = True
+        return self._show_stack
+
+    @show_stack.setter
+    def show_stack(self, show_stack):
+        """Set the show_stack boolean.
+
+        Args:
+            show_stack: Boolean.
+        """
+        self._show_stack = show_stack
+
+    @property
+    def show_zeros(self):
+        """Property to control if windrose displays zero valuess or not.
+
+        Default is True.
+        """
+        if self._show_zeros is None:
+            self._show_zeros = True
+        return self._show_zeros
+
+    @show_zeros.setter
+    def show_zeros(self, show_zeros):
+        """Set the show_zeros boolean.
+
+        Args:
+            show_zeros: Boolean
+        """
+        self._show_zeros = show_zeros
+
+    @property
+    def frequency_spacing_distance(self):
+        """Distance for frequency lines.
+
+        Default is 0.1
+        """
+        if self._frequency_spacing_distance is None:
+            self._frequency_spacing_distance = 0.1
+        return self._frequency_spacing_distance
+
+    @frequency_spacing_distance.setter
+    def frequency_spacing_distance(self, frequency_spacing_distance):
+        """Set the frequency spacing distance for the windrose plot.
+
+        Args:
+            frequency_spacing_distance: Float representing frequency gap distance.
+        """
+        self._frequency_spacing_distance = frequency_spacing_distance
+
+    @property
+    def frequency_maximum(self):
+        """Maximum frequency to represent in the windrose plot.
+
+        Default will be the maximum number of items in current windrose data.
+        """
+        if self._frequency_maximum is None:
+            self._frequency_maximum = self.real_freq_max
+        return self._frequency_maximum
+
+    @frequency_maximum.setter
+    def frequency_maximum(self, frequency_maximum):
+        """Set the frequency maximum for the windrose plot.
+
+        Args:
+            frequency_maximum: Float representing frequency maximum.
+        """
+        self._frequency_maximum = frequency_maximum
+
+    @property
+    def label_point_size_factor(self):
+        """Get the size of the points for labels in the windrose plot.
+
+        Default is 0.8
+        """
+        if self._label_point_size_factor is None:
+            self._label_point_size_factor = 0.8
+        return self._label_point_size_factor
+
+    @label_point_size_factor.setter
+    def label_point_size_factor(self, label_point_size_factor):
+        """Set the size of the points for labels in the windrose plot."""
+        self._label_point_size_factor = label_point_size_factor
+
+    @property
+    def label_tick_size_factor(self):
+        """Get the size of the ticks for labels in the windrose plot.
+
+        Default is 0.3
+        """
+        if self._label_tick_size_factor is None:
+            self._label_tick_size_factor = 0.3
+        return self._label_tick_size_factor
+
+    @label_tick_size_factor.setter
+    def label_tick_size_factor(self, label_tick_size_factor):
+        """Set the size of the ticks for labels in the windrose plot."""
+        self._label_tick_size_factor = label_tick_size_factor
+
+    @property
+    def legend_parameters(self):
+        """The LegendParameters object for this plot.
+
+        Default is a legend parameter with minimum and maximum values of the
+        windrose analysis values. If show_stack is False, then these min and max
+        will be the average of the binned values per orientation.
+        The default segment count is 10.
+        """
+        if self._legend_parameters is None:
+            if self.show_stack:
+                min_analysis = self.analysis_data_collection.min
+                max_analysis = self.analysis_data_collection.max
+            else:
+                # If not stacked histogram, ensure legend parameter range is defined
+                # by wind mean range per orientation.
+                wind_means = [sum(bin)/float(len(bin)) for bin in self.data
+                              if len(bin) > 0]
+                min_analysis = min(wind_means)
+                max_analysis = max(wind_means)
+            segment_count = 10
+            self._legend_parameters = LegendParameters(min=min_analysis,
+                                                       max=max_analysis,
+                                                       segment_count=segment_count)
+        return self._legend_parameters
+
+    @legend_parameters.setter
+    def legend_parameters(self, legend_parameters):
+        """Set the legend parameters for the windrose plot.
+
+        Args:
+            legend_parameters: A LegendParameters object.
+        """
+        legtyp = type(LegendParameters(0, 1, 10))
+        assert isinstance(legend_parameters, legtyp), 'legend_parameters must be' \
+            ' a LegendParameters. Got {}.'.format(type(legend_parameters))
+        self._legend_parameters = legend_parameters
+
+    @property
+    def legend(self):
+        """The Legend object for this plot"""
+        if self._legend is None:
+            self._legend = self._container._legend
+        return self._legend
+
+    @legend.setter
+    def legend(self, legend):
+        """Set the Legend object"""
+        assert isinstance(legend, type(Legend())), 'legend must be a Legend. ' \
+            'Got {}.'.format(type(legend))
+        self._legend = legend
 
     @property
     def direction_data_collection(self):
@@ -311,111 +466,164 @@ class WindRose(object):
         return self._analysis_data_collection.header.analysis_period
 
     @property
-    def bin_angles(self):
+    def angles(self):
         """List of orientation angles used to bin analysis values."""
-        return self._bin_angles
+        return self._angles
 
     @property
-    def base_point(self):
-        """An optional Point3D used as the bottom left corner of the windrose geometry.
-
-        Default is (0, 0, 0))."""
-        return self._base_point
-
-    @base_point.setter
-    def base_point(self, base_point):
-        """Set the base point with a Point3D object."""
-        assert isinstance(base_point, type(Point3D())), 'base_point must be a Point3D. ' \
-            'Got {}.'.format(type(base_point))
-        self._base_point = base_point
+    def bin_vectors(self):
+        """Vectors for orientation intervals."""
+        if self._bin_vectors is None:
+            self._bin_vectors = WindRose._bin_vectors_radial(self.angles)
+        return self._bin_vectors
 
     @property
-    def _center_point2d(self):
-        """Compute center of windrose plot as Point2D."""
-        return Point2D(self.base_point.x + self._radius, self.base_point.y + self._radius)
+    def zeros_per_bin(self):
+        """Number of analysis values that are equal to zero, per orientation bin."""
+        if self._zeros_per_bin is None:
+            self._zeros_per_bin = float(self._zero_count) / (len(self.angles) - 1)
+        return self._zeros_per_bin
+
+    @property
+    def real_freq_max(self):
+        """The maximum frequency of the windrose data."""
+        if self._real_freq_max is None:
+            self._real_freq_max = max([len(d) for d in self.data])
+        return self._real_freq_max
+
+    @property
+    def container(self):
+        """GraphicContainer for the windrose mesh."""
+        # Create the graphic container from the inputs and associated legend properties
+        max_pt = Point3D(self._center_point2d.x + self._radius,
+                         self._center_point2d.y + self._radius, self.base_point.z)
+
+        return GraphicContainer(self.analysis_values, self.base_point, max_pt,
+                                self.legend_parameters, self.analysis_data_collection.header.data_type,
+                                self.analysis_data_collection.header.unit)
 
     @property
     def colored_mesh(self):
         """Get a colored Mesh2D for this graphic.
         """
-        assert self._viz_set, self._VIZ_ASSERTION_ERROR
-        if self._colored_mesh is None:
-            ytick_num = self.legend_parameters.segment_count
-            if self.show_zeros:
-                mesh = WindRose._compute_colored_mesh_zero(
-                    self.data, self.zero_count, self._bin_vectors, ytick_num,
-                    self.show_stack)
-            else:
-                mesh = WindRose._compute_colored_mesh_regl(
-                    self.data, self._bin_vectors, ytick_num, self.show_stack)
+        max_bar_radius = 1.0
+        min_bar_radius = 0.0
+        zero_mesh_array, zero_color_array = [], []
 
-            self._colored_mesh = mesh.scale(self._wind_radius).move(self._center_point2d)
-        return self._colored_mesh
+        # Calculate ytick nums for the wind mesh
+        ytick_num = self.legend_parameters.segment_count  # total
+        max_bar_num = self.real_freq_max + self.zeros_per_bin
+        ytick_num_mesh = max_bar_num / self.frequency_maximum * ytick_num  # wind mesh
 
-    @colored_mesh.setter
-    def colored_mesh(self, colored_mesh):
-        """Set the colored_mesh for this graphic"""
-        self._colored_mesh = colored_mesh
+        if self.show_zeros:
+            # Calculate radius of zero rose
+
+            min_bar_radius = self.zeros_per_bin / max_bar_num * max_bar_radius
+
+            # Update yticks
+            zero_ytick_num_mesh = self._ytick_zero_inc
+            ytick_num_mesh -= zero_ytick_num_mesh
+
+            # Compute the array for calm rose
+            zero_data = [[0] for _ in self.data]
+            zero_mesh_array, zero_color_array = WindRose._compute_colored_mesh_array(
+                zero_data, self.bin_vectors, zero_ytick_num_mesh, 0, min_bar_radius,
+                show_stack=False)
+
+        # Calculate regular mesh
+        mesh_array, color_array = WindRose._compute_colored_mesh_array(
+            self.data, self.bin_vectors, ytick_num_mesh, min_bar_radius, max_bar_radius,
+            self.show_stack)
+
+        mesh_array += zero_mesh_array
+        color_array += zero_color_array
+
+        mesh = Mesh2D.from_face_vertices(mesh_array, purge=True)
+        mesh.colors = color_array
+
+        return mesh.scale(self._wind_radius).move(self._center_point2d)
 
     @property
     def all_boundary_circles(self):
         """Get a list of Arc2Ds for the boundary of the plot."""
-        assert self._viz_set, self._VIZ_ASSERTION_ERROR
-        if self._all_boundary_circles is None:
-            self._all_boundary_circles = self._compass.all_boundary_circles
-        return self._all_boundary_circles
+        return self._compass.all_boundary_circles
 
     @property
     def inner_boundary_circle(self):
         """Get an Arc2D for the inner boundary of the plot."""
-        assert self._viz_set, self._VIZ_ASSERTION_ERROR
-        if self._inner_boundary_circle is None:
-            self._inner_boundary_circle = self._compass.inner_boundary_circle
-        return self._border
+        return self._compass.inner_boundary_circle
 
     @property
     def orientation_lines(self):
         """Orientation lines for windrose as a LineSegment2D list."""
-        assert self._viz_set, self._VIZ_ASSERTION_ERROR
-        if self._orientation_lines is None:
-            lines = WindRose._xtick_radial_lines(self._bin_vectors)
-            self._orientation_lines = [line.scale(self._radius).move(self._center_point2d)
-                                       for line in lines]
-        return self._orientation_lines
+        lines = WindRose._xtick_radial_lines(self._bin_vectors)
+        return [line.scale(self._radius).move(self._center_point2d) for line in lines]
 
     @property
     def orientation_labels(self):
         """List of labels corresponding to the orientation angles."""
-        assert self._viz_set, self._VIZ_ASSERTION_ERROR
         if self._orientation_labels is None:
-            self._orientation_label = self.bin_angles
-        return self._orietnation_labels
+            self._orientation_label = self.angles
+        return self._orientation_labels
 
     @property
     def orientation_label_points(self):
         """Get a list of label points from a list of orientation angles between 0 and 360.
         """
-        assert self._viz_set, self._VIZ_ASSERTION_ERROR
         return self._compass.label_points_from_angles(
-            self.bin_angles, factor=self.label_point_size_factor)
+            self.angles, factor=self.label_point_size_factor)
 
     @property
     def orientation_label_ticks(self):
         """Get a list of Linesegment2Ds from a list of orientation angles between 0 and 360."""
-        assert self._viz_set, self._VIZ_ASSERTION_ERROR
-        return self._compass.ticks_from_angles(self.bin_angles,
+        return self._compass.ticks_from_angles(self.angles,
                                                factor=self.label_tick_size_factor)
 
     @property
     def frequency_lines(self):
         """Frequency lines for windrose as Polygon2D lists."""
-        assert self._viz_set, self._VIZ_ASSERTION_ERROR
-        if self._frequency_lines is None:
-            freqs = WindRose._ytick_radial_lines(self._bin_vectors,
-                                                 self.legend_parameters.segment_count)
-            self._frequency_lines = [freq.scale(self._radius).move(self._center_point2d)
-                                     for freq in freqs]
-        return self._frequency_lines
+        freqs = WindRose._ytick_radial_lines(self._bin_vectors,
+                                             self.legend_parameters.segment_count)
+        return [freq.scale(self._radius).move(self._center_point2d) for freq in freqs]
+
+    @property
+    def _center_point2d(self):
+        """Compute center of windrose plot as Point2D."""
+        return Point2D(self.base_point.x + self._radius,
+                       self.base_point.y + self._radius)
+
+    @property
+    def _radius(self):
+        """Radius of the inner boundary of the windrose plot.
+
+        This number will be a integer multiple of the legend parameter segement count.
+        """
+        ytick_num = self.legend_parameters.segment_count
+        if self.show_zeros:
+            ytick_num += self._ytick_zero_inc
+        return self.frequency_spacing_distance * ytick_num
+
+    @property
+    def _wind_radius(self):
+        """Radius of the windrose mesh."""
+        if self.show_zeros:
+            return (self.real_freq_max + self.zeros_per_bin) / \
+                (self.frequency_maximum + self.zeros_per_bin) * self._radius
+        else:
+            return self.real_freq_max / self.frequency_maximum * self._radius
+
+    @property
+    def _ytick_zero_inc(self):
+        """Returns how much yticks increasa with zeros"""
+        return ceil(self.zeros_per_bin / (self.real_freq_max + self.zeros_per_bin) *
+                    self.legend_parameters.segment_count)
+
+    @property
+    def _compass(self):
+        """Compass object for the windrose plot."""
+        ytick_num = self.legend_parameters.segment_count
+        return Compass(self._radius, self._center_point2d, north_angle=0,
+                       spacing_factor=1.0/ytick_num)
 
     @staticmethod
     def _compute_bar_stack_vecs(base_vec_show_stack, vec1, vec2, curr_bar_radius,
@@ -659,68 +867,8 @@ class WindRose(object):
         return data, zero_count
 
     @staticmethod
-    def _compute_colored_mesh_zero(regl_hist_data, zero_count, bin_vecs, ytick_num,
-                                   show_stack):
-        """Compute a colored mesh from this object's histogram data.
-
-        Args:
-            regl_hist_data: Histogram of analysis values greater then zero as a list of
-                lists.
-            zero_count: The number of zero analysis values.
-            bin_vecs: Array of histogram bin edge vectors.
-            ytick_num: Number of Y-axis intervals.
-            show_stack: Boolean indicating if stacked histogram.
-        Returns:
-            A colored Mesh2D.
-        """
-
-        # Default rose is a unit circle centered at origin. We can scale and translate
-        # the resulting mesh.
-        vec_cpt = (0, 0)
-        max_bar_radius = 1.0
-        zeros_per_bin = float(zero_count) / len(regl_hist_data)
-
-        # Calculate radius of zero rose
-        max_bar_num = max([len(bar) for bar in regl_hist_data]) + zeros_per_bin
-        zero_rose_radius = zeros_per_bin / max_bar_num * max_bar_radius
-
-        # Compute the array for calm rose
-        zero_hist_data = [[0] for _ in regl_hist_data]
-        zero_hist_coords = WindRose._histogram_array_radial(
-            bin_vecs, vec_cpt, zero_hist_data, (0.0, zero_rose_radius), ytick_num,
-            show_stack=False)
-
-        # Compute the array for the regular rose
-        regl_hist_array = WindRose._histogram_array_radial(
-            bin_vecs, vec_cpt, regl_hist_data, (zero_rose_radius, max_bar_radius),
-            ytick_num, show_stack=show_stack)
-
-        # Flatten and add coordinates
-        zero_hist_coords = ([v] for v in zero_hist_coords)
-        if not show_stack:
-            regl_hist_array = ([v] for v in regl_hist_array)
-
-        # Make mesh
-        hist_coords = [intervals for bar in zero_hist_coords for intervals in bar]
-        hist_coords += [intervals for bar in regl_hist_array for intervals in bar]
-
-        # Make the mesh
-        mesh_array = [[Point2D.from_array(vec) for vec in vecs] for vecs in hist_coords]
-        mesh = Mesh2D.from_face_vertices(mesh_array, purge=True)
-
-        # Extract analysis values for colors
-        colors = [0 for i in range(len(zero_hist_data))]
-        colors += WindRose._compute_hist_colors(regl_hist_data, regl_hist_array,
-                                                stack=show_stack)
-
-        # Assign colors
-        mesh.colors = colors
-
-        return mesh
-
-    @staticmethod
-    def _compute_colored_mesh_regl(regl_hist_data, bin_vecs, ytick_num,
-                                   show_stack):
+    def _compute_colored_mesh_array(regl_hist_data, bin_vecs, ytick_num, min_radius,
+                                    max_radius, show_stack):
         """Compute a colored mesh from this object's historam.
 
         Args:
@@ -736,11 +884,10 @@ class WindRose(object):
         # Default rose is a unit circle centered at origin. We can scale and translate
         # the resulting mesh.
         vec_cpt = (0, 0)
-        max_bar_radius = 1.0
 
         # Compute histogram array
         regl_hist_array = WindRose._histogram_array_radial(
-            bin_vecs, vec_cpt, regl_hist_data, (0, max_bar_radius), ytick_num,
+            bin_vecs, vec_cpt, regl_hist_data, (min_radius, max_radius), ytick_num,
             show_stack)
 
         # Flatten and add coordinates
@@ -750,16 +897,16 @@ class WindRose(object):
         # Make mesh
         hist_coords = [intervals for bar in regl_hist_array for intervals in bar]
         mesh_array = [[Point2D.from_array(vec) for vec in vecs] for vecs in hist_coords]
-        mesh = Mesh2D.from_face_vertices(mesh_array, purge=True)
 
         # Extract analysis values for colors
-        mesh.colors = WindRose._compute_hist_colors(regl_hist_data, regl_hist_array,
+        color_array = WindRose._compute_hist_colors(regl_hist_data, regl_hist_array,
                                                     stack=show_stack)
 
-        return mesh
+        return mesh_array, color_array
 
     def set_visualization_properties(self, legend_parameters=None, base_point=None,
-                                     frequency_spacing_distance=None, frequency_maximum=None,
+                                     frequency_spacing_distance=None,
+                                     frequency_maximum=None,
                                      label_point_size_factor=None,
                                      label_tick_size_factor=None, show_stack=None,
                                      show_zeros=None):
@@ -784,91 +931,20 @@ class WindRose(object):
             show_zeros: Boolean indicating if the zero values will be represented in the
                 plot.
         """
-        real_freq_max = max([len(d) for d in self.data])
-        scale_freq_max = True
 
-        if base_point is None:
-            base_point = Point3D() if self.base_point is None else self.base_point
-        self.base_point = base_point
-
-        if show_stack is None:
-            show_stack = True if self.show_stack is None else self.show_stack
-        self.show_stack = show_stack
-
-        if show_zeros is None:
-            show_zeros = True if self.show_zeros is None else self.show_zeros
-        self.show_zeros = show_zeros
-
-        if frequency_spacing_distance is None:
-            frequency_spacing_distance = 0.1 \
-                if self.frequency_spacing_distance is None \
-                else self.frequency_spacing_distance
-        self.frequency_spacing_distance = frequency_spacing_distance
-
-        if (frequency_maximum is not None) or (self.frequency_maximum is not None):
-            scale_freq_max = False
-        if frequency_maximum is None:
-            frequency_maximum = real_freq_max \
-                if self.frequency_maximum is None else self.frequency_maximum
-        self.frequency_maximum = frequency_maximum
-
-        if label_point_size_factor is None:
-            label_point_size_factor = 0.8 \
-                if self.label_point_size_factor is None else self.label_point_size_factor
-        self.label_point_size_factor = label_point_size_factor
-
-        if label_tick_size_factor is None:
-            label_tick_size_factor = 0.3 \
-                if self.label_tick_size_factor is None else self.label_tick_size_factor
-        self.label_tick_size_factor = label_tick_size_factor
-
-        if legend_parameters is None:
-            if self.legend_parameters is None:
-                if show_stack:
-                    min_analysis = self.analysis_data_collection.min
-                    max_analysis = self.analysis_data_collection.max
-                else:
-                    # If not stacked histogram, ensure legend parameter range is defined
-                    # by wind mean range per orientation.
-                    wind_means = [sum(bin)/float(len(bin)) for bin in self.data
-                                  if len(bin) > 0]
-                    min_analysis = min(wind_means)
-                    max_analysis = max(wind_means)
-                segment_count = 10
-                legend_parameters = LegendParameters(min=min_analysis, max=max_analysis,
-                                                     segment_count=segment_count)
-        self.legend_parameters = legend_parameters
-
-        # Update viz paramters if showing calm rose
-        if self.show_zeros:
-            zeros_per_bin = float(self._zero_count) / (len(self.bin_angles) - 1)
-            real_freq_max += zeros_per_bin
-
-            if scale_freq_max:
-                self.frequency_maximum += zeros_per_bin
-                self.legend_parameters.segment_count += \
-                    ceil(zeros_per_bin / self.frequency_maximum)
-
-        # Calculate radius from frequencing spacing
-        ytick_num = self.legend_parameters.segment_count
-        self._radius = self.frequency_spacing_distance * ytick_num
-        self._wind_radius = (real_freq_max / self.frequency_maximum) * self._radius
-
-        # Create compass object
-        self._compass = Compass(self._radius, self._center_point2d, north_angle=0,
-                                spacing_factor=1.0/ytick_num)
-
-        # Create the graphic container from the inputs and associated legend properties
-        max_pt = Point3D(self._center_point2d.x + self._radius,
-                         self._center_point2d.y + self._radius, self.base_point.z)
-
-        self._container = GraphicContainer(
-            self.analysis_values, self.base_point, max_pt,
-            self.legend_parameters, self.analysis_data_collection.header.data_type,
-            self.analysis_data_collection.header.unit)
-        self.legend = self._container._legend
-
-        self._viz_set = True
+        self.base_point = self.base_point if base_point is None else base_point
+        self.show_stack = self.show_stack if show_stack is None else show_stack
+        self.show_zeros = self.show_zeros if show_zeros is None else show_zeros
+        self.frequency_spacing_distance = self.frequency_spacing_distance if \
+            frequency_spacing_distance is None else frequency_spacing_distance
+        self.frequency_maximum = self.frequency_maximum if frequency_maximum is None \
+            else frequency_maximum
+        self.label_point_size_factor = self.label_point_size_factor if \
+            label_point_size_factor is None else label_point_size_factor
+        self.label_tick_size_factor = self.label_tick_size_factor if \
+            label_tick_size_factor is None else label_tick_size_factor
+        self.legend_parameters = self.legend_parameters if legend_parameters is None \
+            else legend_parameters
 
     def __repr__(self):
         """Wind rose Collection representation."""
