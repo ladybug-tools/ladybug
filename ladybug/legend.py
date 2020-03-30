@@ -117,7 +117,7 @@ class Legend(object):
         else:
             self._legend_par = LegendParameters()
 
-        # set default min, max and (if horizontal) segment width
+        # set default min, max and segment count (if min == max)
         self._is_min_default = False
         self._is_max_default = False
         if self._legend_par.min is None:
@@ -126,6 +126,12 @@ class Legend(object):
         if self._legend_par.max is None:
             self._legend_par.max = max(values)
             self._is_max_default = True
+        if self._legend_par.min == self._legend_par.max and not \
+                isinstance(self._legend_par, LegendParametersCategorized) and \
+                self._legend_par.is_segment_count_default:
+            self._legend_par.segment_count = 1
+
+        # set the default segment width if the legend is horizontal
         if not self._legend_par.vertical and self._legend_par.is_segment_width_default:
             self._legend_par.segment_width = self._legend_par.text_height * \
                 (len(str(int(self._legend_par.max))) +
@@ -264,7 +270,10 @@ class Legend(object):
     def segment_numbers(self):
         """Get a list of numbers along a linear scale from the min to max."""
         _l_par = self.legend_parameters
-        _seg_stp = (_l_par.max - _l_par.min) / (_l_par.segment_count - 1)
+        try:
+            _seg_stp = (_l_par.max - _l_par.min) / (_l_par.segment_count - 1)
+        except ZeroDivisionError:
+            _seg_stp = 0
         return tuple(_l_par.min + i * _seg_stp
                      for i in xrange(_l_par.segment_count))
 
@@ -594,7 +603,7 @@ class LegendParameters(object):
         if nos is not None:
             assert isinstance(nos, int), \
                 'Expected integer for segment_count. Got {}.'.format(type(nos))
-            assert nos >= 2, 'segment_count must be greater or equal to 2.' \
+            assert nos >= 1, 'segment_count must be greater or equal to 1.' \
                 ' Got {}.'.format(nos)
             self._segment_count = nos
             self._is_segment_count_default = False
