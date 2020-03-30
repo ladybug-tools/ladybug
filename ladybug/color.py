@@ -221,7 +221,12 @@ class Colorset(object):
              (243, 74, 0), (255, 0, 0)],
         25: [(69, 92, 166), (66, 128, 167), (62, 176, 168), (78, 181, 137),
              (120, 188, 59), (139, 184, 46), (197, 157, 54), (220, 144, 57),
-             (228, 100, 59), (233, 68, 60)]
+             (228, 100, 59), (233, 68, 60)],
+        26: [(230, 180, 60), (230, 215, 150), (165, 82, 0),
+             (128, 20, 20), (255, 128, 128), (64, 128, 128),
+             (128, 128, 128), (255, 128, 128), (128, 64, 0),
+             (64, 180, 255), (160, 150, 100), (120, 75, 190), (255, 255, 200),
+             (0, 128, 0)]
     }
 
     def __init__(self):
@@ -357,6 +362,17 @@ class Colorset(object):
     def multicolored_3(cls):
         """Multi-colored colors with the least saturation."""
         return tuple(Color(*color) for color in cls._colors[25])
+
+    @classmethod
+    def openstudio_palette(cls):
+        """Standard color set for the OpenStudio surface types. Ordered as follows.
+
+        Exterior Wall, Interior Wall, Undreground Wall,
+        Roof, Ceiling, Underground Roof,
+        Exposed Floor, Interior Floor, Ground Floor,
+        Window, Door, Shade, Air
+        """
+        return tuple(Color(*color) for color in cls._colors[26])
 
     def __len__(self):
         """Return length of currently installed color sets."""
