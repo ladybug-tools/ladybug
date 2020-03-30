@@ -580,10 +580,10 @@ class BaseCollection(object):
 
     @staticmethod
     def linspace(start, stop, num):
-        """Return evenly spaced numbers over calculated over the interval start, stop.
+        """Return evenly spaced numbers calculated over the interval start, stop.
 
         This method is similar to native Python range except that it takes a number of
-        divisions instead of a step, and equivalent to numpy's linspace method.
+        divisions instead of a step. It is also equivalent to numpy's linspace method.
 
         Usage:
         .. code-block:: python
@@ -635,7 +635,7 @@ class BaseCollection(object):
                 the rightmost edge.
             hist_range: Optional parameter to define the lower and upper range of the
                 histogram as a tuple of numbers. If not provided the range is
-                ``(min(values), max(values)+1)``.
+                ``(min(key(values)), max(key(values))+1)``.
             key: Optional parameter to define key to bin values by, as a function. If not
                 provided the histogram will be binned by the value.
 
@@ -697,9 +697,9 @@ class BaseCollection(object):
                 These values do not have to be monotonically increasing.
             hist_range: Optional parameter to define the lower and upper range of the
                 histogram as a tuple of numbers. If not provided the range is
-                ``(a.min(), a.max()+1)``.
-            key: Optional function parameter to define key to bin values by. If not
-                provided the histogram will be binned by value item.
+                ``(min(key(values)), max(key(values))+1)``.
+            key: Optional parameter to define key to bin values by, as a function. If not
+                provided the histogram will be binned by the value.
 
         Returns:
             A list of lists representing the ordered values binned by frequency.
