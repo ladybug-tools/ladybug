@@ -13,7 +13,7 @@ from ladybug_geometry.geometry2d.mesh import Mesh2D
 from ladybug_geometry.geometry3d.pointvector import Point3D
 
 from math import pi, cos, sin, ceil
-
+import functools
 
 def linspace(start, stop, num):
     """Return evenly spaced numbers over calculated over the interval start, stop.
@@ -164,6 +164,62 @@ def histogram_circular(values, bins, hist_range=None, key=None):
 
     return hist
 
+
+
+@functools.lru_cache(maxsize=128)
+def memtest(ytick_num, real_freq_max, frequency_maximum,
+            zeros_per_bin, show_zeros, show_stack, _ytick_zero_inc, cx, cy, bin_vectors,
+            data, wind_radius):
+
+    max_bar_radius = 1.0
+    min_bar_radius = 0.0
+    zero_mesh_array, zero_color_array = [], []
+
+    # Calculate ytick nums for the wind mesh
+    #ytick_num = self.legend_parameters.segment_count  # total
+    #max_bar_num = self.real_freq_max + self.zeros_per_bin
+    #ytick_num_mesh = max_bar_num / self.frequency_maximum * ytick_num  # wind mesh
+    max_bar_num = real_freq_max + zeros_per_bin
+    ytick_num_mesh = max_bar_num / frequency_maximum * ytick_num  # wind mesh
+
+    if show_zeros:
+        # Calculate radius of zero rose
+
+        #min_bar_radius = self.zeros_per_bin / max_bar_num * max_bar_radius
+        min_bar_radius = zeros_per_bin / max_bar_num * max_bar_radius
+
+        # Update yticks
+        #zero_ytick_num_mesh = self._ytick_zero_inc
+        zero_ytick_num_mesh = _ytick_zero_inc
+        ytick_num_mesh -= zero_ytick_num_mesh
+
+        # Compute the array for calm rose
+        # zero_data = [[0] for _ in self.data]
+        # zero_mesh_array, zero_color_array = WindRose._compute_colored_mesh_array(
+        #     zero_data, self.bin_vectors, zero_ytick_num_mesh, 0, min_bar_radius,
+        #     show_stack=False)
+        zero_data = [[0] for _ in data]
+        zero_mesh_array, zero_color_array = WindRose._compute_colored_mesh_array(
+            zero_data, bin_vectors, zero_ytick_num_mesh, 0, min_bar_radius,
+            show_stack=False)
+
+
+    # Calculate regular mesh
+    # mesh_array, color_array = WindRose._compute_colored_mesh_array(
+    #     self.data, self.bin_vectors, ytick_num_mesh, min_bar_radius, max_bar_radius,
+    #     self.show_stack)
+    mesh_array, color_array = WindRose._compute_colored_mesh_array(
+        data, bin_vectors, ytick_num_mesh, min_bar_radius, max_bar_radius,
+        show_stack)
+
+    mesh_array += zero_mesh_array
+    color_array += zero_color_array
+
+    mesh = Mesh2D.from_face_vertices(mesh_array, purge=True)
+    mesh.colors = color_array
+
+    #return mesh.scale(self._wind_radius).move(self._center_point2d)
+    return mesh.scale(wind_radius).move(Point2D(cx, cy))#self._center_point2d)
 
 class WindRose(object):
     """Module for calculation and visualization of wind data collection by orientation.
@@ -388,20 +444,21 @@ class WindRose(object):
         The default segment count is 10.
         """
         if self._legend_parameters is None:
-            if self.show_stack:
-                min_analysis = self.analysis_data_collection.min
-                max_analysis = self.analysis_data_collection.max
-            else:
-                # If not stacked histogram, ensure legend parameter range is defined
-                # by wind mean range per orientation.
-                wind_means = [sum(bin)/float(len(bin)) for bin in self.data
-                              if len(bin) > 0]
-                min_analysis = min(wind_means)
-                max_analysis = max(wind_means)
-            segment_count = 10
-            self._legend_parameters = LegendParameters(min=min_analysis,
-                                                       max=max_analysis,
-                                                       segment_count=segment_count)
+            # if self.show_stack:
+            #     min_analysis = self.analysis_data_collection.min
+            #     max_analysis = self.analysis_data_collection.max
+            # else:
+            #     # If not stacked histogram, ensure legend parameter range is defined
+            #     # by wind mean range per orientation.
+            #     wind_means = [sum(bin)/float(len(bin)) for bin in self.data
+            #                   if len(bin) > 0]
+            #     min_analysis = min(wind_means)
+            #     max_analysis = max(wind_means)
+            # segment_count = 10
+            # self._legend_parameters = LegendParameters(min=min_analysis,
+            #                                            max=max_analysis,
+            #                                            segment_count=segment_count)
+            None
         return self._legend_parameters
 
     @legend_parameters.setter
@@ -506,42 +563,22 @@ class WindRose(object):
     def colored_mesh(self):
         """Get a colored Mesh2D for this graphic.
         """
-        max_bar_radius = 1.0
-        min_bar_radius = 0.0
-        zero_mesh_array, zero_color_array = [], []
-
-        # Calculate ytick nums for the wind mesh
         ytick_num = self.legend_parameters.segment_count  # total
-        max_bar_num = self.real_freq_max + self.zeros_per_bin
-        ytick_num_mesh = max_bar_num / self.frequency_maximum * ytick_num  # wind mesh
 
-        if self.show_zeros:
-            # Calculate radius of zero rose
+        data = tuple(tuple(d) for d in self.data)
 
-            min_bar_radius = self.zeros_per_bin / max_bar_num * max_bar_radius
+        w = memtest(
+            ytick_num, self.real_freq_max, self.frequency_maximum, self.zeros_per_bin, self.show_zeros,
+            self.show_stack,
+            self._ytick_zero_inc, self._center_point2d.x, self._center_point2d.y,
+            tuple(self.bin_vectors), data,
+            self._wind_radius
+        )
 
-            # Update yticks
-            zero_ytick_num_mesh = self._ytick_zero_inc
-            ytick_num_mesh -= zero_ytick_num_mesh
+        #print(memtest.cache_info())
+        #print(dir(memoize_colored_mesh)[::-1])
 
-            # Compute the array for calm rose
-            zero_data = [[0] for _ in self.data]
-            zero_mesh_array, zero_color_array = WindRose._compute_colored_mesh_array(
-                zero_data, self.bin_vectors, zero_ytick_num_mesh, 0, min_bar_radius,
-                show_stack=False)
-
-        # Calculate regular mesh
-        mesh_array, color_array = WindRose._compute_colored_mesh_array(
-            self.data, self.bin_vectors, ytick_num_mesh, min_bar_radius, max_bar_radius,
-            self.show_stack)
-
-        mesh_array += zero_mesh_array
-        color_array += zero_color_array
-
-        mesh = Mesh2D.from_face_vertices(mesh_array, purge=True)
-        mesh.colors = color_array
-
-        return mesh.scale(self._wind_radius).move(self._center_point2d)
+        return w
 
     @property
     def all_boundary_circles(self):

@@ -7,113 +7,107 @@ from ladybug.header import Header
 from ladybug.legend import Legend, LegendParameters
 from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.datacollectionimmutable import HourlyContinuousCollectionImmutable
-from ladybug.windrose import WindRose
 from ladybug.epw import EPW
+
+from ladybug.windrose import WindRose, linspace, histogram, histogram_circular
 
 from pprint import pprint as pp
 import numpy as np
 from math import cos, sin, pi
 
 
-# def _polar_to_rect(theta, radius):
-#     """Polar args to rectangular coordinates"""
-#     t = 180 / pi
-#     theta += 90
-#     return radius * cos(theta/t), radius * sin(theta/t)
+def test_linspace():
+    """Test the generation of bin array from bin range and num"""
+
+    # Base case
+    bin_arr = linspace(0, 360, 0)
+    assert [] == bin_arr, bin_arr
 
 
-# def test_bin_array():
-#     """Test the generatin of bin array from bin range and num"""
+    bin_arr = linspace(0, 360, 1)
+    assert [0] == bin_arr, bin_arr
 
-#     # Base case
-#     bin_arr = WindRose._bin_array(1, (0, 360))
-#     assert [0, 360.0] == bin_arr, bin_arr
+    bin_arr = linspace(0, 360, 2)
+    assert [0, 360.0] == bin_arr, bin_arr
 
-#     # Simple 2 div
-#     bin_arr = WindRose._bin_array(2, (0, 360))
-#     assert [0, 180.0, 360.0] == bin_arr, bin_arr
+    bin_arr = linspace(0, 360, 4)
+    assert [0.0, 120.0, 240.0, 360.0] == bin_arr, bin_arr
 
-#     # Simple 3 case
-#     bin_arr = WindRose._bin_array(3, (0, 360))
-#     assert [0.0, 120.0, 240.0, 360.0] == bin_arr, bin_arr
+    bin_arr = linspace(0, 360, 5)
+    assert [0.0, 90.0, 180.0, 270.0, 360.0] == bin_arr, bin_arr
 
-#     # Simple 4 case
-#     bin_arr = WindRose._bin_array(4, (0, 360))
-#     assert [0.0, 90.0, 180.0, 270.0, 360.0] == bin_arr, bin_arr
-
-#     # Start from non zero
-#     bin_arr = WindRose._bin_array(3, (180, 360))
-#     assert [180.0, 240.0, 300.0, 360.0] == bin_arr, bin_arr
-
-#     """
-#     0.0 - 60.0
-#     734
-#     --
-#     60.0 - 120.0
-#     849
-#     --
-#     120.0 - 180.0
-#     509
-#     --
-#     180.0 - 240.0
-#     1262
-#     --
-#     240.0 - 300.0
-#     185
-#     --
-#     300.0 - 360.0
-#     1624
-#     """
-
-# def test_histogram():
-#     """Test the windrose histogram."""
-
-#     # Test out of bounds with 3 divisions
-#     bin_arr = WindRose._bin_array(3, (0, 3))
-#     vals = [0, 0, 0, 1, 1, 1, 2, 2]
-#     hist = WindRose.histogram_bins(vals, bin_arr)
-#     assert hist == [[0, 0, 0], [1, 1, 1], [2, 2]]
-
-#     # Test out of bounds with 2 divisions
-#     bin_arr = WindRose._bin_array(2, (0, 3))
-#     vals = [-1, -2, 10, 0, 0, 0, 1, 1, 1, 2, 2, 34]
-#     hist = WindRose.histogram_bins(vals, bin_arr)
-#     assert hist == [[0, 0, 0, 1, 1, 1], [2, 2]], hist
-
-#     # Test edge bounds
-#     bin_arr = WindRose._bin_array(2, (0, 3))
-#     vals = [0, 0, 0, 1, 1, 1, 2, 2, 3, 3]
-#     hist = WindRose.histogram_bins(vals, bin_arr)
-#     assert hist == [[0, 0, 0, 1, 1, 1], [2, 2]], hist
-
-#     # Test edge bounds 2
-#     hist = WindRose.histogram_bins([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
-#     assert hist == [[0, 0, 0.9], [1, 1.5, 1.99], [2]], hist
+    # Start from non zero
+    bin_arr = linspace(180, 360, 4)
+    assert [180.0, 240.0, 300.0, 360.0] == bin_arr, bin_arr
 
 
-# def test_bin_polar():
-#     """Test polar coordinate array"""
+def test_histogram():
+    """Test the windrose histogram."""
 
-#     # Init simple dir set divided by 4
-#     bin_arr = (0, 90, 180, 270, 360)
+    # Test simple 2 div
+    bin_arr = linspace(0, 2, 3)
+    assert bin_arr == [0, 1, 2]
+    vals = [0, 0, 0, 1, 1, 1, 2, 2]
+    hist = histogram(vals, bin_arr)
+    assert hist == [[0, 0, 0], [1, 1, 1]]
 
-#     #vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
-#     #hist = [[0, 0, 0, 10, 85], [90, 95, 170], [], [285, 288]]
+    # Test out of bounds with 3 divisions
+    bin_arr = linspace(0, 3, 4)
+    vals = [0, 0, 0, 1, 1, 1, 2, 2]
+    hist = histogram(vals, bin_arr)
+    assert hist == [[0, 0, 0], [1, 1, 1], [2, 2]]
 
-#     phist = WindRose._bin_polar(bin_arr)
-#     r1, r2, r3, r4 = 0.5, 0.3, 0.0, 0.2  # radius
-#     p2r = _polar_to_rect
-#     chk_phist = [
-#         [p2r(0, r1), p2r(90, r1)],     # 0-90
-#         [p2r(90, r2), p2r(180, r2)],   # 90-180
-#         [p2r(180, r3), p2r(270, r3)],  # 180-270
-#         [p2r(270, r4), p2r(360, r4)]]  # 270-360
+    # Test out of bounds with 2 divisions
+    bin_arr = linspace(0, 3, 3)
+    vals = [-1, -2, 10, 0, 0, 0, 1, 1, 1, 2, 2, 34]
+    hist = histogram(vals, bin_arr)
+    assert hist == [[-2, -1, 0, 0, 0, 1, 1, 1], [2, 2]], hist
 
-#     # for chk_coords, coords in zip(chk_phist, phist):
-#     #     for chk_vec, vec in zip(chk_coords, coords):
-#     #         # Check x, y
-#     #         assert abs(chk_vec[0] - vec[0]) < 1e-10
-#     #         assert abs(chk_vec[1] - vec[1]) < 1e-10
+    # Test edge bounds
+    bin_arr = linspace(0, 3, 3)
+    vals = [0, 0, 0, 1, 1, 1, 2, 2, 3, 3]
+    hist = histogram(vals, bin_arr)
+    assert hist == [[0, 0, 0, 1, 1, 1], [2, 2]], hist
+
+    # Test edge bounds 2
+    hist = histogram([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
+    assert hist == [[0, 0, 0.9], [1, 1.5, 1.99], [2]], hist
+
+
+def test_histogram_circular():
+    """Test the windrose histogram_circular data."""
+
+    # Test out of bounds with 3 divisions
+    bin_arr = linspace(-2, 2, 3)
+    assert bin_arr == [-2, 0, 2], bin_arr
+    vals = [-2, -1, 0, 0, 0, 1, 1, 1, 2, 2]
+    hist = histogram_circular(vals, bin_arr)
+    assert hist == [[-2, -1], [0, 0, 0, 1, 1, 1]], hist
+
+
+def test_bin_polar():
+    """Test polar coordinate array"""
+
+    # Init simple dir set divided by 4
+    bin_arr = (0, 90, 180, 270, 360)
+
+    #vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
+    #hist = [[0, 0, 0, 10, 85], [90, 95, 170], [], [285, 288]]
+
+    phist = WindRose._bin_polar(bin_arr)
+    r1, r2, r3, r4 = 0.5, 0.3, 0.0, 0.2  # radius
+    p2r = _polar_to_rect
+    chk_phist = [
+        [p2r(0, r1), p2r(90, r1)],     # 0-90
+        [p2r(90, r2), p2r(180, r2)],   # 90-180
+        [p2r(180, r3), p2r(270, r3)],  # 180-270
+        [p2r(270, r4), p2r(360, r4)]]  # 270-360
+
+    # for chk_coords, coords in zip(chk_phist, phist):
+    #     for chk_vec, vec in zip(chk_coords, coords):
+    #         # Check x, y
+    #         assert abs(chk_vec[0] - vec[0]) < 1e-10
+    #         assert abs(chk_vec[1] - vec[1]) < 1e-10
 
 
 # def test_polar_histogram():
@@ -162,9 +156,10 @@ from math import cos, sin, pi
 #     colors = WindRose._compute_bar_interval_colors(hist_data, hist_coords)
 
 if __name__ == '__main__':
-    # test_bin_array()
-    # test_histogram()
-    # test_bin_polar()
+    test_linspace()
+    test_histogram()
+    test_histogram_circular()
+    test_bin_polar()
     # test_polar_histogram()
     # test_histogram_interval_color()
     pass
