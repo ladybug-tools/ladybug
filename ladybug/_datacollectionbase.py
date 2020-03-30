@@ -578,6 +578,174 @@ class BaseCollection(object):
         return statement.replace("&&", "and").replace("||", "or") \
             .replace("~", "not").replace("<<", "in").replace("$", "is")
 
+    @staticmethod
+    def linspace(start, stop, num):
+        """Return evenly spaced numbers over calculated over the interval start, stop.
+
+        This method is similar to native Python range except that it takes a number of
+        divisions instead of a step, and equivalent to numpy's linspace method.
+
+        Usage:
+        .. code-block:: python
+            from BaseCollection import linspace
+
+            linspace(0, 5, 6)
+            >> [0., 1., 2., 3., 4., 5.]
+
+        Args:
+            start: Start interval index as integer or float.
+            stop: Stop interval index as integer or float.
+            num: Number of divisions as integer.
+
+        Returns:
+            A list of numbers.
+        """
+        try:
+            delta = stop - start
+            return [i * (delta / (num - 1)) + start for i in range(num)]
+        except ZeroDivisionError:
+            return [start]
+
+    @staticmethod
+    def histogram(values, bins, hist_range=None, key=None):
+        """Compute the frequency histogram from a list of values.
+
+        The data is binned inclusive of the lower bound but exclusive of the upper bound
+        for intervals. See usage for example of losing the last number in the following
+        dataset because of exclusive upper bound.
+
+        Usage:
+        .. code-block:: python
+            from BaseCollection import histogram
+
+            # Simple example
+            histogram([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
+            >> [[0, 0, 0.9], [1, 1.5, 1.99], [2]]
+
+            # With key parameter
+            histogram(
+                zip([0, 0, 0.9, 1, 1.5, 1.99],
+                    ['a', 'b', 'c', 'd', 'e', 'f']),
+                    (0, 1, 2), key=lambda k: k[0])
+            >> [[(0, 'a'), (0, 'b'), (0.9, 'c')], [(1, 'd'), (1.5, 'e'), (1.99, 'f')]]
+
+        Args:
+            values: Set of numerical data as a list.
+            bins: A monotonically increasing array of uniform-width bin edges, excluding
+                the rightmost edge.
+            hist_range: Optional parameter to define the lower and upper range of the
+                histogram as a tuple of numbers. If not provided the range is
+                ``(min(values), max(values)+1)``.
+            key: Optional parameter to define key to bin values by, as a function. If not
+                provided the histogram will be binned by the value.
+
+        Returns:
+            A list of lists representing the ordered values binned by frequency.
+                histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]
+        """
+
+        if key is None:
+            key = lambda v: v
+
+        vals = sorted(values, key=key)
+
+        if hist_range is None:
+            hist_range = (key(min(vals)), key(max(vals)) + 1)
+
+        bin_bound_num = len(bins)
+
+        # Init histogram bins
+        hist = [[] for i in range(bin_bound_num - 1)]
+        bin_index = 0
+        for val in vals:
+            k = key(val)
+            # Ignore values out of range
+            if k < hist_range[0] or k >= hist_range[1]:
+                continue
+
+            # This loop will iterate through the bin upper bounds.
+            # If the value is within the bounds, the lower bound
+            # of the bin_index is updated, and the loop is broken
+            for i in range(bin_index, bin_bound_num - 1):
+                if k < bins[i + 1]:
+                    hist[i].append(val)
+                    bin_index = i
+                    break
+        return hist
+
+    @staticmethod
+    def histogram_circular(values, bins, hist_range=None, key=None):
+        """Compute the frequency histogram from a list of circular values.
+
+        Circular values refers to a set of values where there is no distinction between
+        values at the lower or upper end of the range, for example angles in a circle, or
+        time.
+
+        Usage:
+        .. code-block:: python
+            from BaseCollection import histogram_circular
+
+            histogram_circular([358, 359, 0, 1, 2, 3], (358, 0, 3))
+            >> [[358, 359], [0, 1, 2]]
+
+        The data is binned inclusive of the lower bound but exclusive of the upper bound
+        for intervals.
+
+        Args:
+            values: Set of numerical data as a list.
+            bins: An array of uniform-width bin edges, excluding the rightmost edge.
+                These values do not have to be monotonically increasing.
+            hist_range: Optional parameter to define the lower and upper range of the
+                histogram as a tuple of numbers. If not provided the range is
+                ``(a.min(), a.max()+1)``.
+            key: Optional function parameter to define key to bin values by. If not
+                provided the histogram will be binned by value item.
+
+        Returns:
+            A list of lists representing the ordered values binned by frequency.
+                histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]
+        """
+
+        if key is None:
+            key = lambda v: v
+
+        vals = sorted(values, key=key)
+
+        if hist_range is None:
+            hist_range = (key(min(vals)), key(max(vals)) + 1)
+
+        bin_bound_num = len(bins) - 1
+
+        # Init histogram bins
+        hist = [[] for i in range(bin_bound_num)]
+        for val in vals:
+            k = key(val)
+
+            # Ignore values out of range
+            if k < hist_range[0] or k >= hist_range[1]:
+                continue
+
+            # This loop will iterate through the bin upper bounds.
+            # If the value is within the bounds, the loop is broken.
+            # Since values at the end of the list can still be binned
+            # into the earlier histogram bars for circular
+            # data, we don't update the bin_index.
+            for i in range(bin_bound_num):
+                if bins[i] > bins[i + 1]:
+                    # If the interval starts data from the end of the list,
+                    # split the conditional checks into two to check two
+                    # intervals.
+                    interval1 = (k < hist_range[1] and k >= bins[i])
+                    interval2 = (k < bins[i + 1] and k >= hist_range[0])
+                    if interval1 or interval2:
+                        hist[i].append(val)
+                        break
+                else:
+                    if k < bins[i + 1]:
+                        hist[i].append(val)
+                        break
+        return hist
+
     def _filter_by_statement(self, statement):
         """Filter the data collection based on a conditional statement."""
         self.__class__._check_conditional_statement(statement, 1)
