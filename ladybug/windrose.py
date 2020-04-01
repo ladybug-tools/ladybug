@@ -84,10 +84,10 @@ class WindRose(object):
         # Assign the inputs as read-only properties of this data collection
         self._direction_data_collection = direction_data_collection.to_immutable()
         self._analysis_data_collection = analysis_data_collection.to_immutable()
-        self._number_of_directions = number_of_directions
+        self._number_of_directions = int(number_of_directions)
 
         # Compute the windrose data and associated read-only properties
-        self._angles = linspace(0, 360, number_of_directions + 1)
+        self._angles = WindRose._compute_angles(number_of_directions)
         self._histogram_data, self._zero_count = \
             self._compute_windrose_data(self.direction_values, self.analysis_values,
                                         number_of_directions, self.angles, (0, 360))
@@ -98,7 +98,7 @@ class WindRose(object):
         self._frequency_maximum = None
         self._show_stack = True
         self._show_zeros = True
-        self._base_point = Point3D()
+        self._base_point = Point2D()
         self._compass = None
 
         # Fixed properties that only need to be computed once
@@ -118,7 +118,7 @@ class WindRose(object):
 
     @base_point.setter
     def base_point(self, base_point):
-        assert isinstance(base_point, type(Point3D())), 'base_point must be a Point3D. '\
+        assert isinstance(base_point, type(Point2D())), 'base_point must be a Point2D. '\
             'Got {}.'.format(type(base_point))
         self._base_point = base_point
 
@@ -260,7 +260,8 @@ class WindRose(object):
     def bin_vectors(self):
         """Get vectors for orientation intervals."""
         if self._bin_vectors is None:
-            self._bin_vectors = WindRose._bin_vectors_radial(self.angles)
+            plot_angles = WindRose._compute_plotting_angles(self.angles)
+            self._bin_vectors = WindRose._bin_vectors_radial(plot_angles)
         return self._bin_vectors
 
     @property
@@ -294,14 +295,15 @@ class WindRose(object):
                 # the real min/max values.
                 values = self.analysis_values
             else:
-                values = [sum(d)/len(d) for d in self.histogram_data if d > 0]
+                values = [sum(d) / len(d) for d in self.histogram_data if len(d) > 0]
 
             # Create the graphic container from the inputs and associated legend properties
-            max_pt = Point3D(self._center_point2d.x + self.radius,
-                             self._center_point2d.y + self.radius, self.base_point.z)
+            max_pt = Point3D(self.base_point.x + self.radius,
+                             self.base_point.y + self.radius, 0)
+            base_point3d = Point3D(self.base_point.x, self.base_point.y, 0)
 
             self._container_cache = GraphicContainer(
-                values, self.base_point, max_pt, self.legend_parameters,
+                values, base_point3d, max_pt, self.legend_parameters,
                 self.analysis_data_collection.header.data_type,
                 self.analysis_data_collection.header.unit)
         return self._container_cache
@@ -316,13 +318,15 @@ class WindRose(object):
 
         # Calculate ytick nums for the wind mesh
         ytick_num = self.legend.legend_parameters.segment_count  # total
-        max_bar_num = self.real_freq_max + self.zeros_per_bin
-        ytick_num_mesh = max_bar_num / self.frequency_maximum * ytick_num  # wind mesh
+        max_bar_num = self.real_freq_max
+        ytick_num_mesh = ytick_num  # default
 
         if self.show_zeros:
             # Calculate radius of zero rose
 
+            max_bar_num += self.zeros_per_bin
             min_bar_radius = self.zeros_per_bin / max_bar_num * max_bar_radius
+            ytick_num_mesh = max_bar_num / self.frequency_maximum * ytick_num
 
             # Update yticks
             zero_ytick_num_mesh = self._ytick_zero_inc
@@ -330,14 +334,21 @@ class WindRose(object):
 
             # Compute the array for calm rose
             zero_data = [[0] for _ in self.histogram_data]
+            zero_data_stacked = [[0] for _ in self.histogram_data]
             zero_mesh_array, zero_color_array = WindRose._compute_colored_mesh_array(
-                zero_data, self.bin_vectors, zero_ytick_num_mesh, 0, min_bar_radius,
-                show_stack=False)
+                zero_data, zero_data_stacked, self.bin_vectors, zero_ytick_num_mesh,
+                0, min_bar_radius, show_stack=False)
 
         # Calculate regular mesh
+        if self.show_stack:
+            histogram_data_stacked = WindRose._histogram_data_stacked(
+                self.histogram_data, ytick_num)
+        else:
+            histogram_data_stacked = [[sum(h) / len(h)]  if len(h) > 0 else [0]
+                                      for h in self.histogram_data]
         mesh_array, color_array = WindRose._compute_colored_mesh_array(
-            self.histogram_data, self.bin_vectors, ytick_num_mesh, min_bar_radius,
-            max_bar_radius, self.show_stack)
+            self.histogram_data, histogram_data_stacked, self.bin_vectors,
+            ytick_num_mesh, min_bar_radius, max_bar_radius, self.show_stack)
 
         mesh_array += zero_mesh_array
         color_array += zero_color_array
@@ -345,25 +356,20 @@ class WindRose(object):
         mesh = Mesh2D.from_face_vertices(mesh_array, purge=True)
         mesh.colors = color_array
 
-        return mesh.scale(self.wind_radius).move(self._center_point2d)
+        return mesh.scale(self.wind_radius).move(self.base_point)
 
     @property
     def orientation_lines(self):
         """Orientation lines for windrose as a LineSegment2D list."""
         lines = WindRose._xtick_radial_lines(self._bin_vectors)
-        return [line.scale(self.radius).move(self._center_point2d) for line in lines]
+        return [line.scale(self.radius).move(self.base_point) for line in lines]
 
     @property
     def frequency_lines(self):
         """Get the frequency lines for windrose as Polygon2D lists."""
         freqs = WindRose._ytick_radial_lines(self._bin_vectors,
                                              self.legend_parameters.segment_count)
-        return [freq.scale(self.radius).move(self._center_point2d) for freq in freqs]
-
-    @property
-    def _center_point2d(self):
-        """Get the center of windrose plot as Point2D."""
-        return Point2D(self.base_point.x, self.base_point.y)
+        return [freq.scale(self.radius).move(self.base_point) for freq in freqs]
 
     @property
     def radius(self):
@@ -401,14 +407,13 @@ class WindRose(object):
         """
         if self._compass is None:
             ytick_num = self.legend_parameters.segment_count
-            return Compass(self.radius, self._center_point2d, north_angle=0,
+            return Compass(self.radius, self.base_point, north_angle=0,
                            spacing_factor=1.0/ytick_num)
         return self._compass
 
     @staticmethod
     def _compute_bar_stack_vecs(base_vec_show_stack, vec1, vec2, curr_bar_radius,
-                                min_bar_radius, max_bar_radius, ytick_num,
-                                ytick_dist):
+                                min_bar_radius, ytick_curr_num, ytick_dist):
         """Compute the bar geometry arrays for stacked histogram bars.
 
         Args:
@@ -418,18 +423,14 @@ class WindRose(object):
             curr_bar_radius: length of the histogram bar.
             min_bar_radius: lenght from the center of the windrose to the start of the
                 histogram bar.
-            max_bar_radius: radius of the windrose.
-            ytick_num: Number of intervals in the current stacked histogram bar.
+            ytick_curr_num: Number of intervals in the current stacked histogram bar.
             ytick_dist: Length of stack interval.
         Returns:
             List of vector arrays representing a stacked histogram bar.
         """
         bar_interval_vecs = []
-        bar_radius = max_bar_radius - min_bar_radius
-        # Identify maximum yticks
-        max_yticks = math.ceil(curr_bar_radius / bar_radius * ytick_num)
 
-        for i in range(1, max_yticks + 1):
+        for i in range(1, ytick_curr_num + 1):
             # Stack vectors for interval wedges
             ytick_dist_inc = i * ytick_dist
             if ytick_dist_inc > curr_bar_radius:
@@ -449,36 +450,22 @@ class WindRose(object):
         return bar_interval_vecs
 
     @staticmethod
-    def _compute_hist_colors(hist_data, hist_coords, stack):
-        """
-        Compute the colors for the mesh corresponding to mesh faces.
+    def _compute_angles(num_of_dir):
+        """Compute angles"""
 
-        Args:
-            hist_data: Histogram of values as list.
-            hist_coords: Geometry of histogram as list of vector arrays.
-            stack: Boolean indicating if stacked histogram.
+        bin_arr = linspace(0, 360, num_of_dir + 1)
 
-        Returns:
-            List of histogram values to translate into colors.
-        """
+        # Subtract half of segment to capture circular data.
+        phi = 360. / (len(bin_arr) - 1) / 2.
+        return [b - phi if (b - phi) >= 0.0 else b - phi + 360.
+                for b in bin_arr]
 
-        if stack:
-            colors = []
-            for data, vecs in zip(hist_data, hist_coords):
-                bar_data_num = len(vecs)
-                bar_data_val = data
+    @staticmethod
+    def _compute_plotting_angles(angles):
+        """Modify angles for plotting"""
 
-                if bar_data_val:
-                    color_arr = linspace(min(bar_data_val), max(bar_data_val),
-                                         bar_data_num)
-                    if not color_arr:
-                        color_arr = [sum(bar_data_val) / len(bar_data_val)]
-                    colors.extend(color_arr)
-        else:
-            colors = [sum(hist)/len(hist)
-                      if len(hist) > 0 else 0 for hist in hist_data]
-
-        return colors
+        # Correction to ensure center of wedge is at the top
+        return [b - 90. for b in angles]
 
     @staticmethod
     def _bin_vectors_radial(bin_arr):
@@ -495,21 +482,17 @@ class WindRose(object):
         """
         vecs = []
         t = 180.0 / math.pi  # for degrees to radian conversion
-        # Midpoint correction to ensure center of wedge is at the top
-        phi = 360. / (len(bin_arr) - 1) / 2.
-        bin_arr = [t - phi if (t - phi) >= 0.0 else t - phi + 360.
-                   for t in bin_arr]
 
         # Plot the vectors
         for i in range(len(bin_arr) - 1):
             # Correct range
-            theta1 = bin_arr[i] - 90.
-            theta2 = bin_arr[i + 1] - 90.
+            theta1 = bin_arr[i]
+            theta2 = bin_arr[i + 1]
 
             # Solve for unit x, y vectors
-            # Flip y-component to ensure clockwise orietnation
+            # Flip y-component to ensure clockwise rotation of each wedge
             vecs.append(((math.cos(theta1 / t), -math.sin(theta1 / t)),
-                        (math.cos(theta2 / t), -math.sin(theta2 / t))))
+                         (math.cos(theta2 / t), -math.sin(theta2 / t))))
         return vecs
 
     @staticmethod
@@ -559,7 +542,7 @@ class WindRose(object):
         return [Polygon2D.from_array((v for v in vecs)) for vecs in ytick_array]
 
     @staticmethod
-    def _histogram_array_radial(bin_vecs, vec_cpt, hist, radius_arr, ytick_num,
+    def _histogram_array_radial(bin_vecs, vec_cpt, hist, hist_stacked, radius_arr,
                                 show_stack):
         """Coordinates for a radial histogram as a vector array.
 
@@ -577,15 +560,15 @@ class WindRose(object):
         min_bar_radius, max_bar_radius = radius_arr
         delta_bar_radius = max_bar_radius - min_bar_radius
         max_bar_num = max([len(bar) for bar in hist])
+        ytick_num = max([len(h) for h in hist_stacked])
         ytick_dist = delta_bar_radius / ytick_num  # Length of 1 y-tick
 
         # Plot histogram bar in radial coordinates
         hist_coords = []
-        for i, curr_bar in enumerate(hist):
+        for i, (curr_bar, curr_stacks) in enumerate(zip(hist, hist_stacked)):
             # Compute the current bar radius
-            # curr_bar_radius:delta_bar_radius = len(curr_bar):max_bar_num
             curr_bar_radius = len(curr_bar) / max_bar_num * delta_bar_radius
-            (vec1, vec2) = bin_vecs[i]
+            (vec2, vec1) = bin_vecs[i]  # flip vecs to be ccw
 
             # Compute array for bottom of the bar
             if min_bar_radius > 0.0:
@@ -596,8 +579,8 @@ class WindRose(object):
 
             if show_stack:
                 bar_vecs = WindRose._compute_bar_stack_vecs(
-                    base, vec1, vec2, curr_bar_radius, min_bar_radius, max_bar_radius,
-                    ytick_num, ytick_dist)
+                    base, vec1, vec2, curr_bar_radius, min_bar_radius,
+                    len(curr_stacks), ytick_dist)
                 hist_coords.append(bar_vecs)
             else:
                 bar_vecs = base + [(vec1[0] * (curr_bar_radius + min_bar_radius),
@@ -647,8 +630,64 @@ class WindRose(object):
         return data, zero_count
 
     @staticmethod
-    def _compute_colored_mesh_array(regl_hist_data, bin_vecs, ytick_num, min_radius,
-                                    max_radius, show_stack):
+    def _histogram_data_stacked_count(histogram_data, ytick_num, max_bar_num=None):
+        """Compute number of intervals in each bin interval based on frequency subdivision.
+
+        Args:
+            histogram_data: Histogram of values as list of binned values.
+            ytick_num: Number of maximum frequencies to subdivide bins into.
+            show_stack: Boolean representing showing stacked counts.
+            max_bar_num: Optional parameter for maximum count of histogram data
+                (can be different from max frequency of histogram_data) as number.
+
+
+        """
+        stacked_nums = []
+
+        if max_bar_num is None:
+            max_bar_num = max([len(bin) for bin in histogram_data])
+
+        for bar_data_val in histogram_data:
+            # Get number of intervals
+            curr_bar_ratio = float(len(bar_data_val)) / max_bar_num
+            bar_data_num = math.ceil(curr_bar_ratio * ytick_num)
+            stacked_nums.append(bar_data_num)
+
+        return stacked_nums
+
+    @staticmethod
+    def _histogram_data_stacked(histogram_data, ytick_num):
+        """Get a histogram of stacked wind anaylysis values binned by wind directions.
+
+        Each histogram bin in this data structure is "stacked" meaning the range of the
+        analysis values per bin are averaged to provide a list of average values per
+        frequency.
+        """
+        _histogram_data_stacked = []
+
+        # Get number of intervals
+        histogram_data_nums = WindRose._histogram_data_stacked_count(histogram_data,
+                                                                     ytick_num)
+        for bar_data_vals, bar_data_num in zip(histogram_data, histogram_data_nums):
+            if len(bar_data_vals) > 0:
+                interval_arr = linspace(min(bar_data_vals), max(bar_data_vals),
+                                        int(bar_data_num + 1))
+
+                # Compute midpt btween values
+                mean_vals_per_bar = []
+                for i in range(len(interval_arr) - 1):
+                    midpt = (interval_arr[i] + interval_arr[i+1]) / 2.0
+                    mean_vals_per_bar.append(midpt)
+            else:
+                mean_vals_per_bar = []
+
+            _histogram_data_stacked.append(mean_vals_per_bar)
+
+        return _histogram_data_stacked
+
+    @staticmethod
+    def _compute_colored_mesh_array(hist_data, hist_data_stacked, bin_vecs, ytick_num,
+                                    min_radius, max_radius, show_stack):
         """Compute a colored mesh from this object's historam.
 
         Args:
@@ -666,29 +705,26 @@ class WindRose(object):
         vec_cpt = (0, 0)
 
         # Compute histogram array
-        regl_hist_array = WindRose._histogram_array_radial(
-            bin_vecs, vec_cpt, regl_hist_data, (min_radius, max_radius), ytick_num,
+        hist_array = WindRose._histogram_array_radial(
+            bin_vecs, vec_cpt, hist_data, hist_data_stacked, (min_radius, max_radius),
             show_stack)
 
         # Flatten and add coordinates
         if not show_stack:
-            regl_hist_array = ([v] for v in regl_hist_array)
+            hist_array = ([v] for v in hist_array)
 
         # Make mesh
-        hist_coords = [intervals for bar in regl_hist_array for intervals in bar]
+        hist_coords = [interval for bar in hist_array for interval in bar]
         mesh_array = [[Point2D.from_array(vec) for vec in vecs] for vecs in hist_coords]
 
-        # Extract analysis values for colors
-        color_array = WindRose._compute_hist_colors(regl_hist_data, regl_hist_array,
-                                                    stack=show_stack)
+        # Extract analysis values for color
+        color_array = [interval for bar in hist_data_stacked for interval in bar]
 
         return mesh_array, color_array
 
     def set_visualization_properties(self, legend_parameters=None, base_point=None,
                                      frequency_spacing_distance=None,
-                                     frequency_maximum=None,
-                                     label_point_size_factor=None,
-                                     label_tick_size_factor=None, show_stack=None,
+                                     frequency_maximum=None, show_stack=None,
                                      show_zeros=None):
         """Sets visualzation properties for this object.
 
@@ -703,10 +739,6 @@ class WindRose(object):
             frequency_spacing_distance: Spacing distance for frequency grid as float
                 between 0 and 1.
             frequency_maximum: Maximum frequency of analysis values.
-            label_point_size_factor: Size factor for orientation label points as float
-                between 0 and 1.
-            label_tick_size_factor: Size factor for orientation label ticks as float
-                between 0 and 1.
             show_stack: Boolean indicating if the analysis values will be stacked.
             show_zeros: Boolean indicating if the zero values will be represented in the
                 plot.
@@ -719,10 +751,6 @@ class WindRose(object):
             frequency_spacing_distance is None else frequency_spacing_distance
         self.frequency_maximum = self.frequency_maximum if frequency_maximum is None \
             else frequency_maximum
-        self.label_point_size_factor = self.label_point_size_factor if \
-            label_point_size_factor is None else label_point_size_factor
-        self.label_tick_size_factor = self.label_tick_size_factor if \
-            label_tick_size_factor is None else label_tick_size_factor
         self.legend_parameters = self.legend_parameters if legend_parameters is None \
             else legend_parameters
 
