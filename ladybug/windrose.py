@@ -3,10 +3,10 @@ from __future__ import division
 
 from .datacollection import HourlyContinuousCollection, HourlyDiscontinuousCollection
 from .graphic import GraphicContainer
-from .legend import LegendParameters, Legend
+from .legend import LegendParameters
 from .compass import Compass
 
-from ladybug_geometry.geometry2d.pointvector import Point2D, Vector2D
+from ladybug_geometry.geometry2d.pointvector import Point2D
 from ladybug_geometry.geometry2d.line import LineSegment2D
 from ladybug_geometry.geometry2d.polygon import Polygon2D
 from ladybug_geometry.geometry2d.mesh import Mesh2D
@@ -94,7 +94,7 @@ class WindRose(object):
 
         # Editable public properties for visualization
         self._legend_parameters = None
-        self._frequency_spacing_distance = 0.1
+        self._frequency_spacing_distance = None
         self._frequency_maximum = None
         self._show_stack = True
         self._show_zeros = True
@@ -106,7 +106,7 @@ class WindRose(object):
         self._zeros_per_bin = None
         self._real_freq_max = None
         self._prevailing_direction = None
-        self._container_cache = None
+        self._container = None
 
     @property
     def base_point(self):
@@ -150,8 +150,10 @@ class WindRose(object):
     def frequency_spacing_distance(self):
         """Get or set distance for frequency lines.
 
-        (Default: 0.1)
+        (Default: autocalculated from legend_parameters to generate radius of 1.0)
         """
+        if self._frequency_spacing_distance is None:
+            self._frequency_spacing_distance = 1./self.legend_parameters.segment_count
         return self._frequency_spacing_distance
 
     @frequency_spacing_distance.setter
@@ -160,7 +162,7 @@ class WindRose(object):
         assert f > 0.0 and isinstance(f, (float, int)), 'frequency_spacing_distance' \
             'should be a number greater then 0. Got {}.'.format(f)
         self._compass = None
-        self._container_cache = None
+        self._container = None
         self._frequency_spacing_distance = frequency_spacing_distance
 
     @property
@@ -176,7 +178,7 @@ class WindRose(object):
     @frequency_maximum.setter
     def frequency_maximum(self, frequency_maximum):
         self._compass = None
-        self._container_cache = None
+        self._container = None
         self._frequency_maximum = frequency_maximum
 
     @property
@@ -196,13 +198,13 @@ class WindRose(object):
 
         # This will mutate the legend_parameters in the windrose Legend object.
         self._compass = None
-        self._container_cache = None
+        self._container = None
         self._legend_parameters = legend_parameters
 
     @property
     def legend(self):
         """Get the Legend object for this plot"""
-        return self._container.legend
+        return self.container.legend
 
     @property
     def direction_data_collection(self):
@@ -279,34 +281,32 @@ class WindRose(object):
         return self._real_freq_max
 
     @property
-    def _container(self):
+    def container(self):
         """GraphicContainer for the windrose mesh.
 
         Since the setable properties of basepoint, frequency_spacing_distance, and
         legend_parameters all influence the initiation of this object, this property
         is to None if any of those properties are edited by the user.
         """
-        if self._container_cache is None:
+        if self._container is None:
             if self.show_stack:
-                # TODO: Rewrite the histogram_data to show a nested, nested data structure
-                # (list of 'stack-intervals' nested within list of bins) to accurately
-                # show the show_stack values, since it's the average of the stack-intervals
-                #  that represent the range of the windrose when show-stack = True, not
-                # the real min/max values.
-                values = self.analysis_values
+                stacked_values = WindRose._histogram_data_stacked(
+                    self.histogram_data, self.legend_parameters.segment_count)
+                values = [val for vals in stacked_values for val in vals]
             else:
                 values = [sum(d) / len(d) for d in self.histogram_data if len(d) > 0]
 
-            # Create the graphic container from the inputs and associated legend properties
+            # Create the graphic container from the inputs and associated legend
+            # properties
             max_pt = Point3D(self.base_point.x + self.radius,
                              self.base_point.y + self.radius, 0)
             base_point3d = Point3D(self.base_point.x, self.base_point.y, 0)
 
-            self._container_cache = GraphicContainer(
+            self._container = GraphicContainer(
                 values, base_point3d, max_pt, self.legend_parameters,
                 self.analysis_data_collection.header.data_type,
                 self.analysis_data_collection.header.unit)
-        return self._container_cache
+        return self._container
 
     @property
     def colored_mesh(self):
@@ -329,7 +329,7 @@ class WindRose(object):
             ytick_num_mesh = max_bar_num / self.frequency_maximum * ytick_num
 
             # Update yticks
-            zero_ytick_num_mesh = self._ytick_zero_inc
+            zero_ytick_num_mesh = self._ytick_zero_inc()
             ytick_num_mesh -= zero_ytick_num_mesh
 
             # Compute the array for calm rose
@@ -379,7 +379,7 @@ class WindRose(object):
         """
         ytick_num = self.legend_parameters.segment_count
         if self.show_zeros:
-            ytick_num += self._ytick_zero_inc
+            ytick_num += self._ytick_zero_inc()
         return self.frequency_spacing_distance * ytick_num
 
     @property
@@ -390,12 +390,6 @@ class WindRose(object):
                 (self.frequency_maximum + self.zeros_per_bin) * self.radius
         else:
             return self.real_freq_max / self.frequency_maximum * self.radius
-
-    @property
-    def _ytick_zero_inc(self):
-        """Get the additional number of yticks required when we display zero values."""
-        return math.ceil(self.zeros_per_bin / (self.real_freq_max + self.zeros_per_bin) *
-                         self.legend_parameters.segment_count)
 
     @property
     def compass(self):
@@ -636,11 +630,11 @@ class WindRose(object):
         Args:
             histogram_data: Histogram of values as list of binned values.
             ytick_num: Number of maximum frequencies to subdivide bins into.
-            show_stack: Boolean representing showing stacked counts.
             max_bar_num: Optional parameter for maximum count of histogram data
                 (can be different from max frequency of histogram_data) as number.
 
-
+        Returns:
+            A list of frequency intervals, per histogram bin.
         """
         stacked_nums = []
 
@@ -662,10 +656,18 @@ class WindRose(object):
         Each histogram bin in this data structure is "stacked" meaning the range of the
         analysis values per bin are averaged to provide a list of average values per
         frequency.
+
+        Args:
+            histogram_data: Histogram of the analysis values binned by direction values,
+                as list of analysis arrays.
+            ytick_num: Maximum number of frequency divisions in the histogram.
+
+        Returns:
+            A list of analysis values per bin averaged by frequency count of each bin.
         """
         _histogram_data_stacked = []
 
-        # Get number of intervals
+        # Get number of intervals per histogram bar
         histogram_data_nums = WindRose._histogram_data_stacked_count(histogram_data,
                                                                      ytick_num)
         for bar_data_vals, bar_data_num in zip(histogram_data, histogram_data_nums):
@@ -691,10 +693,13 @@ class WindRose(object):
         """Compute a colored mesh from this object's historam.
 
         Args:
-            regl_hist_data: Histogram of analysis values greater then zero as a list of
-                lists.
+            hist_data: Histogram of analysis values greater then zero.
+            hist_data_stacked: Histogram of analysis values averaged by number of
+                stacks.
             bin_vecs: Array of histogram bin edge vectors.
             ytick_num: Number of Y-axis intervals.
+            min_radius: Minimum radius for windrose mesh.
+            max_radius: Maximum radius for windrose mesh.
             show_stack: Boolean indicating if stacked histogram.
         Returns:
             A colored Mesh2D.
@@ -753,6 +758,11 @@ class WindRose(object):
             else frequency_maximum
         self.legend_parameters = self.legend_parameters if legend_parameters is None \
             else legend_parameters
+
+    def _ytick_zero_inc(self):
+        """Get the additional number of yticks required when we display zero values."""
+        return math.ceil(self.zeros_per_bin / (self.real_freq_max + self.zeros_per_bin) *
+                         self.legend_parameters.segment_count)
 
     def __repr__(self):
         """Wind rose Collection representation."""
