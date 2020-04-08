@@ -6,6 +6,6 @@ Sphinx==1.8.5
 sphinx-bootstrap-theme==0.6.5
 sphinxcontrib-fulltoc==1.2.0
 sphinxcontrib-websupport==1.1.0
-twine==1.13.0
+twine==3.1.1
 wheel==0.33.4
 setuptools==41.0.1
