@@ -1,6 +1,4 @@
-import re
 import setuptools
-import sys
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -24,6 +22,7 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: CPython",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent"
