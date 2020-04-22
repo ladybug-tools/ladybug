@@ -110,7 +110,7 @@ def test_bin_vectors():
     """Bin vectors"""
 
     # Testing vals
-    dir_vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
+    dir_vals = [3, 3, 3, 10, 85, 90, 95, 170, 230, 285, 288]
     spd_vals = dir_vals
 
     # Make into fake data collections
@@ -123,78 +123,57 @@ def test_bin_vectors():
 
     # Init simple dir set divided by 4
     w = WindRose(dir_data, spd_data, 4)
+    f = _deg2rad
+    cos, sin = math.cos, math.sin
 
-    # # Testing
-    # bin_vecs = w.bin_vectors
-    # f = _deg2rad
-    # a = [315, 45., 45, 135, 135, 225, 225, 315]
-    # #a = WindRose._compute_plotting_angles(a)
-    # a = [_deg2rad(_a) for _a in a]
-    # chk_bin_vecs = [[(-math.cos(45),  math.sin(45)),   # 0
-    #                  (math.cos(a[1]), math.sin(a[1]))],
-    #                 [(math.cos(a[1]), -math.sin(a[1])),   # 1
-    #                  (math.cos(a[2]), -math.sin(a[2]))],
-    #                 [(math.cos(a[2]), -math.sin(a[2])),   # 2
-    #                  (math.cos(a[3]), -math.sin(a[3]))],
-    #                 [(math.cos(a[3]), -math.sin(a[3])),   # 3
-    #                  (-math.cos(a[4]), -math.sin(a[4]))]]
+    # Testing
+    # Check angles
+    a = w.angles
+    chk_a = [315, 45, 135, 225, 315]
+    for _a, _chk_a in zip(a, chk_a):
+        assert abs(_a - _chk_a) < 1e-10, (_a, _chk_a)
 
-    # for i, (chk_vec, vec) in enumerate(zip(chk_bin_vecs, bin_vecs)):
-    #     # Check x, y
-    #     print([_rad2deg(_chk_vec) for _chk_vec in chk_vec[1]])
-    #     print([_rad2deg(_vec) for _vec in vec[1]])
-    #     print('--')
-    #     # left vec
-    #     assert abs(chk_vec[0][0] - vec[0][0]) < 1e-5, (i, chk_vec[0][0], vec[0][0])
-    #     assert abs(chk_vec[0][1] - vec[0][1]) < 1e-5, (i, chk_vec[0][1], vec[0][1])
-    #     # right vec
-    #     assert abs(chk_vec[1][0] - vec[1][0]) < 1e-5, (i, chk_vec[1][0], vec[1][0])
-    #     assert abs(chk_vec[1][1] - vec[1][1]) < 1e-5, (i, chk_vec[1][1], vec[1][1])
+    # Check vectors
+    bin_vecs = w.bin_vectors
+    a = [_deg2rad(_a) for _a in a]
+    chk_bin_vecs = [[(cos(f(225)),  -sin(f(225))),   # 0
+                     (cos(f(-45)),  -sin(f(-45)))],
+                    [(cos(f(-45)),  -sin(f(-45))),   # 1
+                     (cos(f(45)),   -sin(f(45)))],
+                    [(cos(f(45)),   -sin(f(45))),    # 2
+                     (cos(f(135)),  -sin(f(135)))],
+                    [(cos(f(135)),  -sin(f(135))),   # 3
+                     (cos(f(225)),  -sin(f(225)))]]
+
+    # Check len
+    assert len(bin_vecs) == len(chk_bin_vecs)
+
+    # Check coords
+    for i, (chk_vec, vec) in enumerate(zip(chk_bin_vecs, bin_vecs)):
+        # Check x, y
+        # print([_chk_vec for _chk_vec in chk_vec[0]])
+        # print([_vec for _vec in vec[0]])
+        # print('--')
+        # print([_chk_vec for _chk_vec in chk_vec[1]])
+        # print([_vec for _vec in vec[1]])
+
+        # left vec
+        assert abs(chk_vec[0][0] - vec[0][0]) < 1e-5, (i, chk_vec[0][0], vec[0][0])
+        assert abs(chk_vec[0][1] - vec[0][1]) < 1e-5, (i, chk_vec[0][1], vec[0][1])
+        # right vec
+        assert abs(chk_vec[1][0] - vec[1][0]) < 1e-5, (i, chk_vec[1][0], vec[1][0])
+        assert abs(chk_vec[1][1] - vec[1][1]) < 1e-5, (i, chk_vec[1][1], vec[1][1])
 
 
 def test_xticks_radial():
     """Test polar coordinate array"""
 
-    # Testing vals
-    dir_vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
-    spd_vals = dir_vals
+    # Testing vals ensure all histogram heights are equal.
+    dir_vals = [3, 3, 10,       #  315 - 45
+                85, 90, 95,     #  45 - 135
+                170, 170, 170,  #  135 - 225
+                230, 285, 288]  #  225 - 315
 
-    # Make into fake data collections
-    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
-    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
-    spd_header = Header(Speed(), 'm/s', a_per)
-    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
-    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
-    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
-
-    # # Init simple dir set divided by 4
-    # w = WindRose(dir_data, spd_data, 4)
-    # # Testing
-    # bin_vecs = w.bin_vectors
-    # xticks = WindRose._xtick_radial_lines(bin_vecs)
-
-    # f = _deg2rad
-    # cos, sin = math.cos, math.sin
-    # chk_xticks = [
-    #     [(0, 0), (cos(f(315)), -sin(f(315)))],
-    #     [(0, 0), (cos(f(45.)), -sin(f(45.)))],
-    #     [(0, 0), (cos(f(45)), -sin(f(45)))],
-    #     [(0, 0), (cos(f(135)), -sin(f(135)))],
-    #     [(0, 0), (cos(f(135)), -sin(f(135)))],
-    #     [(0, 0), (cos(f(225)), -sin(f(225)))],
-    #     [(0, 0), (cos(f(225)), -sin(f(225)))],
-    #     [(0, 0), (cos(f(315)), -sin(f(315)))]]
-
-    # for i, (chk_xtick, xtick) in enumerate(zip(chk_xticks, xticks)):
-    #     # Check x, y
-    #     assert abs(chk_xtick[1][0] - xtick.to_array()[1][0]) < 1e-10
-    #     assert abs(chk_xtick[1][1] - xtick.to_array()[1][1]) < 1e-10
-
-
-def test_radial_histogram():
-    """ Test circular histogram"""
-    # Testing vals
-    dir_vals = [0, 0, 0, 10, 85, 90, 95, 170, 285, 288]
     spd_vals = dir_vals
 
     # Make into fake data collections
@@ -207,6 +186,54 @@ def test_radial_histogram():
 
     # Init simple dir set divided by 4
     w = WindRose(dir_data, spd_data, 4)
+    f = _deg2rad
+    cos, sin = math.cos, math.sin
+
+    # Testing
+    bin_vecs = w.bin_vectors
+    xticks = WindRose._xtick_radial_lines(bin_vecs)
+    # w.angles - 90: [225, -45, 45, 135, 225]
+
+    # Since frequencies are for xticks, no need to scale vectors.
+    chk_xticks = [
+        [(0, 0), (cos(f(225)), -sin(f(225)))],  # v0
+        [(0, 0), (cos(f(-45)), -sin(f(-45)))],  # v1 bin 0
+        [(0, 0), (cos(f(-45)), -sin(f(-45)))],  # v2
+        [(0, 0), (cos(f(45)),  -sin(f(45)))],   # v3 bin 1
+        [(0, 0), (cos(f(45)),  -sin(f(45)))],   # v4
+        [(0, 0), (cos(f(135)), -sin(f(135)))],  # v5 bin 2
+        [(0, 0), (cos(f(135)), -sin(f(135)))],  # v6
+        [(0, 0), (cos(f(225)), -sin(f(225)))]]  # v7 bin 3
+
+    for i, (chk_xtick, xtick) in enumerate(zip(chk_xticks, xticks)):
+        # Check x, y
+        # print(chk_xtick[1][0], xtick.to_array()[1][0])
+        # print(chk_xtick[1][1], xtick.to_array()[1][1])
+        assert abs(chk_xtick[1][0] - xtick.to_array()[1][0]) < 1e-10
+        assert abs(chk_xtick[1][1] - xtick.to_array()[1][1]) < 1e-10
+
+
+def test_radial_histogram():
+    """ Test circular histogram"""
+    # Testing vals ensure all histogram heights are equal.
+    dir_vals = [3, 3, 10,       #  315 - 45
+                85, 90, 95,     #  45 - 135
+                170, 170, 170,  #  135 - 225
+                230, 285, 288]  #  225 - 315
+    spd_vals = dir_vals
+
+    # Make into fake data collections
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
+    spd_header = Header(Speed(), 'm/s', a_per)
+    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
+    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+
+    # Init simple dir set divided by 4
+    w = WindRose(dir_data, spd_data, 4)
+    f = _deg2rad
+    cos, sin = math.cos, math.sin
 
     # Testing
     bin_vecs = w.bin_vectors
@@ -219,30 +246,24 @@ def test_radial_histogram():
     vecs = WindRose._histogram_array_radial(bin_vecs, vec_cpt, hist, histstack,
                                             radius_arr, show_stack)
 
-    # f = _deg2rad
-    # cos, sin = math.cos, math.sin
-    # # Init simple dir set divided by 4
-    # chk_vecs = [
-    #     [(0, 0), (cos(f(45)), -sin(f(45))), (cos(f(315)), -sin(f(315)))],
-    #     [(0, 0), (cos(f(135)), -sin(f(135))), (cos(f(45)), -sin(f(45)))],
-    #     [(0, 0), (cos(f(225)), -sin(f(225))), (cos(f(135)), -sin(f(135)))],
-    #     [(0, 0), (cos(f(315)), -sin(f(315))), (cos(f(225)), -sin(f(225)))]]
+    # Make bins of equal height (unit circle)
+    chk_bin_vecs = [[(cos(f(225)),  -sin(f(225))),   # 0 west
+                     (cos(f(-45)),  -sin(f(-45)))],
+                    [(cos(f(-45)),  -sin(f(-45))),   # 1 north
+                     (cos(f(45)),   -sin(f(45)))],
+                    [(cos(f(45)),   -sin(f(45))),    # 2 east
+                     (cos(f(135)),  -sin(f(135)))],
+                    [(cos(f(135)),  -sin(f(135))),   # 3 south
+                     (cos(f(225)),  -sin(f(225)))]]
 
-    # # Get histogram properties for calculating radius
-    # min_bar_radius, max_bar_radius = radius_arr
-    # delta_bar_radius = max_bar_radius - min_bar_radius
-    # max_bar_num = max([len(bar) for bar in hist])
+    for i in range(len(chk_bin_vecs)):
+        vec2, vec1 = chk_bin_vecs[i][0], chk_bin_vecs[i][1]
+        chk_pts = [vec1, vec2]
+        pts = vecs[i][1:]  # Get rid of cpt (0, 0)
 
-    # for i, (chk_vec, vec) in enumerate(zip(chk_vecs, vecs)):
-
-    #     # Compute the current bar radius
-    #     curr_bar = hist[i]
-    #     rad = len(curr_bar) / max_bar_num * delta_bar_radius
-
-    #     # Convert ot polys for easy testing
-    #     poly = Polygon2D.from_array(vec)
-    #     chk_poly = Polygon2D.from_array([(c[0] * rad, c[1] * rad) for c in chk_vec])
-    #     assert poly.is_equivalent(chk_poly, 1e-5)
+        for p, cp in zip(pts, chk_pts):
+            assert abs(p[0] - cp[0]) < 1e-10, (p[0], cp[0])
+            assert abs(p[1] - cp[1]) < 1e-10, (p[1], cp[1])
 
 
 def test_histogram_data_stacked():
@@ -341,9 +362,9 @@ if __name__ == '__main__':
     test_linspace()
     test_histogram()
     test_histogram_circular()
-    #test_bin_vectors()
-    #test_xticks_radial()
-    #test_radial_histogram()
+    test_bin_vectors()
+    test_xticks_radial()
+    test_radial_histogram()
     test_histogram_data_stacked()
     test_simple_windrose_mesh()
     test_windrose_mesh()

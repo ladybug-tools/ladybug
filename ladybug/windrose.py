@@ -262,8 +262,7 @@ class WindRose(object):
     def bin_vectors(self):
         """Get vectors for orientation intervals."""
         if self._bin_vectors is None:
-            plot_angles = WindRose._compute_plotting_angles(self.angles)
-            self._bin_vectors = WindRose._bin_vectors_radial(plot_angles)
+            self._bin_vectors = WindRose._bin_vectors_radial(self.angles)
         return self._bin_vectors
 
     @property
@@ -455,13 +454,6 @@ class WindRose(object):
                 for b in bin_arr]
 
     @staticmethod
-    def _compute_plotting_angles(angles):
-        """Modify angles for plotting"""
-
-        # Correction to ensure center of wedge is at the top
-        return [b - 90. for b in angles]
-
-    @staticmethod
     def _bin_vectors_radial(bin_arr):
         """Compute the radial coordinates for the histogram bins of values.
 
@@ -476,6 +468,9 @@ class WindRose(object):
         """
         vecs = []
         t = 180.0 / math.pi  # for degrees to radian conversion
+
+        # Correction to ensure center of wedge is at the top
+        bin_arr = [b - 90. for b in bin_arr]
 
         # Plot the vectors
         for i in range(len(bin_arr) - 1):
