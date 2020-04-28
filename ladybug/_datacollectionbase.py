@@ -585,13 +585,6 @@ class BaseCollection(object):
         This method is similar to native Python range except that it takes a number of
         divisions instead of a step. It is also equivalent to numpy's linspace method.
 
-        Usage:
-        .. code-block:: python
-            from BaseCollection import linspace
-
-            linspace(0, 5, 6)
-            >> [0., 1., 2., 3., 4., 5.]
-
         Args:
             start: Start interval index as integer or float.
             stop: Stop interval index as integer or float.
@@ -599,6 +592,15 @@ class BaseCollection(object):
 
         Returns:
             A list of numbers.
+
+        Usage:
+
+        .. code-block:: python
+            from BaseCollection import linspace
+
+            linspace(0, 5, 6)
+            # >> [0., 1., 2., 3., 4., 5.]
+
         """
         try:
             delta = stop - start
@@ -614,21 +616,6 @@ class BaseCollection(object):
         for intervals. See usage for example of losing the last number in the following
         dataset because of exclusive upper bound.
 
-        Usage:
-        .. code-block:: python
-            from BaseCollection import histogram
-
-            # Simple example
-            histogram([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
-            >> [[0, 0, 0.9], [1, 1.5, 1.99], [2]]
-
-            # With key parameter
-            histogram(
-                zip([0, 0, 0.9, 1, 1.5, 1.99],
-                    ['a', 'b', 'c', 'd', 'e', 'f']),
-                    (0, 1, 2), key=lambda k: k[0])
-            >> [[(0, 'a'), (0, 'b'), (0.9, 'c')], [(1, 'd'), (1.5, 'e'), (1.99, 'f')]]
-
         Args:
             values: Set of numerical data as a list.
             bins: A monotonically increasing array of uniform-width bin edges, excluding
@@ -641,7 +628,23 @@ class BaseCollection(object):
 
         Returns:
             A list of lists representing the ordered values binned by frequency.
-                histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]
+               ``histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]``
+
+        Usage:
+
+        .. code-block:: python
+            from BaseCollection import histogram
+
+            # Simple example
+            histogram([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
+            # >> [[0, 0, 0.9], [1, 1.5, 1.99], [2]]
+
+            # With key parameter
+            histogram(
+                zip([0, 0, 0.9, 1, 1.5, 1.99],
+                    ['a', 'b', 'c', 'd', 'e', 'f']),
+                    (0, 1, 2), key=lambda k: k[0])
+            # >> [[(0, 'a'), (0, 'b'), (0.9, 'c')], [(1, 'd'), (1.5, 'e'), (1.99, 'f')]]
         """
 
         if key is None:
@@ -681,16 +684,6 @@ class BaseCollection(object):
         values at the lower or upper end of the range, for example angles in a circle, or
         time.
 
-        Usage:
-        .. code-block:: python
-            from BaseCollection import histogram_circular
-
-            histogram_circular([358, 359, 0, 1, 2, 3], (358, 0, 3))
-            >> [[358, 359], [0, 1, 2]]
-
-        The data is binned inclusive of the lower bound but exclusive of the upper bound
-        for intervals.
-
         Args:
             values: Set of numerical data as a list.
             bins: An array of uniform-width bin edges, excluding the rightmost edge.
@@ -704,6 +697,17 @@ class BaseCollection(object):
         Returns:
             A list of lists representing the ordered values binned by frequency.
                 histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]
+
+        Usage:
+
+        .. code-block:: python
+            from BaseCollection import histogram_circular
+
+            histogram_circular([358, 359, 0, 1, 2, 3], (358, 0, 3))
+            # >> [[358, 359], [0, 1, 2]]
+
+        The data is binned inclusive of the lower bound but exclusive of the upper bound
+        for intervals.
         """
 
         if key is None:
