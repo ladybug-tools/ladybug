@@ -596,11 +596,11 @@ class BaseCollection(object):
         Usage:
 
         .. code-block:: python
+
             from BaseCollection import linspace
 
             linspace(0, 5, 6)
             # >> [0., 1., 2., 3., 4., 5.]
-
         """
         try:
             delta = stop - start
@@ -628,11 +628,11 @@ class BaseCollection(object):
 
         Returns:
             A list of lists representing the ordered values binned by frequency.
-               ``histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]``
 
         Usage:
 
         .. code-block:: python
+
             from BaseCollection import histogram
 
             # Simple example
@@ -682,7 +682,8 @@ class BaseCollection(object):
 
         Circular values refers to a set of values where there is no distinction between
         values at the lower or upper end of the range, for example angles in a circle, or
-        time.
+        time. The data is binned inclusive of the lower bound but exclusive of the upper bound
+        for intervals.
 
         Args:
             values: Set of numerical data as a list.
@@ -696,18 +697,15 @@ class BaseCollection(object):
 
         Returns:
             A list of lists representing the ordered values binned by frequency.
-                histogram([0, 1, 1, 2, 3], [0, 2, 3]) -> [[0, 1, 1], [2]]
 
         Usage:
 
         .. code-block:: python
+
             from BaseCollection import histogram_circular
 
             histogram_circular([358, 359, 0, 1, 2, 3], (358, 0, 3))
             # >> [[358, 359], [0, 1, 2]]
-
-        The data is binned inclusive of the lower bound but exclusive of the upper bound
-        for intervals.
         """
 
         if key is None:
