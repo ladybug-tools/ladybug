@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Module for visualization of houlry data collections."""
+"""Module for visualization of hourly data collections."""
 from __future__ import division
 
 from .analysisperiod import AnalysisPeriod
@@ -20,7 +20,7 @@ from ladybug_geometry.geometry3d.mesh import Mesh3D
 
 
 class HourlyPlot(object):
-    """Object for visualization of houlry data collections.
+    """Object for visualization of hourly data collections.
 
     Args:
         data_collection: A HourlyContinuousCollection or HourlyDiscontinuousCollection
@@ -34,7 +34,7 @@ class HourlyPlot(object):
         z_dim: An optional number to set the Z dimension of the entire chart. This
             will be used to make the colored_mesh3d of the chart vary in the Z
             dimension according to the data. The value input here should usually be
-            several times larger than the x_dim or y_dim in order to be noticable
+            several times larger than the x_dim or y_dim in order to be noticeable
             (e.g. 100). If 0, the colored_mesh3d will simply be flat. (Default: 0).
 
     Properties:
@@ -124,7 +124,7 @@ class HourlyPlot(object):
     @classmethod
     def from_z_dim_per_unit(cls, data_collection, legend_parameters=None,
                             base_point=Point3D(), x_dim=1, y_dim=4, z_dim_per_unit=0):
-        """Create HorlyPlot with an option to set the Z dimension on a per-unit basis.
+        """Create HourlyPlot with an option to set the Z dimension on a per-unit basis.
 
         This is useful in cases of wanting to compare the Z dimensions of two plots
         to each other.
@@ -392,7 +392,7 @@ class HourlyPlot(object):
         _colored_mesh2d = Mesh2D.from_grid(
             self.base_point, self._num_x, self._num_y, self.x_dim, self.y_dim)
 
-        # reomve any faces in the base mesh that do not represent the data
+        # remove any faces in the base mesh that do not represent the data
         if not isinstance(self.data_collection, HourlyContinuousCollection):
             # get a pattern of booleans for whether mesh faces should be included
             data_coll_moys = [dt.moy for dt in self.data_collection.datetimes]
@@ -451,7 +451,7 @@ class HourlyPlot(object):
 
     def _compute_month_line_pts(self):
         """Compute the points for the hour lines and labels."""
-        # extract several resued properties from the analysis period
+        # extract several reused properties from the analysis period
         st_mon = self.analysis_period.st_month
         end_mon = self.analysis_period.end_month
         st_day = self.analysis_period.st_day

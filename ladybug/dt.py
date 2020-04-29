@@ -12,10 +12,10 @@ class DateTime(datetime):
     """Create Ladybug Date time.
 
     Args:
-        month: A value for month between 1-12 (Defualt: 1).
-        day: A value for day between 1-31 (Defualt: 1).
-        hour: A value for hour between 0-23 (Defualt: 0).
-        minute: A value for month between 0-59 (Defualt: 0).
+        month: A value for month between 1-12 (Default: 1).
+        day: A value for day between 1-31 (Default: 1).
+        hour: A value for hour between 0-23 (Default: 0).
+        minute: A value for month between 0-59 (Default: 0).
         leap_year: A boolean to indicate if datetime is for a leap year
             (Default: False).
 
@@ -58,7 +58,7 @@ class DateTime(datetime):
 
     @classmethod
     def from_dict(cls, data):
-        """Creat datetime from a dictionary.
+        """Create datetime from a dictionary.
 
         Args:
             data: A python dictionary in the following format
@@ -66,10 +66,10 @@ class DateTime(datetime):
         .. code-block:: python
 
                 {
-                'month': 1  #A value for month between 1-12. (Defualt: 1)
-                'day': 1  # A value for day between 1-31. (Defualt: 1)
-                'hour': 0  # A value for hour between 0-23. (Defualt: 0)
-                'minute': 0  # A value for month between 0-59. (Defualt: 0)
+                'month': 1  #A value for month between 1-12. (Default: 1)
+                'day': 1  # A value for day between 1-31. (Default: 1)
+                'hour': 0  # A value for hour between 0-23. (Default: 0)
+                'minute': 0  # A value for month between 0-59. (Default: 0)
                 }
         """
         month = data['month'] if 'month' in data else 1
@@ -288,8 +288,8 @@ class Date(date):
     """Ladybug Date.
 
     Args:
-        month: A value for month between 1-12. Defualt: 1.
-        day: A value for day between 1-31. Defualt: 1.
+        month: A value for month between 1-12. Default: 1.
+        day: A value for day between 1-31. Default: 1.
         leap_year: A boolean to indicate if date is for a leap year. Default: False.
 
     Properties:
@@ -328,8 +328,8 @@ class Date(date):
         .. code-block:: python
 
                 {
-                'month': 1  # A value for month between 1-12. (Defualt: 1)
-                'day': 1  # A value for day between 1-31. (Defualt: 1)
+                'month': 1  # A value for month between 1-12. (Default: 1)
+                'day': 1  # A value for day between 1-31. (Default: 1)
                 }
         """
         month = data['month'] if 'month' in data else 1
@@ -434,8 +434,8 @@ class Time(time):
     """Create Ladybug Time.
 
     Args:
-        hour: A value for hour between 0-23 (Defualt: 0).
-        minute: A value for month between 0-59 (Defualt: 0).
+        hour: A value for hour between 0-23 (Default: 0).
+        minute: A value for month between 0-59 (Default: 0).
 
     Properties:
         * hour
@@ -473,8 +473,8 @@ class Time(time):
         .. code-block:: python
 
                 {
-                'hour': 0  # A value for hour between 0-23. (Defualt: 0)
-                'minute': 0  # A value for month between 0-59. (Defualt: 0)
+                'hour': 0  # A value for hour between 0-23. (Default: 0)
+                'minute': 0  # A value for month between 0-59. (Default: 0)
                 }
         """
         hour = data['hour'] if 'hour' in data else 0

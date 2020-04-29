@@ -1,7 +1,7 @@
 # coding=utf-8
 """Module of Data Types (eg. Temperature, Area, etc.)
 
-Possesses capabilites for unit conversions and range checks.
+Possesses capabilities for unit conversions and range checks.
 It also includes descriptions of the data types and the units.
 
 Properties:

@@ -103,7 +103,7 @@ class Legend(object):
     __slots__ = ('_values', '_legend_par', '_is_min_default', '_is_max_default')
 
     def __init__(self, values, legend_parameters=None):
-        """Initalize Ladybug Legend.
+        """Initialize Ladybug Legend.
         """
         # check the inputs
         assert isinstance(values, Iterable) \
@@ -480,7 +480,7 @@ class LegendParameters(object):
 
     def __init__(self, min=None, max=None, segment_count=None,
                  colors=None, title=None, base_plane=None):
-        """Initalize Ladybug Legend Parameters.
+        """Initialize Ladybug Legend Parameters.
         """
         self._min = None
         self._max = None
@@ -671,7 +671,7 @@ class LegendParameters(object):
         If None, numerical values will be usedfor the legend segments. If not, text
         categories will be used and the legend will be ordinal. Note that, if the
         number if items in the dictionary are less than the segment_count, some segments
-        won't recieve any label. Examples for possible dictiionaries include:
+        won't receive any label. Examples for possible dictionaries include:
         {-1: 'Cold', 0: 'Neutral', 1: 'Hot'}
         {0: 'False', 1: 'True'}
         """
@@ -1022,14 +1022,14 @@ class LegendParametersCategorized(LegendParameters):
     __slots__ = ('_domain', '_category_names', '_continuous_colors',)
 
     def __init__(self, domain, colors, category_names=None, title=None, base_plane=None):
-        """Initalize Ladybug Legend Parameters Categorized."""
+        """Initialize Ladybug Legend Parameters Categorized."""
         # set the domain after verifying that it is correct
         assert isinstance(domain, Iterable) \
             and not isinstance(domain, (str, dict, bytes, bytearray)), \
             'Domain should be a list or tuple. Got {}'.format(type(domain))
         self._domain = tuple(float(x) for x in sorted(domain))
         assert len(self._domain) > 0, \
-            'LegendParametersCategorized doimain must have at least one value.'
+            'LegendParametersCategorized domain must have at least one value.'
         self._min = self._domain[0]
         self._max = self._domain[-1]
         self._segment_count = len(self._domain) + 1

@@ -373,7 +373,7 @@ def estimate_illuminance_from_irradiance(
 def calc_horizontal_infrared(sky_cover, dry_bulb, dew_point):
     """Calculate horizontal infrared radiation intensity.
 
-    See EnergyPlus Enrineering Reference for more information:
+    See EnergyPlus Engineering Reference for more information:
     https://bigladdersoftware.com/epx/docs/8-9/engineering-reference/climate-calculations.html#sky-radiation-modeling
 
     Note:
@@ -411,9 +411,9 @@ def calc_horizontal_infrared(sky_cover, dry_bulb, dew_point):
 
 
 def calc_sky_temperature(horiz_ir, source_emissivity=1):
-    """Calculate sky temperature in Celcius.
+    """Calculate sky temperature in Celsius.
 
-    See EnergyPlus Enrineering Reference for more information:
+    See EnergyPlus Engineering Reference for more information:
     https://bigladdersoftware.com/epx/docs/8-9/engineering-reference/
     climate-calculations.html#energyplus-sky-temperature-calculation
 
@@ -536,7 +536,7 @@ def dirint(ghi, altitudes, doys, pressures, use_delta_kt_prime=True,
     else:
         w = [-1] * len(ghi)
 
-    # bin the values into appropriate categoreis for lookup in the coefficient matirx.
+    # bin the values into appropriate categories for lookup in the coefficient matrix.
     ktp_bin, alt_bin, w_bin, delta_ktp_bin = \
         _dirint_bins(kt_primes, altitudes, w, delta_kt_prime)
 
@@ -848,7 +848,7 @@ def clearness_index_zenith_independent(clearness_index, airmass,
 def get_absolute_airmass(airmass_relative, pressure=101325.):
     """
     Determine absolute (pressure corrected) airmass from relative
-    airmass and atmospheirc pressure.
+    airmass and atmospheric pressure.
 
     Gives the airmass for locations not at sea-level (i.e. not at
     standard pressure). The input argument airmass_relative is the relative
@@ -928,7 +928,7 @@ def get_relative_airmass(altitude, model='kastenyoung1989'):
                 *   'gueymard1993' - See reference [4] -
                     requires apparent sun altitude
                 *   'young1994' - See reference [5] -
-                    requries true sun altitude
+                    requires true sun altitude
                 *   'pickering2002' - See reference [6] -
                     requires apparent sun altitude
 

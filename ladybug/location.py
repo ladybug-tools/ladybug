@@ -18,7 +18,7 @@ class Location(object):
             the time zone will be an estimated integer value derived from the
             longitude in accordance with solar time (Default: None).
         elevation: A number for elevation of the location in meters. (Default: 0).
-        station_id: ID of the location if the location is represnting a weather station.
+        station_id: ID of the location if the location is representing a weather station.
         source: Source of data (e.g. TMY, TMY3).
 
     Properties:
@@ -132,11 +132,11 @@ class Location(object):
         # format the object into a list of properties
         idf_string = idf_string.strip()
         assert idf_string.startswith('Site:Location'), 'Expected Site' \
-            ':Location but received a differet object: {}'.format(idf_string)
+            ':Location but received a different object: {}'.format(idf_string)
         idf_string = idf_string.replace(';', ',')
         idf_string = re.sub(r'!.*\n', '', idf_string)
         ep_fields = [e_str.strip() for e_str in idf_string.split(',')]
-        ep_fields.pop(0)  # reomve the EnergyPlus ojbect name
+        ep_fields.pop(0)  # remove the EnergyPlus object name
         return cls(city=ep_fields[0], latitude=ep_fields[1], longitude=ep_fields[2],
                    time_zone=ep_fields[3], elevation=ep_fields[4])
 
@@ -189,14 +189,6 @@ class Location(object):
     def meridian(self):
         """Get a number between -180 and +180 for the meridian west of Greenwich."""
         return -15 * self.time_zone
-
-    @property
-    def ep_style_location_string(self):
-        """Get an EnergyPlus location string.
-        
-        DO NOT USE THIS METHOD AS IT WILL BE DEPRECATED SOON. Use to_idf instead.
-        """
-        return self.to_idf()
 
     def duplicate(self):
         """Duplicate location."""

@@ -356,7 +356,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         5)  Datetimes for February 29th are excluded if is_leap_year is False on
             the analysis_period.
 
-        Note that there is no need to run this check any time that a discontinous
+        Note that there is no need to run this check any time that a discontinuous
         data collection has been derived from a continuous one or when the
         validated_a_period attribute of the collection is True.  Furthermore, most
         methods on this data collection will still run without a validated
@@ -384,7 +384,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind]
                 sort_values = sort_values[last_ind:] + sort_values[:last_ind]
             # If datetimes are outside the a_period range, just make it annual.
-            # There's no way to know what side of the analysis_period should be etended.
+            # There's no way to know what side of the analysis_period should be extended.
             if sort_datetimes[0].doy > a_per.end_time.doy and \
                     sort_datetimes[0].doy < a_per.st_time.doy:
                 n_ap[0], n_ap[1], n_ap[3], n_ap[4] = 1, 1, 12, 31
@@ -619,9 +619,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
         Args:
             timestep: Target timestep as an integer. Target timestep must be
-                divisable by current timestep.
+                divisible by current timestep.
             cumulative: A boolean that sets whether the interpolation
-                should treat the data colection values as cumulative, in
+                should treat the data collection values as cumulative, in
                 which case the value at each timestep is the value over
                 that timestep (instead of over the hour). The default will
                 check the DataType to see if this type of data is typically
@@ -632,7 +632,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             the input timestep.
         """
         assert timestep % self.header.analysis_period.timestep == 0, \
-            'Target timestep({}) must be divisable by current timestep({})' \
+            'Target timestep({}) must be divisible by current timestep({})' \
             .format(timestep, self.header.analysis_period.timestep)
         if cumulative is not None:
             assert isinstance(cumulative, bool), \
@@ -732,7 +732,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             return _filtered_data
 
     def filter_by_hoys(self, hoys):
-        """Filter the Data Collection based onva list of hoys.
+        """Filter the Data Collection using a list of hoys.
 
         Args:
            hoys: A List of hours of the year 0..8759
@@ -1119,7 +1119,7 @@ class DailyCollection(BaseCollection):
 
         4)  February 29th is excluded if is_leap_year is False on the analysis_period.
 
-        Note that there is no need to run this check any time that a discontinous
+        Note that there is no need to run this check any time that a discontinuous
         data collection has been derived from a continuous one or when the
         validated_a_period attribute of the collection is True.
         """
@@ -1153,7 +1153,7 @@ class DailyCollection(BaseCollection):
                 sort_datetimes = sort_datetimes[last_ind:] + sort_datetimes[:last_ind]
                 sort_values = sort_values[last_ind:] + sort_values[:last_ind]
             # If datetimes are outside the a_period range, just make it annual.
-            # There's no way to know what side of the analysis_period should be etended.
+            # There's no way to know what side of the analysis_period should be extended.
             if sort_datetimes[0] > a_per.end_time.doy and \
                     sort_datetimes[0] < a_per.st_time.doy:
                 n_ap[0], n_ap[1], n_ap[3], n_ap[4] = 1, 1, 12, 31

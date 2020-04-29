@@ -7,7 +7,7 @@ return another data collection will return a collection that is mutable.
 The only exceptions to this rule are:
 
 *   duplicate() - which will always return an exact copy of the collection including
-    its mutabiliy.
+    its mutability.
 
 *   get_aligned_collection() - which follows the mutability of the starting collection
     by default but includes an parameter to override this.
@@ -54,7 +54,7 @@ class _ImmutableCollectionBase(object):
 
 class HourlyDiscontinuousCollectionImmutable(
         _ImmutableCollectionBase, HourlyDiscontinuousCollection):
-    """Immutable Discontinous Data Collection at hourly or sub-hourly intervals."""
+    """Immutable Discontinuous Data Collection at hourly or sub-hourly intervals."""
 
     def convert_to_culled_timestep(self, timestep=1):
         """This method is not available for immutable collections."""
@@ -67,7 +67,7 @@ class HourlyDiscontinuousCollectionImmutable(
 
 class HourlyContinuousCollectionImmutable(
         _ImmutableCollectionBase, HourlyContinuousCollection):
-    """Immutable Continous Data Collection at hourly or sub-hourly intervals."""
+    """Immutable Continuous Data Collection at hourly or sub-hourly intervals."""
 
     def convert_to_culled_timestep(self, timestep=1):
         """This method is not available for immutable collections."""

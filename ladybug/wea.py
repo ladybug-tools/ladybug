@@ -220,7 +220,7 @@ class Wea(object):
             diffuse_horizontal = diffuse_horizontal.interpolate_to_timestep(timestep)
             # create sunpath to check if the sun is up at a given timestep
             sp = Sunpath.from_location(epw.location)
-            # add correct values to the emply data collection
+            # add correct values to the empty data collection
             for i, dt in enumerate(cls._get_datetimes(timestep, is_leap_year)):
                 # set irradiance values to 0 when the sun is not up
                 sun = sp.calculate_sun_from_date_time(dt)
@@ -823,8 +823,8 @@ class Wea(object):
     def _get_datetimes(timestep, is_leap_year):
         """List of datetimes based on timestep.
 
-        This method should only be used for classmethods. For datetimes use datetiems or
-        hoys methods.
+        This method should only be used for classmethods. For datetimes use
+        datetimes or hoys methods.
         """
         hour_count = 8760 + 24 if is_leap_year else 8760
         adjust_time = 30 if timestep == 1 else 0

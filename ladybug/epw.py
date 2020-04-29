@@ -76,7 +76,7 @@ class EPW(object):
     """
 
     def __init__(self, file_path):
-        """Initalize an EPW object from from a local .epw file.
+        """Initialize an EPW object from from a local .epw file.
         """
         self._file_path = os.path.normpath(file_path) if file_path is not None else None
         self._is_header_loaded = False
@@ -103,7 +103,7 @@ class EPW(object):
 
     @classmethod
     def from_missing_values(cls, is_leap_year=False):
-        """Initalize an EPW object with all data missing or empty.
+        """Initialize an EPW object with all data missing or empty.
 
         Note that this classmethod is intended for workflows where one plans
         to set all of the data within the EPW object.  The EPW file written
@@ -460,10 +460,10 @@ class EPW(object):
 
     @property
     def monthly_ground_temperature(self):
-        """Return a dictionary of Mothly Data collections.
+        """Return a dictionary of Monthly Data collections.
 
         The keys of this dictionary are the depths at which each set
-        of temperatures occurrs."""
+        of temperatures occurs."""
         self._load_header_check()
         return self._monthly_ground_temps
 
@@ -544,7 +544,7 @@ class EPW(object):
                 self._location.time_zone = location_data[8]
                 self._location.elevation = location_data[9]
 
-                # asemble a dictionary of metadata
+                # assemble a dictionary of metadata
                 self._metadata = {
                     'source': self._location.source,
                     'country': self._location.country,
@@ -598,9 +598,9 @@ class EPW(object):
                     header_meta['soil specific heat'] = grnd_data[st_ind + 3]
                     grnd_header = Header(temperature.GroundTemperature(), 'C',
                                          AnalysisPeriod(), header_meta)
-                    grnd_vlas = [float(x) for x in grnd_data[st_ind + 4: st_ind + 16]]
+                    grnd_vals = [float(x) for x in grnd_data[st_ind + 4: st_ind + 16]]
                     self._monthly_ground_temps[float(grnd_data[st_ind])] = \
-                        MonthlyCollection(grnd_header, grnd_vlas, list(xrange(12)))
+                        MonthlyCollection(grnd_header, grnd_vals, list(xrange(12)))
                     st_ind += 16
 
                 # parse leap year, daylight savings and comments.
@@ -1287,7 +1287,7 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
     def sky_temperature(self):
         """Return annual Sky Temperature as a Ladybug Data Collection.
 
-        This value in degrees Celcius is derived from the Horizontal Infrared
+        This value in degrees Celsius is derived from the Horizontal Infrared
         Radiation Intensity in Wh/m2. It represents the long wave radiant
         temperature of the sky
         Read more at: https://bigladdersoftware.com/epx/docs/8-9/engineering-reference\

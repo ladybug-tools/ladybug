@@ -100,7 +100,7 @@ class STAT(object):
         r"Monthly Wind Direction %[\s\S]*" + dir + r"\s(.*)") for dir in _wind_dir_names)
 
     def __init__(self, file_path):
-        """Initalize the class.
+        """Initialize the class.
         """
         if file_path is not None:
             if not os.path.isfile(file_path):

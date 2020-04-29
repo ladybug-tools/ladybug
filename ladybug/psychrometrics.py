@@ -6,9 +6,9 @@ import math
 
 
 def saturated_vapor_pressure(t_kelvin):
-    """Saturated vapor pressure (Pa) at a given dry bulb temperture (K).
+    """Saturated vapor pressure (Pa) at a given dry bulb temperature (K).
 
-    This function accounts for the different behaviour above vs. below
+    This function accounts for the different behavior above vs. below
     the freezing point of water.
 
     Args:
@@ -69,7 +69,7 @@ def enthalpy_from_db_hr(db_temp, humid_ratio, reference_temp=0):
         reference_temp: Reference dry air temperature (C). Default is 0C,
             which is standard practice for SI enthalpy values. However, for
             IP enthalpy, this is typically at 0F (-17.78C). Alternatively, for
-            aboslute thermodynamic enthalpy, one can input 0K (-273.15).
+            absolute thermodynamic enthalpy, one can input 0K (-273.15).
 
     Returns:
         Enthalpy (kJ/kg).
@@ -206,7 +206,7 @@ def rel_humid_from_db_enth(db_temp, enthalpy, b_press=101325, reference_temp=0):
         reference_temp: Reference dry air temperature (C). Default is 0C,
             which is standard practice for SI enthalpy values. However, for
             IP enthalpy, this is typically at 0F (-17.78C). Alternatively, for
-            aboslute thermodynamic enthalpy, one can input 0K (-273.15).
+            absolute thermodynamic enthalpy, one can input 0K (-273.15).
 
     Returns:
         Relative humidity (%).
@@ -265,7 +265,7 @@ def dew_point_from_db_hr(db_temp, humid_ratio, b_press=101325):
     return dew_point_from_db_rh(db_temp, rh)
 
 
-def dew_point_from_db_enth(db_temp, enthlpy, b_press=101325, reference_temp=0):
+def dew_point_from_db_enth(db_temp, enthalpy, b_press=101325, reference_temp=0):
     """Dew point temperature (C) from air temperature (C) and enthalpy (kJ/kg).
 
     Args:
@@ -275,12 +275,12 @@ def dew_point_from_db_enth(db_temp, enthlpy, b_press=101325, reference_temp=0):
         reference_temp: Reference dry air temperature (C). Default is 0C,
             which is standard practice for SI enthalpy values. However, for
             IP enthalpy, this is typically at 0F (-17.78C). Alternatively, for
-            aboslute thermodynamic enthalpy, one can input 0K (-273.15).
+            absolute thermodynamic enthalpy, one can input 0K (-273.15).
 
     Returns:
         Dew point temperature (C).
     """
-    rh = rel_humid_from_db_enth(db_temp, enthlpy, b_press, reference_temp)
+    rh = rel_humid_from_db_enth(db_temp, enthalpy, b_press, reference_temp)
     return dew_point_from_db_rh(db_temp, rh)
 
 
@@ -333,7 +333,7 @@ def db_temp_from_enth_hr(enthalpy, humid_ratio, reference_temp=0):
         reference_temp: Reference dry air temperature (C). Default is 0C,
             which is standard practice for SI enthalpy values. However, for
             IP enthalpy, this is typically at 0F (-17.78C). Alternatively, for
-            aboslute thermodynamic enthalpy, one can input 0K (-273.15).
+            absolute thermodynamic enthalpy, one can input 0K (-273.15).
 
     Returns:
         Dry bulb temperature (C).

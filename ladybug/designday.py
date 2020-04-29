@@ -34,9 +34,9 @@ class DesignDay(object):
         day_type: Choose from 'SummerDesignDay', 'WinterDesignDay' or other
             EnergyPlus days visible under the DAY_TYPES property of this object.
         location: Location object for the design day.
-        dry_bulb_condition: Ladyubug DryBulbCondition object.
-        humidity_condition: Ladyubug HumidityCondition object.
-        wind_condition: Ladyubug WindCondition object.
+        dry_bulb_condition: Ladybug DryBulbCondition object.
+        humidity_condition: Ladybug HumidityCondition object.
+        wind_condition: Ladybug WindCondition object.
         sky_condition: Ladybug SkyCondition object (either ASHRAEClearSky or ASHRAETau).
 
     Properties:
@@ -159,7 +159,7 @@ class DesignDay(object):
 
     @classmethod
     def from_idf(cls, idf_string, location):
-        """Initalize from an EnergyPlus IDF string of a SizingPeriod:DesignDay.
+        """Initialize from an EnergyPlus IDF string of a SizingPeriod:DesignDay.
 
         Args:
             idf_string: A full IDF string representing a SizingPeriod:DesignDay.
@@ -169,7 +169,7 @@ class DesignDay(object):
         # format the object into a list of properties
         idf_string = idf_string.strip()
         assert idf_string.startswith('SizingPeriod:DesignDay'), 'Expected SizingPeriod' \
-            ':DesignDay but received a differet object: {}'.format(idf_string)
+            ':DesignDay but received a different object: {}'.format(idf_string)
         idf_string = idf_string.replace(';', ',')
         idf_string = re.sub(r'!.*\n', '', idf_string)
         ep_fields = [e_str.strip() for e_str in idf_string.split(',')]
@@ -209,8 +209,8 @@ class DesignDay(object):
         else:
             sky_condition = _SkyCondition(date_obj, dl_save)
         if sky_model == 'Schedule':
-            sky_condition.beam_shcedule = ep_fields[22]
-            sky_condition.diff_shced = ep_fields[23]
+            sky_condition.beam_schedule = ep_fields[22]
+            sky_condition.diffuse_schedule = ep_fields[23]
 
         return cls(name, day_type, location, dry_bulb_condition,
                    humidity_condition, wind_condition, sky_condition)
@@ -502,7 +502,7 @@ class DesignDay(object):
             energyflux.HorizontalInfraredRadiationIntensity(), 'W/m2', horiz_ir)
     
     def to_idf(self):
-        """Get this object as an EnerygPlus IDF SizingPeriod:DesignDay string."""
+        """Get this object as an EnergyPlus IDF SizingPeriod:DesignDay string."""
         # Put together the values in the order that they exist in the ddy file
         ep_vals = [self.name,
                    self.sky_condition.date.month,
@@ -522,7 +522,7 @@ class DesignDay(object):
                    'Yes' if self.humidity_condition.snow_on_ground else 'No',
                    'Yes' if self.sky_condition.daylight_savings else 'No',
                    'ASHRAEClearSky',
-                   self.sky_condition.beam_shcedule,
+                   self.sky_condition.beam_schedule,
                    self.sky_condition.diffuse_schedule, '', '', '']
 
         # assign humidity values based on the type of criteria
@@ -544,14 +544,14 @@ class DesignDay(object):
             ep_vals.pop()
 
         # put everything together into one string
-        comented_str = ['  {},{}{}\n'.format(
+        commented_str = ['  {},{}{}\n'.format(
             str(val), ' ' * (60 - len(str(val))), self.IDF_COMMENTS[i])
-                        for i, val in enumerate(ep_vals)]
-        comented_str[-1] = comented_str[-1].replace(',', ';')
-        comented_str.insert(0, 'SizingPeriod:DesignDay,\n')
-        comented_str.append('\n')
+                         for i, val in enumerate(ep_vals)]
+        commented_str[-1] = commented_str[-1].replace(',', ';')
+        commented_str.insert(0, 'SizingPeriod:DesignDay,\n')
+        commented_str.append('\n')
 
-        return ''.join(comented_str)
+        return ''.join(commented_str)
 
     def to_dict(self, include_location=True):
         """Convert the Design Day to a dictionary.
@@ -971,7 +971,7 @@ class WindCondition(object):
     __slots__ = ('_wind_speed', '_wind_direction')
 
     def __init__(self, wind_speed, wind_direction=0):
-        """Initalize the class."""
+        """Initialize the class."""
         self.wind_speed = wind_speed
         self.wind_direction = wind_direction
 
@@ -1081,26 +1081,26 @@ class _SkyCondition(object):
             day occurs.
         daylight_savings: Boolean to indicate whether daylight savings
             time is active. Default: False
-        beam_shcedule: Schedule name for beam irradiance. Shoulb be an empty
+        beam_schedule: Schedule name for beam irradiance. Should be an empty
             string unless the solar model is 'Schedule'.
-        diffuse_schedule: Schedule name for diffuse irradiance. Shoulb be an
+        diffuse_schedule: Schedule name for diffuse irradiance. Should be an
             empty string unless solar model is 'Schedule'.
 
     Properties:
         * date
         * daylight_savings
-        * beam_shcedule
+        * beam_schedule
         * diffuse_schedule
         * hourly_sky_cover
     """
-    __slots__ = ('_date', '_daylight_savings', 'beam_shcedule', 'diffuse_schedule')
+    __slots__ = ('_date', '_daylight_savings', 'beam_schedule', 'diffuse_schedule')
     SOLAR_MODELS = ('ASHRAEClearSky', 'ASHRAETau', 'ZhangHuang', 'Schedule')
 
-    def __init__(self, date, daylight_savings=False, beam_shcedule='',
+    def __init__(self, date, daylight_savings=False, beam_schedule='',
                  diffuse_schedule=''):
         self.date = date
         self.daylight_savings = daylight_savings
-        self.beam_shcedule = beam_shcedule
+        self.beam_schedule = beam_schedule
         self.diffuse_schedule = diffuse_schedule
 
     @classmethod
@@ -1130,10 +1130,10 @@ class _SkyCondition(object):
         # assign defaults for optional keys
         dl_save = data['daylight_savings'] if 'daylight_savings' \
             in data else False
-        beam_shcedule = data['beam_shcedule'] if 'beam_shcedule' in data else ''
+        beam_schedule = data['beam_schedule'] if 'beam_schedule' in data else ''
         diffuse_schedule = data['diffuse_schedule'] if 'diffuse_schedule' in data else ''
 
-        return cls(Date.from_array(data['date']), dl_save, beam_shcedule,
+        return cls(Date.from_array(data['date']), dl_save, beam_schedule,
                    diffuse_schedule)
 
     @property
@@ -1167,7 +1167,7 @@ class _SkyCondition(object):
             'type': 'SkyCondition',
             'date': self.date.to_array(),
             'daylight_savings': self.daylight_savings,
-            'beam_shcedule': self.beam_shcedule,
+            'beam_schedule': self.beam_schedule,
             'diffuse_schedule': self.diffuse_schedule
         }
 
@@ -1207,12 +1207,12 @@ class _SkyCondition(object):
         return self.__repr__()
 
     def __copy__(self):
-        return _SkyCondition(self._date, self._daylight_savings, self.beam_shcedule,
+        return _SkyCondition(self._date, self._daylight_savings, self.beam_schedule,
                              self.diffuse_schedule)
 
     def __key(self):
         """A tuple based on the object properties, useful for hashing."""
-        return (hash(self._date), self._daylight_savings, self.beam_shcedule,
+        return (hash(self._date), self._daylight_savings, self.beam_schedule,
                 self.diffuse_schedule)
 
     def __hash__(self):
@@ -1236,7 +1236,7 @@ class ASHRAEClearSky(_SkyCondition):
         date: Ladybug Date object for the day of the year on which the design
             day occurs.
         clearness: Value between 0 and 1.2 that will get multiplied by the model's
-            irradinace to correct for factors like elevation.
+            irradiance to correct for factors like elevation.
         daylight_savings: Boolean to indicate whether daylight savings
             time is active. Default: False.
 
@@ -1305,7 +1305,7 @@ class ASHRAEClearSky(_SkyCondition):
         return [cover] * 24
 
     def radiation_values(self, location, timestep=1):
-        """Get arrays of driect, diffuse, and global radiation at each timestep."""
+        """Get arrays of direct, diffuse, and global radiation at each timestep."""
         # create sunpath and get altitude at every timestep of the design day
         sp = Sunpath.from_location(location)
         altitudes = []
@@ -1433,7 +1433,7 @@ class ASHRAETau(_SkyCondition):
         self._tau_d = data
 
     def radiation_values(self, location, timestep=1):
-        """Gat arrays of driect, diffuse, and global radiation at each timestep."""
+        """Gat arrays of direct, diffuse, and global radiation at each timestep."""
         # create sunpath and get altitude at every timestep of the design day
         sp = Sunpath.from_location(location)
         altitudes = []

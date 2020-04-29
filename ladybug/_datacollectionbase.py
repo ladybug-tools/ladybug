@@ -501,7 +501,7 @@ class BaseCollection(object):
                          pressure_at_denver]
             humid_ratio = HourlyContinuousCollection.compute_function_aligned(
                 humid_ratio_from_db_rh, hr_inputs, HumidityRatio(), 'fraction')
-            # humid_ratio will be a Data Colleciton of humidity ratios at Denver
+            # humid_ratio will be a Data Collection of humidity ratios at Denver
         """
         # check that all inputs are either data collections or floats
         data_colls = []
@@ -512,7 +512,7 @@ class BaseCollection(object):
                 try:
                     data_collections[i] = float(func_input)
                 except ValueError:
-                    raise TypeError('Expected a number or a Data Colleciton. '
+                    raise TypeError('Expected a number or a Data Collection. '
                                     'Got {}'.format(type(func_input)))
 
         # run the function and return the result
@@ -574,7 +574,7 @@ class BaseCollection(object):
 
     @staticmethod
     def _restore_operators(statement):
-        """Restore python logical operators from previusly replaced ones."""
+        """Restore python logical operators from previously replaced ones."""
         return statement.replace("&&", "and").replace("||", "or") \
             .replace("~", "not").replace("<<", "in").replace("$", "is")
 
@@ -777,8 +777,8 @@ class BaseCollection(object):
             isinstance(values, (str, dict, bytes, bytearray)), \
             'values should be a list or tuple. Got {}'.format(type(values))
         assert len(values) == len(self.datetimes), \
-            'Length of values list must match length of datetimes list. {} != {}'.format(
-                len(values), len(self.datetimes))
+            'Length of values list must match length of datetimes list. ' \
+            '{} != {}'.format(len(values), len(self.datetimes))
         assert len(values) > 0, 'Data Collection must include at least one value'
 
     def _check_aligned_header(self, data_type, unit):
@@ -904,7 +904,7 @@ class BaseCollection(object):
             new_vals = [v_1 - other for v_1 in self._values]
         else:
             assert self._collection_type == other._collection_type, \
-                '{} cannot be subtrated from {}'.format(other.__class__, self.__class__)
+                '{} cannot be subtracted from {}'.format(other.__class__, self.__class__)
             assert len(self) == len(other), 'Length of DataCollections must match ' \
                 'to subtract one from the other. {} != {}'.format(len(self), len(other))
             new_vals = [v_1 - v_2 for v_1, v_2 in zip(self._values, other._values)]

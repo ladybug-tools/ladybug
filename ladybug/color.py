@@ -159,13 +159,13 @@ class Colorset(object):
 
     .. code-block:: python
 
-        # initiare colorsets
-            cs = Colorset()
-            print(cs[0])
-            >> [<R:75, G:107, B:169>, <R:115, G:147, B:202>, <R:170, G:200, B:247>,
-                <R:193, G:213, B:208>, <R:245, G:239, B:103>, <R:252, G:230, B:74>,
-                <R:239, G:156, B:21>, <R:234, G:123, B:0>, <R:234, G:74, B:0>,
-                <R:234, G:38, B:0>]
+        # initialize colorsets
+        cs = Colorset()
+        print(cs[0])
+        >> [<R:75, G:107, B:169>, <R:115, G:147, B:202>, <R:170, G:200, B:247>,
+            <R:193, G:213, B:208>, <R:245, G:239, B:103>, <R:252, G:230, B:74>,
+            <R:239, G:156, B:21>, <R:234, G:123, B:0>, <R:234, G:74, B:0>,
+            <R:234, G:38, B:0>]
     """
     # base color sets for which there are several variations
     _multicolored = [(4, 25, 145), (7, 48, 224), (7, 88, 255), (1, 232, 255),
@@ -367,7 +367,7 @@ class Colorset(object):
     def openstudio_palette(cls):
         """Standard color set for the OpenStudio surface types. Ordered as follows.
 
-        Exterior Wall, Interior Wall, Undreground Wall,
+        Exterior Wall, Interior Wall, Underground Wall,
         Roof, Ceiling, Underground Roof,
         Exposed Floor, Interior Floor, Ground Floor,
         Window, Door, Shade, Air
@@ -399,7 +399,7 @@ class ColorRange(object):
             R, G, B values. Default is Ladybug's original colorset.
         domain: A list of at least two numbers to set the lower and upper
             boundary of the color range. This can also be a list of more than
-            two values, which can be used to approximate logartihmic or other types
+            two values, which can be used to approximate logarithmic or other types
             of color scales. However, the number of values in the domain must
             always be less than or equal to the number of colors.
             Default: [0, 1].
