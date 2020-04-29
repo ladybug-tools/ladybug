@@ -9,10 +9,6 @@ import sys
 import importlib
 import pkgutil
 
-# This is a variable to check if the library is a [+] library.
-# TODO: Remove this line once the sunpath module no longer uses the isplus property
-setattr(sys.modules[__name__], 'isplus', False)
-
 # set up the logger
 logger = get_logger(__name__)
 

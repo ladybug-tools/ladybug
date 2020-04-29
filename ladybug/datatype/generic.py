@@ -32,7 +32,7 @@ class GenericType(DataTypeBase):
     def __init__(self, name, unit, min=float('-inf'), max=float('+inf'),
                  abbreviation=None, unit_descr=None, point_in_time=True,
                  cumulative=False):
-        """Initalize Generic Type.
+        """Initialize Generic Type.
         """
         assert isinstance(name, str), 'name must be a string. Got {}.'.format(type(name))
         assert isinstance(unit, str), 'unit must be a string. Got {}.'.format(type(unit))

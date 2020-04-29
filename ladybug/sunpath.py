@@ -161,7 +161,7 @@ class Sunpath(object):
         as indicating the time of day when the shift in clocks happen. So setting the
         st_hour and end_hour to 2 will ensure that the time shift happens at 2 AM on
         the dates specified. Note that this is different than how the hour inputs of
-        AnaylsisPeriods typically work, where the st_hour and end_hour apply to every
+        AnalysisPeriods typically work, where the st_hour and end_hour apply to every
         day of the analysis period.
 
         If None, no daylight saving period will be used.
@@ -311,8 +311,8 @@ class Sunpath(object):
             depression: An angle in degrees indicating the additional period
                 before/after the edge of the sun has passed the horizon where
                 the sun is still considered up. Setting this value to 0 will
-                compute sunrise/sunset as the time when the edge of the sun begings
-                to touch the horizon. Setting it to the angular diamater of the
+                compute sunrise/sunset as the time when the edge of the sun begins
+                to touch the horizon. Setting it to the angular diameter of the
                 sun (0.5334) will compute sunrise/sunset as the time when the sun
                 just finishes passing the horizon (actual sunset). Setting it
                 to 0.833 will compute the apparent sunrise/sunset, accounting for
@@ -344,8 +344,8 @@ class Sunpath(object):
             depression: An angle in degrees indicating the additional period
                 before/after the edge of the sun has passed the horizon where
                 the sun is still considered up. Setting this value to 0 will
-                compute sunrise/sunset as the time when the edge of the sun begings
-                to touch the horizon. Setting it to the angular diamater of the
+                compute sunrise/sunset as the time when the edge of the sun begins
+                to touch the horizon. Setting it to the angular diameter of the
                 sun (0.5334) will compute sunrise/sunset as the time when the sun
                 just finishes passing the horizon (actual sunset). Setting it
                 to 0.833 will compute the apparent sunrise/sunset, accounting for
@@ -558,8 +558,8 @@ class Sunpath(object):
             depression: An angle in degrees indicating the additional period
                 before/after the edge of the sun has passed the horizon where
                 the sun is still considered up. Setting this value to 0 will
-                return an arc that ends when the edge of the sun begings to
-                touch the horizon. Setting it to the angular diamater of the
+                return an arc that ends when the edge of the sun begins to
+                touch the horizon. Setting it to the angular diameter of the
                 sun (0.5334) will return an arc that ends right at the horizon
                 (actual sunset). Setting it to 0.833 will compute the apparent
                 sunrise/sunset, accounting for atmospheric refraction. Setting to
@@ -614,8 +614,8 @@ class Sunpath(object):
             depression: An angle in degrees indicating the additional period
                 before/after the edge of the sun has passed the horizon where
                 the sun is still considered up. Setting this value to 0 will
-                return an arc that ends when the edge of the sun begings to
-                touch the horizon. Setting it to the angular diamater of the
+                return an arc that ends when the edge of the sun begins to
+                touch the horizon. Setting it to the angular diameter of the
                 sun (0.5334) will return an arc that ends right at the horizon
                 (actual sunset). Setting it to 0.833 will compute the apparent
                 sunrise/sunset, accounting for atmospheric refraction. Setting to
@@ -643,14 +643,14 @@ class Sunpath(object):
         Args:
             origin: A ladybug_geometry Point3D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
-            daytime_only: A boolean to note whether arcs should be excuded from the
+            daytime_only: A boolean to note whether arcs should be excluded from the
                 output array if the sun never rises above the horizon on the the day.
                 For example, in the arctic circle in winter. (Default: True)
             depression: An angle in degrees indicating the additional period
                 before/after the edge of the sun has passed the horizon where
                 the sun is still considered up. Setting this value to 0 will
-                return an arc that ends when the edge of the sun begings to
-                touch the horizon. Setting it to the angular diamater of the
+                return an arc that ends when the edge of the sun begins to
+                touch the horizon. Setting it to the angular diameter of the
                 sun (0.5334) will return an arc that ends right at the horizon
                 (actual sunset). Setting it to 0.833 will compute the apparent
                 sunrise/sunset, accounting for atmospheric refraction. Setting to
@@ -681,14 +681,14 @@ class Sunpath(object):
                     * Stereographic
             origin: A ladybug_geometry Point2D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
-            daytime_only: A boolean to note whether arcs should be excuded from the
+            daytime_only: A boolean to note whether arcs should be excluded from the
                 output array if the sun never rises above the horizon on the the day.
                 For example, in the arctic circle in winter. (Default: True)
             depression: An angle in degrees indicating the additional period
                 before/after the edge of the sun has passed the horizon where
                 the sun is still considered up. Setting this value to 0 will
-                return an arc that ends when the edge of the sun begings to
-                touch the horizon. Setting it to the angular diamater of the
+                return an arc that ends when the edge of the sun begins to
+                touch the horizon. Setting it to the angular diameter of the
                 sun (0.5334) will return an arc that ends right at the horizon
                 (actual sunset). Setting it to 0.833 will compute the apparent
                 sunrise/sunset, accounting for atmospheric refraction. Setting to

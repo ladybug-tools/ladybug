@@ -4,7 +4,7 @@ from __future__ import division
 
 
 def secant(a, b, fn, epsilon):
-    """One of the fasest root-finding algorithms.
+    """One of the fastest root-finding algorithms.
     The method calculates the slope of the function fn and this enables it to converge
     to a solution very fast. However, if started too far away from a root, the method
     may not converge (returning a None). For this reason, it is recommended that this
@@ -23,7 +23,7 @@ def secant(a, b, fn, epsilon):
                 def fn(value_trying_to_find):
                     funct(value_trying_to_find) - target_desired_from_funct
 
-            ...but the subtraction should be swtiched if value_trying_to_find
+            ...but the subtraction should be switched if value_trying_to_find
             has a negative relationship with the funct.
         epsilon: The acceptable error in the target_desired_from_funct.
 
@@ -75,7 +75,7 @@ def bisect(a, b, fn, epsilon, target):
                 def fn(value_trying_to_find):
                     funct(value_trying_to_find) - target_desired_from_funct
 
-            ...but the subtraction should be swtiched if value_trying_to_find
+            ...but the subtraction should be switched if value_trying_to_find
             has a negative relationship with the funct.
         epsilon: The acceptable error in the target_desired_from_funct.
         target: The target slope (typically 0 for a local minima or maxima).

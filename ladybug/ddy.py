@@ -57,7 +57,7 @@ class DDY(object):
 
     @classmethod
     def from_ddy_file(cls, file_path):
-        """Initalize from a ddy file object from an existing ddy file.
+        """Initialize from a ddy file object from an existing ddy file.
 
         Args:
             file_path: A string representing a complete path to the .ddy file.
@@ -103,7 +103,7 @@ class DDY(object):
 
     @classmethod
     def from_design_day(cls, design_day):
-        """Initalize from a ddy file object from a ladybug design day object.
+        """Initialize from a ddy file object from a ladybug design day object.
 
         Args:
             design_day: A Ladybug DesignDay object.

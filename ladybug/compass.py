@@ -13,7 +13,7 @@ import math
 class Compass(object):
     """Object for computing geometry for the compass used by a variety of graphics.
 
-    Methods to project points to orthograhpic and sterographic projectsions are
+    Methods to project points to orthograhpic and stereographic projectsions are
     also within this class so that "domed" visualizations can be synchronized with
     the compass in the 2D plane.
 

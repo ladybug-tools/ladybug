@@ -136,7 +136,7 @@ class WindRose(object):
 
     @property
     def show_zeros(self):
-        """Get or set property to control if windrose displays zero valuess or not.
+        """Get or set property to control if windrose displays zero values or not.
 
         (Default: True).
         """
@@ -374,7 +374,7 @@ class WindRose(object):
     def radius(self):
         """Get the radius of the inner boundary of the windrose plot.
 
-        This number will be a integer multiple of the legend parameter segement count.
+        This number will be a integer multiple of the legend parameter segment count.
         """
         ytick_num = self.legend_parameters.segment_count
         if self.show_zeros:
@@ -414,7 +414,7 @@ class WindRose(object):
             vec1: first bin edge as a vector array.
             vec2: second bin edge as a vector array
             curr_bar_radius: length of the histogram bar.
-            min_bar_radius: lenght from the center of the windrose to the start of the
+            min_bar_radius: length from the center of the windrose to the start of the
                 histogram bar.
             ytick_curr_num: Number of intervals in the current stacked histogram bar.
             ytick_dist: Length of stack interval.
@@ -646,7 +646,7 @@ class WindRose(object):
 
     @staticmethod
     def _histogram_data_stacked(histogram_data, ytick_num):
-        """Get a histogram of stacked wind anaylysis values binned by wind directions.
+        """Get a histogram of stacked wind analysis values binned by wind directions.
 
         Each histogram bin in this data structure is "stacked" meaning the range of the
         analysis values per bin are averaged to provide a list of average values per
@@ -670,7 +670,7 @@ class WindRose(object):
                 interval_arr = linspace(min(bar_data_vals), max(bar_data_vals),
                                         int(bar_data_num + 1))
 
-                # Compute midpt btween values
+                # Compute midpoint between values
                 mean_vals_per_bar = []
                 for i in range(len(interval_arr) - 1):
                     midpt = (interval_arr[i] + interval_arr[i+1]) / 2.0
@@ -685,7 +685,7 @@ class WindRose(object):
     @staticmethod
     def _compute_colored_mesh_array(hist_data, hist_data_stacked, bin_vecs, ytick_num,
                                     min_radius, max_radius, show_stack):
-        """Compute a colored mesh from this object's historam.
+        """Compute a colored mesh from this object's histogram.
 
         Args:
             hist_data: Histogram of analysis values greater then zero.
@@ -726,7 +726,7 @@ class WindRose(object):
                                      frequency_spacing_distance=None,
                                      frequency_maximum=None, show_stack=None,
                                      show_zeros=None):
-        """Sets visualzation properties for this object.
+        """Sets visualization properties for this object.
 
         This method will override visualization properties that have already been set,
         if the argument is passed. If the properties are not already set, and no argument

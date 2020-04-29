@@ -209,10 +209,10 @@ class DataTypeBase(object):
 
     @property
     def units(self):
-        """A tuple of all accetpable units of the data type as abbreviated text.
+        """A tuple of all acceptable units of the data type as abbreviated text.
 
         The first item of the list should be the standard SI unit.
-        The second item of the list should be the stadard IP unit (if it exists).
+        The second item of the list should be the standard IP unit (if it exists).
         The rest of the list can be any other acceptable units.
         (eg. [C, F, K])
         """
@@ -268,7 +268,7 @@ class DataTypeBase(object):
         """Boolean to note whether data type is for a single instant in time.
 
         If False, the data type is meant to represent an average or accumulation
-        over time whenenever found in an array of time series data.
+        over time whenever found in an array of time series data.
         (True Examples: Temperature, WindSpeed)
         (False Examples: Energy, Radiation, Illuminance)
         """
@@ -290,7 +290,7 @@ class DataTypeBase(object):
         """A data type object representing the area-normalized version of this data type.
 
         This will be None if the data type cannot be normalized per unit area to
-        yeild a meaningful data type.
+        yield a meaningful data type.
         """
         return self._normalized_type
 
