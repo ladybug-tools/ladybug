@@ -8,7 +8,7 @@ from .base import DataTypeBase
 class EnergyIntensity(DataTypeBase):
     """Energy Intensity
     """
-    _units = ('kWh/m2', 'kBtu/ft2', 'Wh/m2', 'Btu/ft2')
+    _units = ('kWh/m2', 'kBtu/ft2', 'Wh/m2', 'Btu/ft2', 'kWh/ft2', 'kBtu/m2')
     _si_units = ('kWh/m2', 'Wh/m2')
     _ip_units = ('kBtu/ft2', 'Btu/ft2')
     _abbreviation = 'EUI'
@@ -24,6 +24,12 @@ class EnergyIntensity(DataTypeBase):
     def _kWh_m2_to_Btu_ft2(self, value):
         return value * 316.998
 
+    def _kWh_m2_to_kWh_ft2(self, value):
+        return value / 10.7639
+
+    def _kWh_m2_to_kBtu_m2(self, value):
+        return value * 3.41214
+
     def _kBtu_ft2_to_kWh_m2(self, value):
         return value / 0.316998
 
@@ -32,6 +38,12 @@ class EnergyIntensity(DataTypeBase):
 
     def _Btu_ft2_to_kWh_m2(self, value):
         return value / 316.998
+
+    def _kWh_ft2_to_kWh_m2(self, value):
+        return value * 10.7639
+
+    def _kBtu_m2_to_kWh_m2(self, value):
+        return value / 3.41214
 
     def to_unit(self, values, unit, from_unit):
         """Return values converted to the unit given the input from_unit."""
