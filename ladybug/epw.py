@@ -74,6 +74,11 @@ class EPW(object):
         * liquid_precipitation_quantity
         * sky_temperature
     """
+    __slots__ = ("_file_path", "_is_header_loaded", "_is_data_loaded", "_is_ip",
+                 "_data", "_heating_dict", "_cooling_dict", "_extremes_dict",
+                 "_extreme_hot_weeks", "_extreme_cold_weeks", "_typical_weeks",
+                 "_monthly_ground_temps", "_is_leap_year", "daylight_savings_start",
+                 "daylight_savings_end", "_num_of_fields")
 
     def __init__(self, file_path):
         """Initialize an EPW object from from a local .epw file.
@@ -98,7 +103,6 @@ class EPW(object):
         self.daylight_savings_end = '0'
         self.comments_1 = ''
         self.comments_2 = ''
-
         self._num_of_fields = 35  # it is 35 for TMY3 files
 
     @classmethod
