@@ -1,18 +1,19 @@
 # coding=utf-8
 from __future__ import division
 
-from .location import Location
-from .designday import DesignDay
+import os
+
+from .analysisperiod import AnalysisPeriod
 from .datacollection import HourlyContinuousCollection
 from .datacollection import MonthlyCollection
-from .header import Header
-from .analysisperiod import AnalysisPeriod
 from .datatype import angle, distance, energyflux, energyintensity, generic, \
     illuminance, luminance, fraction, pressure, speed, temperature
-from .skymodel import calc_sky_temperature
+from .designday import DesignDay
 from .futil import write_to_file
+from .header import Header
+from .location import Location
+from .skymodel import calc_sky_temperature
 
-import os
 readmode = 'rb'
 try:
     from itertools import izip as zip  # python 2
@@ -74,11 +75,11 @@ class EPW(object):
         * liquid_precipitation_quantity
         * sky_temperature
     """
-    __slots__ = ("_file_path", "_is_header_loaded", "_is_data_loaded", "_is_ip",
-                 "_data", "_heating_dict", "_cooling_dict", "_extremes_dict",
-                 "_extreme_hot_weeks", "_extreme_cold_weeks", "_typical_weeks",
-                 "_monthly_ground_temps", "_is_leap_year", "daylight_savings_start",
-                 "daylight_savings_end", "_num_of_fields")
+    __slots__ = ('_file_path', '_is_header_loaded', '_is_data_loaded', '_is_ip',
+                 '_data','_metadata', '_heating_dict', '_cooling_dict', '_extremes_dict',
+                 '_extreme_hot_weeks', '_extreme_cold_weeks', '_typical_weeks',
+                 '_monthly_ground_temps', '_is_leap_year', 'daylight_savings_start',
+                 'daylight_savings_end', '_num_of_fields')
 
     def __init__(self, file_path):
         """Initialize an EPW object from from a local .epw file.
