@@ -79,7 +79,8 @@ class EPW(object):
                  '_data','_metadata', '_heating_dict', '_cooling_dict', '_extremes_dict',
                  '_extreme_hot_weeks', '_extreme_cold_weeks', '_typical_weeks',
                  '_monthly_ground_temps', '_is_leap_year', 'daylight_savings_start',
-                 'daylight_savings_end', '_num_of_fields')
+                 'daylight_savings_end', '_num_of_fields', 'comments_1', 'comments_2',
+                 '_location', '_header')
 
     def __init__(self, file_path):
         """Initialize an EPW object from from a local .epw file.
@@ -1697,10 +1698,10 @@ class EPWField(object):
 
     Attributes:
         name: Name of the field.
-        type: field value type (e.g. int, float, str)
-        unit: Field unit.
+                unit: Field unit.
         missing: Missing value for the data type in EPW files.
     """
+    __slots__ = ('name', 'value_type', 'unit', 'missing')
 
     def __init__(self, field_dict):
         self.name = field_dict['name']
