@@ -1698,7 +1698,8 @@ class EPWField(object):
 
     Attributes:
         name: Name of the field.
-                unit: Field unit.
+        value_type: field value type (e.g. int, float, str)
+        unit: Field unit.
         missing: Missing value for the data type in EPW files.
     """
     __slots__ = ('name', 'value_type', 'unit', 'missing')
