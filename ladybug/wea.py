@@ -1,30 +1,28 @@
 # coding=utf-8
 from __future__ import division
 
-from .epw import EPW
-from .stat import STAT
-from .location import Location
-from .dt import DateTime
-from .header import Header
-from .datacollection import HourlyContinuousCollection
-from .analysisperiod import AnalysisPeriod
-from .sunpath import Sunpath
-from .futil import write_to_file
+import math
+import os
+import warnings
 
+from ladybug_geometry.geometry3d.pointvector import Vector3D
+
+from .analysisperiod import AnalysisPeriod
+from .datacollection import HourlyContinuousCollection
 from .datatype.energyflux import Irradiance, GlobalHorizontalIrradiance, \
     DirectNormalIrradiance, DiffuseHorizontalIrradiance, DirectHorizontalIrradiance
 from .datatype.illuminance import GlobalHorizontalIlluminance, \
     DirectNormalIlluminance, DiffuseHorizontalIlluminance
 from .datatype.luminance import ZenithLuminance
-
+from .dt import DateTime
+from .epw import EPW
+from .futil import write_to_file
+from .header import Header
+from .location import Location
 from .skymodel import ashrae_revised_clear_sky, ashrae_clear_sky, \
     zhang_huang_solar_split, estimate_illuminance_from_irradiance
-
-from ladybug_geometry.geometry3d.pointvector import Vector3D
-
-import math
-import os
-import warnings
+from .stat import STAT
+from .sunpath import Sunpath
 
 try:  # python 2
     from itertools import izip as zip
@@ -62,6 +60,8 @@ class Wea(object):
         * timestep
         * is_leap_year
     """
+    __slots__ = ('_timestep', '_is_leap_year', 'location', 'metadata',
+                 '_direct_normal_irradiance', 'dhr', '_diffuse_horizontal_irradiance')
 
     def __init__(self, location, direct_normal_irradiance,
                  diffuse_horizontal_irradiance, timestep=1, is_leap_year=False):

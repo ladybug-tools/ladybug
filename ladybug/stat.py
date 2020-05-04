@@ -1,20 +1,21 @@
 # coding=utf-8
 from __future__ import division
 
-from .location import Location
-from .dt import Date
+import codecs
+import os
+import platform
+import re
+
 from .analysisperiod import AnalysisPeriod
+from .designday import ASHRAEClearSky
+from .designday import ASHRAETau
 from .designday import DesignDay
 from .designday import DryBulbCondition
 from .designday import HumidityCondition
 from .designday import WindCondition
-from .designday import ASHRAETau
-from .designday import ASHRAEClearSky
+from .dt import Date
+from .location import Location
 
-import os
-import re
-import codecs
-import platform
 try:
     from itertools import izip as zip  # python 2
 except ImportError:
@@ -98,6 +99,15 @@ class STAT(object):
     _winds_pattern = re.compile(r"Monthly Statistics for Wind Speed[\s\S]*Daily Avg(.*)")
     _windd_patterns = tuple(re.compile(
         r"Monthly Wind Direction %[\s\S]*" + dir + r"\s(.*)") for dir in _wind_dir_names)
+
+    __slots__ = ('_file_path', '_winter_des_day_dict', '_summer_des_day_dict',
+                 '_monthly_wind_dirs', '_location', '_ashrae_climate_zone',
+                 '_koppen_climate_zone', '_extreme_cold_week', '_extreme_hot_week',
+                 '_typical_weeks', '_monthly_db_50', '_monthly_wb_50', '_monthly_db_range_50',
+                 '_monthly_wb_range_50', '_monthly_db_100', '_monthly_wb_100', '_monthly_db_20',
+                 '_monthly_wb_20', '_monthly_db_04', '_monthly_wb_04', '_monthly_wind',
+                 '_stand_press_at_elev', '_monthly_tau_beam', '_monthly_tau_diffuse',
+                 '_header', '_body')
 
     def __init__(self, file_path):
         """Initialize the class.
