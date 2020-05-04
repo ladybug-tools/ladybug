@@ -87,7 +87,7 @@ class EPW(object):
         self._file_path = os.path.normpath(file_path) if file_path is not None else None
         self._is_header_loaded = False
         self._is_data_loaded = False
-        self._is_ip = False  # track if collections have been coverted to IP
+        self._is_ip = False  # track if collections have been converted to IP
 
         # placeholders for the EPW data that will be imported
         self._data = []
