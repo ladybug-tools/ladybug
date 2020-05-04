@@ -1,18 +1,19 @@
 # coding=utf-8
 from __future__ import division
 
-from .location import Location
-from .designday import DesignDay
+import os
+
+from .analysisperiod import AnalysisPeriod
 from .datacollection import HourlyContinuousCollection
 from .datacollection import MonthlyCollection
-from .header import Header
-from .analysisperiod import AnalysisPeriod
 from .datatype import angle, distance, energyflux, energyintensity, generic, \
     illuminance, luminance, fraction, pressure, speed, temperature
-from .skymodel import calc_sky_temperature
+from .designday import DesignDay
 from .futil import write_to_file
+from .header import Header
+from .location import Location
+from .skymodel import calc_sky_temperature
 
-import os
 readmode = 'rb'
 try:
     from itertools import izip as zip  # python 2
@@ -74,6 +75,12 @@ class EPW(object):
         * liquid_precipitation_quantity
         * sky_temperature
     """
+    __slots__ = ('_file_path', '_is_header_loaded', '_is_data_loaded', '_is_ip',
+                 '_data','_metadata', '_heating_dict', '_cooling_dict', '_extremes_dict',
+                 '_extreme_hot_weeks', '_extreme_cold_weeks', '_typical_weeks',
+                 '_monthly_ground_temps', '_is_leap_year', 'daylight_savings_start',
+                 'daylight_savings_end', '_num_of_fields', 'comments_1', 'comments_2',
+                 '_location', '_header')
 
     def __init__(self, file_path):
         """Initialize an EPW object from from a local .epw file.
@@ -81,7 +88,7 @@ class EPW(object):
         self._file_path = os.path.normpath(file_path) if file_path is not None else None
         self._is_header_loaded = False
         self._is_data_loaded = False
-        self._is_ip = False  # track if collections have been coverted to IP
+        self._is_ip = False  # track if collections have been converted to IP
 
         # placeholders for the EPW data that will be imported
         self._data = []
@@ -98,7 +105,6 @@ class EPW(object):
         self.daylight_savings_end = '0'
         self.comments_1 = ''
         self.comments_2 = ''
-
         self._num_of_fields = 35  # it is 35 for TMY3 files
 
     @classmethod
@@ -1692,10 +1698,11 @@ class EPWField(object):
 
     Attributes:
         name: Name of the field.
-        type: field value type (e.g. int, float, str)
+        value_type: field value type (e.g. int, float, str)
         unit: Field unit.
         missing: Missing value for the data type in EPW files.
     """
+    __slots__ = ('name', 'value_type', 'unit', 'missing')
 
     def __init__(self, field_dict):
         self.name = field_dict['name']
