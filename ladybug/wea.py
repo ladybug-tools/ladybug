@@ -854,6 +854,16 @@ class Wea(object):
         """Overwrite .NET ToString."""
         return self.__repr__()
 
+    def __key(self):
+        return self.location, self.direct_horizontal_irradiance, \
+            self.diffuse_horizontal_irradiance
+
+    def __eq__(self, other):
+        return isinstance(other, Wea) and self.__key() == other.__key()
+
+    def __ne__(self, value):
+        return not self.__eq__(value)
+
     def __repr__(self):
         """epw file representation."""
         return "WEA [%s]" % self.location.city

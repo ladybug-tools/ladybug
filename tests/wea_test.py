@@ -42,6 +42,13 @@ def test_from_epw():
     assert wea_from_epw.diffuse_horizontal_irradiance.datetimes[8].minute == 0
 
 
+def test_equality():
+    wea_file = './tests/fixtures/wea/chicago.wea'
+    wea_1 = Wea.from_file(wea_file)
+    wea_2 = Wea.from_file(wea_file)
+    assert wea_1 == wea_2
+
+
 def test_from_stat():
     """Test import from stat"""
     stat_path = './tests/fixtures/stat/chicago.stat'
@@ -231,7 +238,7 @@ def test_global_and_direct_horizontal():
 
 
 def test_directional_irradiance():
-    """Test the directinal irradiance method."""
+    """Test the directional irradiance method."""
     stat_path = './tests/fixtures/stat/chicago.stat'
     wea_from_stat = Wea.from_stat_file(stat_path)
 
@@ -248,7 +255,7 @@ def test_directional_irradiance():
 
 
 def test_estimate_illuminance():
-    """Test the directinal irradiance method."""
+    """Test the directional irradiance method."""
     epw_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(epw_path)
     wea = Wea.from_epw_file(epw_path)

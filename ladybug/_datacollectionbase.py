@@ -12,7 +12,7 @@ except ImportError:
     from collections import Iterable  # python >= 3.8
 from string import ascii_lowercase
 import math
-import sys
+
 try:
     from itertools import izip as zip  # python 2
 except ImportError:
@@ -682,8 +682,8 @@ class BaseCollection(object):
 
         Circular values refers to a set of values where there is no distinction between
         values at the lower or upper end of the range, for example angles in a circle, or
-        time. The data is binned inclusive of the lower bound but exclusive of the upper bound
-        for intervals.
+        time. The data is binned inclusive of the lower bound but exclusive of the upper
+        bound for intervals.
 
         Args:
             values: Set of numerical data as a list.
@@ -939,6 +939,17 @@ class BaseCollection(object):
     def is_mutable(self):
         """Boolean denoting whether the data collection is mutable."""
         return self._mutable
+
+    def __key(self):
+        return (
+            self.header, self.values, self.datetimes, self.validated_a_period
+        )
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.__key() == other.__key()
+
+    def __ne__(self, value):
+        return not self.__eq__(value)
 
     def ToString(self):
         """Overwrite .NET ToString method."""

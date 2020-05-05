@@ -26,7 +26,7 @@ class DataTypeBase(object):
         *   cumulative
         *   normalized_type
     """
-    _name = None
+    __slots__ = ('_name',)
     _units = [None]
     _si_units = [None]
     _ip_units = [None]
@@ -284,7 +284,7 @@ class DataTypeBase(object):
         (True Examples: Energy, Radiation)
         """
         return self._cumulative
-    
+
     @property
     def normalized_type(self):
         """A data type object representing the area-normalized version of this data type.
@@ -297,6 +297,19 @@ class DataTypeBase(object):
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
+
+    def __key(self):
+        return (
+            self._name, self._units, self._si_units, self._ip_units, self._min,
+            self._max, self._abbreviation, self._unit_descr, self._point_in_time,
+            self._cumulative, self._normalized_type
+        )
+
+    def __eq__(self, other):
+        return isinstance(other, DataTypeBase) and self.__key() == other.__key()
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __repr__(self):
         """Return Ladybug data type as a string."""

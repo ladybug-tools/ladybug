@@ -112,7 +112,7 @@ class Header(object):
 
     def __iter__(self):
         """Return data as tuple."""
-        return self.to_tuple()
+        return iter(self.to_tuple())
 
     def to_dict(self):
         """Return a header as a dictionary."""
@@ -128,6 +128,15 @@ class Header(object):
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
+
+    def __key(self):
+        return (self.data_type, self.unit, self.analysis_period, self.metadata)
+
+    def __eq__(self, other):
+        return isinstance(other, Header) and self.__key() == other.__key()
+
+    def __ne__(self, value):
+        return not self.__eq__(value)
 
     def __repr__(self):
         """Return Ladybug header as a string."""

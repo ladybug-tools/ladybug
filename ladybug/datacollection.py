@@ -1513,6 +1513,9 @@ class MonthlyPerHourCollection(BaseCollection):
         return self._validated_a_period and a_per.st_hour == 0 and a_per.end_hour \
                 == 23 and len(self.values) == len(a_per.months_per_hour)
 
+    def __key(self):
+        return (self.header, self.values)
+
     def __repr__(self):
         """Monthly Per Hour Collection representation."""
         return "Monthly Per Hour Collection\n{}@{} to {}@{}\n"\
