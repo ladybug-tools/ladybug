@@ -994,8 +994,19 @@ class Sun(object):
 
     @property
     def azimuth(self):
-        """Return solar azimuth in degrees."""
+        """Return solar azimuth in degrees.
+
+        This value is the same regardless of what the north_angle is.
+        """
         return self._azimuth
+
+    @property
+    def azimuth_from_y_axis(self):
+        """Return solar azimuth in degrees with respect to the Y-axis of the scene.
+
+        This value will change as the north_angle is changed.
+        """
+        return  self._azimuth + self._north_angle
 
     @property
     def altitude_in_radians(self):

@@ -137,8 +137,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return moy_dict
 
     def filter_by_analysis_period(self, analysis_period):
-        """
-        Filter a Data Collection based on an analysis period.
+        """Filter a Data Collection based on an analysis period.
 
         Args:
            analysis period: A Ladybug analysis period
@@ -152,7 +151,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return _filtered_data
 
     def filter_by_hoys(self, hoys):
-        """Filter the Data Collection based on an analysis period.
+        """Filter the Data Collection using a list of hours of the year (hoys).
 
         Args:
            hoys: A List of hours of the year 0..8759
@@ -732,7 +731,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             return _filtered_data
 
     def filter_by_hoys(self, hoys):
-        """Filter the Data Collection using a list of hoys.
+        """Filter the Data Collection using a list of hours of the year (hoys).
 
         Args:
            hoys: A List of hours of the year 0..8759

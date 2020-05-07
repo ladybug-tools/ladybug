@@ -1,6 +1,7 @@
 # coding=utf-8
 from ladybug.wea import Wea
 from ladybug.location import Location
+from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.epw import EPW
 
 import pytest
