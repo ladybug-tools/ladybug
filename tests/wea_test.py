@@ -1,6 +1,7 @@
 # coding=utf-8
 from ladybug.wea import Wea
 from ladybug.location import Location
+from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.epw import EPW
 
 import pytest
@@ -231,7 +232,7 @@ def test_global_and_direct_horizontal():
 
 
 def test_directional_irradiance():
-    """Test the directinal irradiance method."""
+    """Test the directional irradiance method."""
     stat_path = './tests/fixtures/stat/chicago.stat'
     wea_from_stat = Wea.from_stat_file(stat_path)
 
@@ -248,7 +249,7 @@ def test_directional_irradiance():
 
 
 def test_estimate_illuminance():
-    """Test the directinal irradiance method."""
+    """Test the directional irradiance method."""
     epw_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(epw_path)
     wea = Wea.from_epw_file(epw_path)

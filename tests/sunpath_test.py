@@ -38,7 +38,7 @@ def test_init_sun():
     hash(sun)  # ensure sun is hash-able
     assert sun.datetime == dt1
     assert sun.altitude == approx(45, rel=1e-2)
-    assert sun.azimuth == approx(100, rel=1e-2)
+    assert sun.azimuth == sun.azimuth_from_y_axis == approx(100, rel=1e-2)
     assert sun.altitude_in_radians == approx(math.radians(45), rel=1e-2)
     assert sun.azimuth_in_radians == approx(math.radians(100), rel=1e-2)
     assert sun.is_solar_time
