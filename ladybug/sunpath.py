@@ -1006,7 +1006,8 @@ class Sun(object):
 
         This value will change as the north_angle is changed.
         """
-        return  self._azimuth + self._north_angle
+        angle = self._azimuth - self._north_angle
+        return angle if angle < 360 else angle - 360
 
     @property
     def altitude_in_radians(self):
