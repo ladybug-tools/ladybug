@@ -53,6 +53,17 @@ def test_init_sun():
     assert isinstance(sun.position_2d(projection='Stereographic', radius=1), Point2D)
 
 
+def test_azimuth_from_y_axis():
+    """Test the azimuth_from_y_axis property of the Sun."""
+    dt1 = DateTime(3, 21, 12, 30)
+
+    sun1 = Sun(dt1, 45, 100, True, False, 10)
+    assert sun1.azimuth_from_y_axis == 90
+    sun1 = Sun(dt1, 45, 100, True, False, -10)
+    assert sun1.azimuth_from_y_axis == 110
+    sun1 = Sun(dt1, 45, 100, True, False, -270)
+    assert sun1.azimuth_from_y_axis == 10
+
 def test_from_location():
     """Test the initialization of Sunpath from a Location."""
     sydney = Location('Sydney', 'AUS', latitude=-33.87, longitude=151.22,
