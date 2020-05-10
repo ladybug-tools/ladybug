@@ -8,40 +8,40 @@ from .base import DataTypeBase
 class TemperatureDelta(DataTypeBase):
     """TemperatureDelta
     """
-    _units = ('C', 'F', 'K')
-    _si_units = ('C', 'K')
-    _ip_units = ('F')
+    _units = ('dC', 'dF', 'dK')
+    _si_units = ('dC', 'dK')
+    _ip_units = ('dF')
     _abbreviation = 'DeltaT'
 
-    def _C_to_F(self, value):
+    def _dC_to_dF(self, value):
         return value * 9. / 5.
 
-    def _C_to_K(self, value):
+    def _dC_to_dK(self, value):
         return value
 
-    def _F_to_C(self, value):
+    def _dF_to_dC(self, value):
         return value * (5. / 9.)
 
-    def _K_to_C(self, value):
+    def _dK_to_dC(self, value):
         return value
 
     def to_unit(self, values, unit, from_unit):
         """Return values converted to the unit given the input from_unit."""
-        return self._to_unit_base('C', values, unit, from_unit)
+        return self._to_unit_base('dC', values, unit, from_unit)
 
     def to_ip(self, values, from_unit):
         """Return values in IP and the units to which the values have been converted."""
-        if from_unit == 'F':
+        if from_unit == 'dF':
             return values, from_unit
         else:
-            return self.to_unit(values, 'F', from_unit), 'F'
+            return self.to_unit(values, 'dF', from_unit), 'dF'
 
     def to_si(self, values, from_unit):
         """Return values in SI and the units to which the values have been converted."""
-        if from_unit == 'C' or from_unit == 'K':
+        if from_unit == 'dC' or from_unit == 'dK':
             return values, from_unit
         else:
-            return self.to_unit(values, 'C', from_unit), 'C'
+            return self.to_unit(values, 'dC', from_unit), 'dC'
 
 
 class AirTemperatureDelta(TemperatureDelta):

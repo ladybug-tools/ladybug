@@ -83,10 +83,10 @@ def test_temperaturedelta():
         assert len(si_vals) == 1
         for other_unit in temp_type.units:
             assert len(temp_type.to_unit([1], other_unit, unit)) == 1
-    assert temp_type.to_unit([1], 'F', 'C')[0] == pytest.approx(1.8, rel=1e-1)
-    assert temp_type.to_unit([1], 'K', 'C')[0] == pytest.approx(1, rel=1e-1)
-    assert temp_type.to_unit([1], 'C', 'F')[0] == pytest.approx(0.5555, rel=1e-1)
-    assert temp_type.to_unit([1], 'C', 'K')[0] == pytest.approx(1, rel=1e-1)
+    assert temp_type.to_unit([1], 'dF', 'dC')[0] == pytest.approx(1.8, rel=1e-1)
+    assert temp_type.to_unit([1], 'dK', 'dC')[0] == pytest.approx(1, rel=1e-1)
+    assert temp_type.to_unit([1], 'dC', 'dF')[0] == pytest.approx(0.5555, rel=1e-1)
+    assert temp_type.to_unit([1], 'dC', 'dK')[0] == pytest.approx(1, rel=1e-1)
 
 
 def test_temperaturetime():
