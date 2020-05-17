@@ -26,7 +26,6 @@ class DataTypeBase(object):
         *   cumulative
         *   normalized_type
     """
-    __slots__ = ('_name',)
     _units = [None]
     _si_units = [None]
     _ip_units = [None]
