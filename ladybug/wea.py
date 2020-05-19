@@ -60,18 +60,20 @@ class Wea(object):
         * timestep
         * is_leap_year
     """
-    __slots__ = ('_timestep', '_is_leap_year', 'location', 'metadata',
-                 '_direct_normal_irradiance', 'dhr', '_diffuse_horizontal_irradiance')
+    __slots__ = ('_timestep', '_is_leap_year', '_location', 'metadata',
+                 '_direct_normal_irradiance', '_diffuse_horizontal_irradiance')
 
     def __init__(self, location, direct_normal_irradiance,
                  diffuse_horizontal_irradiance, timestep=1, is_leap_year=False):
-        """Create a wea object."""
+        """Create a Wea object."""
+        # Check the timestep and leap year properties
         timestep = timestep or 1
         self._timestep = timestep
         self._is_leap_year = is_leap_year
         assert isinstance(timestep, int), 'timestep must be an' \
             ' integer. Got {}'.format(type(timestep))
 
+        # assign the location, irradiance and metadata
         self.location = location
         self.direct_normal_irradiance = direct_normal_irradiance
         self.diffuse_horizontal_irradiance = diffuse_horizontal_irradiance
@@ -121,32 +123,35 @@ class Wea(object):
         .. code-block:: python
 
             {
-            "location": {},  # ladybug location schema
-            "direct_normal_irradiance": [],  # List of hourly direct normal
-                                             # irradiance data points
-            "diffuse_horizontal_irradiance": [],  # List of hourly diffuse
-                                                  # horizontal irradiance data points
-            "timestep": 1.0  # timestep between measurements, default is 1
+            "type": "Wea",
+            "location": {},  # ladybug location dictionary
+            "direct_normal_irradiance": [],  # direct normal irradiance values
+            "diffuse_horizontal_irradiance": [],  # diffuse horizontal irradiance values
+            "timestep": 1.0,  # optional timestep between measurements, default: 1
+            "is_leap_year": False  # optional boolean for leap year, default: False
             }
         """
-        required_keys = ('location', 'direct_normal_irradiance',
+        # check for the required keys
+        required_keys = ('type', 'location', 'direct_normal_irradiance',
                          'diffuse_horizontal_irradiance')
-        optional_keys = ('timestep', 'is_leap_year')
-
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
+        assert data['type'] == 'Wea', \
+            'Expected Wea dictionary. Got {}.'.format(data['type'])
 
-        for key in optional_keys:
-            if key not in data:
-                data[key] = None
+        # set the optional properties
+        timestep = data['timestep'] if 'timestep' in data else 1
+        is_leap_year = data['is_leap_year'] if 'is_leap_year' in data else False
 
+        # serialize the required keys
         location = Location.from_dict(data['location'])
+        a_per = AnalysisPeriod(timestep=timestep, is_leap_year=is_leap_year)
+        dni_head = Header(DirectNormalIrradiance(), 'W/m2', a_per)
+        dhi_head = Header(DiffuseHorizontalIrradiance(), 'W/m2', a_per)
         direct_normal_irradiance = \
-            HourlyContinuousCollection.from_dict(data['direct_normal_irradiance'])
+            HourlyContinuousCollection(dni_head, data['direct_normal_irradiance'])
         diffuse_horizontal_irradiance = \
-            HourlyContinuousCollection.from_dict(data['diffuse_horizontal_irradiance'])
-        timestep = data['timestep']
-        is_leap_year = data['is_leap_year']
+            HourlyContinuousCollection(dhi_head, data['diffuse_horizontal_irradiance'])
 
         return cls(location, direct_normal_irradiance,
                    diffuse_horizontal_irradiance, timestep, is_leap_year)
@@ -482,6 +487,17 @@ class Wea(object):
         return self._timestep
 
     @property
+    def location(self):
+        """Get or set a Ladybug Location object for the Wea."""
+        return self._location
+
+    @location.setter
+    def location(self, value):
+        assert isinstance(value, Location), \
+            'Wea.location data must be a Ladybug Location. Got {}'.format(type(value))
+        self._location = value
+
+    @property
     def direct_normal_irradiance(self):
         """Get or set the direct normal irradiance."""
         return self._direct_normal_irradiance
@@ -657,7 +673,7 @@ class Wea(object):
             else:
                 y = max(0.45, 0.55 + (0.437 * math.cos(vec_angle)) + 0.313 *
                         math.cos(vec_angle) * 0.313 * math.cos(vec_angle))
-                srf_dif = self.dhr * (y * (
+                srf_dif = dhr * (y * (
                     math.sin(math.radians(abs(90 - altitude)))) +
                     math.cos(math.radians(abs(90 - altitude))))
 
@@ -759,14 +775,12 @@ class Wea(object):
     def to_dict(self):
         """Get the Wea as a dictionary."""
         return {
+            'type': 'Wea',
             'location': self.location.to_dict(),
-            'direct_normal_irradiance':
-                self.direct_normal_irradiance.to_dict(),
-            'diffuse_horizontal_irradiance':
-                self.diffuse_horizontal_irradiance.to_dict(),
+            'direct_normal_irradiance': self.direct_normal_irradiance.values,
+            'diffuse_horizontal_irradiance': self.diffuse_horizontal_irradiance.values,
             'timestep': self.timestep,
-            'is_leap_year': self.is_leap_year,
-            'type': 'Wea'
+            'is_leap_year': self.is_leap_year
         }
 
     def write(self, file_path, hoys=None, write_hours=False):
