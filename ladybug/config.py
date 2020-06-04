@@ -41,7 +41,7 @@ class Folders(object):
     def ladybug_tools_folder(self):
         """Get or set the path to the ladybug tools installation folder."""
         return self._ladybug_tools_folder
-    
+
     @ladybug_tools_folder.setter
     def ladybug_tools_folder(self, path):
         if not path:  # check the default location for epw files
@@ -119,7 +119,7 @@ class Folders(object):
 
     def _find_default_epw_folder(self):
         """Find the the default EPW folder in its usual location.
-        
+
         An attempt will be made to create the directory if it does not already exist.
         """
         epw_folder = os.path.join(self.ladybug_tools_folder, 'resources', 'weather')
@@ -134,7 +134,7 @@ class Folders(object):
     @staticmethod
     def _find_default_ladybug_tools_folder():
         """Find the the default ladybug_tools folder in its usual location.
-        
+
         An attempt will be made to create the directory if it does not already exist.
         """
         home_folder = os.getenv('HOME') or os.path.expanduser('~')

@@ -7,12 +7,12 @@ with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
 setuptools.setup(
-    name="lbt-ladybug",
+    name="ladybug-core",
     use_scm_version=True,
     setup_requires=['setuptools_scm'],
     author="Ladybug Tools",
     author_email="info@ladybug.tools",
-    description="Ladybug is a Python library to load, analyze and modify EneregyPlus Weather files (epw).",
+    description="Python library to load, analyze and modify EnergyPlus Weather files (epw).",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/ladybug-tools/ladybug",

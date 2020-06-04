@@ -14,13 +14,14 @@ Ladybug is a Python library to load, analyze and modify EnergyPlus Weather files
 This repository includes the core library which is the base for Ladybug. For plugin-specific questions and comments refer to [ladybug-grasshopper](https://github.com/ladybug-tools/ladybug-grasshopper) or [ladybug-dynamo](https://github.com/ladybug-tools/ladybug-dynamo) repositories.
 
 ## Note
+
 For the Legacy Ladybug Grasshopper Plugin see [this repository](https://github.com/ladybug-tools/ladybug-legacy).
 
 ## [API Documentation](https://www.ladybug.tools/ladybug/docs/ladybug.html)
 
 ## Installation
 
-`pip install lbt-ladybug`
+`pip install ladybug-core`
 
 
 ## Usage
@@ -46,12 +47,11 @@ print('altitude: {}, azimuth: {}'.format(sun.altitude, sun.azimuth))
 >>> altitude: 72.26, azimuth: 32.37
 ```
 
-
 ### Derivative Work
+
 Ladybug is a derivative work of the following software projects:
 
-[ladybug-geometry](https://github.com/ladybug-tools/ladybug-geometry) for vector math calculation. Available under GNU GPL.
-
 [PVLib-python](https://github.com/pvlib/pvlib-python) for solar irradiance calculations. Available under BSD 3-clause.
+[PsychroLib](https://github.com/psychrometrics/psychrolib) for psychrometric calculations. Available under MIT License.
 
 Applicable copyright notices for these works can be found within the relevant .py files.
