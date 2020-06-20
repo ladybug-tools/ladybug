@@ -153,7 +153,7 @@ class WindRose(object):
         (Default: autocalculated from legend_parameters to generate radius of 1.0)
         """
         if self._frequency_spacing_distance is None:
-            self._frequency_spacing_distance = 1./self.legend_parameters.segment_count
+            self._frequency_spacing_distance = 1. / self.legend_parameters.segment_count
         return self._frequency_spacing_distance
 
     @frequency_spacing_distance.setter
@@ -343,7 +343,7 @@ class WindRose(object):
             histogram_data_stacked = WindRose._histogram_data_stacked(
                 self.histogram_data, ytick_num)
         else:
-            histogram_data_stacked = [[sum(h) / len(h)]  if len(h) > 0 else [0]
+            histogram_data_stacked = [[sum(h) / len(h)] if len(h) > 0 else [0]
                                       for h in self.histogram_data]
         mesh_array, color_array = WindRose._compute_colored_mesh_array(
             self.histogram_data, histogram_data_stacked, self.bin_vectors,
@@ -401,7 +401,7 @@ class WindRose(object):
         if self._compass is None:
             ytick_num = self.legend_parameters.segment_count
             return Compass(self.radius, self.base_point, north_angle=0,
-                           spacing_factor=1.0/ytick_num)
+                           spacing_factor=1.0 / ytick_num)
         return self._compass
 
     @staticmethod
@@ -673,7 +673,7 @@ class WindRose(object):
                 # Compute midpoint between values
                 mean_vals_per_bar = []
                 for i in range(len(interval_arr) - 1):
-                    midpt = (interval_arr[i] + interval_arr[i+1]) / 2.0
+                    midpt = (interval_arr[i] + interval_arr[i + 1]) / 2.0
                     mean_vals_per_bar.append(midpt)
             else:
                 mean_vals_per_bar = []

@@ -345,9 +345,9 @@ class Legend(object):
         if _l_par.vertical:  # vertical
             _pt_2d = tuple(
                 Point2D(_l_par.segment_width + _l_par.text_height * 0.25, i)
-                for i in Legend._frange(0, _l_par.segment_height *
-                                        _l_par.segment_count,
-                                        _l_par.segment_height))
+                for i in Legend._frange(
+                    0, _l_par.segment_height * _l_par.segment_count,
+                    _l_par.segment_height))
         else:  # horizontal
             _start_val = -_l_par.segment_width * self.segment_length
             _pt_2d = tuple(
@@ -882,7 +882,7 @@ class LegendParameters(object):
         base['is_segment_count_default'] = self.is_segment_count_default
         base['type'] = 'LegendParameters'
         return base
-    
+
     def _base_dict(self):
         """Get a dictionary with the base properties shared by all LegendParemeters."""
         title = None if self.is_title_default else self.title
@@ -915,7 +915,7 @@ class LegendParameters(object):
         except Exception:
             try:
                 cols = tuple(Color(col.Red, col.Green, col.Blue)
-                                for col in cols)
+                             for col in cols)
             except Exception:
                 raise ValueError("{} is not a valid list of colors".format(cols))
         return cols
@@ -1040,7 +1040,7 @@ class LegendParametersCategorized(LegendParameters):
         self.title = title
         self.base_plane = base_plane
 
-        ## set all of the other inputs to None for now.
+        # set all of the other inputs to None for now.
         self.continuous_colors = None
         self.continuous_legend = None
         self.decimal_count = None
@@ -1220,7 +1220,7 @@ class LegendParametersCategorized(LegendParameters):
     @property
     def segment_count(self):
         """Get the number of segments in the legend.
-        
+
         This is always equal to one more than the length of the domain."""
         return self._segment_count
 
@@ -1271,7 +1271,7 @@ class LegendParametersCategorized(LegendParameters):
             ' include < >: {}\n vertical: {}\n base point:\n  {}\n' \
             ' segment height: {}\n segment width: {}\n' \
             ' text height: {}\n font: {}'.format(
-                self.domain, 
+                self.domain,
                 '\n  '.join([str(c) for c in self.colors]),
                 '\n  '.join([str(c) for c in self.category_names]),
                 self.continuous_legend, title,

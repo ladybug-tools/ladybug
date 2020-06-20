@@ -717,17 +717,18 @@ def _disc_kn(clearness_index, airmass, max_airmass=12):
     kt3 = kt2 * kt  # 5-10x faster than kt ** 3
 
     if kt <= 0.6:
-        a = 0.512 - 1.56*kt + 2.286*kt2 - 2.222*kt3
-        b = 0.37 + 0.962*kt
-        c = -0.28 + 0.932*kt - 2.048*kt2
+        a = 0.512 - 1.56 * kt + 2.286 * kt2 - 2.222 * kt3
+        b = 0.37 + 0.962 * kt
+        c = -0.28 + 0.932 * kt - 2.048 * kt2
     else:
-        a = -5.743 + 21.77*kt - 27.49*kt2 + 11.56*kt3
-        b = 41.4 - 118.5*kt + 66.05*kt2 + 31.9*kt3
-        c = -47.01 + 184.2*kt - 222.0*kt2 + 73.81*kt3
+        a = -5.743 + 21.77 * kt - 27.49 * kt2 + 11.56 * kt3
+        b = 41.4 - 118.5 * kt + 66.05 * kt2 + 31.9 * kt3
+        c = -47.01 + 184.2 * kt - 222.0 * kt2 + 73.81 * kt3
 
-    delta_kn = a + b * math.exp(c*am)
+    delta_kn = a + b * math.exp(c * am)
 
-    Knc = 0.866 - 0.122*am + 0.0121*am**2 - 0.000653*am**3 + 1.4e-05*am**4
+    Knc = 0.866 - 0.122 * am + 0.0121 * am ** 2 - 0.000653 * am ** 3 + \
+        1.4e-05 * am ** 4
     Kn = Knc - delta_kn
     return Kn, am
 
@@ -944,9 +945,9 @@ def get_relative_airmass(altitude, model='kastenyoung1989'):
 
         if 'kastenyoung1989' == model:
             am = (1.0 / (math.sin(alt_rad) +
-                  0.50572*(((6.07995 + altitude) ** - 1.6364))))
+                  0.50572 * (((6.07995 + altitude) ** - 1.6364))))
         elif 'kasten1966' == model:
-            am = 1.0 / (math.sin(alt_rad) + 0.15*((3.885 + altitude) ** - 1.253))
+            am = 1.0 / (math.sin(alt_rad) + 0.15 * ((3.885 + altitude) ** - 1.253))
         elif 'simple' == model:
             am = 1.0 / math.sin(altitude)
         elif 'pickering2002' == model:
@@ -956,14 +957,14 @@ def get_relative_airmass(altitude, model='kastenyoung1989'):
             sec_zen = 1.0 / math.sin(alt_rad)
             am = sec_zen * (1 - 0.0012 * (sec_zen * sec_zen - 1))
         elif 'young1994' == model:
-            am = ((1.002432*((math.sin(alt_rad)) ** 2) +
-                  0.148386*(math.sin(alt_rad)) + 0.0096467) /
+            am = ((1.002432 * ((math.sin(alt_rad)) ** 2) +
+                  0.148386 * (math.sin(alt_rad)) + 0.0096467) /
                   (math.sin(alt_rad) ** 3 +
-                  0.149864*(math.sin(alt_rad) ** 2) +
-                  0.0102963*(math.sin(alt_rad)) + 0.000303978))
+                  0.149864 * (math.sin(alt_rad) ** 2) +
+                  0.0102963 * (math.sin(alt_rad)) + 0.000303978))
         elif 'gueymard1993' == model:
             am = (1.0 / (math.sin(alt_rad) +
-                  0.00176759*(90 - altitude)*(
+                  0.00176759 * (90 - altitude) * (
                       (94.37515 - (90 - altitude)) ** - 1.21563)))
         else:
             raise ValueError('%s is not a valid model for relativeairmass', model)

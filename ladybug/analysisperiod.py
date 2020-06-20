@@ -56,7 +56,7 @@ class AnalysisPeriod(object):
                       6: 10, 10: 6, 12: 5, 15: 4, 20: 3, 30: 2, 60: 1}
     NUMOFDAYSEACHMONTH = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
     NUMOFDAYSEACHMONTHLEAP = (31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-    MONTHNAMES = {1: 'Jan', 2: 'Feb', 3: 'Mar',  4: 'Apr', 5: 'May', 6: 'Jun',
+    MONTHNAMES = {1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
                   7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'}
 
     __slots__ = (
@@ -426,8 +426,10 @@ class AnalysisPeriod(object):
 
         Use this method only when start time month is before end time month.
         """
-        start_doy = sum(self._num_of_days_each_month[:st_time.month-1]) + st_time.day
-        end_doy = sum(self._num_of_days_each_month[:end_time.month-1]) + end_time.day + 1
+        start_doy = sum(self._num_of_days_each_month[:st_time.month - 1]) + \
+            st_time.day
+        end_doy = sum(self._num_of_days_each_month[:end_time.month - 1]) + \
+            end_time.day + 1
         return list(range(start_doy, end_doy))
 
     def __len__(self):

@@ -76,7 +76,7 @@ class EPW(object):
         * sky_temperature
     """
     __slots__ = ('_file_path', '_is_header_loaded', '_is_data_loaded', '_is_ip',
-                 '_data','_metadata', '_heating_dict', '_cooling_dict', '_extremes_dict',
+                 '_data', '_metadata', '_heating_dict', '_cooling_dict', '_extremes_dict',
                  '_extreme_hot_weeks', '_extreme_cold_weeks', '_typical_weeks',
                  '_monthly_ground_temps', '_is_leap_year', 'daylight_savings_start',
                  'daylight_savings_end', '_num_of_fields', 'comments_1', 'comments_2',

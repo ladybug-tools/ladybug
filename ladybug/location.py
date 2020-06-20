@@ -121,7 +121,7 @@ class Location(object):
         except Exception as e:
             raise ValueError(
                 "Failed to create a Location from %s!\n%s" % (location, e))
-    
+
     @classmethod
     def from_idf(cls, idf_string):
         """Create a Ladybug location from an EnergyPlus IDF string.
@@ -217,7 +217,7 @@ class Location(object):
             "source": self.source,
             "type": 'Location'
         }
-    
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()

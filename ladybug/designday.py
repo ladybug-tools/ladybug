@@ -19,7 +19,6 @@ from .psychrometrics import rel_humid_from_db_dpt, dew_point_from_db_hr, \
     dew_point_from_db_enth, dew_point_from_db_wb
 
 import math
-import os
 import re
 import sys
 if (sys.version_info > (3, 0)):
@@ -145,7 +144,7 @@ class DesignDay(object):
                          'humidity_condition', 'wind_condition', 'sky_condition')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
-        
+
         if 'location' in data and data['location'] is not None:
             loc = Location.from_dict(data['location'])
         else:
@@ -500,7 +499,7 @@ class DesignDay(object):
 
         return self._get_daily_data_collections(
             energyflux.HorizontalInfraredRadiationIntensity(), 'W/m2', horiz_ir)
-    
+
     def to_idf(self):
         """Get this object as an EnergyPlus IDF SizingPeriod:DesignDay string."""
         # Put together the values in the order that they exist in the ddy file
@@ -528,7 +527,7 @@ class DesignDay(object):
         # assign humidity values based on the type of criteria
         if self.humidity_condition.humidity_type == 'Wetbulb' or \
                 self.humidity_condition.humidity_type == 'Dewpoint':
-                    ep_vals[9] = self.humidity_condition.humidity_value
+            ep_vals[9] = self.humidity_condition.humidity_value
         elif self.humidity_condition.humidity_type == 'HumidityRatio':
             ep_vals[11] = self.humidity_condition.humidity_value
         elif self.humidity_condition.humidity_type == 'Enthalpy':
@@ -546,7 +545,7 @@ class DesignDay(object):
         # put everything together into one string
         commented_str = ['  {},{}{}\n'.format(
             str(val), ' ' * (60 - len(str(val))), self.IDF_COMMENTS[i])
-                         for i, val in enumerate(ep_vals)]
+            for i, val in enumerate(ep_vals)]
         commented_str[-1] = commented_str[-1].replace(',', ';')
         commented_str.insert(0, 'SizingPeriod:DesignDay,\n')
         commented_str.append('\n')
@@ -555,7 +554,7 @@ class DesignDay(object):
 
     def to_dict(self, include_location=True):
         """Convert the Design Day to a dictionary.
-        
+
         Args:
             include_location: If True, the location dictionary will be included in the
                 returned dictionary. This ensures that the sky condition contained
@@ -573,11 +572,11 @@ class DesignDay(object):
             'wind_condition': self.wind_condition.to_dict(),
             'sky_condition': self.sky_condition.to_dict(),
             'type': 'DesignDay'
-            }
+        }
         if include_location:
             des_day_dict['location'] = self.location.to_dict()
         return des_day_dict
-    
+
     def _get_daily_data_collections(self, data_type, unit, values):
         """Return an empty data collection."""
         data_header = Header(data_type=data_type, unit=unit,
@@ -675,10 +674,10 @@ class DryBulbCondition(object):
         required_keys = ('dry_bulb_max', 'dry_bulb_range')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
-        
+
         # set defaults for optional keys
         mod_type = data['modifier_type'] if 'modifier_type' in data \
-                else 'DefaultMultipliers'
+            else 'DefaultMultipliers'
         mod_schedule = data['modifier_schedule'] if 'modifier_schedule' in data else ''
 
         return cls(data['dry_bulb_max'], data['dry_bulb_range'], mod_type, mod_schedule)
@@ -728,7 +727,7 @@ class DryBulbCondition(object):
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
-    
+
     def __copy__(self):
         return DryBulbCondition(self._dry_bulb_max, self._dry_bulb_range,
                                 self.modifier_type, self.modifier_schedule)
@@ -909,7 +908,7 @@ class HumidityCondition(object):
                 db, self._humidity_value, self._barometric_pressure)
         elif self._humidity_type == 'Enthalpy':
             return dew_point_from_db_enth(
-                db, self._humidity_value / 1000,  self._barometric_pressure)
+                db, self._humidity_value / 1000, self._barometric_pressure)
 
     def to_dict(self):
         """Convert the Humidity Condition to a dictionary."""
@@ -929,7 +928,7 @@ class HumidityCondition(object):
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
-    
+
     def __copy__(self):
         return HumidityCondition(
             self._humidity_type, self._humidity_value, self._barometric_pressure,
@@ -1177,7 +1176,7 @@ class _SkyCondition(object):
 
     def _get_datetimes(self, timestep=1):
         """List of datetimes based on design day date and timestep.
-        
+
         Note that these datetimes are always in standard time in order to be used
         for solar positions. In other words, they correct from daylight savings time.
         """
@@ -1190,7 +1189,7 @@ class _SkyCondition(object):
         lp_yr = self._date.leap_year
         return tuple(DateTime.from_moy(start_moy + (i * (1 / timestep) * 60), lp_yr)
                      for i in xrange(num_moys))
-    
+
     @staticmethod
     def _check_analysis_period(analysis_period):
         """Check an AnalysisPeriod to be sure that it's suitable for a design day."""
@@ -1327,7 +1326,7 @@ class ASHRAEClearSky(_SkyCondition):
             'clearness': self.clearness,
             'daylight_savings': self.daylight_savings,
         }
-    
+
     def __copy__(self):
         return ASHRAEClearSky(self._date, self._clearness, self._daylight_savings)
 
@@ -1403,7 +1402,7 @@ class ASHRAETau(_SkyCondition):
         required_keys = ('date', 'tau_b', 'tau_d')
         for key in required_keys:
             assert key in data, 'Required key "{}" is missing!'.format(key)
-        
+
         # assign defaults for optional keys
         dl_save = data['daylight_savings'] if 'daylight_savings' \
             in data else False

@@ -5,7 +5,6 @@ import ladybug.datacollectionimmutable
 
 from ladybug.logutil import get_logger
 
-import sys
 import importlib
 import pkgutil
 

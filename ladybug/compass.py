@@ -5,7 +5,7 @@ from __future__ import division
 from ladybug_geometry.geometry2d.pointvector import Point2D, Vector2D
 from ladybug_geometry.geometry2d.line import LineSegment2D
 from ladybug_geometry.geometry2d.arc import Arc2D
-from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
+from ladybug_geometry.geometry3d.pointvector import Point3D
 
 import math
 
@@ -139,10 +139,10 @@ class Compass(object):
     @property
     def inner_boundary_circle(self):
         """Get a Arc2D for the inner circle of the compass.
-        
+
         This is essentially a circle with the compass radius.
         """
-        return Arc2D(self.center, self.radius) 
+        return Arc2D(self.center, self.radius)
 
     @property
     def all_boundary_circles(self):
@@ -218,7 +218,8 @@ class Compass(object):
         Args:
             angles: An array of numbers between 0 and 360 for the angles of
                 custom angle labels to be generated for the compass.
-            factor: A number between 0 and 1 for the fraction of the 
+            factor: A number between 0 and 1 for the fraction of the spacing_factor
+                at which the points should be generated.
         """
         circle = Arc2D(self.center, self.radius * (1 + self.spacing_factor * factor))
         return [circle.point_at_angle(self._north_angle - math.radians(angle - 90))
@@ -229,7 +230,7 @@ class Compass(object):
         pts_in = self.label_points_from_angles(angles, 0)
         pts_out = self.label_points_from_angles(angles, factor)
         return [LineSegment2D.from_end_points(pi, po) for pi, po in zip(pts_in, pts_out)]
-    
+
     def min_point3d(self, z=0):
         """Get a Point3D for the minimum around the entire compass."""
         min_pt = self.min_point
@@ -286,7 +287,7 @@ class Compass(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-    
+
     def __copy__(self):
         return Compass(self.radius, self.center, self.north_angle, self.spacing_factor)
 

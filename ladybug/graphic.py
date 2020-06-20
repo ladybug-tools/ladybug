@@ -104,8 +104,8 @@ class GraphicContainer(object):
                 seg_width = self.legend_parameters.segment_height / 2
             else:
                 seg_width = self.legend_parameters.text_height * \
-                    (len(str(int(self.legend_parameters.max))) + \
-                    self.legend_parameters.decimal_count + 2)
+                    (len(str(int(self.legend_parameters.max))) +
+                     self.legend_parameters.decimal_count + 2)
             self.legend_parameters.segment_width = seg_width
             self.legend_parameters._is_segment_width_default = True
 
@@ -117,8 +117,8 @@ class GraphicContainer(object):
                     self._min_point.y, self._min_point.z)
             else:
                 base_pt = Point3D(
-                    self._max_point.x, self._max_point.y +
-                    3 * self.legend_parameters.text_height,
+                    self._max_point.x,
+                    self._max_point.y + 3 * self.legend_parameters.text_height,
                     self._min_point.z)
             self.legend_parameters.base_plane = Plane(o=base_pt)
             self.legend_parameters._is_base_plane_default = True
