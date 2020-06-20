@@ -546,7 +546,7 @@ class STAT(object):
                 '5% Cooling Design Day for {}'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                    for i in xrange(12)]
+                for i in xrange(12)]
 
     @property
     def monthly_cooling_design_days_100(self):
@@ -565,7 +565,7 @@ class STAT(object):
                 '10% Cooling Design Day for {}'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                    for i in xrange(12)]
+                for i in xrange(12)]
 
     @property
     def monthly_cooling_design_days_020(self):
@@ -584,7 +584,7 @@ class STAT(object):
                 '2% Cooling Design Day for {}'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                    for i in xrange(12)]
+                for i in xrange(12)]
 
     @property
     def monthly_cooling_design_days_004(self):
@@ -603,7 +603,7 @@ class STAT(object):
                 '0.4% Cooling Design Day for {}'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
-                    for i in xrange(12)]
+                for i in xrange(12)]
 
     @property
     def monthly_db_temp_050(self):

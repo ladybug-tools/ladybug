@@ -402,7 +402,7 @@ def wet_bulb_from_db_rh_fast(db_temp, rel_humid, b_press=101325):
     e_d = 1
     while math.fabs(e_d) > 0.005:
         e_wg = 6.112 * (math.e**((17.67 * t_w) / (t_w + 243.5)))
-        eg = e_wg - (b_press/100) * (db_temp - t_w) * 0.00066 * (1 + (0.00155 * t_w))
+        eg = e_wg - (b_press / 100) * (db_temp - t_w) * 0.00066 * (1 + (0.00155 * t_w))
         e_d = e - eg
         if e_d == 0:
             break

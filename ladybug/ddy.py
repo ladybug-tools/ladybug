@@ -86,7 +86,7 @@ class DDY(object):
         except Exception as e:  # the file likely doesn't exist
             import traceback
             raise Exception('{}\n{}'.format(e, traceback.format_exc()))
-        else: 
+        else:
             # check to be sure a location and a design day was found
             assert len(loc_matches) > 0, 'No location objects found in .ddy file.'
             assert len(dday_matches) > 0, 'No design day objects found in .ddy file.'
@@ -136,7 +136,7 @@ class DDY(object):
     @property
     def file_path(self):
         """Get the original .ddy file path.
-        
+
         Will be None if the DDY did not originate from a file.
         """
         return self._file_path
@@ -189,7 +189,7 @@ class DDY(object):
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
-    
+
     def __copy__(self):
         new_ddy = DDY(self._location, [dday.duplicate() for dday in self._design_days])
         new_ddy._file_path = self._file_path
@@ -207,7 +207,7 @@ class DDY(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
-    
+
     def __len__(self):
         return len(self._design_days)
 
@@ -216,7 +216,7 @@ class DDY(object):
 
     def __setitem__(self, key, value):
         assert isinstance(value, DesignDay), 'Expected' \
-                ' DesignDay type. Got {}'.format(type(value))
+            ' DesignDay type. Got {}'.format(type(value))
         self._design_days[key] = value
 
     def __iter__(self):

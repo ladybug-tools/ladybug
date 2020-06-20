@@ -140,12 +140,12 @@ class BaseCollection(object):
     def convert_to_ip(self):
         """Convert the Data Collection to IP units."""
         self._values, self._header._unit = self._header.data_type.to_ip(
-                self._values, self._header.unit)
+            self._values, self._header.unit)
 
     def convert_to_si(self):
         """Convert the Data Collection to SI units."""
         self._values, self._header._unit = self._header.data_type.to_si(
-                self._values, self._header.unit)
+            self._values, self._header.unit)
 
     def to_unit(self, unit):
         """Return a Data Collection in the input unit."""
@@ -557,7 +557,7 @@ class BaseCollection(object):
                     'Statement should be a valid Python statement'
                     ' and the variables should be named as follows: {}'.format(
                         statement, ', '.join(correct_var))
-                    )
+                )
         return correct_var
 
     @staticmethod
@@ -624,7 +624,7 @@ class BaseCollection(object):
                 histogram as a tuple of numbers. If not provided the range is
                 ``(min(key(values)), max(key(values))+1)``.
             key: Optional parameter to define key to bin values by, as a function. If not
-                provided the histogram will be binned by the value.
+                provided, the histogram will be binned by the value.
 
         Returns:
             A list of lists representing the ordered values binned by frequency.
@@ -646,9 +646,9 @@ class BaseCollection(object):
                     (0, 1, 2), key=lambda k: k[0])
             # >> [[(0, 'a'), (0, 'b'), (0.9, 'c')], [(1, 'd'), (1.5, 'e'), (1.99, 'f')]]
         """
-
         if key is None:
-            key = lambda v: v
+            def key(v):
+                return v
 
         vals = sorted(values, key=key)
 
@@ -693,7 +693,7 @@ class BaseCollection(object):
                 histogram as a tuple of numbers. If not provided the range is
                 ``(min(key(values)), max(key(values))+1)``.
             key: Optional parameter to define key to bin values by, as a function. If not
-                provided the histogram will be binned by the value.
+                provided, the histogram will be binned by the value.
 
         Returns:
             A list of lists representing the ordered values binned by frequency.
@@ -707,9 +707,9 @@ class BaseCollection(object):
             histogram_circular([358, 359, 0, 1, 2, 3], (358, 0, 3))
             # >> [[358, 359], [0, 1, 2]]
         """
-
         if key is None:
-            key = lambda v: v
+            def key(v):
+                return v
 
         vals = sorted(values, key=key)
 

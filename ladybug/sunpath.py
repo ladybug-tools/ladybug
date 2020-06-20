@@ -13,7 +13,6 @@ from ladybug_geometry.geometry3d.arc import Arc3D
 from ladybug_geometry.geometry3d.polyline import Polyline3D
 from ladybug_geometry.geometry3d.line import LineSegment3D
 from ladybug_geometry.geometry2d.pointvector import Point2D
-from ladybug_geometry.geometry2d.line import LineSegment2D
 from ladybug_geometry.geometry2d.polyline import Polyline2D
 
 import datetime as py_datetime
@@ -281,13 +280,13 @@ class Sunpath(object):
                 (-518.2 + altitude * (103.4 + altitude * (-12.79 + altitude * 0.711)))
         else:
             atmos_refraction = -20.772 / math.tan(math.radians(altitude))
-        
+
         atmos_refraction /= 3600
         altitude += atmos_refraction
 
         # azimuth in degrees
         az_init = ((math.sin(self._latitude) * math.cos(zenith)) - math.sin(sol_dec)) / \
-                    (math.cos(self._latitude) * math.sin(zenith))
+            (math.cos(self._latitude) * math.sin(zenith))
         try:
             if hour_angle > 0:
                 azimuth = (math.degrees(math.acos(az_init)) + 180) % 360
@@ -337,7 +336,7 @@ class Sunpath(object):
     def calculate_sunrise_sunset_from_datetime(self, datetime, depression=0.5334,
                                                is_solar_time=False):
         """Calculate sunrise, sunset and noon for a day of year.
-        
+
         Args:
             datetime: A ladybug DateTime object to indicate the month and day for
                 which sunrise and sunset are computed.
@@ -442,7 +441,7 @@ class Sunpath(object):
             is_solar_time: A boolean to indicate if the output analemmas should
                 be for solar hours instead of the hours of the sunpath time
                 zone. (Default: False)
-        
+
         Returns:
             An array of 24 arrays with each sub-array representing an analemma.
             Analemmas will each have 12 suns for the 12 months of the year
@@ -471,7 +470,7 @@ class Sunpath(object):
             is_solar_time: A boolean to indicate if the output analemmas should
                 be for solar hours instead of the hours of the sunpath time
                 zone. (Default: False)
-        
+
         Returns:
             An array of ladybug_geometry Polyline3D with at least one polyline
             for each analemma.
@@ -502,7 +501,7 @@ class Sunpath(object):
                 for pl in split_lines:
                     if isinstance(pl, Polyline3D) and pl.center.z > origin.z:
                         day_lines.append(pl)
-                    elif isinstance(pl, LineSegment3D) and pl.midpoint.z > origin.z: 
+                    elif isinstance(pl, LineSegment3D) and pl.midpoint.z > origin.z:
                         try:  # last line segment in intersection; append it to the first
                             new_pl = Polyline3D((pl.p1,) + day_lines[0].vertices, True)
                             day_lines[0] = new_pl
@@ -520,7 +519,7 @@ class Sunpath(object):
 
         Args:
             projection: Text for the name of the projection to use from the sky
-                dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose 
+                dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose
                 from the following:
                     * Orthographic
                     * Stereographic
@@ -531,7 +530,7 @@ class Sunpath(object):
             is_solar_time: A boolean to indicate if the output analemmas should
                 be for solar hours instead of the hours of the sunpath time
                 zone. (Default: False)
-        
+
         Returns:
             An array of ladybug_geometry Polyline2D with at least one polyline for
             each analemma.
@@ -602,7 +601,7 @@ class Sunpath(object):
             day: Integer for the day of the month in which sunrise and sunset
                 are computed.
             projection: Text for the name of the projection to use from the sky
-                dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose 
+                dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose
                 from the following:
                     * Orthographic
                     * Stereographic
@@ -675,7 +674,7 @@ class Sunpath(object):
 
         Args:
             projection: Text for the name of the projection to use from the sky
-                dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose 
+                dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose
                 from the following:
                     * Orthographic
                     * Stereographic
@@ -728,7 +727,7 @@ class Sunpath(object):
                 behind this phenomenon.
         """
         year, month, day, hour, minute = \
-            datetime.year, datetime.month, datetime.day,  datetime.hour, datetime.minute
+            datetime.year, datetime.month, datetime.day, datetime.hour, datetime.minute
 
         julian_day = self._days_from_010119(year, month, day) + 2415018.5 + \
             round((minute + hour * 60) / 1440.0, 2) - (float(self.time_zone) / 24)
@@ -773,8 +772,8 @@ class Sunpath(object):
             math.cos(math.radians(125.04 - 1934.136 * julian_century))
 
         # RADIANS
-        sol_dec = math.asin(math.sin(math.radians(oblique_corr)) * \
-            math.sin(math.radians(sun_app_long)))
+        sol_dec = math.asin(math.sin(math.radians(oblique_corr)) *
+                            math.sin(math.radians(sun_app_long)))
 
         var_y = math.tan(math.radians(oblique_corr / 2)) * \
             math.tan(math.radians(oblique_corr / 2))
@@ -797,7 +796,7 @@ class Sunpath(object):
 
     def _calculate_sunrise_hour_angle(self, solar_dec, depression):
         """Calculate hour angle for sunrise time in degrees.
-        
+
         Args:
             solar_dec: Solar declination in radians.
             depression: Depression in radians.
@@ -842,7 +841,7 @@ class Sunpath(object):
     @staticmethod
     def _days_from_010119(year, month, day):
         """Calculate the number of days from 01-01-1900 to the provided date.
-        
+
         Args:
             year: Integer. The year in the date
             month: Integer. The month in the date
@@ -885,7 +884,7 @@ class Sunpath(object):
     @staticmethod
     def _project_polyline_to_2d(plines_3d, projection, radius, origin_3d):
         """Project an array of Polyline3D into 2D space.
-        
+
         Args:
             plines_3d: An array of Polyline3D to be projected to 2D space.
             projection: Text for the name of the projection to use from the sky
@@ -902,7 +901,7 @@ class Sunpath(object):
         elif projection.title() == 'Stereographic':
             for pline in plines_3d:
                 pts = [Compass.point3d_to_stereographic(pt, radius, origin_3d)
-                        for pt in pline.vertices]
+                       for pt in pline.vertices]
                 plines_2d.append(Polyline2D(pts, True))
         else:
             raise ValueError('Projection "{}" is not supported.'.format(projection))
@@ -964,7 +963,7 @@ class Sun(object):
             'azimuth({}) should be between {} and {}.' \
             .format(azimuth, -self.PI, self.PI)
         self._azimuth = azimuth  # read-only
-    
+
         self._is_solar_time = is_solar_time
         self._is_daylight_saving = is_daylight_saving
         self._north_angle = north_angle
@@ -1036,7 +1035,7 @@ class Sun(object):
     @property
     def data(self):
         """Get or set metadata to this sun position.
-        
+
         No particular data type is enforced for this metadata but a dictionary
         is recommended so that it can be extended for multiple properties.
         """
@@ -1067,14 +1066,14 @@ class Sun(object):
         Daytime sun_vector_reversed point upward (z will be positive).
         """
         return self._sun_vector_reversed
-    
+
     def position_3d(self, origin=Point3D(), radius=100):
         """Get a Point3D for the position of this sun on a sunpath.
 
         Args:
             origin: A ladybug_geometry Point3D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
-        
+
         Returns:
             A Point3D for the position of this sun on a sunpath.
         """
@@ -1087,7 +1086,7 @@ class Sun(object):
 
         Args:
             projection: Text for the name of the projection to use from the sky
-                dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose 
+                dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose
                 from the following:
                     * Orthographic
                     * Stereographic

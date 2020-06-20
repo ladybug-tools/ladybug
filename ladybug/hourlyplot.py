@@ -5,7 +5,6 @@ from __future__ import division
 from .analysisperiod import AnalysisPeriod
 from .datacollection import HourlyContinuousCollection, HourlyDiscontinuousCollection
 from .graphic import GraphicContainer
-from .legend import LegendParameters
 
 from ladybug_geometry.geometry2d.pointvector import Point2D, Vector2D
 from ladybug_geometry.geometry2d.line import LineSegment2D
@@ -212,7 +211,7 @@ class HourlyPlot(object):
     def hour_lines2d(self):
         """Get a list of LineSegment2D for the 6-hour intervals of the chart."""
         if not self._hour_points:
-             self._compute_static_hour_line_pts()
+            self._compute_static_hour_line_pts()
         vec = Vector2D(self._num_x * self._x_dim)
         return [LineSegment2D(pt, vec) for pt in self._hour_points]
 
@@ -423,7 +422,7 @@ class HourlyPlot(object):
     def _compute_static_hour_line_pts(self):
         """Compute the points for the hour lines and labels."""
         self._hour_points, self._hour_text = \
-                 self._compute_hour_line_pts(self.HOUR_LABELS)
+            self._compute_hour_line_pts(self.HOUR_LABELS)
 
     def _compute_hour_line_pts(self, hour_labels):
         """Compute the points for the hour lines and labels."""

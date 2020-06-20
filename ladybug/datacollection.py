@@ -298,8 +298,8 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 new_values.append(self._values[j])
                 i += 1
             else:  # there is a hole between this step and the previous step.
-                n_steps = int((self.datetimes[j].moy - new_datetimes[i].moy)
-                              / mins_per_step)
+                n_steps = int(
+                    (self.datetimes[j].moy - new_datetimes[i].moy) / mins_per_step)
                 intp_vals = self._xxrange(self._values[j - 1], self._values[j], n_steps)
                 new_values.extend(list(intp_vals)[1:] + [self._values[j]])
                 i += n_steps
@@ -787,7 +787,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
             hourly_data_by_day[d] = []
         a_per = self.header.analysis_period
         indx_per_day = 24 * a_per.timestep
-        start_doy = sum(a_per._num_of_days_each_month[:a_per.st_time.month-1]) \
+        start_doy = sum(a_per._num_of_days_each_month[:a_per.st_time.month - 1]) \
             + a_per.st_time.day
         if not a_per.is_reversed:
             for i in range(0, len(self._values), indx_per_day):
@@ -816,7 +816,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         a_per = self.header.analysis_period
         a_per_months = a_per.months_int
         indx = 24 * a_per.timestep * abs(
-            a_per.st_day - 1 - a_per._num_of_days_each_month[a_per_months[0]-1])
+            a_per.st_day - 1 - a_per._num_of_days_each_month[a_per_months[0] - 1])
         hourly_data_by_month[a_per_months[0]] = self._values[0:indx + 1]
 
         if len(a_per_months) > 1:
@@ -1510,7 +1510,7 @@ class MonthlyPerHourCollection(BaseCollection):
         """Boolean denoting whether the data collection is continuous."""
         a_per = self.header.analysis_period
         return self._validated_a_period and a_per.st_hour == 0 and a_per.end_hour \
-                == 23 and len(self.values) == len(a_per.months_per_hour)
+            == 23 and len(self.values) == len(a_per.months_per_hour)
 
     def __key(self):
         return (self.header, self.values)
