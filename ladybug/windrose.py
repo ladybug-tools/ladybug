@@ -118,7 +118,7 @@ class WindRose(object):
         self._show_zeros = True
         self._base_point = None
         self._compass = None
-        self._north = None
+        self._north = self.DEFAULT_NORTH
 
         # Fixed properties that only need to be computed once
         self._bin_vectors = None
@@ -250,8 +250,6 @@ class WindRose(object):
         This must be a number between -360 and 360. 0 is North, 90 is West and 270
         is East.
         """
-        if self._north is None:
-            self._north = self.DEFAULT_NORTH
         return self._north
 
     @north.setter
@@ -597,7 +595,8 @@ class WindRose(object):
 
             # This formula is to reduce mesh size based on fractional increases:
             #if ytick_dist_inc > curr_bar_radius:
-            #    ytick_dist_inc = ((i - 1) * ytick_dist) + (ytick_dist_inc % curr_bar_radius)
+            #    ytick_dist_inc = \
+            # ((i - 1) * ytick_dist) + (ytick_dist_inc % curr_bar_radius)
 
             ytick_dist_inc += min_bar_radius
 
