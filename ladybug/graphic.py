@@ -90,7 +90,7 @@ class GraphicContainer(object):
         # set the default segment_height
         if self.legend_parameters.is_segment_height_default:
             s_count = self.legend_parameters.segment_count
-            denom = s_count if s_count >= 6 else 6
+            denom = s_count if s_count >= 8 else 8
             if self.legend_parameters.vertical:
                 seg_height = float((self._max_point.y - self._min_point.y) / denom)
             else:

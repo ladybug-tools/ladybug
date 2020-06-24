@@ -12,6 +12,7 @@ class Distance(DataTypeBase):
     _si_units = ('m', 'mm', 'km', 'cm')
     _ip_units = ('ft', 'in', 'mi')
     _min = 0
+    _cumulative = True
     _abbreviation = 'D'
 
     def _m_to_ft(self, value):

@@ -35,6 +35,9 @@ class HourlyPlot(object):
             dimension according to the data. The value input here should usually be
             several times larger than the x_dim or y_dim in order to be noticeable
             (e.g. 100). If 0, the colored_mesh3d will simply be flat. (Default: 0).
+        reverse_y: Boolean to note whether the Y-axis of the chart is reversed
+            such that time flows from the top of the chart to the bottom instead of
+            the bottom to the top. (Default: False).
 
     Properties:
         * data_collection
@@ -43,6 +46,7 @@ class HourlyPlot(object):
         * x_dim
         * y_dim
         * z_dim
+        * reverse_y
         * colored_mesh2d
         * colored_mesh3d
         * legend
@@ -67,12 +71,13 @@ class HourlyPlot(object):
     """
     __slots__ = ('_data_collection', '_base_point', '_x_dim', '_y_dim', '_z_dim',
                  '_num_y', '_num_x', '_container', '_hour_points', '_hour_text',
-                 '_month_points', '_month_label_points', '_month_text')
+                 '_month_points', '_month_label_points', '_month_text', '_reverse_y')
 
+    # editing HOUR_LABELS will change the labels produced for the entire chart
     HOUR_LABELS = (0, 6, 12, 18, 24)
 
     def __init__(self, data_collection, legend_parameters=None, base_point=Point3D(),
-                 x_dim=1, y_dim=4, z_dim=0):
+                 x_dim=1, y_dim=4, z_dim=0, reverse_y=False):
         """Initialize hourly plot."""
         # check the input objects
         acceptable_colls = (HourlyContinuousCollection, HourlyDiscontinuousCollection)
@@ -94,6 +99,7 @@ class HourlyPlot(object):
         self._z_dim = 0
         if z_dim != 0:
             self._z_dim = self._check_dim(z_dim, 'z_dim')
+        self._reverse_y = bool(reverse_y)
 
         # set properties to None that will be computed later
         self._hour_points = None
@@ -172,6 +178,15 @@ class HourlyPlot(object):
     def z_dim(self):
         """A number for the Z dimension of the entire hourly plot."""
         return self._z_dim
+
+    @property
+    def reverse_y(self):
+        """Boolean to note whether the Y-axis of the chart is reversed.
+
+        If True, time over the day flows from the top of the chart to the bottom
+        instead of the bottom to the top.
+        """
+        return self._reverse_y
 
     @property
     def colored_mesh2d(self):
@@ -327,6 +342,22 @@ class HourlyPlot(object):
     @property
     def colors(self):
         """A list of colors assigned to the mesh faces of this hourly plot."""
+        if self._reverse_y:  # reverse each day of colors before returning it
+            rev_colors = []
+            dts = self._data_collection.datetimes
+            day_colors = []
+            current_day = dts[0].day
+            for dat_t, col in zip(dts, self._container.value_colors):
+                if dat_t.day == current_day:
+                    day_colors.append(col)
+                else:
+                    day_colors.reverse()
+                    rev_colors.extend(day_colors)
+                    current_day = dat_t.day
+                    day_colors = [col]
+            day_colors.reverse()
+            rev_colors.extend(day_colors)
+            return rev_colors
         return self._container.value_colors
 
     def custom_hour_lines2d(self, hour_labels):
@@ -404,6 +435,15 @@ class HourlyPlot(object):
                     found_i += 1
                 else:
                     mesh_pattern.append(False)
+            if self._reverse_y:
+                hr_diff = (self.analysis_period.end_hour - self.analysis_period.st_hour)
+                t_step = self.analysis_period.timestep
+                t_diff = t_step * hr_diff + 1 if t_step == 1 or hr_diff != 23 else \
+                    t_step * (hr_diff + 1)
+                mesh_pat_rev = []
+                for i in range(0, len(mesh_pattern), t_diff):
+                    mesh_pat_rev.extend(reversed(mesh_pattern[i:i + t_diff]))
+                mesh_pattern = mesh_pat_rev
             _colored_mesh2d = _colored_mesh2d.remove_faces_only(mesh_pattern)
 
         # assign the colors to the mesh
@@ -434,7 +474,9 @@ class HourlyPlot(object):
         last_hr = 0
         for hr in hour_labels:
             if st_hr <= hr <= end_hr:
-                pt_y = self.base_point.y + (hr - st_hr) * self.y_dim * t_step
+                y_dist = (hr - st_hr) * self.y_dim * t_step
+                pt_y = self.base_point.y + y_dist if not self._reverse_y else \
+                    self._container.max_point.y - y_dist
                 pt = Point2D(self._container.min_point.x, pt_y)
                 _hour_points.append(pt)
                 hr_val = hr if hr <= 12 else hr - 12
@@ -449,7 +491,7 @@ class HourlyPlot(object):
         return _hour_points, _hour_text
 
     def _compute_month_line_pts(self):
-        """Compute the points for the hour lines and labels."""
+        """Compute the points for the month lines and labels."""
         # extract several reused properties from the analysis period
         st_mon = self.analysis_period.st_month
         end_mon = self.analysis_period.end_month

@@ -317,6 +317,7 @@ def test_histogram_data_nested():
             assert abs(c - _h) <= 1e-10
     #assert False
 
+
 def test_simple_windrose_mesh():
     # Testing vals
     dir_vals = [0, 0, 0, 10, 10, 10, 85, 90, 90, 90, 95, 170, 285, 288]
@@ -495,7 +496,3 @@ def test_windrose_set_north():
 
     # Check compass orientation
     assert w.compass.north_angle == pytest.approx(5.0, abs=1e-10)
-
-    # Reset
-    w._north = None
-    assert abs(w.north) < 1e-10

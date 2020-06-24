@@ -12,6 +12,7 @@ class Area(DataTypeBase):
     _si_units = ('m2', 'mm2', 'km2', 'cm2', 'ha')
     _ip_units = ('ft2', 'in2', 'mi2', 'acre')
     _min = 0
+    _cumulative = True
     _abbreviation = 'A'
 
     def _m2_to_ft2(self, value):

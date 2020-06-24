@@ -182,7 +182,9 @@ class BaseCollection(object):
         if self._enumeration is None:
             self._get_mutable_enumeration()
         col_obj = self._enumeration['immutable'][self._collection_type]
-        return col_obj(self.header, self.values, self.datetimes)
+        new_obj = col_obj(self.header, self.values, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
     def get_highest_values(self, count):
         """Get a list of the the x highest values of the Data Collection and their indices.
@@ -864,27 +866,39 @@ class BaseCollection(object):
 
     def __add__(self, other):
         new_vals = self._add_values(other)
-        return self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
     def __sub__(self, other):
         new_vals = self._sub_values(other)
-        return self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
     def __mul__(self, other):
         new_vals = self._mul_values(other)
-        return self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
     def __div__(self, other):
         new_vals = self._div_values(other)
-        return self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
     def __truediv__(self, other):
         new_vals = self._div_values(other)
-        return self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
     def __neg__(self):
         new_vals = [-v_1 for v_1 in self._values]
-        return self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
     def _add_values(self, other):
         if isinstance(other, (int, float)):

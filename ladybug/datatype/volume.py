@@ -12,6 +12,7 @@ class Volume(DataTypeBase):
     _si_units = ('m3', 'mm3', 'km3', 'L', 'mL')
     _ip_units = ('ft3', 'in3', 'mi3', 'gal', 'fl oz')
     _min = 0
+    _cumulative = True
     _abbreviation = 'V'
 
     def _m3_to_ft3(self, value):

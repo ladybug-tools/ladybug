@@ -12,6 +12,7 @@ class Mass(DataTypeBase):
     _si_units = ('kg', 'g', 'tonne')
     _ip_units = ('lb', 'ton')
     _min = 0
+    _cumulative = True
     _abbreviation = 'm'
 
     def _kg_to_lb(self, value):
