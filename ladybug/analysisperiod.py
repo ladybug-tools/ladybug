@@ -45,7 +45,7 @@ class AnalysisPeriod(object):
         * hoys_int
         * doys_int
         * months_int
-        * months_per_hour_str
+        * months_per_hour
         * minute_intervals
         * is_annual
         * is_overnight
@@ -296,9 +296,9 @@ class AnalysisPeriod(object):
     def months_per_hour(self):
         """A list of tuples representing months per hour in this analysis period."""
         month_hour = []
-        hour_range = xrange(self.st_hour, self.end_hour + 1)
+        hour_range = xrange(self.st_hour, (self.end_hour + 1) * self.timestep)
         for month in self.months_int:
-            month_hour.extend([(month, hr) for hr in hour_range])
+            month_hour.extend([(month, hr / self.timestep) for hr in hour_range])
         return month_hour
 
     @property

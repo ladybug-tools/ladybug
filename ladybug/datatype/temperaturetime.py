@@ -11,6 +11,7 @@ class TemperatureTime(DataTypeBase):
     _units = ('degC-days', 'degF-days', 'degC-hours', 'degF-hours')
     _si_units = ('degC-days', 'degC-hours')
     _ip_units = ('degF-days', 'degF-hours')
+    _cumulative = True
     _abbreviation = 'degTime'
 
     def _degCdays_to_degFdays(self, value):

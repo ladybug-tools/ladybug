@@ -245,12 +245,14 @@ class HourlyDiscontinuousCollection(BaseCollection):
         -   The second represents the hour of the day between 0-24.
             (eg. (12, 23) for December at 11 PM)
         """
+        t_step = self.header.analysis_period.timestep
         data_by_month_per_hour = OrderedDict()
         for m in xrange(1, 13):
-            for h in xrange(0, 24):
-                data_by_month_per_hour[(m, h)] = []
+            for h in xrange(0, 24 * t_step):
+                hr = h / t_step
+                data_by_month_per_hour[(m, hr)] = []
         for v, dt in zip(self.values, self.datetimes):
-            data_by_month_per_hour[(dt.month, dt.hour)].append(v)
+            data_by_month_per_hour[(dt.month, dt.float_hour)].append(v)
         return data_by_month_per_hour
 
     def average_monthly_per_hour(self):
@@ -549,7 +551,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         * bounds
         * datetimes
         * header
-        * isContinuous
         * is_continuous
         * is_mutable
         * max

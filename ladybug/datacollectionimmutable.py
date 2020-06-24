@@ -62,7 +62,9 @@ class HourlyDiscontinuousCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        return HourlyDiscontinuousCollection(self.header, self.values, self.datetimes)
+        new_obj = HourlyDiscontinuousCollection(self.header, self.values, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
 
 class HourlyContinuousCollectionImmutable(
@@ -75,7 +77,9 @@ class HourlyContinuousCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        return HourlyContinuousCollection(self.header, self.values)
+        new_obj = HourlyContinuousCollection(self.header, self.values)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
 
 class DailyCollectionImmutable(
@@ -84,7 +88,9 @@ class DailyCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        return DailyCollection(self.header, self.values, self.datetimes)
+        new_obj = DailyCollection(self.header, self.values, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
 
 class MonthlyCollectionImmutable(
@@ -93,7 +99,9 @@ class MonthlyCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        return MonthlyCollection(self.header, self.values, self.datetimes)
+        new_obj = MonthlyCollection(self.header, self.values, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
 
 
 class MonthlyPerHourCollectionImmutable(
@@ -102,4 +110,6 @@ class MonthlyPerHourCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        return MonthlyPerHourCollection(self.header, self.values, self.datetimes)
+        new_obj = MonthlyPerHourCollection(self.header, self.values, self.datetimes)
+        new_obj._validated_a_period = self._validated_a_period
+        return new_obj
