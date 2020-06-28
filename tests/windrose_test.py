@@ -178,7 +178,6 @@ def test_xticks_radial():
     cos, sin = math.cos, math.sin
 
     # Testing
-    bin_vecs = w.bin_vectors
     xticks = w.orientation_lines
     xticks = [xtick.scale(1 / w.compass_radius) for xtick in xticks]
     # w.angles - 90: [225, -45, 45, 135, 225]
@@ -272,7 +271,8 @@ def test_histogram_data_nested():
 
     # Init simple example w segs == bin num
     w = WindRose(dir_data, spd_data, 4)
-    w.legend_parameters = LegendParameters(segment_count=5)
+    #w.legend_parameters = LegendParameters(segment_count=5)
+    w.frequency_hours = 1
 
     # Bin values to divide into colors
     # 315-45:  [10, 10, 10];         2 intervals, [10, 10, 10]
@@ -288,14 +288,14 @@ def test_histogram_data_nested():
         [285, 288]]
 
     # Testing
-    histstack = WindRose._histogram_data_nested(w.histogram_data, 5)
+    histstack = WindRose._histogram_data_nested(w.histogram_data, 1)
     for chkh, h in zip(chk_histstack, histstack):
         for c, _h in zip(chkh, h):
             assert abs(c - _h) <= 1e-10
 
     # Init complex dir set divided by 4
     w = WindRose(dir_data, spd_data, 4)
-    w.legend_parameters = LegendParameters(segment_count=3)
+    w.frequency_hours = 2
 
     # Bin values to divide into colors
     # 315-45:  [10, 10, 10];         2 intervals, [10, 10]
@@ -311,11 +311,42 @@ def test_histogram_data_nested():
         [286.5]]
 
     # Testing
-    histstack = WindRose._histogram_data_nested(w.histogram_data, 3)
+    histstack = WindRose._histogram_data_nested(w.histogram_data, 2)
     for chkh, h in zip(chk_histstack, histstack):
         for c, _h in zip(chkh, h):
             assert abs(c - _h) <= 1e-10
-    #assert False
+
+
+def test_frequency_intervals():
+    """Test the distance of frequency_intervals"""
+
+    # Plot windrose
+    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
+    epw = EPW(epw_path)
+
+    w = WindRose(epw.wind_direction, epw.wind_speed, 3)
+    w.show_zeros = False
+    w.show_freq = False
+    w.frequency_hours = 200.0
+
+    test_freq_int = int(math.ceil(w.real_freq_max / 200.0))
+    assert w.frequency_intervals_compass == pytest.approx(test_freq_int, abs=1e-10)
+    assert w.frequency_intervals_mesh == pytest.approx(test_freq_int, abs=1e-10)
+
+    # Test changing interals from 18
+    # Reduce
+    w.frequency_intervals_compass = 10.0
+    test_freq_int = 10.0
+    assert w.frequency_maximum == pytest.approx(10 * 200.0, abs=1e-10)
+    assert w.frequency_intervals_compass == pytest.approx(test_freq_int, abs=1e-10)
+    assert w.frequency_intervals_mesh == pytest.approx(test_freq_int, abs=1e-10)
+
+    # Check that resetting frequency_max works
+    w._frequency_intervals_compass = None
+    assert w.frequency_maximum == pytest.approx(3600, abs=1e-10)
+    assert w.frequency_intervals_compass == pytest.approx(18, abs=1e-10)
+    assert w.frequency_intervals_mesh == pytest.approx(18, abs=1e-10)
+
 
 
 def test_simple_windrose_mesh():
@@ -496,3 +527,109 @@ def test_windrose_set_north():
 
     # Check compass orientation
     assert w.compass.north_angle == pytest.approx(5.0, abs=1e-10)
+
+
+def test_windrose_mesh_size():
+    # Testing mesh scaling
+    dir_vals = [0, 0, 0, 10, 10, 10, 85, 90, 90, 90, 95, 170, 285, 288]
+    spd_vals = dir_vals
+
+    # Make into fake data collections
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
+    spd_header = Header(Speed(), 'm/s', a_per)
+    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
+    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+
+    # Init simple dir set divided by 4
+    w = WindRose(dir_data, spd_data, 4)
+    w.legend_parameters.segment_count = 3
+
+    # Test the size of the windrose
+    w = WindRose(dir_data, spd_data, 4)
+    w.legend_parameters.segment_count = 3
+    w.show_zeros = False
+    w.show_freq = True
+    w.frequency_spacing_distance = 200.0
+    _ = w.colored_mesh
+    intervals = w.frequency_intervals_mesh
+    assert w.mesh_radius == pytest.approx(intervals * 200.0, abs=1e-10)
+
+    # Add calmrose
+    w.show_zeros = True
+    zero_dist = w._zero_mesh_radius
+    _ = w.colored_mesh
+    assert w.mesh_radius == pytest.approx(zero_dist + (intervals * 200.0))
+
+    # Test size with windrose from actual epw data
+    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/chicago.epw')
+    epw = EPW(epw_path)
+    w = WindRose(epw.wind_direction, epw.wind_speed, 3)
+
+
+def test_windrose_frequency_distribution():
+    """Test frequency distribution"""
+
+    # Testing mesh scaling
+    dir_vals = [1, 2, 3, 4, 5, 6,
+                90, 91, 92, 93, 94, 95,
+                180, 181, 182, 183, 184, 185,
+                270, 271, 272, 273, 274, 275]
+    spd_vals = dir_vals
+
+    # Make into fake data collections
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
+    spd_header = Header(Speed(), 'm/s', a_per)
+    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
+    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+
+    # Init simple dir set divided by 4
+    w = WindRose(dir_data, spd_data, 4)
+    w.frequency_hours = 3
+    assert w.frequency_intervals_mesh == 2
+    assert w.real_freq_max == 6
+    assert w.frequency_maximum == 6
+
+    freqs = WindRose._histogram_data_nested(w.histogram_data, 3)
+    north_hbin = freqs[0]
+
+    assert north_hbin[0] == 2.0  # [1, 2, 3]
+    assert north_hbin[1] == 5.0  # [4, 5, 6]
+    assert north_hbin[0] == sum(w.histogram_data[0][:3]) / 3.0
+
+    # Test w/ epw
+    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
+    epw = EPW(epw_path)
+
+    # Test 16 directions
+    w = WindRose(epw.wind_direction, epw.wind_speed, 3)
+    w.show_zeros = False
+    w.show_freq = True
+
+    # max_freq = 3423
+
+    # Test w/ no stacking
+    w.frequency_hours = 4000  # 1 bin
+    ytick_num = w.frequency_intervals_mesh
+    assert ytick_num == 1
+
+    freqs = WindRose._histogram_data_nested(w.histogram_data, 4000)
+    hbin = freqs[0]
+
+    test_val = sum(w.histogram_data[0]) / len(w.histogram_data[0])
+    #print(freqs)
+    assert hbin[0] == pytest.approx(test_val, abs=1e-10)
+
+    # Test w/ stacking
+    w.frequency_hours = 5  # 1 bin
+    h = w.frequency_hours
+
+    freqs = WindRose._histogram_data_nested(w.histogram_data, h)
+    hbin = freqs[0]
+
+    sort_hist_bar = sorted(w.histogram_data[0])
+    test_val = sum(sort_hist_bar[:5]) / 5.0
+    assert hbin[0] == pytest.approx(test_val, abs=1e-10)
