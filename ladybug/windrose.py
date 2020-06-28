@@ -58,7 +58,8 @@ class WindRose(object):
         * orientation_lines
         * frequency_lines
         * frequency_spacing_distance
-        * frequency_intervals
+        * frequency_intervals_compass
+        * frequency_intervals_mesh
         * frequency_maximum
         * frequency_hours
     """
@@ -193,7 +194,7 @@ class WindRose(object):
 
     @property
     def frequency_maximum(self):
-        """Get or set maximum frequency to represent in the windrose plot.
+        """Get maximum frequency to represent in the windrose plot.
 
         Default: number of items in largest windrose histogram bin.
         """
@@ -201,7 +202,7 @@ class WindRose(object):
 
     @property
     def frequency_hours(self):
-        """Number of hours to bin analysis values, per direction."""
+        """Get or set number of hours to bin analysis values, per direction."""
         if self._frequency_hours is None:
             self._frequency_hours = self.DEFAULT_FREQUENCY_HOURS
         return self._frequency_hours
@@ -214,14 +215,13 @@ class WindRose(object):
 
     @property
     def frequency_intervals_compass(self):
-        """Calculate the number of intervals in the windrose compass."""
+        """Get or set the number of intervals in the windrose compass."""
         if self._frequency_intervals_compass is None:
             self._frequency_intervals_compass = self.frequency_intervals_mesh
         return self._frequency_intervals_compass
 
     @frequency_intervals_compass.setter
     def frequency_intervals_compass(self, frequency_intervals_compass):
-        """Calculate the number of intervals in the windrose compass."""
         assert frequency_intervals_compass >= 1, 'The frequency_intervals_compass ' \
             'must be greater then 0. Got: {}'.format(frequency_intervals_compass)
         self._compass = None
@@ -230,7 +230,7 @@ class WindRose(object):
 
     @property
     def frequency_intervals_mesh(self):
-        """Calculate the number of intervals in the windrose mesh."""
+        """Get the number of intervals in the windrose mesh."""
         return int(math.ceil(self.real_freq_max / self.frequency_hours))
 
     @property
@@ -253,10 +253,10 @@ class WindRose(object):
 
     @property
     def north(self):
-        """North orientation for windrose by degrees in counterclockwise orienation.
+        """Get or set north orientation for windrose by degrees.
 
         This must be a number between -360 and 360. 0 is North, 90 is West and 270
-        is East.
+        is East. The rotation is applied counterclockwise.
         """
         return self._north
 
@@ -359,7 +359,7 @@ class WindRose(object):
 
     @property
     def real_freq_max(self):
-        """The maximum hours of wind in the largest histogram bin."""
+        """Get the maximum hours of wind in the largest histogram bin."""
         return max([len(d) for d in self.histogram_data])
 
     @property
@@ -376,7 +376,7 @@ class WindRose(object):
 
     @property
     def container(self):
-        """GraphicContainer for the windrose mesh.
+        """Get the GraphicContainer for the windrose mesh.
 
         Since the setable properties of basepoint, frequency_spacing_distance, and
         legend_parameters all influence the initiation of this object, this property
@@ -407,7 +407,7 @@ class WindRose(object):
 
     @property
     def colored_mesh(self):
-        """Colored Mesh2D for this graphic.
+        """Get the colored Mesh2D for this graphic.
 
         Returns:
             A Mesh2D of the wind rose plot.
@@ -457,7 +457,7 @@ class WindRose(object):
 
     @property
     def color_range(self):
-        """The color range associated with this legend."""
+        """Get the color range associated with this legend."""
         _l_par = self.legend_parameters
         if isinstance(_l_par, LegendParametersCategorized):
             return ColorRange(_l_par.colors, _l_par.domain, _l_par.continuous_colors)
@@ -469,7 +469,7 @@ class WindRose(object):
 
     @property
     def orientation_lines(self):
-        """Orientation lines for windrose as a LineSegment2D list."""
+        """Get the orientation lines for windrose as a LineSegment2D list."""
 
         # Reset computed graphics to account for changes to cached viz properties
         self._compass = None
@@ -521,7 +521,7 @@ class WindRose(object):
 
     @property
     def mesh_radius(self):
-        """The radius of the windrose mesh (with zero values)."""
+        """Get the radius of the windrose mesh (with zero values)."""
         return self._nonzero_mesh_radius + self._zero_mesh_radius
 
     @property
@@ -538,14 +538,14 @@ class WindRose(object):
 
     @property
     def _nonzero_mesh_radius(self):
-        """The radius of just the base windrose (excluding the zero values)."""
+        """Get the radius of just the base windrose (excluding the zero values)."""
 
         ytick_num = self.frequency_intervals_mesh
         return self.frequency_spacing_distance * ytick_num
 
     @property
     def _zero_mesh_radius(self):
-        """The radius of just the windrose zero values."""
+        """Get the radius of just the windrose zero values."""
 
         zero_dist = 0.0
         if self.show_zeros:
