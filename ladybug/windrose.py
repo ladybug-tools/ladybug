@@ -439,6 +439,11 @@ class WindRose(object):
         else:
             histogram_data_stacked = [[sum(h) / len(h)] if len(h) > 0 else [0]
                                       for h in self.histogram_data]
+            # Don't round radius since there are no frequency intervals.
+            max_bar_radius = self.real_freq_max / self.frequency_hours
+            max_bar_radius *= self.frequency_spacing_distance
+            max_bar_radius += self._zero_mesh_radius
+
         mesh_array, color_array = WindRose._compute_colored_mesh_array(
             self.histogram_data, histogram_data_stacked, self.bin_vectors,
             min_bar_radius, max_bar_radius, self.show_freq)
