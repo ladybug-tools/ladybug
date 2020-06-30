@@ -5,6 +5,7 @@ import math
 
 from .color import ColorRange
 from .datacollection import HourlyContinuousCollection, HourlyDiscontinuousCollection
+from .datatype.speed import Speed
 from .graphic import GraphicContainer
 from .legend import LegendParameters, LegendParametersCategorized
 from .compass import Compass
@@ -106,10 +107,12 @@ class WindRose(object):
 
         # Compute the windrose data and associated read-only properties
         self._angles = WindRose._compute_angles(number_of_directions)
+        self._is_speed_data_type = isinstance(
+            self._analysis_data_collection.header.data_type, Speed)
         self._histogram_data, self._zero_count = \
             self._compute_windrose_data(self.direction_values, self.analysis_values,
                                         self._number_of_directions, self.angles,
-                                        (0, 360))
+                                        (0, 360), self._is_speed_data_type)
 
         # Editable public properties for visualization
         self._legend_parameters = None
@@ -117,7 +120,7 @@ class WindRose(object):
         self._frequency_hours = None
         self._frequency_intervals_compass = None
         self._show_freq = True
-        self._show_zeros = True
+        self._show_zeros = False
         self._base_point = None
         self._compass = None
         self._north = self.DEFAULT_NORTH
@@ -171,6 +174,11 @@ class WindRose(object):
 
     @show_zeros.setter
     def show_zeros(self, show_zeros):
+        _zero_error = (not self._is_speed_data_type and not show_zeros)
+        assert self._is_speed_data_type or _zero_error, 'The calmrose can ' \
+            'only be shown if the analysis data type is Speed, for all other data ' \
+            'types the zero values will be treated the same as the other numeric ' \
+            'values.'
         self._compass = None
         self._container = None
         self._show_zeros = bool(show_zeros)
@@ -694,7 +702,7 @@ class WindRose(object):
 
     @staticmethod
     def _compute_windrose_data(direction_values, analysis_values, bin_intervals,
-                               bin_array, bin_range):
+                               bin_array, bin_range, is_speed_data_type):
         """
         Computes the histogram for the windrose.
 
@@ -709,13 +717,17 @@ class WindRose(object):
             The histogram, a proxy histogram to represent zero values, and the
                 number of zeros in the analysis values, as a tuple.
         """
-        # Filter out zero values
-        _direction_values = []
-        _analysis_values = []
-        for d, v in zip(direction_values, analysis_values):
-            if v > 1e-10:
-                _direction_values.append(d)
-                _analysis_values.append(v)
+        # Filter out zero values if looking at wind speed values
+        if is_speed_data_type:
+            _direction_values = []
+            _analysis_values = []
+            for d, v in zip(direction_values, analysis_values):
+                if v > 1e-10:
+                    _direction_values.append(d)
+                    _analysis_values.append(v)
+        else:
+            _direction_values = direction_values
+            _analysis_values = analysis_values
 
         # Calculate zero rose properties
         zero_count = (len(analysis_values) - len(_analysis_values))
