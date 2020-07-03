@@ -326,15 +326,33 @@ class WindRose(object):
 
     @property
     def prevailing_direction(self):
-        """Get the predominant direction of the wind values.
-
-        In case of ties, this property will return the first direction value in the
-        ordered direction values.
+        """Get a tuple of the predominant directions of the wind values.
         """
+
         if self._prevailing_direction is None:
-            dirvals = sorted(self.direction_values)
-            self._prevailing_direction = dirvals[dirvals.index(max(dirvals))]
-        return self._prevailing_direction % 360.0
+            # group by frequency
+            groups = {}
+            for dirval in self.direction_values:
+                dirval = int(dirval)
+                if dirval not in groups:
+                    groups[dirval] = 1
+                else:
+                    groups[dirval] += 1
+
+            # get dir val based on max frequency
+            max_dirv = None
+            max_freq = 0
+            for dirv, freq in groups.items():
+                if max_freq < freq:
+                    max_dirv = [dirv]  # Reset list
+                    max_freq = freq
+                elif max_freq == freq:
+                    max_dirv.append(dirv)
+
+            # set tuple
+            self._prevailing_direction = tuple(max_dirv)
+
+        return self._prevailing_direction
 
     @property
     def zero_count(self):
