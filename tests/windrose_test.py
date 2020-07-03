@@ -633,3 +633,51 @@ def test_windrose_frequency_distribution():
     sort_hist_bar = sorted(w.histogram_data[0])
     test_val = sum(sort_hist_bar[:5]) / 5.0
     assert hbin[0] == pytest.approx(test_val, abs=1e-10)
+
+
+def test_prevailing_direction():
+    """Test prevailing direction getter"""
+
+    # Test with single prevailing dir
+    dir_vals = [0, 0, 3, 10,    #  315 - 45
+                85, 90,  95,    #  45 - 135
+                170, 170, 170,  #  135 - 225
+                230, 285, 288]  #  225 - 315
+
+    spd_vals = dir_vals
+
+    # Make into fake data collections
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
+    spd_header = Header(Speed(), 'm/s', a_per)
+    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
+    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+
+    # Init simple dir set divided by 4
+    w = WindRose(dir_data, spd_data, 4)
+    test_prev_dir = 170
+
+    assert w.prevailing_direction[0] == test_prev_dir
+
+    # Testing with two max prevailing values
+    dir_vals = [3, 3, 10,       #  315 - 45
+                85, 90, 90, 90, 95, #  45 - 135
+                170, 170, 170,  #  135 - 225
+                230, 285, 288]  #  225 - 315
+
+    spd_vals = dir_vals
+
+    # Make into fake data collections
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
+    spd_header = Header(Speed(), 'm/s', a_per)
+    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
+    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+
+    # Init simple dir set divided by 4
+    w = WindRose(dir_data, spd_data, 4)
+    test_prev_dir = set((90, 170))
+
+    assert set(w.prevailing_direction) == test_prev_dir
