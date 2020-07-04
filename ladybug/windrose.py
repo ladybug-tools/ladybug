@@ -330,26 +330,20 @@ class WindRose(object):
         """
 
         if self._prevailing_direction is None:
-            # group by frequency
-            groups = {}
-            for dirval in self.direction_values:
-                dirval = int(dirval)
-                if dirval not in groups:
-                    groups[dirval] = 1
-                else:
-                    groups[dirval] += 1
+            dirv_num = self._number_of_directions
+            freqs = [len(b) for b in self._histogram_data]
+            dirvs = [i / dirv_num * 360.0 for i in range(dirv_num)]
 
-            # get dir val based on max frequency
-            max_dirv = None
+            # To ensure ties are captured, iterate through check all values.
             max_freq = 0
-            for dirv, freq in groups.items():
+            max_dirv = []
+            for freq, dirv in zip(freqs, dirvs):
                 if max_freq < freq:
-                    max_dirv = [dirv]  # Reset list
                     max_freq = freq
+                    max_dirv = [dirv]
                 elif max_freq == freq:
                     max_dirv.append(dirv)
 
-            # set tuple
             self._prevailing_direction = tuple(max_dirv)
 
         return self._prevailing_direction
