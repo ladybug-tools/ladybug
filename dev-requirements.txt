@@ -1,4 +1,4 @@
-coverage==5.1
+coverage==5.2
 coveralls==1.7.0;python_version<'3.0'
 coveralls==2.0.0;python_version>='3.6'
 pytest==4.6.9;python_version<'3.0'
