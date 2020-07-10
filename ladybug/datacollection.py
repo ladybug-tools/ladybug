@@ -604,7 +604,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
     def datetimes(self):
         """Return datetimes for this collection as a tuple."""
         if self._datetimes is None:
-            self._datetimes = tuple(self.header.analysis_period.datetimes)
+            self._datetimes = self.header.analysis_period.datetimes
         return self._datetimes
 
     def interpolate_holes(self):
@@ -956,15 +956,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         assert isinstance(values, Iterable) and not isinstance(
             values, (str, dict, bytes, bytearray)), \
             'values should be a list or tuple. Got {}'.format(type(values))
-        if self.header.analysis_period.is_annual:
-            a_period_len = 8760 * self.header.analysis_period.timestep
-            if self.header.analysis_period.is_leap_year:
-                a_period_len = a_period_len + 24 * self.header.analysis_period.timestep
-        else:
-            a_period_len = len(self.header.analysis_period.moys)
-        assert len(values) == a_period_len, \
-            'Length of values does not match that expected by the '\
-            'header analysis_period. {} != {}'.format(len(values), a_period_len)
+        assert len(values) == len(self.header.analysis_period), 'Length of ' \
+            'values does not match that expected by the header analysis_period.'\
+            ' {} != {}'.format(len(values), len(self.header.analysis_period))
 
     @property
     def is_continuous(self):

@@ -172,6 +172,26 @@ class DateTime(datetime):
         leap_year = True if date.year % 4 == 0 else False
         return cls(date.month, date.day, time.hour, time.minute, leap_year)
 
+    @classmethod
+    def from_first_hour(cls, leap_year=False):
+        """Create Ladybug DateTime for the first hour of the year.
+
+        Args:
+            leap_year: Boolean to note whether the Date Time is a part of a
+                leap year. Default: False.
+        """
+        return cls(1, 1, 0, leap_year=leap_year)
+
+    @classmethod
+    def from_last_hour(cls, leap_year=False):
+        """Create Ladybug DateTime for the last hour of the year.
+
+        Args:
+            leap_year: Boolean to note whether the Date Time is a part of a
+                leap year. Default: False.
+        """
+        return cls(12, 31, 23, leap_year=leap_year)
+
     @property
     def leap_year(self):
         """Boolean to note whether DateTime belongs to a leap year or not."""
