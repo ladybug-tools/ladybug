@@ -62,7 +62,7 @@ class AnalysisPeriod(object):
     __slots__ = (
         '_is_leap_year', '_st_time', '_num_of_days_each_month', '_is_overnight',
         '_is_reversed', '_timestep', '_minute_intervals', '_end_time',
-        '_timestamps_data'
+        '_timestamps_data', '_datetimes'
     )
 
     # TODO: handle timestep between 1-60
@@ -116,6 +116,7 @@ class AnalysisPeriod(object):
         # _timestamps_data is a dictionary for datetimes.
         # key values will be minute of year
         self._timestamps_data = None  # set to None for now and calculate upon request
+        self._datetimes = None
 
     @classmethod
     def from_dict(cls, data):
@@ -247,8 +248,7 @@ class AnalysisPeriod(object):
         """A sorted list of hourly datetimes in this analysis period."""
         if self._timestamps_data is None:
             self._calculate_timestamps()
-        return tuple(DateTime.from_moy(moy, self.is_leap_year)
-                     for moy in self._timestamps_data)
+        return tuple(self._datetimes)
 
     @property
     def moys(self):
@@ -256,7 +256,7 @@ class AnalysisPeriod(object):
         """
         if self._timestamps_data is None:
             self._calculate_timestamps()
-        return self._timestamps_data
+        return tuple(self._timestamps_data)
 
     @property
     def hoys(self):
@@ -278,8 +278,10 @@ class AnalysisPeriod(object):
         if not self._is_reversed:
             return self._calc_daystamps(self.st_time, self.end_time)
         else:
-            doys_st = self._calc_daystamps(self.st_time, DateTime.from_hoy(8759))
-            doys_end = self._calc_daystamps(DateTime.from_hoy(0), self.end_time)
+            doys_st = self._calc_daystamps(
+                self.st_time, DateTime.from_last_hour(self.is_leap_year))
+            doys_end = self._calc_daystamps(
+                DateTime.from_first_hour(self.is_leap_year), self.end_time)
             return doys_st + doys_end
 
     @property
@@ -309,11 +311,8 @@ class AnalysisPeriod(object):
     @property
     def is_annual(self):
         """Check if an analysis period is annual."""
-        if (self.st_month, self.st_day, self.st_hour, self.end_month,
-                self.end_day, self.end_hour) == (1, 1, 0, 12, 31, 23):
-            return True
-        else:
-            return False
+        return (self.st_month, self.st_day, self.st_hour, self.end_month,
+                self.end_day, self.end_hour) == (1, 1, 0, 12, 31, 23)
 
     @property
     def is_reversed(self):
@@ -400,6 +399,7 @@ class AnalysisPeriod(object):
                 time = DateTime(curr.month, curr.day, curr.hour, curr.minute,
                                 self.is_leap_year)
                 self._timestamps_data.append(time.moy)
+                self._datetimes.append(time)
             curr += self.minute_intervals
 
         if self.timestep != 1 and curr.hour == 23 and self.is_possible_hour(0):
@@ -411,15 +411,19 @@ class AnalysisPeriod(object):
                 time = DateTime(curr.month, curr.day, curr.hour, curr.minute,
                                 self.is_leap_year)
                 self._timestamps_data.append(time.moy)
+                self._datetimes.append(time)
 
     def _calculate_timestamps(self):
-        """Return a list of Ladybug DateTime in this analysis period."""
+        """Return a list of Ladybug DateTimes in this analysis period."""
         self._timestamps_data = []
+        self._datetimes = []
         if not self._is_reversed:
             self._calc_timestamps(self.st_time, self.end_time)
         else:
-            self._calc_timestamps(self.st_time, DateTime.from_hoy(8759))
-            self._calc_timestamps(DateTime.from_hoy(0), self.end_time)
+            self._calc_timestamps(
+                self.st_time, DateTime.from_last_hour(self.is_leap_year))
+            self._calc_timestamps(
+                DateTime.from_first_hour(self.is_leap_year), self.end_time)
 
     def _calc_daystamps(self, st_time, end_time):
         """Calculate days of the year between start time and end time.
@@ -433,11 +437,23 @@ class AnalysisPeriod(object):
         return list(range(start_doy, end_doy))
 
     def __len__(self):
-        """Number of hours of the year.
+        """Number of steps in the analysis period.
 
         The length will be number of hours * timestep.
         """
-        return len(self.hoys)
+        if not self._is_reversed:
+            return (self.end_time.int_hoy + 1 - self.st_time.int_hoy) * self.timestep \
+                if self.end_hour == 23 else \
+                ((self.end_time.int_hoy - self.st_time.int_hoy) * self.timestep) + 1
+        else:
+            first = DateTime.from_last_hour(self.is_leap_year).int_hoy - \
+                self.st_time.int_hoy
+            second = self.end_time.int_hoy - \
+                DateTime.from_first_hour(self.is_leap_year).int_hoy
+            if self.end_hour == 23:
+                return ((first + second + 2) * self.timestep)
+            else:
+                return ((first + second) * self.timestep) + 2
 
     def __str__(self):
         """Return analysis period as a string."""
