@@ -596,48 +596,48 @@ def test_to_ip_si():
     assert dc3.values[0] == dc1.values[0]
 
 
-def test_get_highest_values():
+def test_highest_values():
     header = Header(Temperature(), 'C', AnalysisPeriod())
     test_data = list(xrange(8760))
     test_count = len(test_data)/2
     dc3 = HourlyContinuousCollection(header, test_data)
 
     test_highest_values, test_highest_values_index = \
-        dc3.get_highest_values(test_count)
+        dc3.highest_values(test_count)
 
     assert test_highest_values == list(reversed(test_data[4380:8760]))
     assert test_highest_values_index == list(xrange(8759, 4379, -1))
 
 
-def test_get_lowest_values():
+def test_lowest_values():
     header = Header(Temperature(), 'C', AnalysisPeriod())
     test_data = [50] * 8760
     test_count = len(test_data)/2
     dc3 = HourlyContinuousCollection(header, test_data)
 
     test_lowest_values, test_lowest_values_index = \
-        dc3.get_lowest_values(test_count)
+        dc3.lowest_values(test_count)
 
     assert test_lowest_values == list(test_data[0:4380])
     assert test_lowest_values_index == list(xrange(0, 4380))
 
 
-def test_get_percentile():
-    """Test the get_percentile method."""
+def test_percentile():
+    """Test the percentile method."""
     header1 = Header(Temperature(), 'C', AnalysisPeriod())
     values = list(xrange(8760))
     dc = HourlyContinuousCollection(header1, values)
 
-    assert dc.get_percentile(0) == 0
-    assert dc.get_percentile(25) == 2189.75
-    assert dc.get_percentile(50) == 4379.5
-    assert dc.get_percentile(75) == 6569.25
-    assert dc.get_percentile(100) == 8759
+    assert dc.percentile(0) == 0
+    assert dc.percentile(25) == 2189.75
+    assert dc.percentile(50) == 4379.5
+    assert dc.percentile(75) == 6569.25
+    assert dc.percentile(100) == 8759
 
     with pytest.raises(Exception):
-        dc.get_percentile(-10)
+        dc.percentile(-10)
     with pytest.raises(Exception):
-        dc.get_percentile(110)
+        dc.percentile(110)
 
 
 def test_filter_by_conditional_statement():

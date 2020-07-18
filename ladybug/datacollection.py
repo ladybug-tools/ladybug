@@ -16,7 +16,7 @@ Collections have the following inheritance structure:
 
 
 All Data Collections in this module have the ability to:
-    * max, min, bounds, average, median, total, get_percentile, get_highest/lowest values
+    * max, min, bounds, average, median, total, percentile, highest/lowest values
     * perform unit conversions on the data: to_unit, to_ip, to_si
     * filter based on conditional statements
     * filter based on analysis period

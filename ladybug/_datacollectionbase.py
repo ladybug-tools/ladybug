@@ -186,7 +186,7 @@ class BaseCollection(object):
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
-    def get_highest_values(self, count):
+    def highest_values(self, count):
         """Get a list of the the x highest values of the Data Collection and their indices.
 
         This is useful for situations where one needs to know the times of
@@ -221,7 +221,7 @@ class BaseCollection(object):
                                       reverse=True)[0:count]
         return highest_values, highest_values_index
 
-    def get_lowest_values(self, count):
+    def lowest_values(self, count):
         """Get a list of the the x lowest values of the Data Collection and their indices.
 
         This is useful for situations where one needs to know the times of
@@ -251,7 +251,7 @@ class BaseCollection(object):
                                      key=lambda k: self._values[k])[0:count]
         return lowest_values, lowest_values_index
 
-    def get_percentile(self, percentile):
+    def percentile(self, percentile):
         """Get a value representing a the input percentile of the Data Collection.
 
         Args:

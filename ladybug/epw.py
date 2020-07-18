@@ -3,16 +3,19 @@ from __future__ import division
 
 import os
 
+from .dt import Date
 from .analysisperiod import AnalysisPeriod
 from .datacollection import HourlyContinuousCollection
 from .datacollection import MonthlyCollection
 from .datatype import angle, distance, energyflux, energyintensity, generic, \
     illuminance, luminance, fraction, pressure, speed, temperature
 from .designday import DesignDay
+from .ddy import DDY
 from .futil import write_to_file
 from .header import Header
 from .location import Location
 from .skymodel import calc_sky_temperature
+from .psychrometrics import rel_humid_from_db_dpt, wet_bulb_from_db_rh
 
 readmode = 'rb'
 try:
@@ -1316,6 +1319,129 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
             "time_zone %d\n" % (-self.location.time_zone * 15) + \
             "site_elevation %.1f\n" % self.location.elevation + \
             "weather_data_file_unit 1\n"
+
+    def approximate_design_day(self, day_type='SummerDesignDay', percentile=0.4):
+        """Get a DesignDay object derived from percentile analysis of annual EPW data.
+
+        Note that this method is only intended to be used when there are no design
+        days in any DDY files associated with the EPW and the EPW's values for
+        annual_heating_design_day or annual_cooling_design_day properties are None.
+
+        The approximated design days produced by this method tend to be less
+        accurate than these other sources, which are usually derived from multiple
+        years of climate data instead of only one year. Information on the error
+        introduced by using only one year of data to create design days can be
+        found in AHSRAE HOF 2013, Chapter 14, pg 14.
+
+        Args:
+            day_type: Text for the type of design day to be produced. Choose from.
+
+                * SummerDesignDay
+                * WinterDesignDay
+
+            percentile: A number between 0 and 50 for the percentile difference
+                from the most extreme conditions within the EPW to be used for
+                the design day. Typical values are 0.4 and 1.0. (Default: 0.4).
+        """
+        # get values used for both winter and summer design days
+        avg_pres = self.atmospheric_station_pressure.average
+        pressure = round(avg_pres) if avg_pres != 999999 else 101325
+        avg_mon_temp = self.dry_bulb_temperature.average_monthly()
+        hr_count = int(87.6 * percentile * 2)
+
+        if day_type == 'WinterDesignDay':  # create winter design day criteria
+            # get temperature at percentile and indices of coldest hours
+            temp = self.dry_bulb_temperature.percentile(percentile)
+            temps, indices = self.dry_bulb_temperature.lowest_values(hr_count)
+            # get average wind speed and direction at coldest hours
+            wind_speed = round(sum(self.wind_speed[i] for i in indices) / hr_count, 1)
+            wind_dir = round(sum(self.wind_direction[i] for i in indices) / hr_count)
+            # get the date as the 21st of the coldest month
+            date_obj = Date(avg_mon_temp.lowest_values(1)[1][0] + 1, 21)
+            # return the design day object
+            day_name = '{}% Heating Design Day for {}'.format(
+                100 - percentile, self.location.city)
+            return DesignDay.from_design_day_properties(
+                day_name, day_type, self.location, date_obj, temp, 0,
+                'Wetbulb', temp, pressure, wind_speed, wind_dir,
+                'ASHRAEClearSky', [0.0])
+        elif day_type == 'SummerDesignDay':  # create summer design day criteria
+            # get temperature at percentile and indices of hottest hours
+            temp = self.dry_bulb_temperature.percentile(100 - percentile)
+            temps, indices = self.dry_bulb_temperature.highest_values(hr_count)
+            # get average humidity, wind speed and direction at hottest hours
+            dew_pt = sum(self.dew_point_temperature[i] for i in indices) / hr_count
+            rh = rel_humid_from_db_dpt(temp, dew_pt)
+            wb_temp = round(wet_bulb_from_db_rh(temp, rh, pressure), 1)
+            wind_speed = round(sum(self.wind_speed[i] for i in indices) / hr_count, 1)
+            wind_dir = round(sum(self.wind_direction[i] for i in indices) / hr_count)
+            # get the date as the 21st of the hottest month
+            date_obj = Date(avg_mon_temp.highest_values(1)[1][0] + 1, 21)
+            # compute the daily range of temperature from the days of the hottest month
+            hot_mon_db = self.dry_bulb_temperature.filter_by_analysis_period(
+                AnalysisPeriod(st_month=date_obj.month, end_month=date_obj.month))
+            temp_ranges = []
+            for day in hot_mon_db.group_by_day().values():
+                if day != []:
+                    temp_ranges.append(max(day) - min(day))
+            temp_range = round(sum(temp_ranges) / len(temp_ranges), 1)
+            # return the design day object
+            day_name = '{}% Cooling Design Day for {}'.format(
+                percentile, self.location.city)
+            return DesignDay.from_design_day_properties(
+                day_name, day_type, self.location, date_obj, temp, temp_range,
+                'Wetbulb', wb_temp, pressure, wind_speed, wind_dir,
+                'ASHRAEClearSky', [1.0])
+        else:
+            raise ValueError(
+                'Unrecognized design day type "{}".\nChoose from: "SummerDesignDay", '
+                '"WinterDesignDay"'.format(day_type))
+
+    def to_ddy(self, file_path, percentile=0.4):
+        """Produce a DDY file with a heating + cooling design day from this EPW.
+
+        This method will first check if there is a heating or cooling design day
+        that meet the input percentile contained within the EPW itself. If None is
+        found, the heating and cooling design days will be derived from analysis
+        of the annual data within the EPW, which is usually less accurate.
+
+        Args:
+            file_path: Full file path for output ddy file.
+            percentile: A number between 0 and 50 for the percentile difference
+                from the most extreme conditions within the EPW to be used for
+                the design day. Typical values are 0.4 and 1.0. (Default: 0.4).
+        """
+        # ensure the EPW file data is all in SI before creating design days
+        originally_ip = False
+        if self.is_ip:
+            self.convert_to_si()
+            originally_ip = True
+
+        # get the design day objects
+        des_days = []
+        if percentile == 0.4 and self.annual_heating_design_day_996 is not None:
+            des_days.append(self.annual_heating_design_day_996)
+        elif percentile == 1 and self.annual_heating_design_day_990 is not None:
+            des_days.append(self.annual_heating_design_day_990)
+        else:
+            des_days.append(self.approximate_design_day('WinterDesignDay', percentile))
+
+        if percentile == 0.4 and self.annual_cooling_design_day_004 is not None:
+            des_days.append(self.annual_cooling_design_day_004)
+        elif percentile == 1 and self.annual_cooling_design_day_010 is not None:
+            des_days.append(self.annual_cooling_design_day_010)
+        else:
+            des_days.append(self.approximate_design_day('SummerDesignDay', percentile))
+
+        # write the DDY
+        if not file_path.lower().endswith('.ddy'):
+            file_path += '.ddy'
+        ddy = DDY(self.location, des_days)
+        ddy.save(file_path)
+
+        if originally_ip:
+            self.convert_to_ip()
+        return file_path
 
     def to_wea(self, file_path, hoys=None):
         """Write an wea file from the epw file.
