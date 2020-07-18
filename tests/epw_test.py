@@ -334,6 +334,24 @@ def test_save_converted_epw():
     os.remove(modified_path)
 
 
+def test_save_ddy():
+    """Test save wea_rel."""
+    path = './tests/fixtures/epw/chicago.epw'
+    epw = EPW(path)
+
+    ddy_path = './tests/fixtures/epw/chicago_epw.ddy'
+    epw.to_ddy(ddy_path)
+    assert os.path.isfile(ddy_path)
+    assert os.stat(ddy_path).st_size > 1
+    os.remove(ddy_path)
+
+    ddy_path = './tests/fixtures/epw/chicago_epw_02.ddy'
+    epw.to_ddy(ddy_path, 2)
+    assert os.path.isfile(ddy_path)
+    assert os.stat(ddy_path).st_size > 1
+    os.remove(ddy_path)
+
+
 def test_save_wea():
     """Test save wea_rel."""
     path = './tests/fixtures/epw/chicago.epw'
