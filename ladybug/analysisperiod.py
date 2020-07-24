@@ -11,9 +11,7 @@ if (sys.version_info >= (3, 0)):
 
 
 class AnalysisPeriod(object):
-    """Ladybug Analysis Period.
-
-    A continuous analysis period between two days of the year between certain hours.
+    """An analysis period between two dates of the year and between certain hours.
 
     Args:
         st_month: An integer between 1-12 for starting month (default = 1)
@@ -24,9 +22,10 @@ class AnalysisPeriod(object):
         end_day: An integer between 1-31 for ending day (default = 31)
                 Note that some months are shorter than 31 days.
         end_hour: An integer between 0-23 for ending hour (default = 23)
-        timestep: An integer number from 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+        timestep: An integer for the number of timesteps per hour. (Default: 1).
+                Choose from: 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
         is_leap_year: A boolean to indicate whether the AnalysisPeriod represents
-            a leap year.
+            a leap year. (Default: False)
 
     Properties:
         * st_month
@@ -152,29 +151,10 @@ class AnalysisPeriod(object):
             data['is_leap_year'])
 
     @classmethod
-    def from_analysis_period(cls, analysis_period=None):
-        """Create and AnalysisPeriod from an analysis period.
-
-        This method is useful to be called from inside Grasshopper or Dynamo
-        """
-        if not analysis_period:
-            return cls()
-        elif isinstance(analysis_period, AnalysisPeriod):
-            return analysis_period
-        elif isinstance(analysis_period, str):
-            try:
-                return cls.from_string(analysis_period)
-            except Exception as e:
-                raise ValueError(
-                    "{} is not convertable to an AnalysisPeriod: {}".format(
-                        analysis_period, e)
-                )
-
-    @classmethod
     def from_string(cls, analysis_period_string):
         """Create an Analysis Period object from an analysis period string.
 
-            %s/%s to %s/%s between %s and %s @%s
+        Format is: %s/%s to %s/%s between %s and %s @%s
         """
         # %s/%s to %s/%s between %s to %s @%s*
         is_leap_year = True if analysis_period_string.strip()[-1] == '*' else False
@@ -192,6 +172,22 @@ class AnalysisPeriod(object):
                        end_day, end_hour, int(timestep), is_leap_year)
         except Exception as e:
             raise ValueError(str(e))
+
+    @classmethod
+    def from_start_end_datetime(cls, start_datetime, end_datetime, timestep):
+        """Create and AnalysisPeriod from start and end date objects.
+
+        Args:
+            start_datetime: A Ladybug DateTime object for the start of the period.
+            end_datetime: A Ladybug DateTime object for the end of the period.
+            timestep: An integer for the number of timesteps per hour. (Default: 1).
+                Choose from: 1, 2, 3, 4, 5, 6, 10, 12, 15, 20, 30, 60
+        """
+        assert start_datetime.leap_year == end_datetime.leap_year, \
+            'Period start_datetime and end_datetime leap_year property must match'
+        return cls(start_datetime.month, start_datetime.day, start_datetime.hour,
+                   end_datetime.month, end_datetime.day, end_datetime.hour,
+                   int(timestep), start_datetime.leap_year)
 
     @property
     def st_month(self):
@@ -441,19 +437,19 @@ class AnalysisPeriod(object):
 
         The length will be number of hours * timestep.
         """
-        if not self._is_reversed:
-            return (self.end_time.int_hoy + 1 - self.st_time.int_hoy) * self.timestep \
-                if self.end_hour == 23 else \
-                ((self.end_time.int_hoy - self.st_time.int_hoy) * self.timestep) + 1
-        else:
-            first = DateTime.from_last_hour(self.is_leap_year).int_hoy - \
-                self.st_time.int_hoy
-            second = self.end_time.int_hoy - \
-                DateTime.from_first_hour(self.is_leap_year).int_hoy
-            if self.end_hour == 23:
-                return ((first + second + 2) * self.timestep)
+        if self.st_hour == 1 and self.end_hour == 23:  # use fast method
+            if not self._is_reversed:
+                return (self.end_time.int_hoy + 1 - self.st_time.int_hoy) * self.timestep
             else:
-                return ((first + second) * self.timestep) + 2
+                first = DateTime.from_last_hour(self.is_leap_year).int_hoy - \
+                    self.st_time.int_hoy
+                second = self.end_time.int_hoy - \
+                    DateTime.from_first_hour(self.is_leap_year).int_hoy
+                return ((first + second + 2) * self.timestep)
+        else:
+            if self._timestamps_data is None:
+                self._calculate_timestamps()
+            return len(self._timestamps_data)
 
     def __str__(self):
         """Return analysis period as a string."""

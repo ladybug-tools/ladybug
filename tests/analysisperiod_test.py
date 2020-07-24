@@ -25,7 +25,6 @@ def test_default_values():
 def test_from_string():
     """Test creating analysis period from a string."""
     ap_string = '2/21 to 3/22 between 5 to 17 @1'
-    ap = AnalysisPeriod.from_analysis_period(ap_string)
     ap = AnalysisPeriod.from_string(ap_string)
     assert ap.st_hour == 5
     assert ap.end_hour == 17
@@ -81,7 +80,7 @@ def test_default_values_leap_year():
 
 
 def test_from_string_leap_year():
-    """Test creating analysis priod from a string."""
+    """Test creating analysis period from a string."""
     ap_string = '2/21 to 3/22 between 5 to 17 @1*'
     ap = AnalysisPeriod.from_string(ap_string)
     assert ap.st_hour == 5
