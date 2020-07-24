@@ -75,17 +75,17 @@ class BaseCollection(object):
 
     @property
     def header(self):
-        """Return the header for this collection."""
+        """Get the header for this collection."""
         return self._header
 
     @property
     def datetimes(self):
-        """Return datetimes for this collection as a tuple."""
+        """Get a tuple of datetimes for this collection, which align with the values."""
         return self._datetimes
 
     @property
     def values(self):
-        """The Data Collection's list of numerical values."""
+        """Get a tuple of numerical values for this collection."""
         return tuple(self._values)
 
     @values.setter
@@ -103,64 +103,84 @@ class BaseCollection(object):
 
     @property
     def bounds(self):
-        """Return a tuple as (min, max)."""
+        """Get a tuple of two value as (min, max) of the data."""
         return (min(self._values), max(self._values))
 
     @property
     def min(self):
-        """Return the min of the Data Collection values."""
+        """Get the min of the Data Collection values."""
         return min(self._values)
 
     @property
     def max(self):
-        """Return the max of the Data Collection values."""
+        """Get the max of the Data Collection values."""
         return max(self._values)
 
     @property
     def average(self):
-        """Return the average of the Data Collection values."""
+        """Get the average of the Data Collection values."""
         return sum(self._values) / len(self._values)
 
     @property
     def median(self):
-        """Return the median of the Data Collection values."""
+        """Get the median of the Data Collection values."""
         return self._percentile(self._values, 50)
 
     @property
     def total(self):
-        """Return the total of the Data Collection values."""
+        """Get the total of the Data Collection values."""
         return sum(self._values)
 
     def convert_to_unit(self, unit):
-        """Convert the Data Collection to the input unit."""
+        """Convert the Data Collection to the input unit.
+
+        Note that this mutates the data collection object, which can have unintended
+        consequences depending on how the data collection is used. Use to_unit to
+        get a new instance of a collection without mutating this one.
+        """
         self._values = self._header.data_type.to_unit(
             self._values, unit, self._header.unit)
         self._header._unit = unit
 
     def convert_to_ip(self):
-        """Convert the Data Collection to IP units."""
+        """Convert the Data Collection to IP units.
+
+        Note that this mutates the data collection object, which can have unintended
+        consequences depending on how the data collection is used. Use to_ip to
+        get a new instance of a collection without mutating this one.
+        """
         self._values, self._header._unit = self._header.data_type.to_ip(
             self._values, self._header.unit)
 
     def convert_to_si(self):
-        """Convert the Data Collection to SI units."""
+        """Convert the Data Collection to SI units.
+
+        Note that this mutates the data collection object, which can have unintended
+        consequences depending on how the data collection is used. Use to_si to
+        get a new instance of a collection without mutating this one.
+        """
         self._values, self._header._unit = self._header.data_type.to_si(
             self._values, self._header.unit)
 
     def to_unit(self, unit):
-        """Return a Data Collection in the input unit."""
+        """Get a Data Collection in the input unit.
+
+        Args:
+            unit: Text for the unit to convert the data to (eg. 'C' or 'kWh'). This
+                unit must appear under the data collection's header.data_type.units.
+        """
         new_data_c = self.duplicate()
         new_data_c.convert_to_unit(unit)
         return new_data_c
 
     def to_ip(self):
-        """Return a Data Collection in IP units."""
+        """Get a Data Collection in IP units."""
         new_data_c = self.duplicate()
         new_data_c.convert_to_ip()
         return new_data_c
 
     def to_si(self):
-        """Return a Data Collection in SI units."""
+        """Get a Data Collection in SI units."""
         new_data_c = self.duplicate()
         new_data_c.convert_to_si()
         return new_data_c
@@ -168,8 +188,13 @@ class BaseCollection(object):
     def is_in_data_type_range(self, raise_exception=True):
         """Check if collection values are in physically possible ranges for the data_type.
 
-        If this method returns False, the Data Collection's data is
-        physically or mathematically impossible for the data_type."""
+        If this method returns False, the collection's values are physically or
+        mathematically impossible for the data_type (eg. temperature below absolute zero).
+
+        Args:
+            raise_exception: Boolean to note whether an exception should be raised
+                if an impossible value is found. (Default: True).
+        """
         return self._header.data_type.is_in_range(
             self._values, self._header.unit, raise_exception)
 
@@ -258,7 +283,7 @@ class BaseCollection(object):
             percentile: A float value from 0 to 100 representing the
                 requested percentile.
 
-        Return:
+        Returns:
             The Data Collection value at the input percentile
         """
         assert 0 <= percentile <= 100, \
@@ -272,7 +297,7 @@ class BaseCollection(object):
             statement: A conditional statement as a string (e.g. a > 25 and a%5 == 0).
                 The variable should always be named as 'a' (without quotations).
 
-        Return:
+        Returns:
             A new Data Collection containing only the filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_statement(statement)
@@ -295,7 +320,7 @@ class BaseCollection(object):
                 with a length matching the length of the Data Collections values
                 but it can also be a pattern to be repeated over the Data Collection.
 
-        Return:
+        Returns:
             A new Data Collection with filtered data
         """
         _filt_values, _filt_datetimes = self._filter_by_pattern(pattern)
@@ -316,7 +341,7 @@ class BaseCollection(object):
             data_collection: The Data Collection which you want to test if this
                 collection is aligned with.
 
-        Return:
+        Returns:
             True if collections are aligned, False if not aligned
         """
         if self._collection_type != data_collection._collection_type:
@@ -329,7 +354,7 @@ class BaseCollection(object):
             return True
 
     def get_aligned_collection(self, value=0, data_type=None, unit=None, mutable=None):
-        """Return a Collection aligned with this one composed of one repeated value.
+        """Get a collection aligned with this one composed of one repeated value.
 
         Aligned Data Collections are of the same Data Collection class, have the same
         number of values and have matching datetimes.
@@ -369,7 +394,7 @@ class BaseCollection(object):
         return collection
 
     def duplicate(self):
-        """Return a copy of the current Data Collection."""
+        """Get a copy of this Data Collection."""
         collection = self.__class__(self.header.duplicate(), self.values, self.datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
@@ -394,7 +419,7 @@ class BaseCollection(object):
             statement: A conditional statement as a string (e.g. a>25 and a%5==0).
                 The variable should always be named as 'a' (without quotations).
 
-        Return:
+        Returns:
             collections -- A list of Data Collections that have been filtered based
             on the statement.
         """
@@ -417,7 +442,7 @@ class BaseCollection(object):
             statement: A conditional statement as a string (e.g. a>25 and a%5==0).
                 The variable should always be named as 'a' (without quotations).
 
-        Return:
+        Returns:
             pattern -- A list of True/False booleans with the length of the
             Data Collections where True meets the conditional statement
             and False does not.
@@ -453,7 +478,7 @@ class BaseCollection(object):
             data_collections: A list of Data Collections for which you want to
                 test if they are al aligned with one another.
 
-        Return:
+        Returns:
             True if collections are aligned, False if not aligned
         """
         if len(data_collections) > 1:
@@ -482,7 +507,7 @@ class BaseCollection(object):
                 of the funct.
             unit: The units of the funct results.
 
-        Return:
+        Returns:
             A Data Collection with the results function. If all items in this list of
             data_collections are individual values, only a single value will be returned.
 
@@ -540,7 +565,7 @@ class BaseCollection(object):
             num_collections: An integer representing the number of data collections
                 that the statement will be evaluating.
 
-        Return:
+        Returns:
             correct_var -- A list of the correct variable names that should be
                 used within the statement (eg. ['a', 'b', 'c'])
         """
@@ -582,7 +607,7 @@ class BaseCollection(object):
 
     @staticmethod
     def linspace(start, stop, num):
-        """Return evenly spaced numbers calculated over the interval start, stop.
+        """Get evenly spaced numbers calculated over the interval start, stop.
 
         This method is similar to native Python range except that it takes a number of
         divisions instead of a step. It is also equivalent to numpy's linspace method.
@@ -813,7 +838,7 @@ class BaseCollection(object):
             percent: A float value from 0 to 100 representing the requested percentile.
             key: optional key function to compute value from each element of N.
 
-        Return:
+        Returns:
             The percentile of the values
         """
         vals = sorted(values)
@@ -955,9 +980,7 @@ class BaseCollection(object):
         return self._mutable
 
     def __key(self):
-        return (
-            self.header, self.values, self.datetimes, self.validated_a_period
-        )
+        return self.header, self.values, self.datetimes, self.validated_a_period
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.__key() == other.__key()

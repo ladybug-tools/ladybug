@@ -140,10 +140,10 @@ class HourlyDiscontinuousCollection(BaseCollection):
         """Filter a Data Collection based on an analysis period.
 
         Args:
-           analysis period: A Ladybug analysis period
+           analysis period: A Ladybug analysis period.
 
         Return:
-            A new Data Collection with filtered data
+            A new Data Collection with filtered data.
         """
         self._check_analysis_period(analysis_period)
         _filtered_data = self.filter_by_moys(analysis_period.moys)
@@ -989,6 +989,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         new_vals = [-v_1 for v_1 in self._values]
         return self.__class__(self.header, new_vals)
 
+    def __key(self):
+        return (self.header, self.values)
+
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""
         return "{} Continuous Data Collection\n{}\n{} ({})\n...{} values...".format(
@@ -1506,9 +1509,6 @@ class MonthlyPerHourCollection(BaseCollection):
         a_per = self.header.analysis_period
         return self._validated_a_period and a_per.st_hour == 0 and a_per.end_hour \
             == 23 and len(self.values) == len(a_per.months_per_hour)
-
-    def __key(self):
-        return (self.header, self.values)
 
     def __repr__(self):
         """Monthly Per Hour Collection representation."""
