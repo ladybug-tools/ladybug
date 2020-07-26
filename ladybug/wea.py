@@ -231,7 +231,7 @@ class Wea(object):
             dni = HourlyDiscontinuousCollection(dni_head, dir_norm_irr, datetimes)
             dhi = HourlyDiscontinuousCollection(dhi_head, dif_horiz_irr, datetimes)
             dni = dni.validate_analysis_period()
-            dhi = dni.validate_analysis_period()
+            dhi = dhi.validate_analysis_period()
 
         return cls(location, dni, dhi)
 
@@ -743,6 +743,37 @@ class Wea(object):
             sun_up = True if sun.altitude > min_altitude else False
             pattern.append(sun_up)
         return self.filter_by_pattern(pattern)
+
+    def get_irradiance_value(self, month, day, hour):
+        """Get direct and diffuse irradiance values for a point in time.
+
+        Args:
+            month: Integer for month of the year [1 - 12].
+            day: Integer for the day of the month [1 - 31].
+            hour: Float for hour of the day [0 - 23].
+        """
+        dt = DateTime(month, day, hour, leap_year=self.is_leap_year)
+        try:
+            count = int(dt.hoy * self.timestep) if self.is_annual else \
+                self.direct_normal_irradiance.datetimes.index(dt)
+        except ValueError as e:
+            raise ValueError('Datetime {} was not found in the Wea.\n{}'.format(dt, e))
+        return self.direct_normal_irradiance[count], \
+            self.diffuse_horizontal_irradiance[count]
+
+    def get_irradiance_value_for_hoy(self, hoy):
+        """Get direct and diffuse irradiance values for a hoy.
+
+        Args:
+            hoy: Float for hour of the year [0 - 8759].
+        """
+        try:
+            count = int(hoy * self.timestep) if self.is_annual else \
+                self.direct_normal_irradiance.datetimes.index(DateTime.from_hoy(hoy))
+        except ValueError as e:
+            raise ValueError('HOY {} was not found in the Wea.\n{}'.format(hoy, e))
+        return self.direct_normal_irradiance[count], \
+            self.diffuse_horizontal_irradiance[count]
 
     def directional_irradiance(self, altitude=90, azimuth=180,
                                ground_reflectance=0.2, isotrophic=True):

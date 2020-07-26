@@ -25,6 +25,14 @@ def test_from_file():
     assert wea.direct_normal_irradiance[46] == 137
     assert wea.diffuse_horizontal_irradiance[46] == 7
 
+    direct, diff = wea.get_irradiance_value(1, 1, 8)
+    assert direct == 273
+    assert diff == 20
+
+    direct, diff = wea.get_irradiance_value_for_hoy(8)
+    assert direct == 273
+    assert diff == 20
+
 
 def test_from_file_discontinuous():
     """Test import from wea file with discontinuous data."""
@@ -37,6 +45,16 @@ def test_from_file_discontinuous():
     assert not wea.is_continuous
     assert len(wea) == 4427
     assert wea.datetimes[0].hour == 7
+
+    with pytest.raises(ValueError):
+        direct, diff = wea.get_irradiance_value(1, 1, 5)  # non-existent date
+    direct, diff = wea.get_irradiance_value(1, 1, 8)
+    assert direct == 397
+    assert diff == 47
+
+    direct, diff = wea.get_irradiance_value_for_hoy(8)
+    assert direct == 397
+    assert diff == 47
 
 
 def test_from_file_daysim():
