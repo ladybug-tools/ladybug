@@ -741,7 +741,7 @@ class BaseCollection(object):
         vals = sorted(values, key=key)
 
         if hist_range is None:
-            hist_range = (key(min(vals)), key(max(vals)) + 1)
+            hist_range = (key(vals[0]), key(vals[-1]) + 1)
 
         bin_bound_num = len(bins) - 1
 
@@ -760,19 +760,20 @@ class BaseCollection(object):
             # into the earlier histogram bars for circular
             # data, we don't update the bin_index.
             for i in range(bin_bound_num):
-                if bins[i] > bins[i + 1]:
+                if bins[i] < bins[i + 1]:
+                    if k >= bins[i] and k < bins[i + 1]:
+                        hist[i].append(val)
+                        break
+                else:
                     # If the interval starts data from the end of the list,
                     # split the conditional checks into two to check two
                     # intervals.
-                    interval1 = (k < hist_range[1] and k >= bins[i])
+                    interval1 = (k <= hist_range[1] and k >= bins[i])
                     interval2 = (k < bins[i + 1] and k >= hist_range[0])
                     if interval1 or interval2:
                         hist[i].append(val)
                         break
-                else:
-                    if k < bins[i + 1]:
-                        hist[i].append(val)
-                        break
+
         return hist
 
     def _filter_by_statement(self, statement):
