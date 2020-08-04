@@ -7,11 +7,10 @@ from ladybug.datatype.speed import Speed
 from ladybug.datatype.generic import GenericType
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.header import Header
-from ladybug.datacollection import HourlyContinuousCollection, \
-    HourlyDiscontinuousCollection
+from ladybug.datacollection import HourlyDiscontinuousCollection
 from ladybug.dt import DateTime
 from ladybug.epw import EPW
-from ladybug.windrose import WindRose, linspace, histogram, histogram_circular
+from ladybug.windrose import WindRose
 from ladybug.legend import LegendParameters
 
 from ladybug_geometry.geometry2d.mesh import Mesh2D
@@ -21,84 +20,13 @@ from ladybug_geometry.geometry2d.polygon import Polygon2D
 import os
 import math
 
+
 def _rad2deg(r):
     return r * 180. / math.pi
 
 
 def _deg2rad(d):
     return d * math.pi / 180.
-
-
-def test_linspace():
-    """Test the generation of bin array from bin range and num"""
-
-    # Base case
-    bin_arr = linspace(0, 360, 0)
-    assert [] == bin_arr, bin_arr
-
-    bin_arr = linspace(0, 360, 1)
-    assert [0] == bin_arr, bin_arr
-
-    bin_arr = linspace(0, 360, 2)
-    assert [0, 360.0] == bin_arr, bin_arr
-
-    bin_arr = linspace(0, 360, 4)
-    assert [0.0, 120.0, 240.0, 360.0] == bin_arr, bin_arr
-
-    bin_arr = linspace(0, 360, 5)
-    assert [0.0, 90.0, 180.0, 270.0, 360.0] == bin_arr, bin_arr
-
-    # Start from non zero
-    bin_arr = linspace(180, 360, 4)
-    assert [180.0, 240.0, 300.0, 360.0] == bin_arr, bin_arr
-
-    # Start from non zero, w/ floats
-    bin_arr = linspace(180., 360., 4)
-    assert [180., 240.0, 300.0, 360.0] == bin_arr, bin_arr
-
-
-def test_histogram():
-    """Test the windrose histogram."""
-
-    # Test simple 2 div
-    bin_arr = linspace(0, 2, 3)
-    assert bin_arr == [0, 1, 2]
-    vals = [0, 0, 0, 1, 1, 1, 2, 2]
-    hist = histogram(vals, bin_arr)
-    assert hist == [[0, 0, 0], [1, 1, 1]]
-
-    # Test out of bounds with 3 divisions
-    bin_arr = linspace(0, 3, 4)
-    vals = [0, 0, 0, 1, 1, 1, 2, 2]
-    hist = histogram(vals, bin_arr)
-    assert hist == [[0, 0, 0], [1, 1, 1], [2, 2]]
-
-    # Test out of bounds with 2 divisions
-    bin_arr = linspace(0, 3, 3)
-    vals = [-1, -2, 10, 0, 0, 0, 1, 1, 1, 2, 2, 34]
-    hist = histogram(vals, bin_arr)
-    assert hist == [[-2, -1, 0, 0, 0, 1, 1, 1], [2, 2]], hist
-
-    # Test edge bounds
-    bin_arr = linspace(0, 3, 3)
-    vals = [0, 0, 0, 1, 1, 1, 2, 2, 3, 3]
-    hist = histogram(vals, bin_arr)
-    assert hist == [[0, 0, 0, 1, 1, 1], [2, 2]], hist
-
-    # Test edge bounds 2
-    hist = histogram([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
-    assert hist == [[0, 0, 0.9], [1, 1.5, 1.99], [2]], hist
-
-
-def test_histogram_circular():
-    """Test the windrose histogram_circular data."""
-
-    # Test out of bounds with 3 divisions
-    bin_arr = linspace(-2, 2, 3)
-    assert bin_arr == [-2, 0, 2], bin_arr
-    vals = [-2, -1, 0, 0, 0, 1, 1, 1, 2, 2]
-    hist = histogram_circular(vals, bin_arr)
-    assert hist == [[-2, -1], [0, 0, 0, 1, 1, 1]], hist
 
 
 def test_bin_vectors():
@@ -201,7 +129,7 @@ def test_xticks_radial():
         assert abs(chk_xtick[1][1] - xtick.to_array()[1][1]) < 1e-10
 
 
-def test_radial_histogram():
+def test_radial_histogram_plot():
     """ Test circular histogram"""
     # Testing vals ensure all histogram heights are equal.
     dir_vals = [3, 3, 10,       #  315 - 45
@@ -343,10 +271,12 @@ def test_frequency_intervals():
 
     # Check that resetting frequency_max works
     w._frequency_intervals_compass = None
-    assert w.frequency_maximum == pytest.approx(3600, abs=1e-10)
-    assert w.frequency_intervals_compass == pytest.approx(18, abs=1e-10)
-    assert w.frequency_intervals_mesh == pytest.approx(18, abs=1e-10)
+    # w.real_freq_max: 4406
+    chk_max = int(math.ceil(4406 / 200)) * 200
 
+    assert w.frequency_maximum == pytest.approx(chk_max, abs=1e-10)
+    assert w.frequency_intervals_compass == pytest.approx(23, abs=1e-10)
+    assert w.frequency_intervals_mesh == pytest.approx(23, abs=1e-10)
 
 
 def test_simple_windrose_mesh():
@@ -609,14 +539,15 @@ def test_windrose_frequency_distribution():
     w.show_zeros = False
     w.show_freq = True
 
-    # max_freq = 3423
+    # w.real_freq_max: 4406
+    # w.frequency_maximum: 4600
 
     # Test w/ no stacking
-    w.frequency_hours = 4000  # 1 bin
+    w.frequency_hours = 4600  # 1 bin
     ytick_num = w.frequency_intervals_mesh
     assert ytick_num == 1
 
-    freqs = WindRose._histogram_data_nested(w.histogram_data, 4000)
+    freqs = WindRose._histogram_data_nested(w.histogram_data, 4600)
     hbin = freqs[0]
 
     test_val = sum(w.histogram_data[0]) / len(w.histogram_data[0])

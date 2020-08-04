@@ -101,6 +101,9 @@ class WindRose(object):
                 analysis_data_collection.validate_analysis_period()
 
         # Assign the inputs as read-only properties of this data collection
+        # get rid of duplicate 0 and 360 values
+        direction_data_collection.values = \
+            [d % 360.0 for d in direction_data_collection.values]
         self._direction_data_collection = direction_data_collection.to_immutable()
         self._analysis_data_collection = analysis_data_collection.to_immutable()
         self._number_of_directions = int(number_of_directions)
