@@ -1,7 +1,7 @@
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import os
-
+import tempfile
 
 # This is copied from logging module since python 2 doesn't have it under the same name.
 CRITICAL = 50
@@ -27,6 +27,8 @@ _name_to_level = {
 
 def _get_log_folder():
     home_folder = os.getenv('HOME') or os.path.expanduser('~')
+    if not os.access(home_folder, os.W_OK):
+        home_folder = tempfile.gettempdir()
     log_folder = os.path.join(home_folder, '.ladybug')
     if not os.path.isdir(log_folder):
         os.mkdir(log_folder)
@@ -56,7 +58,8 @@ def get_logger(name, filename='ladybug.log', file_log_level='DEBUG',
     if filename:
         log_file = os.path.join(_get_log_folder(), filename)
         file_handler = TimedRotatingFileHandler(log_file, when='midnight')
-        file_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        file_format = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         file_handler.setFormatter(file_format)
         file_handler.setLevel(_get_log_level(file_log_level))
         logger.addHandler(file_handler)
