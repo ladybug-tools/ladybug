@@ -14,11 +14,12 @@ def test_init_color():
     assert color.r == 255
     assert color.g == 0
     assert color.b == 100
+    assert color.a == 255
 
     color.r = 100
     assert color.r == 100
 
-    assert len(color) == 3
+    assert len(color) == 4
     assert color == Color(100, 0, 100)
     assert color != Color(100, 0, 0)
     assert color == color.duplicate()
