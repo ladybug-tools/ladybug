@@ -9,27 +9,31 @@ except ImportError:
 
 
 class Color(object):
-    """Ladybug RGB color.
+    """Ladybug RGBA color.
 
     Args:
         r: red value 0-255, default: 0
         g: green value 0-255, default: 0
         b: blue red value 0-255, default: 0
+        a: alpha value 0-255. Alpha defines the opacity as a number between 0 (fully
+            transparent) and 255 (fully opaque). Default 255.
 
     Properties:
         * r
         * g
         * b
+        * a
     """
 
-    __slots__ = ("_r", "_g", "_b")
+    __slots__ = ("_r", "_g", "_b", "_a")
 
-    def __init__(self, r, g, b):
+    def __init__(self, r=0, g=0, b=0, a=255):
         """Generate RGB Color.
         """
         self.r = r
         self.g = g
         self.b = b
+        self.a = a
 
     @classmethod
     def from_dict(cls, data):
@@ -43,10 +47,12 @@ class Color(object):
                 {
                 "r": 255,
                 "g": 0,
-                "b": 150
+                "b": 150,
+                "a": 255
                 }
         """
-        return cls(data['r'], data['g'], data['b'])
+        a = data['a'] if 'a' in data else 255
+        return cls(data['r'], data['g'], data['b'], a)
 
     @property
     def r(self):
@@ -81,6 +87,17 @@ class Color(object):
             "B value should be between 0-255"
         self._b = int(value)
 
+    @property
+    def a(self):
+        """Return A value."""
+        return self._a
+
+    @a.setter
+    def a(self, value):
+        assert 0 <= int(value) <= 255, "%d is out of range. " % value + \
+            "B value should be between 0-255"
+        self._a = int(value)
+
     def duplicate(self):
         """Return a copy of the current color."""
         return self.__copy__()
@@ -91,15 +108,17 @@ class Color(object):
             'r': self.r,
             'g': self.g,
             'b': self.b,
+            'a': self.a,
             'type': 'Color'
         }
 
     def __copy__(self):
-        return self.__class__(self.r, self.g, self.b)
+        return self.__class__(self.r, self.g, self.b, self.a)
 
     def __eq__(self, other):
         if isinstance(other, Color):
-            return self.r == other.r and self.g == other.g and self.b == other.b
+            return self.r == other.r and self.g == other.g and self.b == other.b and \
+                self.a == other.a
         else:
             return False
 
@@ -107,16 +126,16 @@ class Color(object):
         return not self.__eq__(other)
 
     def __hash__(self):
-        return hash((self.r, self.g, self.b))
+        return hash((self.r, self.g, self.b, self.a))
 
     def __len__(self):
-        return 3
+        return 4
 
     def __getitem__(self, key):
-        return (self.r, self.g, self.b)[key]
+        return (self.r, self.g, self.b, self.a)[key]
 
     def __iter__(self):
-        return iter((self.r, self.g, self.b))
+        return iter((self.r, self.g, self.b, self.a))
 
     def ToString(self):
         """Overwrite .NET ToString."""
@@ -124,7 +143,7 @@ class Color(object):
 
     def __repr__(self):
         """Return RGB values."""
-        return "(R:%d, G:%d, B:%d)" % (self._r, self._g, self._b)
+        return "(R:%d, G:%d, B:%d, A:%d)" % (self._r, self._g, self._b, self._a)
 
 
 # TODO: Add support for CMYK
