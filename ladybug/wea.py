@@ -59,6 +59,9 @@ class Wea(object):
         * hoys
         * timestep
         * is_leap_year
+        * is_continuous
+        * is_annual
+        * location
     """
     __slots__ = ('_timestep', '_is_leap_year', '_location', 'metadata',
                  '_direct_normal_irradiance', '_diffuse_horizontal_irradiance')

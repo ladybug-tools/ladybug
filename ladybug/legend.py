@@ -456,6 +456,7 @@ class LegendParameters(object):
         * font
 
         * is_segment_count_default
+        * are_colors_default
         * is_title_default
         * is_base_plane_default
         * is_segment_height_default
@@ -474,9 +475,10 @@ class LegendParameters(object):
                  '_continuous_legend', '_title', '_ordinal_dictionary',
                  '_decimal_count', '_include_larger_smaller', '_vertical',
                  '_base_plane', '_segment_height', '_segment_width', '_text_height',
-                 '_font', '_is_segment_count_default', '_is_title_default',
-                 '_is_base_plane_default', '_is_segment_height_default',
-                 '_is_segment_width_default', '_is_text_height_default')
+                 '_font', '_is_segment_count_default', '_are_colors_default',
+                 '_is_title_default', '_is_base_plane_default',
+                 '_is_segment_height_default', '_is_segment_width_default',
+                 '_is_text_height_default')
 
     def __init__(self, min=None, max=None, segment_count=None,
                  colors=None, title=None, base_plane=None):
@@ -525,9 +527,10 @@ class LegendParameters(object):
                          'decimal_count', 'include_larger_smaller',
                          'vertical', 'base_plane', 'segment_height',
                          'segment_width', 'text_height', 'font')
-        default_keys = ('is_segment_count_default', 'is_title_default',
-                        'is_base_plane_default', 'is_segment_height_default',
-                        'is_segment_width_default', 'is_text_height_default')
+        default_keys = ('is_segment_count_default', 'are_colors_default',
+                        'is_title_default', 'is_base_plane_default',
+                        'is_segment_height_default', 'is_segment_width_default',
+                        'is_text_height_default')
         for key in optional_keys:
             if key not in data:
                 data[key] = None
@@ -554,6 +557,7 @@ class LegendParameters(object):
         leg_par.text_height = data['text_height']
         leg_par.font = data['font']
         leg_par._is_segment_count_default = data['is_segment_count_default']
+        leg_par._are_colors_default = data['are_colors_default']
         leg_par._is_title_default = data['is_title_default']
         leg_par._is_base_plane_default = data['is_base_plane_default']
         leg_par._is_segment_height_default = data['is_segment_height_default']
@@ -625,8 +629,10 @@ class LegendParameters(object):
             self._colors = self._convert_colors(cols)
             assert len(self._colors) > 1, \
                 'There must be at least two colors to make a legend.'
+            self._are_colors_default = False
         else:
             self._colors = Colorset.original()
+            self._are_colors_default = True
 
     @property
     def continuous_legend(self):
@@ -843,6 +849,11 @@ class LegendParameters(object):
         return self._is_segment_count_default
 
     @property
+    def are_colors_default(self):
+        """Boolean noting whether the colors are defaulted."""
+        return self._are_colors_default
+
+    @property
     def is_title_default(self):
         """Boolean noting whether the title is defaulted."""
         return self._is_title_default
@@ -885,20 +896,23 @@ class LegendParameters(object):
 
     def _base_dict(self):
         """Get a dictionary with the base properties shared by all LegendParemeters."""
+        cols = None if self.are_colors_default else [c.to_dict() for c in self.colors]
         title = None if self.is_title_default else self.title
         base_plane = None if self.is_base_plane_default else self.base_plane.to_dict()
         seg_h = None if self.is_segment_height_default else self.segment_height
         seg_w = None if self.is_segment_width_default else self.segment_width
         txt_h = None if self.is_text_height_default else self.text_height
         return {
-            'colors': [col.to_dict() for col in self.colors],
-            'continuous_legend': self.continuous_legend, 'title': title,
+            'colors': cols,
+            'continuous_legend': self.continuous_legend,
+            'title': title,
             'decimal_count': self.decimal_count,
             'include_larger_smaller': self.include_larger_smaller,
             'vertical': self.vertical,
             'base_plane': base_plane,
             'segment_height': seg_h, 'segment_width': seg_w,
             'text_height': txt_h, 'font': self.font,
+            'are_colors_default': self.are_colors_default,
             'is_title_default': self.is_title_default,
             'is_base_plane_default': self.is_base_plane_default,
             'is_segment_height_default': self.is_segment_height_default,
@@ -933,6 +947,7 @@ class LegendParameters(object):
         new_par._text_height = self._text_height
         new_par._font = self._font
         new_par._is_segment_count_default = self._is_segment_count_default
+        new_par._are_colors_default = self._are_colors_default
         new_par._is_title_default = self._is_title_default
         new_par._is_base_plane_default = self._is_base_plane_default
         new_par._is_segment_height_default = self._is_segment_height_default
@@ -1054,6 +1069,7 @@ class LegendParametersCategorized(LegendParameters):
         # properties that have no meaning for this class
         self._ordinal_dictionary = None
         self._is_segment_count_default = True
+        self._are_colors_default = False
 
     @classmethod
     def from_dict(cls, data):
