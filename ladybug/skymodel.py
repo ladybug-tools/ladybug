@@ -15,7 +15,11 @@ except ImportError:  # python 3
 
 
 def ashrae_clear_sky(altitudes, month, sky_clearness=1):
-    """Calculate solar flux for an original ASHRAE Clear Sky
+    """Calculate solar flux for an original ASHRAE Clear Sky.
+
+    Note:
+        [1] American Society of Heating Refrigerating and Air-Conditioning Engineers.
+        2005. 2005 ASHRAE Handbook: Fundamentals. Atlanta, GA. Chapter 31.
 
     Args:
         altitudes: A list of solar altitudes in degrees
@@ -72,8 +76,9 @@ def ashrae_clear_sky(altitudes, month, sky_clearness=1):
 def ashrae_revised_clear_sky(altitudes, tb, td, use_2017_model=False):
     """Calculate solar flux for an ASHRAE Revised Clear Sky ("Tau Model").
 
-    By default, this function returns clear sky values following the
-    methods originally published in the ASHRAE 2009 HOF.
+    Note:
+        [1] American Society of Heating, Refrigerating and Air-Conditioning Engineers.
+        2009. 2009 Ashrae Handbook: Fundamentals. Atlanta, GA.
 
     Args:
         altitudes: A list of solar altitudes in degrees.

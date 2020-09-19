@@ -34,8 +34,8 @@ class Location(object):
         * time_zone
     """
 
-    __slots__ = ("city", "state", "country", "_lat", "_lon", "_tz", "_elev",
-                 "station_id", "source")
+    __slots__ = ('city', 'state', 'country', '_lat', '_lon', '_tz', '_elev',
+                 'station_id', 'source')
 
     def __init__(self, city=None, state=None, country=None, latitude=0, longitude=0,
                  time_zone=None, elevation=0, station_id=None, source=None):
