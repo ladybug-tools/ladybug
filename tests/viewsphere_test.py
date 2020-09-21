@@ -3,6 +3,8 @@ from ladybug_geometry.geometry3d.mesh import Mesh3D
 
 from ladybug.viewsphere import view_sphere
 
+import pytest
+
 
 def test_init_view_sphere():
     """Test the basic properties of the View Sphere."""
@@ -23,6 +25,21 @@ def test_init_view_sphere():
     assert len(view_sphere.reinhart_dome_mesh.faces) == 576 + 12
     assert isinstance(view_sphere.reinhart_sphere_mesh, Mesh3D)
     assert len(view_sphere.reinhart_sphere_mesh.faces) == (576 + 12) * 2
+
+
+def test_patch_weights():
+    """Test the various patch_weights methods."""
+    horiz_weights = view_sphere.horizontal_radial_patch_weights(30, 2)
+    assert len(horiz_weights) == 576
+    assert sum(horiz_weights) / len(horiz_weights) == pytest.approx(1, rel=1e-3)
+
+    dome_weights = view_sphere.dome_patch_weights()
+    assert len(dome_weights) == 145
+    assert sum(dome_weights) / len(dome_weights) == pytest.approx(1, rel=1e-3)
+
+    sphere_weights = view_sphere.sphere_patch_weights()
+    assert len(sphere_weights) == 290
+    assert sum(sphere_weights) / len(sphere_weights) == pytest.approx(1, rel=1e-3)
 
 
 def test_horizontal_radial_vectors():
