@@ -28,6 +28,14 @@ class ViewSphere(object):
         * reinhart_sphere_mesh
     """
     TREGENZA_PATCHES_PER_ROW = (30, 30, 24, 24, 18, 12, 6)
+    REINHART_PATCHES_PER_ROW = (60, 60, 60, 60, 48, 48, 48, 48, 36, 36, 24, 24, 12, 12)
+    TREGENZA_COEFFICIENTS = \
+        (0.0435449227, 0.0416418006, 0.0473984151, 0.0406730411, 0.0428934136,
+         0.0445221864, 0.0455168385, 0.0344199465)
+    REINHART_COEFFICIENTS = \
+        (0.0113221971, 0.0111894547, 0.0109255262, 0.0105335058, 0.0125224872,
+         0.0117312774, 0.0108025291, 0.00974713106, 0.011436609, 0.00974295956,
+         0.0119026242, 0.00905126163, 0.0121875626, 0.00612971396, 0.00921483254)
 
     __slots__ = ('_tregenza_dome_vectors', '_tregenza_sphere_vectors',
                  '_tregenza_dome_mesh', '_tregenza_dome_mesh_high_res',
@@ -181,14 +189,10 @@ class ViewSphere(object):
         """
         # figure out how many rows and patches should be in the output
         patch_row_count = self._patch_row_count_array(division_count)
-        rad_angle = math.radians(offset_angle)
-        patch_rows = len(patch_row_count)
-        vert_angle = math.pi / (2 * patch_rows + division_count) if subdivide_in_place \
-            else math.pi / (2 * patch_rows + 1)
-        row_count = int(round(rad_angle / vert_angle))
-        patch_count = sum(patch_row_count[:row_count])
+        patch_count = self._patch_count_in_radial_offset(
+            offset_angle, division_count, patch_row_count, subdivide_in_place)
 
-        # get the dome and vectors and remove faces up tot he patch count
+        # get the dome and vectors and remove faces up tot the patch count
         m_all, v_all = self.dome_patches(division_count, subdivide_in_place)
         pattern = [True] * patch_count + \
             [False] * (sum(patch_row_count) - patch_count + 6 * division_count)
@@ -198,8 +202,31 @@ class ViewSphere(object):
         # reverse the vectors and negate all the z values of the sky patch mesh
         return self._generate_bottom_from_top(m_top, v_top)
 
+    def horizontal_radial_patch_weights(self, offset_angle=30, division_count=1):
+        """Get a list of numbers corresponding to the area weight of each radial patch.
+
+        Args:
+            offset_angle: A number between 0 and 90 for the angle offset from the
+                horizontal plane at which vectors will be included. Vectors both
+                above and below this angle will be included (Default: 30).
+            division_count: A positive integer for the number of times that the
+                original Tregenza patches are subdivided. (Default: 1).
+
+        Returns:
+            A list of numbers with a value for each patch that corresponds to the
+            area of that patch. The aveage value of all the patches is equal to 1.
+        """
+        # get the areas of the patches and the number of patches to include in the offset
+        patch_areas, patch_row_count = self._dome_patch_areas(division_count)
+        patch_count = self._patch_count_in_radial_offset(
+            offset_angle, division_count, patch_row_count)
+        # normalize the patch areas so that they average to 1
+        relevant_patches = patch_areas[:patch_count]
+        avg_patch_area = sum(relevant_patches) / len(relevant_patches)
+        return [p_area / avg_patch_area for p_area in relevant_patches] * 2
+
     def dome_patches(self, division_count=1, subdivide_in_place=False):
-        """Get a Vector3Ds and a correcponding Mesh3D.
+        """Get a Vector3Ds and a correcponding Mesh3D for a dome.
 
         Args:
             division_count: A positive integer for the number of times that the
@@ -269,8 +296,25 @@ class ViewSphere(object):
             (Vector3D(0, 0, 1),)
         return patch_mesh, patch_vectors
 
+    def dome_patch_weights(self, division_count=1):
+        """Get a list of numbers corresponding to the area weight of each dome patch.
+
+        Args:
+            division_count: A positive integer for the number of times that the
+                original Tregenza patches are subdivided. (Default: 1).
+
+        Returns:
+            A list of numbers with a value for each patch that corresponds to the
+            area of that patch. The aveage value of all the patches is equal to 1.
+        """
+        # get the areas of the patches
+        patch_areas, patch_row_count = self._dome_patch_areas(division_count)
+        # normalize the patch areas so that they average to 1
+        avg_patch_area = 2 * math.pi / len(patch_areas)
+        return [p_area / avg_patch_area for p_area in patch_areas]
+
     def sphere_patches(self, division_count=1, subdivide_in_place=False):
-        """Get a Vector3Ds for a sphere and a correcponding Mesh3D.
+        """Get a Vector3Ds and a correcponding Mesh3D for a sphere.
 
         Args:
             division_count: A positive integer for the number of times that the
@@ -301,6 +345,54 @@ class ViewSphere(object):
         m_top, v_top = self.dome_patches(division_count, subdivide_in_place)
         # reverse the vectors and negate all the z values of the sky patch mesh
         return self._generate_bottom_from_top(m_top, v_top)
+
+    def sphere_patch_weights(self, division_count=1):
+        """Get a list of numbers corresponding to the area weight of each sphere patch.
+
+        Args:
+            division_count: A positive integer for the number of times that the
+                original Tregenza patches are subdivided. (Default: 1).
+
+        Returns:
+            A list of numbers with a value for each patch that corresponds to the
+            area of that patch. The aveage value of all the patches is equal to 1.
+        """
+        # get the areas of the patches
+        patch_areas, patch_row_count = self._dome_patch_areas(division_count)
+        # normalize the patch areas so that they average to 1
+        avg_patch_area = 2 * math.pi / len(patch_areas)
+        return [p_area / avg_patch_area for p_area in patch_areas] * 2
+
+    @staticmethod
+    def _dome_patch_areas(division_count):
+        """Get the area of each patch in a dome from a division_count."""
+        # get the areas of each spherical cap moving up the unit dome
+        patch_row_count = ViewSphere._patch_row_count_array(division_count)
+        vert_angle = math.pi / (2 * len(patch_row_count) + division_count)
+        cap_areas = [2 * math.pi]
+        current_angle = vert_angle
+        for i in range(len(patch_row_count)):
+            cap_areas.append(2 * math.pi * (1 - math.sin(current_angle)))
+            current_angle += vert_angle
+
+        # get the area of each row and subdivide it by the patch count of the row
+        row_areas = [cap_areas[i] - cap_areas[i + 1] for i in range(len(cap_areas) - 1)]
+        patch_areas = []
+        for row_count, row_area in zip(patch_row_count, row_areas):
+            patch_areas.extend([row_area / row_count] * row_count)
+        patch_areas.append(cap_areas[-1])
+        return patch_areas, patch_row_count
+
+    @staticmethod
+    def _patch_count_in_radial_offset(offset_angle, division_count, patch_row_count,
+                                      subdivide_in_place=False):
+        """Get the number of patches within a radial offset from the horizontal plane."""
+        rad_angle = math.radians(offset_angle)
+        patch_rows = len(patch_row_count)
+        vert_angle = math.pi / (2 * patch_rows + division_count) if subdivide_in_place \
+            else math.pi / (2 * patch_rows + 1)
+        row_count = int(round(rad_angle / vert_angle))
+        return sum(patch_row_count[:row_count])
 
     @staticmethod
     def _patch_row_count_array(division_count):
