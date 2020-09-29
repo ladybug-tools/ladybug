@@ -22,13 +22,17 @@ class ViewSphere(object):
         * tregenza_dome_mesh
         * tregenza_dome_mesh_high_res
         * tregenza_sphere_mesh
+        * tregenza_solid_angles
         * reinhart_dome_vectors
         * reinhart_sphere_vectors
         * reinhart_dome_mesh
         * reinhart_sphere_mesh
+        * reinhart_solid_angles
     """
+    # number of patches in each row of the most-used sky domes
     TREGENZA_PATCHES_PER_ROW = (30, 30, 24, 24, 18, 12, 6)
     REINHART_PATCHES_PER_ROW = (60, 60, 60, 60, 48, 48, 48, 48, 36, 36, 24, 24, 12, 12)
+    # number of steradians for the patches of each row of the most-used sky domes
     TREGENZA_COEFFICIENTS = \
         (0.0435449227, 0.0416418006, 0.0473984151, 0.0406730411, 0.0428934136,
          0.0445221864, 0.0455168385, 0.0344199465)
@@ -39,9 +43,10 @@ class ViewSphere(object):
 
     __slots__ = ('_tregenza_dome_vectors', '_tregenza_sphere_vectors',
                  '_tregenza_dome_mesh', '_tregenza_dome_mesh_high_res',
-                 '_tregenza_sphere_mesh',
+                 '_tregenza_sphere_mesh', '_tregenza_solid_angles',
                  '_reinhart_dome_vectors', '_reinhart_sphere_vectors',
-                 '_reinhart_dome_mesh', '_reinhart_sphere_mesh')
+                 '_reinhart_dome_mesh', '_reinhart_sphere_mesh',
+                 '_reinhart_solid_angles')
 
     def __init__(self):
         """Create the ViewSphere."""
@@ -51,10 +56,12 @@ class ViewSphere(object):
         self._tregenza_dome_mesh = None
         self._tregenza_dome_mesh_high_res = None
         self._tregenza_sphere_mesh = None
+        self._tregenza_solid_angles = None
         self._reinhart_dome_vectors = None
         self._reinhart_sphere_vectors = None
         self._reinhart_dome_mesh = None
         self._reinhart_sphere_mesh = None
+        self._reinhart_solid_angles = None
 
     @property
     def tregenza_dome_vectors(self):
@@ -106,6 +113,18 @@ class ViewSphere(object):
         return self._tregenza_sphere_mesh
 
     @property
+    def tregenza_solid_angles(self):
+        """Get a list of solid angles that align with the tregenza_dome_vectors."""
+        if self._reinhart_solid_angles is None:
+            angles = view_sphere.TREGENZA_COEFFICIENTS
+            patch_rows = view_sphere.TREGENZA_PATCHES_PER_ROW + (1,)
+            patch_angles = []
+            for ang, p_count in zip(angles, patch_rows):
+                patch_angles.extend([ang] * p_count)
+            self._reinhart_solid_angles = tuple(patch_angles)
+        return self._reinhart_solid_angles
+
+    @property
     def reinhart_dome_vectors(self):
         """An array of 577 vectors representing the Reinhart sky dome."""
         if self._reinhart_dome_vectors is None:
@@ -142,6 +161,18 @@ class ViewSphere(object):
             self._reinhart_sphere_mesh, self._reinhart_sphere_vectors = \
                 self.sphere_patches(2)
         return self._reinhart_sphere_mesh
+
+    @property
+    def reinhart_solid_angles(self):
+        """Get a list of solid angles that align with the reinhart_dome_vectors."""
+        if self._reinhart_solid_angles is None:
+            angles = view_sphere.REINHART_COEFFICIENTS
+            patch_rows = view_sphere.REINHART_PATCHES_PER_ROW + (1,)
+            patch_angles = []
+            for ang, p_count in zip(angles, patch_rows):
+                patch_angles.extend([ang] * p_count)
+            self._reinhart_solid_angles = tuple(patch_angles)
+        return self._reinhart_solid_angles
 
     def horizontal_radial_vectors(self, vector_count):
         """Get perfectly horizontal Vector3Ds radiating outward in a circle.
