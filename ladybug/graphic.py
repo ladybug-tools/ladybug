@@ -93,8 +93,12 @@ class GraphicContainer(object):
             denom = s_count if s_count >= 8 else 8
             if self.legend_parameters.vertical:
                 seg_height = float((self._max_point.y - self._min_point.y) / denom)
+                if seg_height == 0:
+                    seg_height = float((self._max_point.x - self._min_point.x) / denom)
             else:
                 seg_height = float((self._max_point.x - self._min_point.x) / (denom * 2))
+                if seg_height == 0:
+                    seg_height = float((self._max_point.y - self._min_point.y) / denom)
             self.legend_parameters.segment_height = seg_height
             self.legend_parameters._is_segment_height_default = True
 
