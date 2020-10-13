@@ -34,7 +34,7 @@ dry_bulb_temp = epw_data.dry_bulb_temperature
 
 # Get altitude and longitude
 from ladybug.location import Location
-form ladybug.sunpath import Sunpath
+from ladybug.sunpath import Sunpath
 
 # Create location. You can also extract location data from an epw file.
 sydney = Location('Sydney', 'AUS', latitude=-33.87, longitude=151.22, time_zone=10)
