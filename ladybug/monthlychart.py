@@ -447,6 +447,7 @@ class MonthlyChart(object):
 
         for j, (t, data_arr) in enumerate(zip(self._data_types, self._grouped_data)):
             d_range = self._maximums[j] - self._minimums[j]
+            d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
             prev_y_low = self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
             prev_y_up = self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
@@ -483,6 +484,7 @@ class MonthlyChart(object):
 
         for j, (t, data_arr) in enumerate(zip(self._data_types, self._grouped_data)):
             d_range = self._maximums[j] - self._minimums[j]
+            d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
             prev_y_low = self._hour_y_values_base(data_arr[0], d_range, min_val, step)
             prev_y_up = self._hour_y_values_base(data_arr[0], d_range, min_val, step)
@@ -513,6 +515,7 @@ class MonthlyChart(object):
         # loop through each data set and build the bar meshes
         for j, (t, data_arr) in enumerate(zip(self._data_types, self._grouped_data)):
             d_range = self._maximums[j] - self._minimums[j]
+            d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
             zero_val = self._y_dim * (min_val / d_range)
             base_y = self._base_point.y - zero_val if t.cumulative else self._base_point.y
@@ -569,6 +572,7 @@ class MonthlyChart(object):
         # loop through each data set and build the bar meshes
         for j, (t, data_arr) in enumerate(zip(self._data_types, self._grouped_data)):
             d_range = self._maximums[j] - self._minimums[j]
+            d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
             zero_val = self._y_dim * (min_val / d_range)
             base_y = self._base_point.y - zero_val if t.cumulative else self._base_point.y
@@ -631,6 +635,7 @@ class MonthlyChart(object):
 
         for j, (t, data_arr) in enumerate(zip(self._data_types, self._grouped_data)):
             d_range = self._maximums[j] - self._minimums[j]
+            d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
             prev_y_low = self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
             prev_y_up = self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
