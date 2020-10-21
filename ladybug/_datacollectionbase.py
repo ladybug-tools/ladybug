@@ -211,6 +211,39 @@ class BaseCollection(object):
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
+    def normalize_by_area(self, area, area_unit):
+        """Get a Data Collection that is normalized by an area value.
+        
+        Note that this method will raise a ValueError if the data type in the header
+        of the data collection does not have a normalized_type. Also note that a
+        ZeroDivisionError will be raised if the input area is equal to 0.
+
+        Args:
+            area: Number representing area by which all of the data is normalized.
+            area_unit: Text for the units that the area value is in. Acceptable
+                inputs include 'm2', 'ft2' and any other unit that is supported
+                in the normalized_type of this datacollection's data type.
+        """
+        # gan an instance of the normalized data type
+        head = self.header
+        norm_type_class = head.data_type.normalized_type
+        assert norm_type_class is not None, \
+            'Data type "{}" cannot be normalized by area to yield a useful '\
+            'metric.'.format(head.data_type)
+
+        # create the new data collection and assign normalized values
+        new_data_c = self.duplicate()
+        new_data_c._values = [val / area for val in self.values]
+
+        # normalize the data type and unit in the header
+        new_data_c._header._unit = '{}/{}'.format(head.unit, area_unit)
+        new_data_c._header._data_type = norm_type_class()
+        new_data_c._header._data_type.is_unit_acceptable(new_data_c._header._unit)
+        if 'type' in head.metadata:  # key used to identify sophisticated data types
+            new_data_c._header.metadata['type'] = \
+                '{} {}'.format(new_meta['type'], 'Intensity')
+        return new_data_c
+
     def highest_values(self, count):
         """Get a list of the the x highest values of the Data Collection and their indices.
 
@@ -395,7 +428,8 @@ class BaseCollection(object):
 
     def duplicate(self):
         """Get a copy of this Data Collection."""
-        collection = self.__class__(self.header.duplicate(), self.values, self.datetimes)
+        collection = self.__class__(
+            self.header.duplicate(), list(self._values), self.datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
 
@@ -892,37 +926,37 @@ class BaseCollection(object):
 
     def __add__(self, other):
         new_vals = self._add_values(other)
-        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header.duplicate(), new_vals, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
     def __sub__(self, other):
         new_vals = self._sub_values(other)
-        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header.duplicate(), new_vals, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
     def __mul__(self, other):
         new_vals = self._mul_values(other)
-        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header.duplicate(), new_vals, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
     def __div__(self, other):
         new_vals = self._div_values(other)
-        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header.duplicate(), new_vals, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
     def __truediv__(self, other):
         new_vals = self._div_values(other)
-        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header.duplicate(), new_vals, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
     def __neg__(self):
         new_vals = [-v_1 for v_1 in self._values]
-        new_obj = self.__class__(self.header, new_vals, self.datetimes)
+        new_obj = self.__class__(self.header.duplicate(), new_vals, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 

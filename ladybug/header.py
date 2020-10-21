@@ -46,7 +46,7 @@ class Header(object):
         self._data_type = data_type
         self._unit = unit
         self._analysis_period = analysis_period
-        self._metadata = metadata or {}
+        self.metadata = metadata
 
     @classmethod
     def from_dict(cls, data):
@@ -77,23 +77,30 @@ class Header(object):
 
     @property
     def data_type(self):
-        """A DataType object."""
+        """Get a DataType object."""
         return self._data_type
 
     @property
     def unit(self):
-        """A text string representing an abbreviated unit."""
+        """Get a text string representing an abbreviated unit (eg. 'C')."""
         return self._unit
 
     @property
     def analysis_period(self):
-        """A AnalysisPeriod object."""
+        """Get an AnalysisPeriod object."""
         return self._analysis_period
 
     @property
     def metadata(self):
-        """Dictionary of metadata associated with the Header."""
+        """Get or set a dictionary of metadata associated with the Header."""
         return self._metadata
+
+    @metadata.setter
+    def metadata(self, value):
+        if value is not None:
+            assert isinstance(value, dict), \
+                'Expected dictionary for Header metadata. Got {}.'.format(type(value))
+        self._metadata = value or {}
 
     def duplicate(self):
         """Return a copy of the header."""
