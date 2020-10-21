@@ -241,7 +241,7 @@ class BaseCollection(object):
         new_data_c._header._data_type.is_unit_acceptable(new_data_c._header._unit)
         if 'type' in head.metadata:  # key used to identify sophisticated data types
             new_data_c._header.metadata['type'] = \
-                '{} {}'.format(new_meta['type'], 'Intensity')
+                '{} {}'.format(new_data_c._header.metadata['type'], 'Intensity')
         return new_data_c
 
     def highest_values(self, count):
