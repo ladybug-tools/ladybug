@@ -1407,7 +1407,7 @@ def test_normalize_by_area():
     a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
     dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
     v1, v2 = 20, 25
-    dc1 = HourlyDiscontinuousCollection(Header(Energy(), 'kWh', a_per),
+    dc1 = HourlyDiscontinuousCollection(Header(Energy(), 'kWh', a_per, {'type': 'Energy'}),
                                         [v1, v2], [dt1, dt2])
 
     dc2 = dc1.normalize_by_area(5., 'm2')
@@ -1415,3 +1415,4 @@ def test_normalize_by_area():
     assert dc2.values == (v1 / 5., v2 / 5.)
     assert isinstance(dc2.header.data_type, EnergyIntensity)
     assert dc2.header.unit == 'kWh/m2'
+    assert dc2.header.metadata['type'] == 'Energy Intensity'
