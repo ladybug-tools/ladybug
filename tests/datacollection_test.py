@@ -11,6 +11,8 @@ from ladybug.dt import DateTime
 from ladybug.datatype.generic import GenericType
 from ladybug.datatype.temperature import Temperature
 from ladybug.datatype.fraction import RelativeHumidity, HumidityRatio
+from ladybug.datatype.energy import Energy
+from ladybug.datatype.energyintensity import EnergyIntensity
 
 from ladybug.epw import EPW
 from ladybug.psychrometrics import humid_ratio_from_db_rh
@@ -39,6 +41,8 @@ def test_init():
     str(dc1)  # Test the string representation of the collection
     str(dc1.header)  # Test the string representation of the header
 
+    dc1.header.metadata = {'type': 'Room Air Temperature'}
+
 
 def test_init_incorrect():
     """Test the init methods for base collections with incorrect inputs."""
@@ -60,7 +64,7 @@ def test_init_incorrect():
 
 
 def test_init_hourly():
-    """Test the init methods for dicontinuous collections."""
+    """Test the init methods for discontinuous collections."""
     a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
     dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
     v1, v2 = 20, 25
@@ -152,7 +156,7 @@ def test_init_continuous_incorrect():
 
 
 def test_operators_hourly_discontinuous():
-    """Test the operators for dicontinuous collections."""
+    """Test the operators for discontinuous collections."""
     a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
     dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
     v1, v2 = 20, 25
@@ -199,7 +203,7 @@ def test_operators_hourly_discontinuous():
 
 
 def test_operators_hourly_continuous():
-    """Test the operators for dicontinuous collections."""
+    """Test the operators for discontinuous collections."""
     v1 = 20
     vals = [v1] * 24
     a_per = AnalysisPeriod(6, 21, 0, 6, 21, 23)
@@ -287,7 +291,7 @@ def test_setting_values_continuous():
 
 
 def test_validate_a_period_hourly():
-    """Test the validate_analysis_period method for dicontinuous collections."""
+    """Test the validate_analysis_period method for discontinuous collections."""
     a_per = AnalysisPeriod(6, 21, 0, 6, 21, 23)
     dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
     v1, v2 = 20, 25
@@ -1018,7 +1022,7 @@ def test_percentile_monthly_per_hour():
 
 
 def test_group_by_day_discontinuous():
-    """Test the group by day method for dicontinuous collections."""
+    """Test the group by day method for discontinuous collections."""
     header = Header(Temperature(), 'C', AnalysisPeriod())
     values = list(xrange(8760))
     dc = HourlyDiscontinuousCollection(header, values, AnalysisPeriod().datetimes)
@@ -1029,7 +1033,7 @@ def test_group_by_day_discontinuous():
 
 
 def test_group_by_month_discontinuous():
-    """Test the group by month method for dicontinuous collections."""
+    """Test the group by month method for discontinuous collections."""
     header = Header(Temperature(), 'C', AnalysisPeriod())
     values = list(xrange(8760))
     dc = HourlyDiscontinuousCollection(header, values, AnalysisPeriod().datetimes)
@@ -1041,7 +1045,7 @@ def test_group_by_month_discontinuous():
 
 
 def test_interpolate_holes():
-    """Test the interoplate holes method on the discontinuous collection."""
+    """Test the interpolate holes method on the discontinuous collection."""
     a_per = AnalysisPeriod(6, 21, 0, 6, 21, 23)
     dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 14)
     v1, v2 = 20, 25
@@ -1088,7 +1092,7 @@ def test_cull_to_timestep():
 
 
 def test_interpolate_to_timestep():
-    """Test the interoplation method on the continuous collection."""
+    """Test the interpolation method on the continuous collection."""
     values = list(xrange(24))
     test_header = Header(GenericType('Test Type', 'test'), 'test',
                          AnalysisPeriod(end_month=1, end_day=1))
@@ -1196,7 +1200,7 @@ def test_get_aligned_collection_continuous():
 
 
 def test_compute_function_aligned():
-    """Test the method for computing funtions with aligned collections."""
+    """Test the method for computing functions with aligned collections."""
     epw_file_path = './tests/fixtures/epw/chicago.epw'
     chicago_epw = EPW(epw_file_path)
     pressure_at_chicago = 95000
@@ -1371,7 +1375,6 @@ def test_histogram():
 
 def test_histogram_circular():
     """Test the windrose histogram_circular data."""
-
     # # Test out of bounds with 3 divisions
     # bin_arr = linspace(-2, 2, 3)
     # assert bin_arr == [-2, 0, 2], bin_arr
@@ -1397,3 +1400,18 @@ def test_histogram_circular():
     for chkh, h in zip(chk_hist, hist):
         for _chkh, _h in zip(chkh, h):
             assert _chkh == pytest.approx(_h, abs=1e-10)
+
+
+def test_normalize_by_area():
+    """Test the normalize_by_area method."""
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
+    v1, v2 = 20, 25
+    dc1 = HourlyDiscontinuousCollection(Header(Energy(), 'kWh', a_per),
+                                        [v1, v2], [dt1, dt2])
+
+    dc2 = dc1.normalize_by_area(5., 'm2')
+    assert dc2.datetimes == (dt1, dt2)
+    assert dc2.values == (v1 / 5., v2 / 5.)
+    assert isinstance(dc2.header.data_type, EnergyIntensity)
+    assert dc2.header.unit == 'kWh/m2'

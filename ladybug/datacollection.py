@@ -839,8 +839,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
     def duplicate(self):
         """Return a copy of the current Data Collection."""
-        return self.__class__(
-            self.header.duplicate(), self._values)
+        return self.__class__(self.header.duplicate(), list(self._values))
 
     def get_aligned_collection(self, value=0, data_type=None, unit=None, mutable=None):
         """Return a Collection aligned with this one composed of one repeated value.

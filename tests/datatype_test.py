@@ -6,7 +6,7 @@ from ladybug.datatype import base
 from ladybug.datatype import angle, area, distance, energy, energyflux, \
     energyintensity, fraction, generic, illuminance, luminance, mass, massflowrate, \
     power, pressure, rvalue, speed, temperature, temperaturedelta, temperaturetime, \
-    thermalcondition, specificenergy, uvalue, volume, volumeflowrate
+    thermalcondition, time, specificenergy, uvalue, volume, volumeflowrate
 
 import pytest
 import math
@@ -515,6 +515,25 @@ def test_thermal_condition():
             assert len(tc_type.to_unit([1], other_unit, unit)) == 1
     assert tc_type.to_unit([1], 'PMV', 'condition')[0] == 1
     assert tc_type.to_unit([1], 'condition', 'PMV')[0] == 1
+
+
+def test_time():
+    """Test Time type."""
+    time_type = time.Time()
+    for unit in time_type.units:
+        assert time_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+        ip_vals, ip_u = time_type.to_ip([1], unit)
+        assert len(ip_vals) == 1
+        si_vals, si_u = time_type.to_si([1], unit)
+        assert len(si_vals) == 1
+        for other_unit in time_type.units:
+            assert len(time_type.to_unit([1], other_unit, unit)) == 1
+    assert time_type.to_unit([1], 'min', 'hr')[0] == 60
+    assert time_type.to_unit([1], 'sec', 'hr')[0] == 3600
+    assert time_type.to_unit([1], 'day', 'hr')[0] == 1 / 24.
+    assert time_type.to_unit([60], 'hr', 'min')[0] == 1.
+    assert time_type.to_unit([3600], 'hr', 'sec')[0] == 1.
+    assert time_type.to_unit([1], 'hr', 'day')[0] == 24.
 
 
 def test_specific_energy():

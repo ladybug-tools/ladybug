@@ -48,6 +48,13 @@ class _ImmutableCollectionBase(object):
         """Get an immutable version of this collection."""
         return self.duplicate()
 
+    def duplicate(self):
+        """Get a copy of this Data Collection."""
+        collection = self.__class__(
+            self.header.duplicate(), self._values, self.datetimes)
+        collection._validated_a_period = self._validated_a_period
+        return collection
+
     def __setitem__(self, key, value):
         raise AttributeError(self._mutable_message)
 
@@ -80,6 +87,10 @@ class HourlyContinuousCollectionImmutable(
         new_obj = HourlyContinuousCollection(self.header, self.values)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
+
+    def duplicate(self):
+        """Return a copy of the current Data Collection."""
+        return self.__class__(self.header.duplicate(), self._values)
 
 
 class DailyCollectionImmutable(
