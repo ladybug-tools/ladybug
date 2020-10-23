@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import division
+from typing import Generator
 
 import pytest
 
@@ -19,6 +20,83 @@ from ladybug_geometry.geometry2d.polygon import Polygon2D
 
 import os
 import math
+from pprint import pprint as pp
+
+
+def arange(start, stop, step):
+    """Equivalent to numpy.arange"""
+
+    val = start
+
+    if start <= stop:
+        def ineq(a, b): return a < b
+    else:
+        def ineq(a, b): return a > b
+
+    while ineq(val, stop) and abs(val - stop) > 1e-10:
+        yield val
+        val += step
+
+
+def test_arange():
+    """Test arange function."""
+
+    # Basic
+    r = arange(0, 10, 1)
+    assert isinstance(r, Generator)
+    r = list(r)
+    cr = list(range(10))
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Fraction 1
+    r = list(arange(0, 1, 0.1))
+    cr = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Fraction 2
+    r = list(arange(-0.55, 3, 0.0532))
+    cr = [-0.55, -0.4968, -0.4436, -0.3904, -0.3372, -0.284, -0.2308,
+          -0.1776, -0.1244, -0.0712, -0.018,  0.0352,  0.0884,  0.1416,
+          0.1948,  0.248,  0.3012,  0.3544,  0.4076,  0.4608,  0.514,
+          0.5672,  0.6204,  0.6736,  0.7268,  0.78,  0.8332,  0.8864,
+          0.9396,  0.9928,  1.046,  1.0992,  1.1524,  1.2056,  1.2588,
+          1.312,  1.3652,  1.4184,  1.4716,  1.5248,  1.578,  1.6312,
+          1.6844,  1.7376,  1.7908,  1.844,  1.8972,  1.9504,  2.0036,
+          2.0568,  2.11,  2.1632,  2.2164,  2.2696,  2.3228,  2.376,
+          2.4292,  2.4824,  2.5356,  2.5888,  2.642,  2.6952,  2.7484,
+          2.8016,  2.8548,  2.908,  2.9612]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Equal
+    r = list(arange(10, 10, 1))
+    assert len(r) == 0
+
+    # Neg step
+    r = list(arange(1, 0, -0.1))
+    cr = [1., 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Neg start
+    r = list(arange(-10, 0, 1))
+    cr = [-10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Neg stop
+    r = list(arange(0, -10, -1))
+    cr = [-i for i in range(10)]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
 
 
 def _rad2deg(r):
@@ -85,10 +163,10 @@ def test_xticks_radial():
     """Test polar coordinate array"""
 
     # Testing vals ensure all histogram heights are equal.
-    dir_vals = [3, 3, 10,       #  315 - 45
-                85, 90, 95,     #  45 - 135
-                170, 170, 170,  #  135 - 225
-                230, 285, 288]  #  225 - 315
+    dir_vals = [3, 3, 10,  # 315 - 45
+                85, 90, 95,  # 45 - 135
+                170, 170, 170,  # 135 - 225
+                230, 285, 288]  # 225 - 315
 
     spd_vals = dir_vals
 
@@ -132,10 +210,10 @@ def test_xticks_radial():
 def test_radial_histogram_plot():
     """ Test circular histogram"""
     # Testing vals ensure all histogram heights are equal.
-    dir_vals = [3, 3, 10,       #  315 - 45
-                85, 90, 95,     #  45 - 135
-                170, 170, 170,  #  135 - 225
-                230, 285, 288]  #  225 - 315
+    dir_vals = [3, 3, 10,  # 315 - 45
+                85, 90, 95,  # 45 - 135
+                170, 170, 170,  # 135 - 225
+                230, 285, 288]  # 225 - 315
     spd_vals = dir_vals
 
     # Make into fake data collections
@@ -155,10 +233,14 @@ def test_radial_histogram_plot():
     bin_vecs = w.bin_vectors
     vec_cpt = (0, 0)
     radius_arr = (0., 1.)
-    ytick_num = 1
     hist = w.histogram_data
-    histstack = w._histogram_data_nested(hist, ytick_num)
-    print(histstack)
+
+    speeds = [val for bin in w.histogram_data for val in bin]
+    min_speed, max_speed = min(speeds), max(speeds)
+    speed_interval = (max_speed - min_speed) / w.legend_parameters.segment_count
+    histstack = w._histogram_data_nested(
+        hist, (min_speed, max_speed), speed_interval)
+
     show_freq = False
     vecs = WindRose._histogram_array_radial(bin_vecs, vec_cpt, hist, histstack,
                                             radius_arr, show_freq)
@@ -181,68 +263,6 @@ def test_radial_histogram_plot():
         for p, cp in zip(pts, chk_pts):
             assert abs(p[0] - cp[0]) < 1e-10, (p[0], cp[0])
             assert abs(p[1] - cp[1]) < 1e-10, (p[1], cp[1])
-
-
-def test_histogram_data_nested():
-
-    # Testing vals
-    dir_vals = [0, 0, 0, 10, 10, 10, 85, 90, 90, 90, 95, 170, 285, 288]
-    spd_vals = dir_vals
-
-    # Make into fake data collections
-    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
-    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
-    spd_header = Header(Speed(), 'm/s', a_per)
-    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
-    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
-    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
-
-    # Init simple example w segs == bin num
-    w = WindRose(dir_data, spd_data, 4)
-    #w.legend_parameters = LegendParameters(segment_count=5)
-    w.frequency_hours = 1
-
-    # Bin values to divide into colors
-    # 315-45:  [10, 10, 10];         2 intervals, [10, 10, 10]
-    # 45-135:  [85, 90, 90, 90, 95]; 3 intervals, [85, 90, 90, 90, 95]
-    # 135-225: [170];                1 intervals, [170];
-    # 225-315: [285, 288];           2 intervals, [285, 288]
-
-    # interval_num: [2, 3, 1, 2]
-    chk_histstack = [
-        [10, 10, 10],
-        [85, 90, 90, 90, 95],
-        [170.],
-        [285, 288]]
-
-    # Testing
-    histstack = WindRose._histogram_data_nested(w.histogram_data, 1)
-    for chkh, h in zip(chk_histstack, histstack):
-        for c, _h in zip(chkh, h):
-            assert abs(c - _h) <= 1e-10
-
-    # Init complex dir set divided by 4
-    w = WindRose(dir_data, spd_data, 4)
-    w.frequency_hours = 2
-
-    # Bin values to divide into colors
-    # 315-45:  [10, 10, 10];         2 intervals, [10, 10]
-    # 45-135:  [85, 90, 90, 90, 95]; 3 intervals, [87.5, 90, 95. ]
-    # 135-225: [170];                1 intervals, [170]
-    # 225-315: [285, 288];           2 intervals, [286.5]
-
-    # interval_num: [2, 3, 1, 2]
-    chk_histstack = [
-        [10, 10],
-        [87.5, 90, 95.],
-        [170.],
-        [286.5]]
-
-    # Testing
-    histstack = WindRose._histogram_data_nested(w.histogram_data, 2)
-    for chkh, h in zip(chk_histstack, histstack):
-        for c, _h in zip(chkh, h):
-            assert abs(c - _h) <= 1e-10
 
 
 def test_frequency_intervals():
@@ -324,13 +344,30 @@ def test_windrose_mesh():
 
     w = WindRose(epw.wind_direction, epw.wind_speed, 16)
     w.legend_parameters.segment_count = 3
-    w.show_zeros = False
-    w.show_freq = False
-    assert isinstance(w.colored_mesh, Mesh2D)
 
     # Test the plot grid
     assert isinstance(w.frequency_lines[0], Polygon2D)
     assert isinstance(w.orientation_lines[0], LineSegment2D)
+
+    # Test False, False
+    w.show_zeros = False
+    w.show_freq = False
+    assert isinstance(w.colored_mesh, Mesh2D)
+
+    # Test True, False
+    w.show_zeros = True
+    w.show_freq = False
+    assert isinstance(w.colored_mesh, Mesh2D)
+
+    # Test False, True
+    w.show_zeros = False
+    w.show_freq = True
+    assert isinstance(w.colored_mesh, Mesh2D)
+
+    # Test True, True
+    w.show_zeros = True
+    w.show_freq = True
+    assert isinstance(w.colored_mesh, Mesh2D)
 
 
 def test_windrose_frequency_lines():
@@ -483,14 +520,17 @@ def test_windrose_mesh_size():
     w.show_freq = True
     w.frequency_spacing_distance = 200.0
     _ = w.colored_mesh
-    intervals = w.frequency_intervals_mesh
-    assert w.mesh_radius == pytest.approx(intervals * 200.0, abs=1e-10)
+    hdist = w.frequency_spacing_hypot_distance
+    intervals = w.real_freq_max / w.frequency_hours
+    assert w.mesh_radius == pytest.approx(intervals * hdist, abs=1e-10)
 
     # Add calmrose
     w.show_zeros = True
     zero_dist = w._zero_mesh_radius
     _ = w.colored_mesh
-    assert w.mesh_radius == pytest.approx(zero_dist + (intervals * 200.0))
+    hdist = w.frequency_spacing_hypot_distance
+    intervals = w.real_freq_max / w.frequency_hours
+    assert w.mesh_radius == pytest.approx(zero_dist + (intervals * hdist))
 
     # Test size with windrose from actual epw data
     epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/chicago.epw')
@@ -498,81 +538,14 @@ def test_windrose_mesh_size():
     w = WindRose(epw.wind_direction, epw.wind_speed, 3)
 
 
-def test_windrose_frequency_distribution():
-    """Test frequency distribution"""
-
-    # Testing mesh scaling
-    dir_vals = [1, 2, 3, 4, 5, 6,
-                90, 91, 92, 93, 94, 95,
-                180, 181, 182, 183, 184, 185,
-                270, 271, 272, 273, 274, 275]
-    spd_vals = dir_vals
-
-    # Make into fake data collections
-    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
-    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
-    spd_header = Header(Speed(), 'm/s', a_per)
-    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
-    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
-    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
-
-    # Init simple dir set divided by 4
-    w = WindRose(dir_data, spd_data, 4)
-    w.frequency_hours = 3
-    assert w.frequency_intervals_mesh == 2
-    assert w.real_freq_max == 6
-    assert w.frequency_maximum == 6
-
-    freqs = WindRose._histogram_data_nested(w.histogram_data, 3)
-    north_hbin = freqs[0]
-
-    assert north_hbin[0] == 2.0  # [1, 2, 3]
-    assert north_hbin[1] == 5.0  # [4, 5, 6]
-    assert north_hbin[0] == sum(w.histogram_data[0][:3]) / 3.0
-
-    # Test w/ epw
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
-    epw = EPW(epw_path)
-
-    # Test 16 directions
-    w = WindRose(epw.wind_direction, epw.wind_speed, 3)
-    w.show_zeros = False
-    w.show_freq = True
-
-    # w.real_freq_max: 4406
-    # w.frequency_maximum: 4600
-
-    # Test w/ no stacking
-    w.frequency_hours = 4600  # 1 bin
-    ytick_num = w.frequency_intervals_mesh
-    assert ytick_num == 1
-
-    freqs = WindRose._histogram_data_nested(w.histogram_data, 4600)
-    hbin = freqs[0]
-
-    test_val = sum(w.histogram_data[0]) / len(w.histogram_data[0])
-    assert hbin[0] == pytest.approx(test_val, abs=1e-10)
-
-    # Test w/ stacking
-    w.frequency_hours = 5  # 1 bin
-    h = w.frequency_hours
-
-    freqs = WindRose._histogram_data_nested(w.histogram_data, h)
-    hbin = freqs[0]
-
-    sort_hist_bar = sorted(w.histogram_data[0])
-    test_val = sum(sort_hist_bar[:5]) / 5.0
-    assert hbin[0] == pytest.approx(test_val, abs=1e-10)
-
-
 def test_prevailing_direction():
     """Test prevailing direction getter"""
 
     # Test with single prevailing dir
-    dir_vals = [0, 3, 10,    #  315 - 45
-                85, 90,  95,    #  45 - 135
-                140, 170, 170, 170,  #  135 - 225
-                230, 285, 288]  #  225 - 315
+    dir_vals = [0, 3, 10,  # 315 - 45
+                85, 90,  95,  # 45 - 135
+                140, 170, 170, 170,  # 135 - 225
+                230, 285, 288]  # 225 - 315
 
     spd_vals = dir_vals
 
@@ -591,10 +564,10 @@ def test_prevailing_direction():
     assert w.prevailing_direction[0] == test_prev_dir
 
     # Testing with two max prevailing values
-    dir_vals = [3, 3, 10,        #  315 - 45
-                85, 90, 90, 100, #  45 - 135
-                170, 170, 170, 180,  #  135 - 225
-                230, 285, 288]   #  225 - 315
+    dir_vals = [3, 3, 10,  # 315 - 45
+                85, 90, 90, 100,  # 45 - 135
+                170, 170, 170, 180,  # 135 - 225
+                230, 285, 288]  # 225 - 315
 
     spd_vals = dir_vals
 
@@ -619,3 +592,112 @@ def test_prevailing_direction():
     # Test 5 directions
     w = WindRose(epw.wind_direction, epw.wind_speed, 5)
     assert w.prevailing_direction[0] == 216.0
+
+
+def test_histogram_data_nested():
+
+    # Testing vals
+    dir_vals = [0, 0, 0, 0, 10, 10, 10, 85, 90, 90, 90, 95, 170, 285, 310]
+    spd_vals = [0, 0, 0, 0, 1, 145, 189, 15, 10, 150, 299, 259, 100, 5, 301]
+
+    # Make into fake data collections
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
+    spd_header = Header(Speed(), 'm/s', a_per)
+    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
+    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+
+    # Init complex dir set divided by 4, and 2 hourly intervals
+    w = WindRose(dir_data, spd_data, 4)
+    w.frequency_hours = 2
+    w.legend_parameters.segment_count = 6
+
+    # Bin values to divide into 6 intervals = 10 - 310 = 300 / 6 = 50 m/s
+    # intervals: [1-50, 51-100, 101-150, 151-200, 201-250, 251-300, 301-350]
+    #
+    # each frequency interval = 1/6 ~ 0.166 of total speed
+    # 315-45:  [1, 145, 189];           3 bands [0-49, 100-149, 150-199]
+    # 45-135:  [15, 10, 150, 299, 259]; 3 bands, [0-49, 150-199,, 250-299]
+    # 135-225: [100];                   1 bands, [100-149]
+    # 225-315: [5, 300];                2 bands, [0-49, 300, 249]
+
+    # interval_num: [3, 3, 1, 2]
+    chk_histstack = [
+        [[1], [], [145], [189], [], [], []],  # 0-49, 100-149, 150-199
+        [[10, 15], [], [150], [], [], [259, 299], []],  # 0-49, 150-199,, 250-299
+        [[], [100], [], [], [], [], []],  # 100-149
+        [[5], [], [], [], [], [], [301]]]  # 0-49, 300-349
+
+    # Testing
+    speeds = [val for bin in w.histogram_data for val in bin]
+    min_speed, max_speed = min(speeds), max(speeds)
+    speed_interval = (max_speed - min_speed) / w.legend_parameters.segment_count
+    histstack = WindRose._histogram_data_nested(
+        w.histogram_data, (min_speed, max_speed), speed_interval)
+
+    # Check
+    assert len(chk_histstack) == len(histstack)
+    for cbins, bins in zip(chk_histstack, histstack):
+        assert len(cbins) == len(bins)
+        for cbin, bin in zip(cbins, bins):
+            assert len(cbin) == len(bin)
+            for cval, val in zip(cbin, bin):
+                assert abs(cval - val) <= 1e-10, (cval, val)
+
+    # Test colored mesh
+    mesh_array, color_array = WindRose._compute_colored_mesh_array(
+        w.histogram_data, histstack, w.bin_vectors, 0, 1, show_freq=True)
+
+    assert len(mesh_array) == len(color_array)
+
+    # color index corresponds to hourly interval indices
+    chk_color_array = [0, 2, 3, 0, 2, 5, 1, 0, 6]
+    for cc, c in zip(chk_color_array, color_array):
+        assert abs(cc - c) < 1e-10
+
+    start_idx = 0
+    for cbar in chk_histstack:
+        # Eliminates empty lists
+        flat_bar = [a for a in cbar if len(a) > 0]
+        tri_num = start_idx + len(flat_bar)
+        tri_cols = color_array[start_idx:tri_num]
+
+        # Check that the index labeled in the color array
+        # corresponds to the values in the nested histogram
+        for i, col_idx in enumerate(tri_cols):
+            assert len(cbar[col_idx]) == len(flat_bar[i])
+            for cv, v in zip(cbar[col_idx], flat_bar[i]):
+                assert abs(cv - v) < 1e-10
+
+        # Update
+        start_idx = tri_num
+
+    # Check with zeros
+    w.show_zeros = True
+    w.frequency_hours = 1.0
+    w.frequency_spacing_distance = 25.0
+    hypot_dist = w.frequency_spacing_hypot_distance
+    assert abs(w._zero_mesh_radius - hypot_dist) < 1e-10
+
+    # Check with zeros 2
+    # Testing vals
+    dir_vals = [0, 0, 0, 0, 0, 0, 10, 10, 10, 85, 90, 90, 90, 95, 170, 285, 310]
+    spd_vals = [0, 0, 0, 0, 0, 0, 1, 145, 189, 15, 10, 150, 299, 259, 100, 5, 301]
+
+    # Make into fake data collections
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
+    spd_header = Header(Speed(), 'm/s', a_per)
+    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
+    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+
+    # Init complex dir set divided by 4, and 2 hourly intervals
+    w = WindRose(dir_data, spd_data, 4)
+
+    w.show_zeros = True
+    w.frequency_hours = 1.0
+    w.frequency_spacing_distance = 25.0
+    hypot_dist = w.frequency_spacing_hypot_distance * 1.5
+    assert abs(w._zero_mesh_radius - hypot_dist) < 1e-10
