@@ -23,86 +23,6 @@ import math
 from pprint import pprint as pp
 
 
-def arange(start, stop, step):
-    """Equivalent to numpy.arange"""
-
-    val = start
-
-    if start <= stop:
-        def ineq(a, b): return a < b
-    else:
-        def ineq(a, b): return a > b
-
-    while ineq(val, stop) and abs(val - stop) > 1e-10:
-        yield val
-        val += step
-
-
-def test_arange():
-    """Test arange function."""
-
-    # Basic
-    r = arange(0, 10, 1)
-    assert isinstance(r, Generator)
-    r = list(r)
-    cr = list(range(10))
-    assert len(r) == len(cr)
-    for cv, v in zip(cr, r):
-        assert abs(cv - v) < 1e-10
-
-    # Fraction 1
-    r = list(arange(0, 1, 0.1))
-    cr = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    assert len(r) == len(cr)
-    for cv, v in zip(cr, r):
-        assert abs(cv - v) < 1e-10
-
-    # Fraction 2
-    r = list(arange(-0.55, 3, 0.0532))
-    cr = [-0.55, -0.4968, -0.4436, -0.3904, -0.3372, -0.284, -0.2308,
-          -0.1776, -0.1244, -0.0712, -0.018,  0.0352,  0.0884,  0.1416,
-          0.1948,  0.248,  0.3012,  0.3544,  0.4076,  0.4608,  0.514,
-          0.5672,  0.6204,  0.6736,  0.7268,  0.78,  0.8332,  0.8864,
-          0.9396,  0.9928,  1.046,  1.0992,  1.1524,  1.2056,  1.2588,
-          1.312,  1.3652,  1.4184,  1.4716,  1.5248,  1.578,  1.6312,
-          1.6844,  1.7376,  1.7908,  1.844,  1.8972,  1.9504,  2.0036,
-          2.0568,  2.11,  2.1632,  2.2164,  2.2696,  2.3228,  2.376,
-          2.4292,  2.4824,  2.5356,  2.5888,  2.642,  2.6952,  2.7484,
-          2.8016,  2.8548,  2.908,  2.9612]
-    assert len(r) == len(cr)
-    for cv, v in zip(cr, r):
-        assert abs(cv - v) < 1e-10
-
-    # Equal
-    r = list(arange(10, 10, 1))
-    assert len(r) == 0
-
-    # Neg step
-    r = list(arange(1, 0, -0.1))
-    cr = [1., 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
-    assert len(r) == len(cr)
-    for cv, v in zip(cr, r):
-        assert abs(cv - v) < 1e-10
-
-    # Neg start
-    r = list(arange(-10, 0, 1))
-    cr = [-10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1]
-    assert len(r) == len(cr)
-    for cv, v in zip(cr, r):
-        assert abs(cv - v) < 1e-10
-
-    # Neg stop
-    r = list(arange(0, -10, -1))
-    cr = [-i for i in range(10)]
-    assert len(r) == len(cr)
-    for cv, v in zip(cr, r):
-        assert abs(cv - v) < 1e-10
-
-
-def _rad2deg(r):
-    return r * 180. / math.pi
-
-
 def _deg2rad(d):
     return d * math.pi / 180.
 
@@ -238,7 +158,7 @@ def test_radial_histogram_plot():
     speeds = [val for bin in w.histogram_data for val in bin]
     min_speed, max_speed = min(speeds), max(speeds)
     speed_interval = (max_speed - min_speed) / w.legend_parameters.segment_count
-    histstack = w._histogram_data_nested(
+    histstack, _ = w._histogram_data_nested(
         hist, (min_speed, max_speed), speed_interval)
 
     show_freq = False
@@ -624,17 +544,16 @@ def test_histogram_data_nested():
 
     # interval_num: [3, 3, 1, 2]
     chk_histstack = [
-        [[1], [], [145], [189], [], [], []],  # 0-49, 100-149, 150-199
-        [[10, 15], [], [150], [], [], [259, 299], []],  # 0-49, 150-199,, 250-299
-        [[], [100], [], [], [], [], []],  # 100-149
-        [[5], [], [], [], [], [], [301]]]  # 0-49, 300-349
+        [[1], [], [145], [189], [], []],  # 0-49, 100-149, 150-199
+        [[10, 15], [], [150], [], [], [259, 299]],  # 0-49, 150-199,, 250-299
+        [[], [100], [], [], [], []],  # 100-149
+        [[5], [], [], [], [], [301]]]  # 0-49, 300-349
 
     # Testing
     speeds = [val for bin in w.histogram_data for val in bin]
     min_speed, max_speed = min(speeds), max(speeds)
-    speed_interval = (max_speed - min_speed) / w.legend_parameters.segment_count
-    histstack = WindRose._histogram_data_nested(
-        w.histogram_data, (min_speed, max_speed), speed_interval)
+    histstack, _ = WindRose._histogram_data_nested(
+        w.histogram_data, (min_speed, max_speed), w.legend_parameters.segment_count)
 
     # Check
     assert len(chk_histstack) == len(histstack)
@@ -644,34 +563,6 @@ def test_histogram_data_nested():
             assert len(cbin) == len(bin)
             for cval, val in zip(cbin, bin):
                 assert abs(cval - val) <= 1e-10, (cval, val)
-
-    # Test colored mesh
-    mesh_array, color_array = WindRose._compute_colored_mesh_array(
-        w.histogram_data, histstack, w.bin_vectors, 0, 1, show_freq=True)
-
-    assert len(mesh_array) == len(color_array)
-
-    # color index corresponds to hourly interval indices
-    chk_color_array = [0, 2, 3, 0, 2, 5, 1, 0, 6]
-    for cc, c in zip(chk_color_array, color_array):
-        assert abs(cc - c) < 1e-10
-
-    start_idx = 0
-    for cbar in chk_histstack:
-        # Eliminates empty lists
-        flat_bar = [a for a in cbar if len(a) > 0]
-        tri_num = start_idx + len(flat_bar)
-        tri_cols = color_array[start_idx:tri_num]
-
-        # Check that the index labeled in the color array
-        # corresponds to the values in the nested histogram
-        for i, col_idx in enumerate(tri_cols):
-            assert len(cbar[col_idx]) == len(flat_bar[i])
-            for cv, v in zip(cbar[col_idx], flat_bar[i]):
-                assert abs(cv - v) < 1e-10
-
-        # Update
-        start_idx = tri_num
 
     # Check with zeros
     w.show_zeros = True
@@ -701,3 +592,165 @@ def test_histogram_data_nested():
     w.frequency_spacing_distance = 25.0
     hypot_dist = w.frequency_spacing_hypot_distance * 1.5
     assert abs(w._zero_mesh_radius - hypot_dist) < 1e-10
+
+
+def test_color_array():
+    """Test colors for different windrose types."""
+
+    # Testing vals
+    dir_vals = [0, 0, 0, 0, 10, 10, 10, 85, 90, 90, 90, 95, 170, 285, 310]
+    spd_vals = [0, 0, 0, 0, 1, 145, 189, 15, 10, 150, 300, 259, 100, 5, 301]
+
+    # Make into fake data collections
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
+    spd_header = Header(Speed(), 'm/s', a_per)
+    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
+    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+    data_step = 50.0
+    min_val = 1
+
+    # Bin values to divide into 6 intervals = 10 - 310 = 300 / 6 = 50 m/s
+    # intervals: [1-50, 51-100, 101-150, 151-200, 201-250, 251-300, 301-350]
+    #
+    # [[1], [], [145], [189], [], []],  # 0-49, 100-149, 150-199
+    # [[10, 15], [], [150], [], [], [259, 300]],  # 0-49, 150-199,, 250-299
+    # [[], [100], [], [], [], []],  # 100-149
+    # [[5], [], [], [], [], [301]]  # 0-49, 300-349
+
+    # Check freq=True, zeros=False
+    w = WindRose(dir_data, spd_data, 4)
+    w.show_freq, w.show_zeros = True, False
+    w.frequency_hours = 2
+    w.legend_parameters.segment_count = 6
+    w.colored_mesh
+
+    # color index corresponds to hourly interval indices
+    # [1-50, 51-100, 101-150, 151-200, 201-250, 251-300, 301-350]
+    chk_color_array = [0, 2, 3, 0, 2, 5, 1, 0, 5]
+    chk_color_array = [(c * data_step) + min_val for c in chk_color_array]
+
+    assert len(chk_color_array) == len(w._color_array)
+    for cc, c in zip(chk_color_array, w._color_array):
+        assert abs(cc - c) < 1e-10
+
+    # Check freq=True, zeros=True
+    w = WindRose(dir_data, spd_data, 4)
+    w.show_freq, w.show_zeros = True, True
+    w.frequency_hours = 2
+    w.legend_parameters.segment_count = 6
+    w.colored_mesh
+
+    # color index corresponds to hourly interval indices
+    chk_color_array = [1, 3, 4, 1, 3, 6, 2, 1, 6]
+    chk_color_array = [(c * data_step) + min_val for c in chk_color_array]
+    chk_color_array += [0, 0, 0, 0]
+
+    assert len(chk_color_array) == len(w._color_array)
+    for cc, c in zip(chk_color_array, w._color_array):
+        assert abs(cc - c) < 1e-10
+
+    # # Check freq=False, zeros=False
+    # w = WindRose(dir_data, spd_data, 4)
+    # w.show_freq, w.show_zeros = False, False
+    # w.frequency_hours = 2
+    # w.legend_parameters.segment_count = 6
+    # w.colored_mesh
+
+    # # color index corresponds to hourly interval indices
+    # chk_color_array = [int(round(sum([0, 2, 3]) / 3)),
+    #                    int(round(sum([0, 2, 5]) / 3)),
+    #                    1,  # 100
+    #                    3]  # 153
+    # chk_color_array = [(c * data_step) + min_val for c in chk_color_array]
+
+    # assert len(chk_color_array) == len(w._color_array)
+    # for cc, c in zip(chk_color_array, w._color_array):
+    #     assert abs(cc - c) < 1e-10
+
+    # # Check freq=False, zeros=True
+    # w = WindRose(dir_data, spd_data, 4)
+    # w.show_freq, w.show_zeros = False, True
+    # w.frequency_hours = 2
+    # w.legend_parameters.segment_count = 6
+    # w.colored_mesh
+
+    # # color index corresponds to hourly interval indices
+    # chk_color_array = [int(round(sum([0, 2, 3]) / 3)) + 1,
+    #                    int(round(sum([0, 2, 5]) / 3)) + 1,
+    #                    2,
+    #                    4]
+
+    # chk_color_array = [(c * data_step) + min_val for c in chk_color_array]
+    # chk_color_array += [0, 0, 0, 0]
+
+    # print(w._color_array)
+
+    # assert len(chk_color_array) == len(w._color_array)
+    # for cc, c in zip(chk_color_array, w._color_array):
+    #     assert abs(cc - c) < 1e-10
+
+    poly = w.windrose_lines[0]
+
+    print(poly)
+
+    assert False
+
+
+def test_windrose_ticks():
+    """Test windrose ticks."""
+
+    # Testing vals
+    dir_vals = [0, 0, 0, 0, 10, 10, 10, 85, 90, 90, 90, 95, 170, 285, 310]
+    spd_vals = [0, 0, 0, 0, 1, 145, 189, 15, 10, 150, 300, 259, 100, 5, 301]
+
+    # Make into fake data collections
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dates = [DateTime(6, 21, i) for i in range(len(dir_vals))]
+    spd_header = Header(Speed(), 'm/s', a_per)
+    dir_header = Header(GenericType('Direction', 'deg'), 'deg', a_per)
+    spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+
+    # Bin values to divide into 6 intervals = 10 - 310 = 300 / 6 = 50 m/s
+    # intervals: [1-50, 51-100, 101-150, 151-200, 201-250, 251-300, 301-350]
+    #
+    # [[1], [], [145], [189], [], []],  # 0-49, 100-149, 150-199
+    # [[10, 15], [], [150], [], [], [259, 300]],  # 0-49, 150-199,, 250-299
+    # [[], [100], [], [], [], []],  # 100-149
+    # [[5], [], [], [], [], [301]]  # 0-49, 300-349
+
+    # Check freq=True, zeros=False
+    w = WindRose(dir_data, spd_data, 4)
+    w.show_freq, w.show_zeros = True, False
+    w.frequency_hours = 2
+    w.legend_parameters.segment_count = 6
+    w.radius = 10.0
+
+    # Check freqs
+    freqs, ticks = w.frequency_labels(0.)
+    assert len(freqs) == len(ticks)
+    assert abs(sum(freqs) - 100.0) < 1e-10
+
+    tot = len([b for a in w.histogram_data for b in a])
+
+    chk_freqs = [3 / tot * 100, 5 / tot * 100, 1 / tot * 100, 2 / tot * 100]
+
+    for cf, f in zip(chk_freqs, freqs):
+        assert abs(cf - f) < 1e-10
+
+    # Check means
+    means, ticks = w.average_labels(0.)
+    assert len(means) == len(ticks)
+    tot = sum([b for a in w.histogram_data for b in a])
+    lengths = [len(h) for h in w.histogram_data]
+    assert abs(sum([m * l for m, l in zip(means, lengths)]) - tot) < 1e-10
+
+    chk_means = [sum([1, 145, 189]) / 3,
+                 sum([10, 15, 150, 259, 300]) / 5,
+                 100,
+                 153]
+
+    for cm, m in zip(chk_means, means):
+        assert abs(cm - m) < 1e-10

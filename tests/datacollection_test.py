@@ -22,8 +22,9 @@ import sys
 if (sys.version_info >= (3, 0)):
     xrange = range
 
-linspace, histogram, histogram_circular = \
-    BaseCollection.linspace, BaseCollection.histogram, BaseCollection.histogram_circular
+linspace, arange, histogram, histogram_circular = \
+    BaseCollection.linspace, BaseCollection.arange, BaseCollection.histogram, \
+    BaseCollection.histogram_circular
 
 
 def test_init():
@@ -702,9 +703,11 @@ def test_filter_by_analysis_period_sub_hourly():
     dc1 = HourlyContinuousCollection(header, values)
     dc2 = dc1.interpolate_to_timestep(4)
 
-    dc3 = dc2.filter_by_analysis_period(AnalysisPeriod(st_month=7, end_month=7, timestep=4))
+    dc3 = dc2.filter_by_analysis_period(
+        AnalysisPeriod(st_month=7, end_month=7, timestep=4))
     assert len(dc3) == 2976
-    dc4 = dc2.filter_by_analysis_period(AnalysisPeriod(st_hour=9, end_hour=17, timestep=4))
+    dc4 = dc2.filter_by_analysis_period(
+        AnalysisPeriod(st_hour=9, end_hour=17, timestep=4))
     assert len(dc4) == 12045
 
 
@@ -1340,6 +1343,67 @@ def test_linspace():
     assert [180., 240.0, 300.0, 360.0] == bin_arr, bin_arr
 
 
+def test_arange():
+    """Test arange function."""
+
+    # Basic
+    r = arange(0, 10, 1)
+    assert isinstance(r, Generator)
+    r = list(r)
+    cr = list(range(10))
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Fraction 1
+    r = list(arange(0, 1, 0.1))
+    cr = [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Fraction 2
+    r = list(arange(-0.55, 3, 0.0532))
+    cr = [-0.55, -0.4968, -0.4436, -0.3904, -0.3372, -0.284, -0.2308,
+          -0.1776, -0.1244, -0.0712, -0.018,  0.0352,  0.0884,  0.1416,
+          0.1948,  0.248,  0.3012,  0.3544,  0.4076,  0.4608,  0.514,
+          0.5672,  0.6204,  0.6736,  0.7268,  0.78,  0.8332,  0.8864,
+          0.9396,  0.9928,  1.046,  1.0992,  1.1524,  1.2056,  1.2588,
+          1.312,  1.3652,  1.4184,  1.4716,  1.5248,  1.578,  1.6312,
+          1.6844,  1.7376,  1.7908,  1.844,  1.8972,  1.9504,  2.0036,
+          2.0568,  2.11,  2.1632,  2.2164,  2.2696,  2.3228,  2.376,
+          2.4292,  2.4824,  2.5356,  2.5888,  2.642,  2.6952,  2.7484,
+          2.8016,  2.8548,  2.908,  2.9612]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Equal
+    r = list(arange(10, 10, 1))
+    assert len(r) == 0
+
+    # Neg step
+    r = list(arange(1, 0, -0.1))
+    cr = [1., 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Neg start
+    r = list(arange(-10, 0, 1))
+    cr = [-10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+    # Neg stop
+    r = list(arange(0, -10, -1))
+    cr = [-i for i in range(10)]
+    assert len(r) == len(cr)
+    for cv, v in zip(cr, r):
+        assert abs(cv - v) < 1e-10
+
+
 def test_histogram():
     """Test the windrose histogram."""
 
@@ -1357,10 +1421,10 @@ def test_histogram():
     assert hist == [[0, 0, 0], [1, 1, 1], [2, 2]]
 
     # Test out of bounds with 2 divisions
-    bin_arr = linspace(0, 3, 3)
+    bin_arr = linspace(-3, 3, 3)
     vals = [-1, -2, 10, 0, 0, 0, 1, 1, 1, 2, 2, 34]
     hist = histogram(vals, bin_arr)
-    assert hist == [[-2, -1, 0, 0, 0, 1, 1, 1], [2, 2]], hist
+    assert hist == [[-2, -1], [0, 0, 0, 1, 1, 1, 2, 2]], hist
 
     # Test edge bounds
     bin_arr = linspace(0, 3, 3)
