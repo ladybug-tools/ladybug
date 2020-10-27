@@ -1,10 +1,18 @@
-.. Ladybug documentation master file, created by
-   sphinx-quickstart on Wed Mar 13 20:09:41 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to Ladybug's documentation!
 ===================================
+
+.. image:: http://www.ladybug.tools/assets/img/ladybug.png
+
+Ladybug is a Python library to load, analyze and modify EnergyPlus Weather files (epw).
+You can download epw files from `EPWMap <http://www.ladybug.tools/epwmap/>`_.
+
+Installation
+============
+
+``pip install -U ladybug-core``
+
+Documentation
+=============
 
 .. toctree::
    :maxdepth: 2

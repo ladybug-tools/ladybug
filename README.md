@@ -17,7 +17,7 @@ This repository includes the core library which is the base for Ladybug. For plu
 
 For the Legacy Ladybug Grasshopper Plugin see [this repository](https://github.com/ladybug-tools/ladybug-legacy).
 
-## [API Documentation](https://www.ladybug.tools/ladybug/docs/ladybug.html)
+## [API Documentation](https://www.ladybug.tools/ladybug/docs/)
 
 ## Installation
 
@@ -51,7 +51,7 @@ print('altitude: {}, azimuth: {}'.format(sun.altitude, sun.azimuth))
 
 Ladybug is a derivative work of the following software projects:
 
-[PVLib-python](https://github.com/pvlib/pvlib-python) for solar irradiance calculations. Available under BSD 3-clause.
-[PsychroLib](https://github.com/psychrometrics/psychrolib) for psychrometric calculations. Available under MIT License.
+* [PVLib-python](https://github.com/pvlib/pvlib-python) for solar irradiance calculations. Available under BSD 3-clause.
+* [PsychroLib](https://github.com/psychrometrics/psychrolib) for psychrometric calculations. Available under MIT License.
 
 Applicable copyright notices for these works can be found within the relevant .py files.
