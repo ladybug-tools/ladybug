@@ -468,7 +468,8 @@ class WindRose(object):
 
         # Calculate stacked_data
         flat_data = [b for a in self.histogram_data for b in a]
-        min_data, max_data = min(flat_data), max(flat_data)
+        max_data = max(flat_data)
+        min_data = min(self.analysis_values) if self.show_zeros else min(flat_data)
         bin_count = self.legend_parameters.segment_count
         data_range = (min_data, max_data)
         histogram_data_stacked, bin_range = WindRose._histogram_data_nested(
@@ -841,7 +842,7 @@ class WindRose(object):
         """
         _histogram_data_nested = []
         min_analy, max_analy = analysis_range[0], analysis_range[1]
-        bins = linspace(min_analy, max_analy, int(bin_count) + 1)
+        bins = linspace(min_analy, max_analy, int(bin_count))
 
         # add some epsilon to final bin edge. We do this because the final bin in the
         # analysis histogram is not bounded by a value, but is simply greater then

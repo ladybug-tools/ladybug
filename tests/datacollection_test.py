@@ -1348,7 +1348,6 @@ def test_arange():
 
     # Basic
     r = arange(0, 10, 1)
-    assert isinstance(r, Generator)
     r = list(r)
     cr = list(range(10))
     assert len(r) == len(cr)
