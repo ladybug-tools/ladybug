@@ -651,55 +651,37 @@ def test_color_array():
     for cc, c in zip(chk_color_array, w._color_array):
         assert abs(cc - c) < 1e-10
 
-    # # Check freq=False, zeros=False
-    # w = WindRose(dir_data, spd_data, 4)
-    # w.show_freq, w.show_zeros = False, False
-    # w.frequency_hours = 2
-    # w.legend_parameters.segment_count = 6
-    # w.colored_mesh
+    # Check freq=False, zeros=False
+    w = WindRose(dir_data, spd_data, 4)
+    w.show_freq, w.show_zeros = False, False
+    w.frequency_hours = 2
+    w.legend_parameters.segment_count = 6
+    w.colored_mesh
 
-    # # color index corresponds to hourly interval indices
-    # chk_color_array = [int(round(sum([0, 2, 3]) / 3)),
-    #                    int(round(sum([0, 2, 5]) / 3)),
-    #                    1,  # 100
-    #                    3]  # 153
-    # chk_color_array = [(c * data_step) + min_val for c in chk_color_array]
+    # color index corresponds to hourly interval indices
+    chk_color_array = [111 + 2/3, 146.8, 100, 153]
+    assert len(chk_color_array) == len(w._color_array)
+    for cc, c in zip(chk_color_array, w._color_array):
+        assert abs(cc - c) < 1e-10
 
-    # assert len(chk_color_array) == len(w._color_array)
-    # for cc, c in zip(chk_color_array, w._color_array):
-    #     assert abs(cc - c) < 1e-10
+    # Check freq=False, zeros=True
+    w = WindRose(dir_data, spd_data, 4)
+    w.show_freq, w.show_zeros = False, True
+    w.frequency_hours = 2
+    w.legend_parameters.segment_count = 6
+    w.colored_mesh
 
-    # # Check freq=False, zeros=True
-    # w = WindRose(dir_data, spd_data, 4)
-    # w.show_freq, w.show_zeros = False, True
-    # w.frequency_hours = 2
-    # w.legend_parameters.segment_count = 6
-    # w.colored_mesh
+    # color index corresponds to hourly interval indices
+    chk_color_array = [111 + 2/3, 146.8, 100, 153]
+    chk_color_array += [0, 0, 0, 0]
 
-    # # color index corresponds to hourly interval indices
-    # chk_color_array = [int(round(sum([0, 2, 3]) / 3)) + 1,
-    #                    int(round(sum([0, 2, 5]) / 3)) + 1,
-    #                    2,
-    #                    4]
-
-    # chk_color_array = [(c * data_step) + min_val for c in chk_color_array]
-    # chk_color_array += [0, 0, 0, 0]
-
-    # print(w._color_array)
-
-    # assert len(chk_color_array) == len(w._color_array)
-    # for cc, c in zip(chk_color_array, w._color_array):
-    #     assert abs(cc - c) < 1e-10
-
-    poly = w.windrose_lines[0]
-
-    print(poly)
-
-    assert False
+    assert len(chk_color_array) == len(w._color_array)
+    for cc, c in zip(chk_color_array, w._color_array):
+        assert abs(cc - c) < 1e-10
 
 
-def test_windrose_ticks():
-    """Test windrose ticks."""
+def test_wind_polygons():
+    """Test colors for different windrose types."""
 
     # Testing vals
     dir_vals = [0, 0, 0, 0, 10, 10, 10, 85, 90, 90, 90, 95, 170, 285, 310]
@@ -726,31 +708,12 @@ def test_windrose_ticks():
     w.show_freq, w.show_zeros = True, False
     w.frequency_hours = 2
     w.legend_parameters.segment_count = 6
-    w.radius = 10.0
 
-    # Check freqs
-    freqs, ticks = w.frequency_labels(0.)
-    assert len(freqs) == len(ticks)
-    assert abs(sum(freqs) - 100.0) < 1e-10
+    chk_poly_num = sum([3, 3, 1, 2])
+    assert chk_poly_num == len(w.windrose_lines)
 
-    tot = len([b for a in w.histogram_data for b in a])
-
-    chk_freqs = [3 / tot * 100, 5 / tot * 100, 1 / tot * 100, 2 / tot * 100]
-
-    for cf, f in zip(chk_freqs, freqs):
-        assert abs(cf - f) < 1e-10
-
-    # Check means
-    means, ticks = w.average_labels(0.)
-    assert len(means) == len(ticks)
-    tot = sum([b for a in w.histogram_data for b in a])
-    lengths = [len(h) for h in w.histogram_data]
-    assert abs(sum([m * l for m, l in zip(means, lengths)]) - tot) < 1e-10
-
-    chk_means = [sum([1, 145, 189]) / 3,
-                 sum([10, 15, 150, 259, 300]) / 5,
-                 100,
-                 153]
-
-    for cm, m in zip(chk_means, means):
-        assert abs(cm - m) < 1e-10
+    # For averaged
+    w.show_freq = False
+    chk_poly_num = 4
+    w.colored_mesh
+    assert chk_poly_num == len(w.windrose_lines)

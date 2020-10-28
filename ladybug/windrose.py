@@ -45,7 +45,6 @@ class WindRose(object):
         * north
         * histogram_data
         * angles
-        * label_angles
         * legend
         * legend_parameters
         * base_point
@@ -58,8 +57,7 @@ class WindRose(object):
         * color_range
         * orientation_lines
         * frequency_lines
-        * frequency_labels
-        * average_labels
+        * windrose_lines
         * frequency_spacing_distance
         * frequency_intervals_compass
         * frequency_intervals_mesh
@@ -111,8 +109,6 @@ class WindRose(object):
 
         # Compute the windrose data and associated read-only properties
         self._angles = WindRose._compute_angles(number_of_directions)
-        theta = 360.0 / self._number_of_directions / 2.0
-        self._label_angles = [(a + theta) % 360.0 for a in self.angles[:-1]]
         self._is_speed_data_type = isinstance(
             self._analysis_data_collection.header.data_type, Speed)
         self._histogram_data, self._zero_count = \
@@ -383,11 +379,6 @@ class WindRose(object):
         return self._angles
 
     @ property
-    def label_angles(self):
-        """Get a list of orientation angles used to label bins."""
-        return self._label_angles
-
-    @ property
     def bin_vectors(self):
         """Get vectors for orientation intervals."""
         if self._bin_vectors is None:
@@ -467,7 +458,7 @@ class WindRose(object):
         max_bar_radius = self.mesh_radius
         min_bar_radius = self._zero_mesh_radius
 
-        if self.show_zeros:
+        if self.show_zeros and self.zero_count > 0:
             # Compute the array for calm rose
             zero_data = [[0] for _ in self.histogram_data]
             zero_data_stacked = [[[0]] for _ in self.histogram_data]
@@ -577,7 +568,7 @@ class WindRose(object):
         zero_dist = self._zero_mesh_radius
         ytick_dist = self.frequency_spacing_hypot_distance
         # Add frequency polygon for calmrose, if exists
-        if self.show_zeros:
+        if self.show_zeros and self.zero_count > 0:
             _ytick_array = [(vec1[0] * zero_dist, vec1[1] * zero_dist)
                             for (vec1, _) in self.bin_vectors]
             ytick_array.append(_ytick_array)
@@ -640,59 +631,6 @@ class WindRose(object):
             zero_dist = self.frequency_spacing_hypot_distance * _ytick_num_frac
 
         return zero_dist
-
-    def frequency_labels(self, factor):
-        """Get frequency labels per windrose direction.
-
-        Args:
-            factor: A number between 0 and 1 for the fraction of the spacing_factor
-                at which the points should be generated.
-
-        Return:
-            A tuple with two items.
-
-            - A list of hourly frequencies for each windrose orientation.
-
-            - A corresponding list of LineSegment2Ds for each windrose orientation tick.
-        """
-
-        freqs = []
-        ticks = self.compass.ticks_from_angles(self.label_angles, factor=factor)
-
-        total_hours = len(self.analysis_values)
-        if not self.show_zeros:
-            total_hours -= self.zero_count
-
-        for bin in self.histogram_data:
-            bin_hours = len(bin)
-            if self.show_zeros:
-                bin_hours += self.zeros_per_bin
-            freqs.append(bin_hours / total_hours * 100.0)
-
-        return freqs, ticks
-
-    def average_labels(self, factor):
-        """Get mean average labels per windrose direction.
-
-        Args:
-            factor: A number between 0 and 1 for the fraction of the spacing_factor
-                at which the points should be generated.
-
-        Return:
-            A tuple with two items.
-
-            - A list of hourly mean averages for each windrose orientation.
-
-            - A corresponding list of LineSegment2Ds for each windrose orientation tick.
-        """
-
-        means = []
-        ticks = self.compass.ticks_from_angles(self.label_angles, factor=factor)
-
-        for bin in self.histogram_data:
-            means.append(sum(bin) / float(len(bin)))
-
-        return means, ticks
 
     @ staticmethod
     def _compute_angles(num_of_dir):
@@ -968,7 +906,6 @@ class WindRose(object):
 
         # Make mesh
         mesh_array = [[Point2D.from_array(vec) for vec in vecs] for vecs in hist_coords]
-
         return mesh_array, color_array
 
     def _transform(self, geometry):
