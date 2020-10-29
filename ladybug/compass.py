@@ -187,6 +187,8 @@ class Compass(object):
             spacing_fac = self.radius * 0.01  # spacing factor
             add_y = (self.radius * math.cos(math.radians(angle))) - spacing_fac
             pts.append(Point2D(self.center.x, self.center.y + add_y))
+        if self._north_angle != 0:
+            pts = [pt.rotate(self._north_angle, self.center) for pt in pts]
         return pts
 
     @property
@@ -210,6 +212,8 @@ class Compass(object):
             pt3d = Point3D(math.cos(ang), 0, math.sin(ang))
             add_y = (self.point3d_to_stereographic(pt3d, 1).x * self.radius) - spacing_fac
             pts.append(Point2D(self.center.x, self.center.y + add_y))
+        if self._north_angle != 0:
+            pts = [pt.rotate(self._north_angle, self.center) for pt in pts]
         return pts
 
     def label_points_from_angles(self, angles, factor=0.8):
