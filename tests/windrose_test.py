@@ -1,6 +1,5 @@
 # coding=utf-8
 from __future__ import division
-from typing import Generator
 
 import pytest
 
@@ -531,7 +530,7 @@ def test_histogram_data_nested():
     # Init complex dir set divided by 4, and 2 hourly intervals
     w = WindRose(dir_data, spd_data, 4)
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 6
+    w.legend_parameters.segment_count = 7
 
     # Bin values to divide into 6 intervals = 10 - 310 = 300 / 6 = 50 m/s
     # intervals: [1-50, 51-100, 101-150, 151-200, 201-250, 251-300, 301-350]
@@ -552,7 +551,7 @@ def test_histogram_data_nested():
     # Testing
     speeds = [val for bin in w.histogram_data for val in bin]
     min_speed, max_speed = min(speeds), max(speeds)
-    histstack, _ = WindRose._histogram_data_nested(
+    histstack, bins = WindRose._histogram_data_nested(
         w.histogram_data, (min_speed, max_speed), w.legend_parameters.segment_count)
 
     # Check
@@ -614,7 +613,7 @@ def test_color_array():
     # Bin values to divide into 6 intervals = 10 - 310 = 300 / 6 = 50 m/s
     # intervals: [1-50, 51-100, 101-150, 151-200, 201-250, 251-300, 301-350]
     #
-    # [[1], [], [145], [189], [], []],  # 0-49, 100-149, 150-199
+    # [[1], [], [145], [189], [], [],  # 0-49, 100-149, 150-199
     # [[10, 15], [], [150], [], [], [259, 300]],  # 0-49, 150-199,, 250-299
     # [[], [100], [], [], [], []],  # 100-149
     # [[5], [], [], [], [], [301]]  # 0-49, 300-349
@@ -623,7 +622,7 @@ def test_color_array():
     w = WindRose(dir_data, spd_data, 4)
     w.show_freq, w.show_zeros = True, False
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 6
+    w.legend_parameters.segment_count = 7
     w.colored_mesh
 
     # color index corresponds to hourly interval indices
@@ -636,17 +635,24 @@ def test_color_array():
         assert abs(cc - c) < 1e-10
 
     # Check freq=True, zeros=True
-    w = WindRose(dir_data, spd_data, 4)
+    # Modify range for easier calcs
+    dir_vals = [0, 0, 0, 0, 10, 10, 10, 85, 90, 90, 90, 95, 170, 285, 310]
+    spd_vals = [0, 0, 0, 0, 1, 145, 189, 15, 10, 149, 299, 259, 99, 5, 300]
+    zero_spd_data = HourlyDiscontinuousCollection(spd_header, spd_vals, dates)
+    zero_dir_data = HourlyDiscontinuousCollection(dir_header, dir_vals, dates)
+    zero_data_step = 50
+    zero_min_val = 0
+
+    w = WindRose(zero_dir_data, zero_spd_data, 4)
     w.show_freq, w.show_zeros = True, True
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 6
+    w.legend_parameters.segment_count = 7
     w.colored_mesh
 
     # color index corresponds to hourly interval indices
     chk_color_array = [1, 3, 4, 1, 3, 6, 2, 1, 6]
-    chk_color_array = [(c * data_step) + min_val for c in chk_color_array]
+    chk_color_array = [(c * zero_data_step) + zero_min_val for c in chk_color_array]
     chk_color_array += [0, 0, 0, 0]
-
     assert len(chk_color_array) == len(w._color_array)
     for cc, c in zip(chk_color_array, w._color_array):
         assert abs(cc - c) < 1e-10
@@ -655,7 +661,7 @@ def test_color_array():
     w = WindRose(dir_data, spd_data, 4)
     w.show_freq, w.show_zeros = False, False
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 6
+    w.legend_parameters.segment_count = 7
     w.colored_mesh
 
     # color index corresponds to hourly interval indices
@@ -668,7 +674,7 @@ def test_color_array():
     w = WindRose(dir_data, spd_data, 4)
     w.show_freq, w.show_zeros = False, True
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 6
+    w.legend_parameters.segment_count = 7
     w.colored_mesh
 
     # color index corresponds to hourly interval indices

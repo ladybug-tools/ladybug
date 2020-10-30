@@ -426,8 +426,8 @@ class WindRose(object):
             else:
                 values = [sum(h) / float(len(h)) for h in self.histogram_data]
 
-            if self.show_zeros and self.zero_count > 0:
-                values.extend([0 for i in range(self.zero_count)])
+            if self.show_zeros:
+                values += [0 for i in range(self.zero_count)]
 
             # Create the graphic container
             z = 0
@@ -437,6 +437,7 @@ class WindRose(object):
                 data_type=self.analysis_data_collection.header.data_type,
                 unit=self.analysis_data_collection.header.unit)
 
+            self._container.legend_parameters.include_larger_smaller = True
         return self._container
 
     @ property
@@ -469,6 +470,7 @@ class WindRose(object):
         # Calculate stacked_data
         flat_data = [b for a in self.histogram_data for b in a]
         max_data = max(flat_data)
+        print(flat_data)
         min_data = min(self.analysis_values) if self.show_zeros else min(flat_data)
         bin_count = self.legend_parameters.segment_count
         data_range = (min_data, max_data)
@@ -488,7 +490,6 @@ class WindRose(object):
             min_bar_radius, max_bar_radius, self.show_freq)
 
         # Compute colors
-
         # If show_freq, assign colors to intervals. Else keep averages.
         if self.show_freq:
             for i, mean_val in enumerate(color_array):
@@ -496,13 +497,11 @@ class WindRose(object):
                     if bin_range[j] <= mean_val < bin_range[j+1]:
                         color_array[i] = j
                         break
-
             if self.show_zeros:
                 color_array = [c + 1 for c in color_array]
 
             # convert bin legend interval to the average interval (interval midpoint)
             color_array = [(c * data_step) + min_data for c in color_array]
-
         poly_array += zero_poly_array
         color_array += zero_color_array
 
@@ -512,8 +511,9 @@ class WindRose(object):
 
         # Assign colors
         _color_range = self.color_range
+        _color_range = [_color_range.color(val) for val in color_array]
         mesh = Mesh2D.from_face_vertices(poly_array, purge=True)
-        mesh.colors = tuple(_color_range.color(val) for val in color_array)
+        mesh.colors = tuple(_color_range)
 
         # Scale up unit circle to windrose radius (and other transforms)
         return self._transform(mesh)
@@ -851,7 +851,8 @@ class WindRose(object):
         # included in the histogram (since the maximum value in a bin interval is
         # exclusive), and would need to be added in it's own bin. There is no way to
         # include the maximum value, without creating arbitrary intervals.
-        bins[-1] += 1e-1
+        eps = 1e-1
+        bins[-1] += eps
 
         # Calculate number of hours per frequency segment
         for bar_data_vals in histogram_data:
@@ -892,12 +893,12 @@ class WindRose(object):
             for stack in hist_data_stacked:
                 i = 0
                 for j in range(len(stack)):
-                    if len(stack[j]) == 0:
-                        i += 1
-                    else:
+                    try:
                         mean_val = sum(stack[j]) / float(len(stack[j]))
                         color_array.append(mean_val)
-                        i += 1
+                    except ZeroDivisionError:
+                        mean_val = 0
+                    i += 1
         else:
             for stack in hist_data_stacked:
                 # Value is already averaged
