@@ -11,8 +11,6 @@ Installation
 
 ``pip install -U ladybug-core``
 
-Documentation
-=============
 
 .. toctree::
    :maxdepth: 2
