@@ -215,7 +215,7 @@ class WindRose(object):
         theta = _theta / 2.0 / 180.0 * math.pi
         return self.frequency_spacing_distance / math.cos(theta)
 
-    @ property
+    @property
     def frequency_maximum(self):
         """Get maximum frequency to represent in the windrose plot.
 
@@ -223,40 +223,40 @@ class WindRose(object):
         """
         return self.frequency_intervals_compass * self.frequency_hours
 
-    @ property
+    @property
     def frequency_hours(self):
         """Get or set number of hours to bin analysis values, per direction."""
         if self._frequency_hours is None:
             self._frequency_hours = self.DEFAULT_FREQUENCY_HOURS
         return self._frequency_hours
 
-    @ frequency_hours.setter
+    @frequency_hours.setter
     def frequency_hours(self, frequency_hours):
         assert frequency_hours > 0, 'frequency_hours must be a number greater then 0. ' \
             'Got: {}'.format(frequency_hours)
         self._frequency_hours = int(frequency_hours)
 
-    @ property
+    @property
     def frequency_intervals_compass(self):
         """Get or set the number of intervals in the windrose compass."""
         if self._frequency_intervals_compass is None:
             self._frequency_intervals_compass = self.frequency_intervals_mesh
         return self._frequency_intervals_compass
 
-    @ frequency_intervals_compass.setter
+    @frequency_intervals_compass.setter
     def frequency_intervals_compass(self, frequency_intervals_compass):
-        assert frequency_intervals_compass >= 1, 'The frequency_intervals_compass '
-        'must be greater then 0. Got: {}'.format(frequency_intervals_compass)
+        assert frequency_intervals_compass >= 1, 'The frequency_intervals_compass ' \
+            'must be greater then 0. Got: {}'.format(frequency_intervals_compass)
         self._compass = None
         self._container = None
         self._frequency_intervals_compass = int(frequency_intervals_compass)
 
-    @ property
+    @property
     def frequency_intervals_mesh(self):
         """Get the number of intervals in the windrose mesh."""
         return int(math.ceil(self.real_freq_max / self.frequency_hours))
 
-    @ property
+    @property
     def legend_parameters(self):
         """Get or set the LegendParameters object for this plot.
 
@@ -266,15 +266,15 @@ class WindRose(object):
             self._legend_parameters = self.container.legend_parameters
         return self._legend_parameters
 
-    @ legend_parameters.setter
+    @legend_parameters.setter
     def legend_parameters(self, legend_parameters):
-        assert isinstance(legend_parameters, LegendParameters), 'legend_parameters'
-        ' must be a LegendParameters. Got {}.'.format(type(legend_parameters))
+        assert isinstance(legend_parameters, LegendParameters), 'legend_parameters' \
+            ' must be a LegendParameters. Got {}.'.format(type(legend_parameters))
         self._compass = None
         self._container = None
         self._legend_parameters = legend_parameters
 
-    @ property
+    @property
     def north(self):
         """Get or set north orientation for windrose by degrees.
 
@@ -283,41 +283,41 @@ class WindRose(object):
         """
         return self._north
 
-    @ north.setter
+    @north.setter
     def north(self, north):
-        assert isinstance(north, (float, int)), 'north must be a number representing '
-        'degrees. Got {}.'.format(north)
+        assert isinstance(north, (float, int)), 'north must be a number representing ' \
+            'degrees. Got {}.'.format(north)
 
         self._compass = None
         self._container = None
         self._north = float(north) % 360.0
 
-    @ property
+    @property
     def legend(self):
         """Get the Legend object for this plot"""
         return self.container.legend
 
-    @ property
+    @property
     def direction_data_collection(self):
         """Get the direction data collection assigned to this windrose plot."""
         return self._direction_data_collection
 
-    @ property
+    @property
     def analysis_data_collection(self):
         """Get the analysis data collection assigned to this windrose plot."""
         return self._analysis_data_collection
 
-    @ property
+    @property
     def analysis_values(self):
         """Get the hourly wind analysis values to bin by direction (i.e wind speed)."""
         return self._analysis_data_collection.values
 
-    @ property
+    @property
     def direction_values(self):
         """Get the direction data values in this windrose plot."""
         return self._direction_data_collection.values
 
-    @ property
+    @property
     def histogram_data(self):
         """Get a histogram of wind analysis values binned by wind direction.
 
@@ -339,7 +339,7 @@ class WindRose(object):
 
         return self._histogram_data
 
-    @ property
+    @property
     def prevailing_direction(self):
         """Get a tuple of the predominant directions of the wind values.
         """
@@ -363,41 +363,41 @@ class WindRose(object):
 
         return self._prevailing_direction
 
-    @ property
+    @property
     def zero_count(self):
         """Get the number of wind analysis values equal to zero."""
         return self._zero_count
 
-    @ property
+    @property
     def analysis_period(self):
         """Get the AnalysisPeriod assigned to the hourly plot's data collection."""
         return self._analysis_data_collection.header.analysis_period
 
-    @ property
+    @property
     def angles(self):
         """Get a list of orientation angles used to bin analysis values."""
         return self._angles
 
-    @ property
+    @property
     def bin_vectors(self):
         """Get vectors for orientation intervals."""
         if self._bin_vectors is None:
             self._bin_vectors = WindRose._bin_vectors_radial(self.angles)
         return self._bin_vectors
 
-    @ property
+    @property
     def zeros_per_bin(self):
         """Get the number of analysis values equal to zero, per orientation bin."""
         if self._zeros_per_bin is None:
             self._zeros_per_bin = float(self.zero_count) / (len(self.angles) - 1)
         return self._zeros_per_bin
 
-    @ property
+    @property
     def real_freq_max(self):
         """Get the maximum hours of wind in the largest histogram bin."""
         return max([len(d) for d in self.histogram_data])
 
-    @ property
+    @property
     def compass(self):
         """Get the compass object for the windrose plot.
 
@@ -409,7 +409,7 @@ class WindRose(object):
             return Compass(self.compass_radius, self.base_point, north_angle=self.north)
         return self._compass
 
-    @ property
+    @property
     def container(self):
         """Get the GraphicContainer for the windrose mesh.
 
@@ -440,7 +440,7 @@ class WindRose(object):
             self._container.legend_parameters.include_larger_smaller = True
         return self._container
 
-    @ property
+    @property
     def colored_mesh(self):
         """Get the colored Mesh2D for this graphic.
 
@@ -518,7 +518,7 @@ class WindRose(object):
         # Scale up unit circle to windrose radius (and other transforms)
         return self._transform(mesh)
 
-    @ property
+    @property
     def color_range(self):
         """Get the color range associated with this legend."""
         _l_par = self.legend_parameters
@@ -534,7 +534,7 @@ class WindRose(object):
                     _l_par.max = max(values)
             return ColorRange(_l_par.colors, (_l_par.min, _l_par.max))
 
-    @ property
+    @property
     def orientation_lines(self):
         """Get the orientation lines for windrose as a LineSegment2D list."""
 
@@ -556,7 +556,7 @@ class WindRose(object):
 
         return [self._transform(seg) for seg in segs]
 
-    @ property
+    @property
     def frequency_lines(self):
         """Get the frequency lines for windrose as Polygon2D lists."""
 
@@ -585,16 +585,19 @@ class WindRose(object):
 
         return [self._transform(Polygon2D.from_array(vecs)) for vecs in ytick_array]
 
-    @ property
+    @property
     def windrose_lines(self):
         """Get the windrose lines as Polygon2D lists."""
 
         if self._poly_array is None:
+            # colored_mesh property computes windrose geometry with appropriate checks
+            # for user-defined parameters, so all windrose geometry properties are set
+            # there. If _poly_array is not set, compute colored_mesh.
             _ = self.colored_mesh
 
         return [self._transform(Polygon2D(vecs)) for vecs in self._poly_array]
 
-    @ property
+    @property
     def mesh_radius(self):
         """Get the radius of the windrose mesh (with zero values).
 
@@ -603,7 +606,7 @@ class WindRose(object):
         """
         return self._nonzero_mesh_radius + self._zero_mesh_radius
 
-    @ property
+    @property
     def compass_radius(self):
         """Get the radius of the windrose compass.
 
@@ -615,14 +618,14 @@ class WindRose(object):
 
         return max_bar_radius + self._zero_mesh_radius
 
-    @ property
+    @property
     def _nonzero_mesh_radius(self):
         """Get the radius of just the base windrose (excluding the zero values)."""
 
         ytick_num_frac = self.real_freq_max / self.frequency_hours
         return self.frequency_spacing_hypot_distance * ytick_num_frac
 
-    @ property
+    @property
     def _zero_mesh_radius(self):
         """Get the radius of just the windrose zero values."""
 
@@ -633,7 +636,7 @@ class WindRose(object):
 
         return zero_dist
 
-    @ staticmethod
+    @staticmethod
     def _compute_angles(num_of_dir):
         """Compute angles"""
 
@@ -644,7 +647,7 @@ class WindRose(object):
         return [b - phi if (b - phi) >= 0.0 else b - phi + 360.
                 for b in bin_arr]
 
-    @ staticmethod
+    @staticmethod
     def _bin_vectors_radial(bin_arr):
         """Compute the radial coordinates for the histogram bins of values.
 
@@ -675,7 +678,7 @@ class WindRose(object):
                          (math.cos(theta2 / t), -math.sin(theta2 / t))))
         return vecs
 
-    @ staticmethod
+    @staticmethod
     def _compute_bar_stack_vecs(base_vec_show_freq, vec1, vec2, curr_bar_radius,
                                 min_bar_radius, max_bar_num, stacks):
         """Compute the bar geometry arrays for stacked histogram bars.
@@ -722,7 +725,7 @@ class WindRose(object):
 
         return bar_interval_vecs
 
-    @ staticmethod
+    @staticmethod
     def _histogram_array_radial(bin_vecs, vec_cpt, hist, hist_stacked, radius_arr,
                                 show_freq):
         """Coordinates for a radial histogram as a vector array.
@@ -775,7 +778,7 @@ class WindRose(object):
 
         return hist_coords
 
-    @ staticmethod
+    @staticmethod
     def _compute_windrose_data(direction_values, analysis_values, bin_array, bin_range,
                                is_speed_data_type):
         """
@@ -817,7 +820,7 @@ class WindRose(object):
 
         return data, zero_count
 
-    @ staticmethod
+    @staticmethod
     def _histogram_data_nested(histogram_data, analysis_range, bin_count):
         """Computes histogram for each histogram bin based analysis values.
 
@@ -861,7 +864,7 @@ class WindRose(object):
 
         return _histogram_data_nested, bins
 
-    @ staticmethod
+    @staticmethod
     def _compute_colored_mesh_array(hist_data, hist_data_stacked, bin_vecs, min_radius,
                                     max_radius, show_freq):
         """Compute a colored mesh from this object's histogram.

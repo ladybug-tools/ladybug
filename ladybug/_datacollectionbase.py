@@ -706,7 +706,7 @@ class BaseCollection(object):
             val += step
 
     @staticmethod
-    def histogram(values, bins,  key=None):
+    def histogram(values, bins, key=None):
         """Compute the frequency histogram from a list of values.
 
         The data is binned inclusive of the lower bound but exclusive of the upper bound
