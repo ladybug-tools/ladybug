@@ -213,7 +213,7 @@ class BaseCollection(object):
 
     def normalize_by_area(self, area, area_unit):
         """Get a Data Collection that is normalized by an area value.
-        
+
         Note that this method will raise a ValueError if the data type in the header
         of the data collection does not have a normalized_type. Also note that a
         ZeroDivisionError will be raised if the input area is equal to 0.
@@ -670,7 +670,43 @@ class BaseCollection(object):
             return [start]
 
     @staticmethod
-    def histogram(values, bins, hist_range=None, key=None):
+    def arange(start, stop, step):
+        """Return evenly spaced fractional or whole values within a given interval.
+
+        This function acts like the Python range method, but can also account for
+        fractional values. It is equivalent to the numpy.arange function.
+
+        Args:
+            start: Number for inclusive start of interval.
+            stop: Number for exclusive end of interval.
+            step: Number for step size of interval.
+
+        Returns:
+            Generator of evenly spaced values.
+
+        Usage:
+
+        .. code-block:: python
+
+            from BaseCollection import arange
+
+            arange(1, 351, 50)
+            # >> [1, 51, 101, 151, 201, 251, 301]
+        """
+
+        val = start
+
+        if start <= stop:
+            def ineq(a, b): return a < b
+        else:
+            def ineq(a, b): return a > b
+
+        while ineq(val, stop) and abs(val - stop) > 1e-10:
+            yield val
+            val += step
+
+    @staticmethod
+    def histogram(values, bins, key=None):
         """Compute the frequency histogram from a list of values.
 
         The data is binned inclusive of the lower bound but exclusive of the upper bound
@@ -681,9 +717,6 @@ class BaseCollection(object):
             values: Set of numerical data as a list.
             bins: A monotonically increasing array of uniform-width bin edges, excluding
                 the rightmost edge.
-            hist_range: Optional parameter to define the lower and upper range of the
-                histogram as a tuple of numbers. If not provided the range is
-                ``(min(key(values)), max(key(values))+1)``.
             key: Optional parameter to define key to bin values by, as a function. If not
                 provided, the histogram will be binned by the value.
 
@@ -712,19 +745,17 @@ class BaseCollection(object):
                 return v
 
         vals = sorted(values, key=key)
-
-        if hist_range is None:
-            hist_range = (key(min(vals)), key(max(vals)) + 1)
-
+        min_bound, max_bound = min(bins), max(bins)
         bin_bound_num = len(bins)
 
         # Init histogram bins
         hist = [[] for i in range(bin_bound_num - 1)]
         bin_index = 0
+
         for val in vals:
             k = key(val)
             # Ignore values out of range
-            if k < hist_range[0] or k >= hist_range[1]:
+            if k < min_bound or k > max_bound:
                 continue
 
             # This loop will iterate through the bin upper bounds.
