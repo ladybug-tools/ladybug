@@ -390,7 +390,7 @@ def test_windrose_set_legend_parameters():
     assert w.legend_parameters.segment_count == pytest.approx(16, abs=1e-10)
 
     # Check resetting
-    w._legend_parameters = None
+    w.legend_parameters = None
     assert isinstance(w.legend_parameters, LegendParameters)
     assert w.legend_parameters.segment_count == pytest.approx(11.0, abs=1e-10)
 
@@ -622,7 +622,7 @@ def test_color_array():
     w = WindRose(dir_data, spd_data, 4)
     w.show_freq, w.show_zeros = True, False
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 7
+    w.legend_parameters = LegendParameters(segment_count=7)
     w.colored_mesh
 
     # color index corresponds to hourly interval indices
@@ -646,7 +646,7 @@ def test_color_array():
     w = WindRose(zero_dir_data, zero_spd_data, 4)
     w.show_freq, w.show_zeros = True, True
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 7
+    w.legend_parameters = LegendParameters(segment_count=7)
     w.colored_mesh
 
     # color index corresponds to hourly interval indices
@@ -661,7 +661,7 @@ def test_color_array():
     w = WindRose(dir_data, spd_data, 4)
     w.show_freq, w.show_zeros = False, False
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 7
+    w.legend_parameters = LegendParameters(segment_count=7)
     w.colored_mesh
 
     # color index corresponds to hourly interval indices
@@ -674,7 +674,7 @@ def test_color_array():
     w = WindRose(dir_data, spd_data, 4)
     w.show_freq, w.show_zeros = False, True
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 7
+    w.legend_parameters = LegendParameters(segment_count=7)
     w.colored_mesh
 
     # color index corresponds to hourly interval indices
@@ -713,7 +713,7 @@ def test_wind_polygons():
     w = WindRose(dir_data, spd_data, 4)
     w.show_freq, w.show_zeros = True, False
     w.frequency_hours = 2
-    w.legend_parameters.segment_count = 6
+    w.legend_parameters = LegendParameters(segment_count=6)
 
     chk_poly_num = sum([3, 3, 1, 2])
     assert chk_poly_num == len(w.windrose_lines)

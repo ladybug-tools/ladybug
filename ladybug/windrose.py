@@ -262,14 +262,13 @@ class WindRose(object):
 
         Default segment count is 10.
         """
-        if self._legend_parameters is None:
-            self._legend_parameters = self.container.legend_parameters
-        return self._legend_parameters
+        return self.container.legend_parameters
 
     @legend_parameters.setter
     def legend_parameters(self, legend_parameters):
-        assert isinstance(legend_parameters, LegendParameters), 'legend_parameters' \
-            ' must be a LegendParameters. Got {}.'.format(type(legend_parameters))
+        if legend_parameters is not None:
+            assert isinstance(legend_parameters, LegendParameters), 'legend_parameters' \
+                ' must be a LegendParameters. Got {}.'.format(type(legend_parameters))
         self._compass = None
         self._container = None
         self._legend_parameters = legend_parameters
@@ -417,9 +416,7 @@ class WindRose(object):
         legend_parameters all influence the initiation of this object, this property
         is to None if any of those properties are edited by the user.
         """
-
         if self._container is None:
-
             # Get analysis values
             if self.show_freq:
                 values = [b for a in self.histogram_data for b in a]
@@ -436,8 +433,6 @@ class WindRose(object):
                 legend_parameters=self._legend_parameters,
                 data_type=self.analysis_data_collection.header.data_type,
                 unit=self.analysis_data_collection.header.unit)
-
-            self._container.legend_parameters.include_larger_smaller = True
         return self._container
 
     @property
@@ -470,7 +465,6 @@ class WindRose(object):
         # Calculate stacked_data
         flat_data = [b for a in self.histogram_data for b in a]
         max_data = max(flat_data)
-        print(flat_data)
         min_data = min(self.analysis_values) if self.show_zeros else min(flat_data)
         bin_count = self.legend_parameters.segment_count
         data_range = (min_data, max_data)
@@ -526,13 +520,10 @@ class WindRose(object):
         if isinstance(_l_par, LegendParametersCategorized):
             return ColorRange(_l_par.colors, _l_par.domain, _l_par.continuous_colors)
         else:
-            if (_l_par.min is None) or (_l_par.max is None):
-                values = self.container.values
-                if _l_par.min is None:
-                    _l_par.min = min(values)
-                if _l_par.max is None:
-                    _l_par.max = max(values)
-            return ColorRange(_l_par.colors, (_l_par.min, _l_par.max))
+            values = self.container.values
+            min_val = _l_par.min if _l_par.min is not None else min(values)
+            max_val = _l_par.max if _l_par.max is not None else max(values)
+            return ColorRange(_l_par.colors, (min_val, max_val))
 
     @property
     def orientation_lines(self):
