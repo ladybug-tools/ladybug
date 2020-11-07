@@ -438,7 +438,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
             'values': self._values,
             'datetimes': [dat.to_array() for dat in self.datetimes],
             'validated_a_period': self._validated_a_period,
-            'type': 'HourlyDiscontinuousCollection'
+            'type': self.__class__.__name__
         }
 
     def _xxrange(self, start, end, step_count):
@@ -920,7 +920,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         return {
             'header': self.header.to_dict(),
             'values': self._values,
-            'type': 'HourlyContinuousCollection'
+            'type': self.__class__.__name__
         }
 
     def _get_analysis_period_subset(self, a_per):
