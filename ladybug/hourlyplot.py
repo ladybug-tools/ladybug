@@ -81,9 +81,9 @@ class HourlyPlot(object):
         """Initialize hourly plot."""
         # check the input objects
         acceptable_colls = (HourlyContinuousCollection, HourlyDiscontinuousCollection)
-        assert isinstance(data_collection, acceptable_colls), 'HourlyPlot data_collection' \
-            ' must be a HourlyContinuousCollection or HourlyDiscontinuousCollection. ' \
-            'Got {}.'.format(type(data_collection))
+        assert isinstance(data_collection, acceptable_colls), 'HourlyPlot ' \
+            'data_collection must be a HourlyContinuousCollection or ' \
+            'HourlyDiscontinuousCollection. Got {}.'.format(type(data_collection))
         assert isinstance(base_point, Point3D), 'Expected Point3D for ' \
             'HourlyPlot base point. Got {}.'.format(type(base_point))
 
@@ -135,8 +135,8 @@ class HourlyPlot(object):
         to each other.
 
         Args:
-            data_collection: A HourlyContinuousCollection or HourlyDiscontinuousCollection
-                which will be used to generate the hourly plot.
+            data_collection: A Hourly Collection, which will be used to generate
+                the hourly plot.
             legend_parameters: An optional LegendParameter object to change the display
                 of the HourlyPlot (Default: None).
             base_point: An optional Point3D to be used as a starting point to generate

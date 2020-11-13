@@ -345,6 +345,51 @@ def db_temp_from_enth_hr(enthalpy, humid_ratio, reference_temp=0):
     return db_temp + reference_temp
 
 
+def db_temp_from_rh_hr(rel_humid, humid_ratio, b_press=101325):
+    """Dry bulb temperature (C) from relative humidity (%) and humidity ratio (water/air).
+
+    Args:
+        rel_humid: Relative humidity (%).
+        humid_ratio: Humidity ratio (kg water/kg air).
+        b_press: Air pressure (Pa). Default is pressure at sea level (101325 Pa).
+
+    Returns:
+        Dry bulb temperature (C).
+
+    Note:
+        [1] Antoine equation - Antoine, C. (1888), Vapor Pressure: a new relationship
+        between pressure and temperature, 107: 681–684, 778–780, 836–837.
+        https://en.wikipedia.org/wiki/Antoine_equation
+    """
+    p_w = (b_press * humid_ratio) / (0.621945 + humid_ratio)  # partial pressure
+    p_ws = p_w / (rel_humid / 100)  # saturation pressure
+    return (1730.63 / (8.07131 - math.log10(p_ws / 133.322))) - 233.426
+
+
+def db_temp_and_hr_from_wb_rh(wb_temp, rel_humid, b_press=101325):
+    """Dry bulb temperature (C) from wet bulb temperature (C) and relative humidity (%).
+
+    Args:
+        wb_temp: Wet bulb temperature (C).
+        rel_humid: Relative humidity (%).
+        b_press: Air pressure (Pa). Default is pressure at sea level (101325 Pa).
+
+    Returns:
+        A tuple with two values.
+
+        -   Dry bulb temperature (C).
+
+        -   Humidity ratio (kg water/kg air).
+
+    Note:
+        [1] ASHRAE Handbook - Fundamentals (2017)
+    """
+    hr = humid_ratio_from_db_rh(wb_temp, rel_humid, b_press)
+    hr_sat = humid_ratio_from_db_rh(wb_temp, 100, b_press)
+    db_temp = (((hr_sat - hr) * 2260000) / 1005) + wb_temp
+    return db_temp, hr
+
+
 def dew_point_from_db_rh_fast(db_temp, rel_humid):
     """Dew point temperature (C) from air temperature (C) and relative humidity (%).
 
@@ -426,11 +471,11 @@ def wet_bulb_from_db_rh_fast(db_temp, rel_humid, b_press=101325):
 
 
 def _d_ln_p_ws(db_temp):
-    """Helper function returning the derivative of the natural log of the
-    saturation vapor pressure as a function of dry-bulb temperature.
+    """Helper function for the derivative of the log of saturation vapor pressure.
 
     Args:
         db_temp : Dry bulb temperature (C).
+
     Returns:
         Derivative of natural log of vapor pressure of saturated air in Pa.
     """
