@@ -3,7 +3,8 @@ from ladybug.psychrometrics import humid_ratio_from_db_rh, enthalpy_from_db_hr, 
     wet_bulb_from_db_rh, dew_point_from_db_rh, rel_humid_from_db_hr, \
     rel_humid_from_db_enth, rel_humid_from_db_dpt, rel_humid_from_db_wb, \
     dew_point_from_db_hr, dew_point_from_db_enth, dew_point_from_db_wb, \
-    db_temp_from_enth_hr, dew_point_from_db_rh_fast, wet_bulb_from_db_rh_fast
+    db_temp_from_enth_hr, db_temp_from_rh_hr, db_temp_and_hr_from_wb_rh, \
+    dew_point_from_db_rh_fast, wet_bulb_from_db_rh_fast
 
 import pytest
 
@@ -146,6 +147,21 @@ def test_db_temp_from_enth_hr():
     assert db_temp_from_enth_hr(60, 0.015) == pytest.approx(21.74775, rel=1e-3)
     assert db_temp_from_enth_hr(60, 0.01) == pytest.approx(34.1499, rel=1e-3)
     assert db_temp_from_enth_hr(30, 0.005) == pytest.approx(17.23136, rel=1e-3)
+
+
+def test_db_temp_from_rh_hr():
+    """Test the accuracy of the db_temp_from_rh_hr function."""
+    assert db_temp_from_rh_hr(100, 0.3) == pytest.approx(71.365, rel=1e-3)
+
+
+def test_db_temp_and_hr_from_wb_rh():
+    """Test the accuracy of the db_temp_and_hr_from_wb_rh function."""
+    t, hr = db_temp_and_hr_from_wb_rh(20, 100)
+    assert t == pytest.approx(20.0, rel=1e-3)
+    assert hr == pytest.approx(0.01469, rel=1e-3)
+    t, hr = db_temp_and_hr_from_wb_rh(20, 0)
+    assert t == pytest.approx(53.04558, rel=1e-3)
+    assert hr == pytest.approx(0.0, rel=1e-3)
 
 
 def test_dew_point_from_db_rh_fast():

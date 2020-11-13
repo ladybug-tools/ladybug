@@ -56,7 +56,6 @@ class GraphicContainer(object):
         self._data_type = data_type
         self._unit = unit
         if data_type is not None:
-            # TODO: Have data types reference Colorsets, which override default colors
             assert isinstance(data_type, DataTypeBase), \
                 'data_type should be a ladybug DataType. Got {}'.format(type(data_type))
             if self.legend_parameters.is_title_default:
@@ -219,7 +218,7 @@ class GraphicContainer(object):
             self._min_point.z))
 
     def to_dict(self):
-        """Get result graphic container as a dictionary."""
+        """Get graphic container as a dictionary."""
         data_type = None if self.data_type is None else self.data_type.to_dict()
         return {
             'values': self.values,
