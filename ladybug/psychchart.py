@@ -621,15 +621,18 @@ class PsychrometricChart(object):
         hr_vals = [humid_ratio_from_db_rh(t, rh, self.average_pressure)
                    for t in self._temp_range]
         pts = []
-        for x, hr in zip(self._x_range, hr_vals):
+        for i, (x, hr) in enumerate(zip(self._x_range, hr_vals)):
             if hr < self._max_humidity_ratio:
                 pts.append(Point2D(x, self.hr_y_value(hr)))
             else:  # we're at the top of the chart; cut it off
-                last_db = db_temp_from_rh_hr(rh, self._max_humidity_ratio)
+                if abs(self._max_humidity_ratio - hr_vals[i - 1]) < 0.001:
+                    del pts[-1]  # avoid the case of a bad interpolation
+                last_db = db_temp_from_rh_hr(
+                    rh, self._max_humidity_ratio, self.average_pressure)
                 last_db = self.TEMP_TYPE.to_unit([last_db], 'F', 'C')[0] \
                     if self.use_ip else last_db
-                pts.append(Point2D(self.t_x_value(last_db),
-                                   self.hr_y_value(self._max_humidity_ratio)))
+                x_val = self.t_x_value(last_db)
+                pts.append(Point2D(x_val, self.hr_y_value(self._max_humidity_ratio)))
                 break
         return Polyline2D(pts, interpolated=True)
 
