@@ -296,7 +296,10 @@ class AnalysisPeriod(object):
         month_hour = []
         hour_range = xrange(self.st_hour, (self.end_hour + 1) * self.timestep)
         for month in self.months_int:
-            month_hour.extend([(month, hr / self.timestep) for hr in hour_range])
+            month_hour.extend(
+                [(month, int(hr / self.timestep),
+                  int((hr % self.timestep) * (60 / self.timestep)))
+                 for hr in hour_range])
         return month_hour
 
     @property
