@@ -762,8 +762,8 @@ def test_filter_by_analysis_period_monthly_per_hour():
     filt_dc = dc.filter_by_analysis_period(a_per)
     assert len(filt_dc) == 2 * 24
     assert filt_dc.header.analysis_period == a_per
-    assert filt_dc.datetimes[0] == (3, 0)
-    assert filt_dc.datetimes[-1] == (4, 23)
+    assert filt_dc.datetimes[0] == (3, 0, 0)
+    assert filt_dc.datetimes[-1] == (4, 23, 0)
 
 
 def test_filter_by_analysis_period_continuous():
@@ -986,8 +986,8 @@ def test_average_monthly_per_hour():
     new_dc = dc.average_monthly_per_hour()
     assert isinstance(new_dc, MonthlyPerHourCollection)
     assert len(new_dc) == 12 * 24
-    assert new_dc.datetimes[0] == (1, 0)
-    assert new_dc.datetimes[-1] == (12, 23)
+    assert new_dc.datetimes[0] == (1, 0, 0)
+    assert new_dc.datetimes[-1] == (12, 23, 0)
     assert new_dc.is_continuous
     for i, val in enumerate(dc.group_by_month_per_hour().values()):
         assert new_dc[i] == sum(val) / len(val)
@@ -1001,8 +1001,8 @@ def test_total_monthly_per_hour():
     new_dc = dc.total_monthly_per_hour()
     assert isinstance(new_dc, MonthlyPerHourCollection)
     assert len(new_dc) == 12 * 24
-    assert new_dc.datetimes[0] == (1, 0)
-    assert new_dc.datetimes[-1] == (12, 23)
+    assert new_dc.datetimes[0] == (1, 0, 0)
+    assert new_dc.datetimes[-1] == (12, 23, 0)
     assert new_dc.is_continuous
     for i, val in enumerate(dc.group_by_month_per_hour().values()):
         assert new_dc[i] == sum(val)
@@ -1016,8 +1016,8 @@ def test_percentile_monthly_per_hour():
     new_dc = dc.percentile_monthly_per_hour(25)
     assert isinstance(new_dc, MonthlyPerHourCollection)
     assert len(new_dc) == 12 * 24
-    assert new_dc.datetimes[0] == (1, 0)
-    assert new_dc.datetimes[-1] == (12, 23)
+    assert new_dc.datetimes[0] == (1, 0, 0)
+    assert new_dc.datetimes[-1] == (12, 23, 0)
     assert new_dc.is_continuous
     pct_vals = list(xrange(24)) * 12
     for i, val in enumerate(pct_vals):

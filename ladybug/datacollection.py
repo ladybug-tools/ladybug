@@ -238,21 +238,23 @@ class HourlyDiscontinuousCollection(BaseCollection):
     def group_by_month_per_hour(self):
         """Return a dictionary of this collection's values grouped by each month per hour.
 
-        Key values are tuples of 2 integers.
+        Key values are tuples of 3 integers.
 
         -   The first represents the month of the year between 1-12.
 
         -   The second represents the hour of the day between 0-24.
-            (eg. (12, 23) for December at 11 PM)
+
+        -   The third represents the minute of the minute of the hour between 0-59.
         """
         t_step = self.header.analysis_period.timestep
         data_by_month_per_hour = OrderedDict()
         for m in xrange(1, 13):
             for h in xrange(0, 24 * t_step):
-                hr = h / t_step
-                data_by_month_per_hour[(m, hr)] = []
+                float_hr = h / t_step
+                hr, mi = int(float_hr), int((h % t_step) * (60 / t_step))
+                data_by_month_per_hour[(m, hr, mi)] = []
         for v, dt in zip(self.values, self.datetimes):
-            data_by_month_per_hour[(dt.month, dt.float_hour)].append(v)
+            data_by_month_per_hour[(dt.month, dt.hour, dt.minute)].append(v)
         return data_by_month_per_hour
 
     def average_monthly_per_hour(self):
@@ -1369,8 +1371,9 @@ class MonthlyPerHourCollection(BaseCollection):
             must have an AnalysisPeriod on it.
         values: A list of values.
         datetimes: A list of tuples that aligns with the list of values.
-            Each tuple should possess two values: the first is the month
-            and the second is the hour. (eg. (12, 23) = December at 11 PM)
+            Each tuple should possess three values: the first is the month, the
+            second is the hour, and the third is the minute. (eg. (12, 23, 30) =
+            December at 11:30 PM).
 
     Properties:
         * average
@@ -1422,8 +1425,9 @@ class MonthlyPerHourCollection(BaseCollection):
 
         Args:
            months_per_hour: A list of tuples representing months per hour.
-               Each tuple should possess two values: the first is the month
-               and the second is the hour. (eg. (12, 23) = December at 11 PM)
+               Each tuple should possess three values: the first is the month, the
+               second is the hour and the third is the minute. (eg. (12, 23, 30) =
+               December at 11:30 PM)
 
         Return:
             A new Data Collection with filtered data
