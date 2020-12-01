@@ -4,7 +4,7 @@ from ladybug.psychrometrics import humid_ratio_from_db_rh, enthalpy_from_db_hr, 
     rel_humid_from_db_enth, rel_humid_from_db_dpt, rel_humid_from_db_wb, \
     dew_point_from_db_hr, dew_point_from_db_enth, dew_point_from_db_wb, \
     db_temp_from_enth_hr, db_temp_from_rh_hr, db_temp_and_hr_from_wb_rh, \
-    dew_point_from_db_rh_fast, wet_bulb_from_db_rh_fast
+    dew_point_from_db_rh_fast, wet_bulb_from_db_rh_fast, wet_bulb_from_db_hr
 
 import pytest
 
@@ -69,6 +69,12 @@ def test_wet_bulb_from_db_rh():
     assert wet_bulb_from_db_rh(-20, 0) == pytest.approx(-21.5142, rel=1e-3)
     assert wet_bulb_from_db_rh(-20, 50) == pytest.approx(-20.7405, rel=1e-3)
     assert wet_bulb_from_db_rh(-20, 100) == pytest.approx(-20, rel=1e-3)
+
+
+def test_wet_bulb_from_db_hr():
+    """Test the accuracy of the wet_bulb_from_db_hr function."""
+    assert wet_bulb_from_db_hr(30, 0.01) == pytest.approx(19.622532, rel=1e-3)
+    assert wet_bulb_from_db_hr(20, 0.005) == pytest.approx(11.54350508, rel=1e-3)
 
 
 def test_rel_humid_from_db_hr():
