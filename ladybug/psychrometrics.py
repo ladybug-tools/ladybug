@@ -180,6 +180,21 @@ def wet_bulb_from_db_rh(db_temp, rel_humid, b_press=101325):
     return wb_temp
 
 
+def wet_bulb_from_db_hr(db_temp, humid_ratio, b_press=101325):
+    """Wet bulb temperature (C) from air temperature (C) and humidity ratio.
+
+    Args:
+        db_temp: Dry bulb temperature (C).
+        humid_ratio: Humidity ratio (kg water/kg air).
+        b_press: Air pressure (Pa). Default is pressure at sea level (101325 Pa).
+
+    Returns:
+        Wet bulb temperature (C).
+    """
+    rh = rel_humid_from_db_hr(db_temp, humid_ratio, b_press)
+    return wet_bulb_from_db_rh(db_temp, rh, b_press)
+
+
 def rel_humid_from_db_hr(db_temp, humid_ratio, b_press=101325):
     """Relative Humidity (%) from humidity ratio (water/air) and air temperature (C).
 
