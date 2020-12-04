@@ -111,6 +111,9 @@ def test_data_mesh():
     epw = EPW(path)
     psych_chart = PsychrometricChart(epw.dry_bulb_temperature, epw.relative_humidity)
 
+    test_pt = psych_chart.plot_point(20, 50)
+    assert isinstance(test_pt, Point2D)
+
     mesh = psych_chart.colored_mesh
     assert isinstance(mesh, Mesh2D)
     assert len(mesh.faces) > 1

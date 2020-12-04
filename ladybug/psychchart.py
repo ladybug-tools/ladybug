@@ -560,6 +560,19 @@ class PsychrometricChart(object):
         """Get the GraphicContainer for the colored mesh."""
         return self._container
 
+    def plot_point(self, temperature, relative_humidity):
+        """Get a Point2D for a given temperature and relative humidity on the chart.
+
+        Args:
+            temperature: A temperature value, which should be in Celsius if use_ip
+                is False and Fahrenheit is use_ip is True.
+            relative_humidity: A relative humidity value in % (from 0 to 100).
+        """
+        tc = temperature if not self.use_ip else \
+            self.TEMP_TYPE.to_unit([temperature], 'C', 'F')[0]
+        hr = humid_ratio_from_db_rh(tc, relative_humidity, self.average_pressure)
+        return Point2D(self.t_x_value(temperature), self.hr_y_value(hr))
+
     def data_mesh(self, data_collection, legend_parameters=None):
         """Get a colored mesh for a data_collection aligned with the chart's data.
 
