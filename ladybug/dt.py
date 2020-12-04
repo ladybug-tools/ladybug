@@ -29,7 +29,6 @@ class DateTime(datetime):
         * int_hoy
         * minute
         * moy
-        * int_hoy
         * float_hour
         * tzinfo
         * year

@@ -810,7 +810,7 @@ class Wea(object):
                 used (as opposed to an anisotropic sky). An isotrophic sky
                 assumes an even distribution of diffuse irradiance across the
                 sky while an anisotropic sky places more diffuse irradiance
-                near the solar disc. Default is set to True for isotrophic
+                near the solar disc. (Default: True).
 
         Returns:
             A tuple of four elements
