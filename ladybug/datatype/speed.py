@@ -3,6 +3,7 @@
 from __future__ import division
 
 from .base import DataTypeBase
+from .distance import Distance
 
 
 class Speed(DataTypeBase):
@@ -13,6 +14,8 @@ class Speed(DataTypeBase):
     _ip_units = ('mph', 'ft/s')
     _min = 0
     _abbreviation = 'v'
+    _time_aggregated_type = Distance
+    _time_aggregated_factor = 3600
 
     def _m_s_to_mph(self, value):
         return value * 2.23694

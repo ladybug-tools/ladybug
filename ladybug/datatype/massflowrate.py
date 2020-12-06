@@ -3,6 +3,7 @@
 from __future__ import division
 
 from .base import DataTypeBase
+from .mass import Mass
 
 
 class MassFlowRate(DataTypeBase):
@@ -13,6 +14,8 @@ class MassFlowRate(DataTypeBase):
     _ip_units = ('lb/s', 'oz/s')
     _min = 0
     _abbreviation = 'dm/dt'
+    _time_aggregated_type = Mass
+    _time_aggregated_factor = 3600
 
     def _kg_s_to_lb_s(self, value):
         return value * 2.2046

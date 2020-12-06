@@ -3,6 +3,7 @@
 from __future__ import division
 
 from .base import DataTypeBase
+from .temperaturetime import TemperatureTime
 
 
 class TemperatureDelta(DataTypeBase):
@@ -12,6 +13,8 @@ class TemperatureDelta(DataTypeBase):
     _si_units = ('dC', 'dK')
     _ip_units = ('dF')
     _abbreviation = 'DeltaT'
+    _time_aggregated_type = TemperatureTime
+    _time_aggregated_factor = 1. / 24.
 
     def _dC_to_dF(self, value):
         return value * 9. / 5.

@@ -3,6 +3,7 @@
 from __future__ import division
 
 from .base import DataTypeBase
+from .volume import Volume
 
 
 class VolumeFlowRate(DataTypeBase):
@@ -13,6 +14,8 @@ class VolumeFlowRate(DataTypeBase):
     _ip_units = ('ft3/s', 'cfm', 'gpm', 'fl oz/s')
     _min = 0
     _abbreviation = 'dV/dt'
+    _time_aggregated_type = Volume
+    _time_aggregated_factor = 3600
 
     def _m3_s_to_ft3_s(self, value):
         return value * 35.3147

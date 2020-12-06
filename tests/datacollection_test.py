@@ -13,6 +13,9 @@ from ladybug.datatype.temperature import Temperature
 from ladybug.datatype.fraction import RelativeHumidity, HumidityRatio
 from ladybug.datatype.energy import Energy
 from ladybug.datatype.energyintensity import EnergyIntensity
+from ladybug.datatype.power import Power
+from ladybug.datatype.speed import Speed
+from ladybug.datatype.distance import Distance
 
 from ladybug.epw import EPW
 from ladybug.psychrometrics import humid_ratio_from_db_rh
@@ -590,6 +593,21 @@ def test_to_unit():
     assert dc3.values[0] == 293.15
     assert dc2.values[0] == 20
     assert dc4.values[0] == pytest.approx(266.483, rel=1e-1)
+
+
+def test_to_time_aggregated():
+    """Test the conversion of DataCollection units."""
+    header1 = Header(Power(), 'W', AnalysisPeriod())
+    header2 = Header(Speed(), 'm/s', AnalysisPeriod())
+    values = [20] * 8760
+    dc1 = HourlyContinuousCollection(header1, values)
+    dc2 = HourlyContinuousCollection(header2, values)
+    dc3 = dc1.to_time_aggregated()
+    dc4 = dc2.to_time_aggregated()
+    assert isinstance(dc3.header.data_type, Energy)
+    assert dc3.header.unit == 'kWh'
+    assert isinstance(dc4.header.data_type, Distance)
+    assert dc4.header.unit == 'm'
 
 
 def test_to_ip_si():
