@@ -168,7 +168,7 @@ class PsychrometricChart(object):
             self._temp_range = self.TEMP_TYPE.to_unit(self._temp_range, 'C', 'F')
         rh_range = range(10, 110, 10)
         self._rh_lines = tuple(self.relative_humidity_polyline(rh) for rh in rh_range)
-        self._saturation_line = self._rh_lines[-1]
+        self._saturation_line = self.relative_humidity_polyline(100, 2)
         max_hr_thnd = int(self._max_humidity_ratio * 1000)
         base_hr_range = list(range(5, max_hr_thnd, 5)) + [max_hr_thnd]
         max_db_hr = 1000 * humid_ratio_from_db_rh(
@@ -271,7 +271,7 @@ class PsychrometricChart(object):
             if isinstance(t_data, dict) else t_data
         rh = class_mapper[rh_data['type']].from_dict(rh_data) \
             if isinstance(rh_data, dict) else rh_data
-        return cls(temp, rh_data, p, lp, bpt, xd, yd, tmin, tmax, hrmax, ip)
+        return cls(temp, rh, p, lp, bpt, xd, yd, tmin, tmax, hrmax, ip)
 
     @property
     def temperature(self):
@@ -412,19 +412,13 @@ class PsychrometricChart(object):
     @property
     def hr_lines(self):
         """Get a tuple of LineSegment2Ds for the humidity ratio labels on the chart."""
-        # get the points for the left of the humidity ratio lines
-        x_min, x_max = self._x_range[0], self._x_range[-1]
-        base_lines = [LineSegment2D.from_end_points(
-            Point2D(x_max, y_val), Point2D(x_min, y_val)) for y_val in self._y_range]
-        int_pts = [self._saturation_line.intersect_line_ray(base_line)
-                   for base_line in base_lines]
-
-        hr_lines = []  # create the array of line segments
-        for int_pt, base_line in zip(int_pts, base_lines):
-            try:
-                l_seg = LineSegment2D.from_end_points(int_pt[0], base_line.p)
-            except IndexError:  # HR line does not intersect the saturation line
-                l_seg = base_line
+        hr_lines, xmax = [], self._x_range[-1]
+        for hr, y in zip(self._hr_range, self._y_range):
+            tmin = db_temp_from_rh_hr(100, hr, self.average_pressure)
+            tmin = self.TEMP_TYPE.to_unit([tmin], 'F', 'C')[0] if self.use_ip else tmin
+            xmin = self.t_x_value(tmin)
+            xmin = xmin if xmin > self.base_point.x else self.base_point.x
+            l_seg = LineSegment2D.from_end_points(Point2D(xmax, y), Point2D(xmin, y))
             hr_lines.append(l_seg)
         return hr_lines
 
@@ -625,16 +619,33 @@ class PsychrometricChart(object):
         mesh.colors = container.value_colors
         return mesh, container
 
-    def relative_humidity_polyline(self, rh):
+    def relative_humidity_polyline(self, rh, subdivisions=1):
         """Get a Polyline2D for a given relative humidity value.
 
         Args:
             rh: A number between 0 and 100 for the relative humidity line to draw.
+            subdivisions: Integer for the number of subdivisions for every 5
+                degrees. (Default: 1).
         """
-        hr_vals = [humid_ratio_from_db_rh(t, rh, self.average_pressure)
-                   for t in self._temp_range]
+        # get the HR values and temperatures
+        prs = self.average_pressure
+        if subdivisions == 1:
+            hr_vals = [humid_ratio_from_db_rh(t, rh, prs) for t in self._temp_range]
+            x_vals = self._x_range
+        else:  # build up custom temperatures and HRs
+            hr_vals = [humid_ratio_from_db_rh(self._temp_range[0], rh, prs)]
+            x_vals, t_diff = [self._x_range[0]], 5 / subdivisions
+            x_diff = (self._x_range[1] - self._x_range[0]) / subdivisions
+            for i in range(len(self._temp_range) - 1):
+                st_t, st_x = self._temp_range[i], self._x_range[i]
+                for j in range(subdivisions):
+                    t = st_t + (j + 1) * t_diff
+                    hr_vals.append(humid_ratio_from_db_rh(t, rh, prs))
+                    x_vals.append(st_x + (j + 1) * x_diff)
+
+        # loop through the values and create the points
         pts = []
-        for i, (x, hr) in enumerate(zip(self._x_range, hr_vals)):
+        for i, (x, hr) in enumerate(zip(x_vals, hr_vals)):
             if hr < self._max_humidity_ratio:
                 pts.append(Point2D(x, self.hr_y_value(hr)))
             else:  # we're at the top of the chart; cut it off

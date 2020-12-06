@@ -3,6 +3,7 @@
 from __future__ import division
 
 from .base import DataTypeBase
+from .energyintensity import EnergyIntensity
 
 
 class EnergyFlux(DataTypeBase):
@@ -13,6 +14,8 @@ class EnergyFlux(DataTypeBase):
     _ip_units = ('Btu/h-ft2', 'kBtu/h-ft2')
     _abbreviation = 'J'
     _point_in_time = False
+    _time_aggregated_type = EnergyIntensity
+    _time_aggregated_factor = 0.001
 
     def _W_m2_to_Btu_hft2(self, value):
         return value / 3.15459075

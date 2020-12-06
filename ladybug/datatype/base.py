@@ -14,17 +14,19 @@ class DataTypeBase(object):
         name: Optional name for the type. Default is derived from the class name.
 
     Properties:
-        *   name
-        *   units
-        *   si_units
-        *   ip_units
-        *   min
-        *   max
-        *   abbreviation
-        *   unit_descr
-        *   point_in_time
-        *   cumulative
-        *   normalized_type
+        * name
+        * units
+        * si_units
+        * ip_units
+        * min
+        * max
+        * abbreviation
+        * unit_descr
+        * point_in_time
+        * cumulative
+        * normalized_type
+        * time_aggregated_type
+        * time_aggregated_factor
     """
     _units = [None]
     _si_units = [None]
@@ -37,6 +39,8 @@ class DataTypeBase(object):
     _point_in_time = True
     _cumulative = False
     _normalized_type = None
+    _time_aggregated_type = None
+    _time_aggregated_factor = None
 
     _type_enumeration = None
 
@@ -293,6 +297,25 @@ class DataTypeBase(object):
         """
         return self._normalized_type
 
+    @property
+    def time_aggregated_type(self):
+        """A data type object representing the time-aggregated version of this data type.
+
+        This will be None if the data type cannot be aggregated per unit time to
+        yield a meaningful data type.
+        """
+        return self._time_aggregated_type
+
+    @property
+    def time_aggregated_factor(self):
+        """A number to convert to the base unit of the type to the time aggregated unit.
+
+        The factor assumes that the data is aggregated over one hour. This will be
+        None if the data type cannot be aggregated per unit time to yield a
+        meaningful data type.
+        """
+        return self._time_aggregated_factor
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -301,7 +324,7 @@ class DataTypeBase(object):
         return (
             self._name, self._units, self._si_units, self._ip_units, self._min,
             self._max, self._abbreviation, self._unit_descr, self._point_in_time,
-            self._cumulative, self._normalized_type
+            self._cumulative, self._normalized_type, self._time_aggregated_type
         )
 
     def __eq__(self, other):

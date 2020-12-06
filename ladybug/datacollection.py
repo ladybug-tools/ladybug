@@ -341,6 +341,14 @@ class HourlyDiscontinuousCollection(BaseCollection):
         self._values = new_values
         self._datetimes = new_datetimes
 
+    def to_time_aggregated(self):
+        """Get a collection where data has been aggregated over the collection timestep.
+
+        For example, if the collection has a Power data type in W, this method
+        will return a collection with an Energy data type in kWh.
+        """
+        return self._time_aggregated_collection(self.header.analysis_period.timestep)
+
     def validate_analysis_period(self):
         """Get a collection where the header analysis_period aligns with datetimes.
 
@@ -1102,6 +1110,14 @@ class DailyCollection(BaseCollection):
                 requested percentile.
         """
         return self._monthly_operation('percentile', percentile)
+
+    def to_time_aggregated(self):
+        """Get a collection where data has been aggregated over the collection timestep.
+
+        For example, if the collection has a Power data type in W, this method
+        will return a collection with an Energy data type in kWh.
+        """
+        return self._time_aggregated_collection(1. / 24.)
 
     def validate_analysis_period(self):
         """Get a collection where the header analysis_period aligns with datetimes.

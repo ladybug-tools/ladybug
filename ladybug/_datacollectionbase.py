@@ -189,7 +189,8 @@ class BaseCollection(object):
         """Check if collection values are in physically possible ranges for the data_type.
 
         If this method returns False, the collection's values are physically or
-        mathematically impossible for the data_type (eg. temperature below absolute zero).
+        mathematically impossible for the data_type (eg. temperature below
+        absolute zero).
 
         Args:
             raise_exception: Boolean to note whether an exception should be raised
@@ -224,7 +225,7 @@ class BaseCollection(object):
                 inputs include 'm2', 'ft2' and any other unit that is supported
                 in the normalized_type of this datacollection's data type.
         """
-        # gan an instance of the normalized data type
+        # get an instance of the normalized data type
         head = self.header
         norm_type_class = head.data_type.normalized_type
         assert norm_type_class is not None, \
@@ -588,6 +589,23 @@ class BaseCollection(object):
             for i in xrange(val_len):
                 result[i] = funct(*[col[i] for col in data_collections])
             return result
+
+    def _time_aggregated_collection(self, timestep):
+        """Get a time-aggregated version of this collection."""
+        # get an instance of the time aggregated data type
+        head = self.header
+        time_class = head.data_type.time_aggregated_type
+        assert time_class is not None, \
+            'Data type "{}" cannot be time aggregated to yield a useful '\
+            'metric.'.format(head.data_type)
+
+        # create the new data collection and assign normalized values
+        new_data_c = self.to_unit(head.data_type.units[0])
+        factor = head.data_type.time_aggregated_factor / timestep
+        new_data_c._values = [val * factor for val in new_data_c._values]
+        new_data_c._header._data_type = time_class()
+        new_data_c._header._unit = new_data_c._header._data_type.units[0]
+        return new_data_c
 
     @staticmethod
     def _check_conditional_statement(statement, num_collections):
