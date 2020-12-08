@@ -629,9 +629,10 @@ class BaseCollection(object):
                 elif isinstance(dat_type, typ_clss._time_aggregated_type):
                     time_class = typ_clss
                 break
-            else:
-                raise ValueError('Data type "{}" does not have a time-rate-of-'
-                                 'change metric.'.format(head.data_type))
+        # if nothing was found, throw an error
+        if time_class is None:
+            raise ValueError('Data type "{}" does not have a time-rate-of-'
+                             'change metric.'.format(head.data_type))
 
         # create the new data collection and assign normalized values
         new_data_c = self.to_unit(head.data_type.units[0])
