@@ -3,7 +3,8 @@
 from __future__ import division
 
 from .base import DataTypeBase
-from .energyintensity import EnergyIntensity
+from .energyintensity import EnergyIntensity, Radiation, GlobalHorizontalRadiation, \
+    DirectNormalRadiation, DiffuseHorizontalRadiation, DirectHorizontalRadiation
 
 
 class EnergyFlux(DataTypeBase):
@@ -82,22 +83,27 @@ class EffectiveRadiantField(EnergyFlux):
 class Irradiance(EnergyFlux):
     _min = 0
     _abbreviation = 'Qsolar'
+    _time_aggregated_type = Radiation
 
 
 class GlobalHorizontalIrradiance(Irradiance):
     _abbreviation = 'GHIr'
+    _time_aggregated_type = GlobalHorizontalRadiation
 
 
 class DirectNormalIrradiance(Irradiance):
     _abbreviation = 'DNIr'
+    _time_aggregated_type = DirectNormalRadiation
 
 
 class DiffuseHorizontalIrradiance(Irradiance):
     _abbreviation = 'DHIr'
+    _time_aggregated_type = DiffuseHorizontalRadiation
 
 
 class DirectHorizontalIrradiance(Irradiance):
     _abbreviation = 'DHIr'
+    _time_aggregated_type = DirectHorizontalRadiation
 
 
 class HorizontalInfraredRadiationIntensity(Irradiance):

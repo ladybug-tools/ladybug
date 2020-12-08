@@ -36,7 +36,8 @@ class MonthlyChart(object):
             Otherwise, all bars for cumulative monthly/daily data will be placed
             next to each other and all meshes for cumulative hourly data will
             be overlapped on top of one another. Note that this input has no effect
-            on data collections that do not have a cumulative data type (Default: False).
+            on data collections that do not have a cumulative data type or do
+            not have a time aggregated data type that is cumulative. (Default: False).
         percentile: An optional number between 0 and 50 to be used for the percentile
             difference from the mean that hourly data meshes display at. For example,
             using 34 will generate hourly data meshes with a range of one standard
@@ -460,7 +461,7 @@ class MonthlyChart(object):
                         data[0], d_range, min_val, step, prev_y)
                     up_vals = self._hour_y_values_stack(
                         data[-1], d_range, min_val, step, prev_y)
-                    if t.cumulative:  # set the start y so that the next data stacks
+                    if self._is_cumulative(t):  # set the start y so the next data stacks
                         if dat_total > 0:
                             prev_y_up = up_vals
                         else:
@@ -493,7 +494,7 @@ class MonthlyChart(object):
                     dat_total = sum(data.values)
                     prev_y = prev_y_up if dat_total > 0 else prev_y_low
                     vals = self._hour_y_values_stack(data, d_range, min_val, step, prev_y)
-                    if t.cumulative:  # set the start y so that the next data stacks
+                    if self._is_cumulative(t):  # set the start y so the next data stacks
                         if dat_total > 0:
                             prev_y_up = vals
                         else:
@@ -518,7 +519,8 @@ class MonthlyChart(object):
             d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
             zero_val = self._y_dim * (min_val / d_range)
-            base_y = self._base_point.y - zero_val if t.cumulative else self._base_point.y
+            base_y = self._base_point.y - zero_val if self._is_cumulative(t) \
+                else self._base_point.y
             bar_y_low = [base_y] * len(data_arr[0])  # track the bar cumulative heights
             bar_y_up = [base_y] * len(data_arr[0])  # track the bar cumulative heights
             for i, data in enumerate(data_arr):
@@ -529,7 +531,7 @@ class MonthlyChart(object):
                     # compute critical dimensions of each bar
                     start_x = self._base_point.x + m_i * self._x_dim + \
                         spacer_width + bar_count * bar_width
-                    if t.cumulative:
+                    if self._is_cumulative(t):
                         bar_hgt = (self._y_dim * ((val - min_val) / d_range)) + zero_val
                         if bar_hgt >= 0:
                             start_y = bar_y_up[m_i]
@@ -550,9 +552,9 @@ class MonthlyChart(object):
                 # create the final colored mesh
                 mesh_col = [colors[self._color_map[j][i]]] * len(faces)
                 meshes.append(Mesh2D(verts, faces, mesh_col))
-                if not self._stack or not t.cumulative:  # shift the bar in x direction
+                if not self._stack or not self._is_cumulative(t):  # shift bar in x dir
                     bar_count += 1
-            if self._stack and t.cumulative:
+            if self._stack and self._is_cumulative(t):
                 bar_count += 1
         return meshes
 
@@ -575,7 +577,8 @@ class MonthlyChart(object):
             d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
             zero_val = self._y_dim * (min_val / d_range)
-            base_y = self._base_point.y - zero_val if t.cumulative else self._base_point.y
+            base_y = self._base_point.y - zero_val if self._is_cumulative(t) \
+                else self._base_point.y
             bar_y_low = [base_y] * len(data_arr[0])  # track the bar cumulative heights
             bar_y_up = [base_y] * len(data_arr[0])  # track the bar cumulative heights
             for i, data in enumerate(data_arr):
@@ -590,7 +593,7 @@ class MonthlyChart(object):
                     # compute critical dimensions of each bar
                     start_x = self._base_point.x + x_dist + \
                         month_count * self._x_dim + bar_count * big_bar_width
-                    if t.cumulative:
+                    if self._is_cumulative(t):
                         bar_hgt = (self._y_dim * ((val - min_val) / d_range)) + zero_val
                         if bar_hgt >= 0:
                             start_y = bar_y_up[m_i]
@@ -619,9 +622,9 @@ class MonthlyChart(object):
                 # create the final colored mesh
                 mesh_col = [colors[self._color_map[j][i]]] * len(faces)
                 meshes.append(Mesh2D(verts, faces, mesh_col))
-                if not self._stack or not t.cumulative:  # shift the bar in x direction
+                if not self._stack or not self._is_cumulative(t):  # shift bar in x dir
                     bar_count += 1
-            if self._stack and t.cumulative:
+            if self._stack and self._is_cumulative(t):
                 bar_count += 1
         return meshes
 
@@ -648,7 +651,7 @@ class MonthlyChart(object):
                         data[0], d_range, min_val, step, prev_y)
                     up_vals = self._hour_y_values_stack(
                         data[-1], d_range, min_val, step, prev_y)
-                    if t.cumulative:  # set the start y so that the next data stacks
+                    if self._is_cumulative(t):  # set start y so the next data stacks
                         if dat_total > 0:
                             prev_y_up = up_vals
                         else:
@@ -733,7 +736,7 @@ class MonthlyChart(object):
         """Get a list of y-coordinates from a monthly-per-hour data collection."""
         data_values = data.values
         zero_val = self._y_dim * (minimum / d_range) if \
-            data.header.data_type.cumulative else 0
+            self._is_cumulative(data.header.data_type) else 0
         y_values = []
         for count, i in enumerate(range(0, len(data_values), step)):
             month_val = []
@@ -748,7 +751,7 @@ class MonthlyChart(object):
         """Get a list of base y-coordinates from a monthly-per-hour data collection."""
         y_values = []
         zero_val = self._y_dim * (-minimum / d_range) if \
-            data.header.data_type.cumulative else 0
+            self._is_cumulative(data.header.data_type) else 0
         for i in range(0, len(data), step):
             y_values.append([self._base_point.y + zero_val] * (step + 1))
         return y_values
@@ -760,7 +763,7 @@ class MonthlyChart(object):
         else:
             n_bars = 0
             for d_type, data_list in zip(self._data_types, self._grouped_data):
-                if d_type.cumulative:
+                if self._is_cumulative(d_type):
                     n_bars += 1
                 else:
                     n_bars += len(data_list)
@@ -813,7 +816,7 @@ class MonthlyChart(object):
                 max_vals = [data.max for data in data_list]
 
             # determine the maximum and minium values depending on the stack input
-            if not data_type.cumulative or not self._stack:
+            if not self._is_cumulative(data_type) or not self._stack:
                 min_val = min(min_vals)
                 max_val = max(max_vals)
             else:  # stacked data; sum up the values to get the total of the stack
@@ -821,7 +824,7 @@ class MonthlyChart(object):
                 max_val = sum(max_vals)
 
             # plot everything from 0 if the data is cumulative
-            if data_type.cumulative:
+            if self._is_cumulative(data_type):
                 if min_val > 0 and max_val > 0:
                     min_val = 0
                 elif max_val < 0 and min_val < 0:
@@ -868,12 +871,17 @@ class MonthlyChart(object):
             lower, upper = 50 - self._percentile, 50 + self._percentile
             new_data = [[] for data_list in grouped_data]
             for i, data_list in enumerate(grouped_data):
-                cumul = data_types[i].cumulative
+                cumul = self._is_cumulative(data_types[i])
                 for data in data_list:
                     new_d = self._hourly_to_monthly_per_hour(data, lower, upper, cumul)
                     new_data[i].append(new_d)
             grouped_data = new_data
         return grouped_data, data_types, units, color_map
+
+    def _is_cumulative(self, data_type):
+        """Determine if a data type is cumulative and should be stack-able."""
+        return data_type.cumulative or \
+            (self._stack and data_type.time_aggregated_type is not None)
 
     @staticmethod
     def _bar_pts(start_x, base_y, bar_width, end_y):

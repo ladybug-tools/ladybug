@@ -596,7 +596,7 @@ def test_to_unit():
 
 
 def test_to_time_aggregated():
-    """Test the conversion of DataCollection units."""
+    """Test the conversion of DataCollection to time aggregated."""
     header1 = Header(Power(), 'W', AnalysisPeriod())
     header2 = Header(Speed(), 'm/s', AnalysisPeriod())
     values = [20] * 8760
@@ -608,6 +608,21 @@ def test_to_time_aggregated():
     assert dc3.header.unit == 'kWh'
     assert isinstance(dc4.header.data_type, Distance)
     assert dc4.header.unit == 'm'
+
+
+def test_to_time_rate_of_change():
+    """Test the conversion of DataCollection to time rate of change."""
+    header1 = Header(Energy(), 'kWh', AnalysisPeriod())
+    header2 = Header(Distance(), 'm', AnalysisPeriod())
+    values = [20] * 8760
+    dc1 = HourlyContinuousCollection(header1, values)
+    dc2 = HourlyContinuousCollection(header2, values)
+    dc3 = dc1.to_time_rate_of_change()
+    dc4 = dc2.to_time_rate_of_change()
+    assert isinstance(dc3.header.data_type, Power)
+    assert dc3.header.unit == 'W'
+    assert isinstance(dc4.header.data_type, Speed)
+    assert dc4.header.unit == 'm/s'
 
 
 def test_to_ip_si():

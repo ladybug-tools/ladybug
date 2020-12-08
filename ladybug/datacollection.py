@@ -349,6 +349,14 @@ class HourlyDiscontinuousCollection(BaseCollection):
         """
         return self._time_aggregated_collection(self.header.analysis_period.timestep)
 
+    def to_time_rate_of_change(self):
+        """Get a collection that has been converted to time-rate-of-change units.
+
+        For example, if the collection has an Energy data type in kWh, this method
+        will return a collection with a Power data type in W.
+        """
+        return self._time_rate_of_change_collection(self.header.analysis_period.timestep)
+
     def validate_analysis_period(self):
         """Get a collection where the header analysis_period aligns with datetimes.
 
@@ -1118,6 +1126,14 @@ class DailyCollection(BaseCollection):
         will return a collection with an Energy data type in kWh.
         """
         return self._time_aggregated_collection(1. / 24.)
+
+    def to_time_rate_of_change(self):
+        """Get a collection that has been converted to time rate of change units.
+
+        For example, if the collection has an Energy data type in kWh, this method
+        will return a collection with a Power data type in W.
+        """
+        return self._time_rate_of_change_collection(1. / 24.)
 
     def validate_analysis_period(self):
         """Get a collection where the header analysis_period aligns with datetimes.

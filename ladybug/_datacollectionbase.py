@@ -5,6 +5,7 @@ from __future__ import division
 
 from .header import Header
 from .datatype.base import DataTypeBase
+from .datatype import TYPESDICT, BASETYPES
 
 try:
     from collections.abc import Iterable  # python < 3.7
@@ -603,6 +604,39 @@ class BaseCollection(object):
         new_data_c = self.to_unit(head.data_type.units[0])
         factor = head.data_type.time_aggregated_factor / timestep
         new_data_c._values = [val * factor for val in new_data_c._values]
+        new_data_c._header._data_type = time_class()
+        new_data_c._header._unit = new_data_c._header._data_type.units[0]
+        return new_data_c
+
+    def _time_rate_of_change_collection(self, timestep):
+        """Get a time-rate-of-change version of this collection."""
+        # get an instance of the time aggregated data type
+        head = self.header
+        dat_type, time_class = head.data_type, None
+        # first see if there's a specific data type for the current one
+        for typ_clss in TYPESDICT.values():
+            if typ_clss._time_aggregated_type is None:
+                continue
+            elif dat_type.__class__ == typ_clss._time_aggregated_type:
+                time_class = typ_clss
+                break
+        # then, check to see if there's any base type
+        if time_class is None:
+            for typ_clss_name in BASETYPES:
+                typ_clss = TYPESDICT[typ_clss_name]
+                if typ_clss._time_aggregated_type is None:
+                    continue
+                elif isinstance(dat_type, typ_clss._time_aggregated_type):
+                    time_class = typ_clss
+                break
+            else:
+                raise ValueError('Data type "{}" does not have a time-rate-of-'
+                                 'change metric.'.format(head.data_type))
+
+        # create the new data collection and assign normalized values
+        new_data_c = self.to_unit(head.data_type.units[0])
+        factor = typ_clss._time_aggregated_factor / timestep
+        new_data_c._values = [val / factor for val in new_data_c._values]
         new_data_c._header._data_type = time_class()
         new_data_c._header._unit = new_data_c._header._data_type.units[0]
         return new_data_c
