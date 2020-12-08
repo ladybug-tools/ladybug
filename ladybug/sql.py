@@ -811,7 +811,6 @@ class SQLiteResult(object):
                 day_vals.append([val[0] / 3600000. for val in
                                  data[start + i:start + i + n_lists]])
             all_values.extend(zip(*day_vals))
-        print([len(val) for val in all_values])
         return all_values
 
     @staticmethod
