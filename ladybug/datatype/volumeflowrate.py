@@ -1,21 +1,21 @@
 # coding=utf-8
-"""Generic data type."""
+"""Volume Flow Rate data type."""
 from __future__ import division
 
 from .base import DataTypeBase
 from .volume import Volume
+from .volumeflowrateintensity import VolumeFlowRateIntensity
 
 
 class VolumeFlowRate(DataTypeBase):
     """Volume Flow Rate
     """
-    _units = ('m3/s', 'ft3/s', 'L/s', 'cfm', 'gpm', 'mL/s', 'fl oz/s')
-    _si_units = ('m3/s', 'L/s', 'mL/s')
-    _ip_units = ('ft3/s', 'cfm', 'gpm', 'fl oz/s')
+    _units = ('m3/s', 'ft3/s', 'L/s', 'cfm', 'gpm', 'mL/s', 'fl oz/s', 'L/h', 'gph')
+    _si_units = ('m3/s', 'L/s', 'mL/s', 'L/h')
+    _ip_units = ('ft3/s', 'cfm', 'gpm', 'fl oz/s', 'gph')
     _min = 0
     _abbreviation = 'dV/dt'
-    _time_aggregated_type = Volume
-    _time_aggregated_factor = 3600
+    _normalized_type = VolumeFlowRateIntensity
 
     def _m3_s_to_ft3_s(self, value):
         return value * 35.3147
@@ -35,6 +35,12 @@ class VolumeFlowRate(DataTypeBase):
     def _m3_s_to_floz_s(self, value):
         return value * 33814.
 
+    def _m3_s_to_L_h(self, value):
+        return value * 3600000.
+
+    def _m3_s_to_gph(self, value):
+        return value * 951019.
+
     def _ft3_s_to_m3_s(self, value):
         return value / 35.3147
 
@@ -53,6 +59,12 @@ class VolumeFlowRate(DataTypeBase):
     def _floz_s_to_m3_s(self, value):
         return value / 33814.
 
+    def _L_h_to_m3_s(self, value):
+        return value / 3600000.
+
+    def _gph_to_m3_s(self, value):
+        return value / 951019.
+
     def to_unit(self, values, unit, from_unit):
         """Return values converted to the unit given the input from_unit."""
         return self._to_unit_base('m3/s', values, unit, from_unit)
@@ -65,6 +77,8 @@ class VolumeFlowRate(DataTypeBase):
             return self.to_unit(values, 'cfm', from_unit), 'cfm'
         elif from_unit == 'mL/s':
             return self.to_unit(values, 'fl oz/s', from_unit), 'fl oz/s'
+        elif from_unit == 'L/h':
+            return self.to_unit(values, 'gph', from_unit), 'gph'
         else:
             return self.to_unit(values, 'ft3/s', from_unit), 'ft3/s'
 
@@ -76,5 +90,7 @@ class VolumeFlowRate(DataTypeBase):
             return self.to_unit(values, 'L/s', from_unit), 'L/s'
         elif from_unit == 'fl oz/s':
             return self.to_unit(values, 'mL/s', from_unit), 'mL/s'
+        elif from_unit == 'gph':
+            return self.to_unit(values, 'L/h', from_unit), 'L/h'
         else:
             return self.to_unit(values, 'm3/s', from_unit), 'm3/s'

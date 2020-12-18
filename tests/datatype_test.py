@@ -6,7 +6,8 @@ from ladybug.datatype import base
 from ladybug.datatype import angle, area, distance, energy, energyflux, \
     energyintensity, fraction, generic, illuminance, luminance, mass, massflowrate, \
     power, pressure, rvalue, speed, temperature, temperaturedelta, temperaturetime, \
-    thermalcondition, time, specificenergy, uvalue, volume, volumeflowrate
+    thermalcondition, time, specificenergy, uvalue, volume, volumeflowrate, \
+    volumeflowrateintensity
 
 import pytest
 import math
@@ -449,6 +450,24 @@ def test_volume_flow_rate():
     assert vfr_type.to_unit([1], 'm3/s', 'gpm')[0] == pytest.approx(1 / 15850.3231, rel=1e-8)
     assert vfr_type.to_unit([1], 'm3/s', 'mL/s')[0] == 0.000001
     assert vfr_type.to_unit([1], 'm3/s', 'fl oz/s')[0] == pytest.approx(1 / 33814, rel=1e-7)
+
+
+def test_volume_flow_rate_intensity():
+    """Test VolumeFlowRateIntensity type."""
+    vfr_type = volumeflowrateintensity.VolumeFlowRateIntensity()
+    for unit in vfr_type.units:
+        assert vfr_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+        ip_vals, ip_u = vfr_type.to_ip([1], unit)
+        assert len(ip_vals) == 1
+        si_vals, si_u = vfr_type.to_si([1], unit)
+        assert len(si_vals) == 1
+        for other_unit in vfr_type.units:
+            assert len(vfr_type.to_unit([1], other_unit, unit)) == 1
+    assert vfr_type.to_unit([1], 'ft3/s-ft2', 'm3/s-m2')[0] == pytest.approx(3.28084, rel=1e-3)
+    assert vfr_type.to_unit([1], 'L/s-m2', 'm3/s-m2')[0] == 1000
+    assert vfr_type.to_unit([1], 'cfm/ft2', 'm3/s-m2')[0] == pytest.approx(196.85, rel=1e-1)
+    assert vfr_type.to_unit([1], 'L/h-m2', 'm3/s-m2')[0] == 3600000
+    assert vfr_type.to_unit([1], 'gph/ft2', 'm3/s-m2')[0] == pytest.approx(88352.5923, rel=1e-1)
 
 
 def test_mass_flow_rate():
