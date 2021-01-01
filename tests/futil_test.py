@@ -5,17 +5,6 @@ import pytest
 import os
 
 
-def test_download_file():
-    """Test the download file capability"""
-    wf_url = "https://www.energyplus.net/weather-download/" \
-        "southwest_pacific_wmo_region_5/AUS//AUS_NSW.Sydney.947670_IWEC/all"
-    wf_name = os.path.join("./tests/fixtures/zip", "AUS_NSW.Sydney.947670_IWEC.zip")
-    futil.download_file(wf_url, wf_name)
-    assert os.path.isfile(wf_name)
-    assert 200000 < os.stat(wf_name).st_size < 300000
-    os.remove(wf_name)
-
-
 def test_unzip_file():
     """Test the unzip file capability"""
     folder = "./tests/fixtures/zip/extracted"
