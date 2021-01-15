@@ -26,6 +26,7 @@ def test_import_epw():
     assert epw.is_data_loaded
     assert len(dbt) == 8760
     assert len(skyt) == 8760
+    assert epw.ashrae_climate_zone == '5A'
 
 
 def test_import_tokyo_epw():
@@ -39,6 +40,7 @@ def test_import_tokyo_epw():
     dbt = epw.dry_bulb_temperature
     assert epw.is_data_loaded
     assert len(dbt) == 8760
+    assert epw.ashrae_climate_zone == '3A'
 
 
 def test_epw_from_missing_values():
