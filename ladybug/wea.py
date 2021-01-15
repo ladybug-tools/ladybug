@@ -779,7 +779,7 @@ class Wea(object):
             self.diffuse_horizontal_irradiance[count]
 
     def directional_irradiance(self, altitude=90, azimuth=180,
-                               ground_reflectance=0.2, isotrophic=True):
+                               ground_reflectance=0.2, isotropic=True):
         """Get the irradiance components for a surface facing a given direction.
 
         Note this method computes unobstructed solar flux facing a given
@@ -806,8 +806,8 @@ class Wea(object):
                 *   concrete: 0.30
                 *   sea: 0.06
 
-            isotrophic: A boolean value that sets whether an isotropic sky is
-                used (as opposed to an anisotropic sky). An isotrophic sky
+            isotropic: A boolean value that sets whether an isotropic sky is
+                used (as opposed to an anisotropic sky). An isotropic sky
                 assumes an even distribution of diffuse irradiance across the
                 sky while an anisotropic sky places more diffuse irradiance
                 near the solar disc. (Default: True).
@@ -852,7 +852,7 @@ class Wea(object):
                 srf_dir = dnr * math.cos(vec_angle)
 
             # diffuse irradiance on surface
-            if isotrophic:
+            if isotropic:
                 srf_dif = dhr * ((math.sin(math.radians(altitude)) / 2) + 0.5)
             else:
                 y = max(0.45, 0.55 + (0.437 * math.cos(vec_angle)) + 0.313 *
