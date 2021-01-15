@@ -14,6 +14,7 @@ from .ddy import DDY
 from .futil import write_to_file
 from .header import Header
 from .location import Location
+from .climatezone import ashrae_climate_zone
 from .skymodel import calc_sky_temperature
 from .psychrometrics import rel_humid_from_db_dpt, wet_bulb_from_db_rh
 
@@ -43,6 +44,7 @@ class EPW(object):
         * extreme_hot_weeks
         * extreme_cold_weeks
         * typical_weeks
+        * ashrae_climate_zone
         * monthly_ground_temperature
         * header
 
@@ -466,6 +468,17 @@ class EPW(object):
         self._load_header_check()
         self._weeks_check(data, 'typical_weeks')
         self._typical_weeks = data
+
+    @property
+    def ashrae_climate_zone(self):
+        """Text for the ASHRAE climate zone, estimated from the dry bulb temperature.
+
+        Note that all climate zones that should have a "B" will have an "A" for
+        this property because EPW files almost never have correct precipitation
+        data. If accurate precipitation data is available from another source, the
+        ashrae_climate_zone method in the climatezone module should be used instead.
+        """
+        return ashrae_climate_zone(self.dry_bulb_temperature)
 
     @property
     def monthly_ground_temperature(self):
