@@ -19,6 +19,9 @@ setuptools.setup(
     packages=setuptools.find_packages(exclude=["tests"]),
     include_package_data=True,
     install_requires=requirements,
+    entry_points={
+        "console_scripts": ["ladybug = ladybug.cli:main"]
+    },
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",

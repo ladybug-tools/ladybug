@@ -81,11 +81,11 @@ class EPW(object):
         * sky_temperature
     """
     __slots__ = ('_file_path', '_is_header_loaded', '_is_data_loaded', '_is_ip',
-                 '_data', '_metadata', '_heating_dict', '_cooling_dict', '_extremes_dict',
+                 '_data', '_metadata', '_location',
+                 '_heating_dict', '_cooling_dict', '_extremes_dict',
                  '_extreme_hot_weeks', '_extreme_cold_weeks', '_typical_weeks',
                  '_monthly_ground_temps', '_is_leap_year', 'daylight_savings_start',
-                 'daylight_savings_end', '_num_of_fields', 'comments_1', 'comments_2',
-                 '_location', '_header')
+                 'daylight_savings_end', '_num_of_fields', 'comments_1', 'comments_2')
 
     def __init__(self, file_path):
         """Initialize an EPW object from from a local .epw file.
@@ -111,6 +111,28 @@ class EPW(object):
         self.comments_1 = ''
         self.comments_2 = ''
         self._num_of_fields = 35  # it is 35 for TMY3 files
+
+    @classmethod
+    def from_file_string(cls, file_contents):
+        """Initialize an EPW object from a string containing all EPW file contents.
+
+        This classmethod is intended for workflows where ladybug does not have
+        access to a file system (eg. within a web browser).
+
+        Args:
+            file_contents: A text string for the entirety of the EPW file contents.
+        """
+        # Initialize the class with all data missing and split the file contents
+        epw_obj = cls(None)
+        all_lines = file_contents.split('\n')
+
+        # parse the EPW header from the file contents
+        epw_obj._import_location(all_lines[0])
+        epw_obj._import_header(all_lines[:8])
+
+        # import the body of the data to the object
+        epw_obj._import_body(all_lines[8:-1])
+        return epw_obj
 
     @classmethod
     def from_missing_values(cls, is_leap_year=False):
@@ -293,6 +315,177 @@ class EPW(object):
             epw_obj.comments_2 = data['comments_2']
 
         return epw_obj
+
+    def _import_data(self, import_header_only=False):
+        """Import data from an epw file.
+
+        Hourly data will be saved in self.data and the various header data
+        will be saved in the properties above.
+        """
+        # perform checks on the file before opening it.
+        assert os.path.isfile(self._file_path), 'Cannot find an epw file at {}'.format(
+            self._file_path)
+        assert self._file_path.lower().endswith('epw'), '{} is not an .epw file. \n' \
+            'It does not possess the .epw file extension.'.format(self._file_path)
+
+        with open(self._file_path, readmode) as epwin:
+            # import the header data to the object
+            line = epwin.readline()
+            original_header_load = bool(self._is_header_loaded)
+            if not self._is_header_loaded:
+                self._import_location(line)
+                header_lines = [line] + [epwin.readline() for i in xrange(7)]
+                self._import_header(header_lines)
+            if import_header_only:
+                return
+
+            # import the body of the data to the object
+            if original_header_load:
+                for _ in xrange(7):
+                    epwin.readline()
+            body_lines = []
+            while line:
+                line = epwin.readline()
+                body_lines.append(line)
+            del body_lines[-1]  # last line is a blank space
+            self._import_body(body_lines)
+
+    def _import_location(self, line):
+        """Set the EPW location from the first line of the EPW.
+
+        Here's an example.
+        LOCATION,Denver Golden Nr,CO,USA,TMY3,724666,39.74,-105.18,-7.0,1829.0
+        """
+        # import location data
+        location_data = line.strip().split(',')
+        self._location = Location()
+        self._location.city = location_data[1].replace('\\', ' ') \
+            .replace('/', ' ')
+        self._location.state = location_data[2]
+        self._location.country = location_data[3]
+        self._location.source = location_data[4]
+        self._location.station_id = location_data[5]
+        self._location.latitude = location_data[6]
+        self._location.longitude = location_data[7]
+        self._location.time_zone = location_data[8]
+        self._location.elevation = location_data[9]
+
+        # assemble a dictionary of metadata
+        self._metadata = {
+            'source': self._location.source,
+            'country': self._location.country,
+            'city': self._location.city
+        }
+
+    def _import_header(self, header_lines):
+        """Set EPW design days, typical weeks, and ground temperatures from header lines.
+        """
+        # parse the heating, cooling and extreme design conditions.
+        dday_data = header_lines[1].strip().split(',')
+        if len(dday_data) >= 2 and int(dday_data[1]) == 1:
+            if dday_data[4] == 'Heating':
+                for key, val in zip(DesignDay.HEATING_KEYS, dday_data[5:20]):
+                    self._heating_dict[key] = val
+            if dday_data[20] == 'Cooling':
+                for key, val in zip(DesignDay.COOLING_KEYS, dday_data[21:53]):
+                    self._cooling_dict[key] = val
+            if dday_data[53] == 'Extremes':
+                for key, val in zip(DesignDay.EXTREME_KEYS, dday_data[54:70]):
+                    self._extremes_dict[key] = val
+
+        # parse typical and extreme periods into analysis periods.
+        week_data = header_lines[2].split(',')
+        num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
+        st_ind = 2
+        for _ in xrange(num_weeks):
+            week_dat = week_data[st_ind:st_ind + 4]
+            st_ind += 4
+            st = [int(num) for num in week_dat[2].split('/')]
+            end = [int(num) for num in week_dat[3].split('/')]
+            if len(st) == 3:
+                a_per = AnalysisPeriod(st[1], st[2], 0, end[1], end[2], 23)
+            elif len(st) == 2:
+                a_per = AnalysisPeriod(st[0], st[1], 0, end[0], end[1], 23)
+            if 'Max' in week_dat[0] and week_dat[1] == 'Extreme':
+                self._extreme_hot_weeks[week_dat[0]] = a_per
+            elif 'Min' in week_dat[0] and week_dat[1] == 'Extreme':
+                self._extreme_cold_weeks[week_dat[0]] = a_per
+            elif week_dat[1] == 'Typical':
+                self._typical_weeks[week_dat[0]] = a_per
+
+        # parse the monthly ground temperatures in the header.
+        grnd_data = header_lines[3].strip().split(',')
+        num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
+        st_ind = 2
+        for _ in xrange(num_depths):
+            header_meta = dict(self._metadata)  # copying the metadata dictionary
+            header_meta['depth'] = float(grnd_data[st_ind])
+            header_meta['soil conductivity'] = grnd_data[st_ind + 1]
+            header_meta['soil density'] = grnd_data[st_ind + 2]
+            header_meta['soil specific heat'] = grnd_data[st_ind + 3]
+            grnd_header = Header(temperature.GroundTemperature(), 'C',
+                                 AnalysisPeriod(), header_meta)
+            grnd_vals = [float(x) for x in grnd_data[st_ind + 4: st_ind + 16]]
+            self._monthly_ground_temps[float(grnd_data[st_ind])] = \
+                MonthlyCollection(grnd_header, grnd_vals, list(xrange(12)))
+            st_ind += 16
+
+        # parse leap year, daylight savings and comments.
+        leap_dl_sav = header_lines[4].strip().split(',')
+        self._is_leap_year = True if leap_dl_sav[1] == 'Yes' else False
+        self.daylight_savings_start = leap_dl_sav[2]
+        self.daylight_savings_end = leap_dl_sav[3]
+        comments_1 = header_lines[5].strip().split(',')
+        if len(comments_1) > 0:
+            self.comments_1 = ','.join(comments_1[1:])
+        comments_2 = header_lines[6].strip().split(',')
+        if len(comments_2) > 0:
+            self.comments_2 = ','.join(comments_2[1:])
+
+        self._is_header_loaded = True
+
+    def _import_body(self, body_lines):
+        """Set all of the EPW data collections by parsing from the body lines."""
+        # get the number of fields and make an annual analysis period
+        self._num_of_fields = min(len(body_lines[0].strip().split(',')), 35)
+        analysis_period = AnalysisPeriod(is_leap_year=self.is_leap_year)
+
+        # create headers and an empty list for each field in epw file
+        headers = []
+        for field_number in xrange(self._num_of_fields):
+            field = EPWFields.field_by_number(field_number)
+            header = Header(data_type=field.name, unit=field.unit,
+                            analysis_period=analysis_period,
+                            metadata=dict(self._metadata))
+            headers.append(header)
+            self._data.append([])
+
+        # parse the hourly data
+        for line in body_lines:
+            data = line.strip().split(',')
+            for field_number in xrange(self._num_of_fields):
+                value_type = EPWFields.field_by_number(field_number).value_type
+                try:
+                    value = value_type(data[field_number])
+                except ValueError as e:
+                    # failed to convert the value for the specific TypeError
+                    if value_type != int:
+                        raise ValueError(e)
+                    value = int(round(float(data[field_number])))
+                self._data[field_number].append(value)
+
+        # if the first value is at 1 AM, move last item to start position
+        for field_number in xrange(self._num_of_fields):
+            point_in_time = headers[field_number].data_type.point_in_time
+            if point_in_time:
+                # move the last hour to first position
+                last_hour = self._data[field_number].pop()
+                self._data[field_number].insert(0, last_hour)
+
+        # finally, build the data collection objects from the headers and data
+        for i in xrange(self._num_of_fields):
+            self._data[i] = HourlyContinuousCollection(headers[i], self._data[i])
+        self._is_data_loaded = True
 
     @property
     def file_path(self):
@@ -533,167 +726,6 @@ class EPW(object):
                     ' a week.  Got AnalysisPeriod for {} days.'.format(
                         week_type, type(val))
 
-    def _import_data(self, import_header_only=False):
-        """Import data from an epw file.
-
-        Hourly data will be saved in self.data and the various header data
-        will be saved in the properties above.
-        """
-        # perform checks on the file before opening it.
-        assert os.path.isfile(self._file_path), 'Cannot find an epw file at {}'.format(
-            self._file_path)
-        assert self._file_path.lower().endswith('epw'), '{} is not an .epw file. \n' \
-            'It does not possess the .epw file extension.'.format(self._file_path)
-
-        with open(self._file_path, readmode) as epwin:
-            line = epwin.readline()
-            original_header_load = bool(self._is_header_loaded)
-
-            if not self._is_header_loaded:
-                # import location data
-                # first line has location data - Here is an example
-                # LOCATION,Denver Golden Nr,CO,USA,TMY3,724666,39.74,-105.18,-7.0,1829.0
-                location_data = line.strip().split(',')
-                self._location = Location()
-                self._location.city = location_data[1].replace('\\', ' ') \
-                    .replace('/', ' ')
-                self._location.state = location_data[2]
-                self._location.country = location_data[3]
-                self._location.source = location_data[4]
-                self._location.station_id = location_data[5]
-                self._location.latitude = location_data[6]
-                self._location.longitude = location_data[7]
-                self._location.time_zone = location_data[8]
-                self._location.elevation = location_data[9]
-
-                # assemble a dictionary of metadata
-                self._metadata = {
-                    'source': self._location.source,
-                    'country': self._location.country,
-                    'city': self._location.city
-                }
-
-                self._header = [line] + [epwin.readline() for i in xrange(7)]
-
-                # parse the heating, cooling and extreme design conditions.
-                dday_data = self._header[1].strip().split(',')
-                if len(dday_data) >= 2 and int(dday_data[1]) == 1:
-                    if dday_data[4] == 'Heating':
-                        for key, val in zip(DesignDay.HEATING_KEYS, dday_data[5:20]):
-                            self._heating_dict[key] = val
-                    if dday_data[20] == 'Cooling':
-                        for key, val in zip(DesignDay.COOLING_KEYS, dday_data[21:53]):
-                            self._cooling_dict[key] = val
-                    if dday_data[53] == 'Extremes':
-                        for key, val in zip(DesignDay.EXTREME_KEYS, dday_data[54:70]):
-                            self._extremes_dict[key] = val
-
-                # parse typical and extreme periods into analysis periods.
-                week_data = self._header[2].split(',')
-                num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
-                st_ind = 2
-                for i in xrange(num_weeks):
-                    week_dat = week_data[st_ind:st_ind + 4]
-                    st_ind += 4
-                    st = [int(num) for num in week_dat[2].split('/')]
-                    end = [int(num) for num in week_dat[3].split('/')]
-                    if len(st) == 3:
-                        a_per = AnalysisPeriod(st[1], st[2], 0, end[1], end[2], 23)
-                    elif len(st) == 2:
-                        a_per = AnalysisPeriod(st[0], st[1], 0, end[0], end[1], 23)
-                    if 'Max' in week_dat[0] and week_dat[1] == 'Extreme':
-                        self._extreme_hot_weeks[week_dat[0]] = a_per
-                    elif 'Min' in week_dat[0] and week_dat[1] == 'Extreme':
-                        self._extreme_cold_weeks[week_dat[0]] = a_per
-                    elif week_dat[1] == 'Typical':
-                        self._typical_weeks[week_dat[0]] = a_per
-
-                # parse the monthly ground temperatures in the header.
-                grnd_data = self._header[3].strip().split(',')
-                num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
-                st_ind = 2
-                for i in xrange(num_depths):
-                    header_meta = dict(self._metadata)  # copying the metadata dictionary
-                    header_meta['depth'] = float(grnd_data[st_ind])
-                    header_meta['soil conductivity'] = grnd_data[st_ind + 1]
-                    header_meta['soil density'] = grnd_data[st_ind + 2]
-                    header_meta['soil specific heat'] = grnd_data[st_ind + 3]
-                    grnd_header = Header(temperature.GroundTemperature(), 'C',
-                                         AnalysisPeriod(), header_meta)
-                    grnd_vals = [float(x) for x in grnd_data[st_ind + 4: st_ind + 16]]
-                    self._monthly_ground_temps[float(grnd_data[st_ind])] = \
-                        MonthlyCollection(grnd_header, grnd_vals, list(xrange(12)))
-                    st_ind += 16
-
-                # parse leap year, daylight savings and comments.
-                leap_dl_sav = self._header[4].strip().split(',')
-                self._is_leap_year = True if leap_dl_sav[1] == 'Yes' else False
-                self.daylight_savings_start = leap_dl_sav[2]
-                self.daylight_savings_end = leap_dl_sav[3]
-                comments_1 = self._header[5].strip().split(',')
-                if len(comments_1) > 0:
-                    self.comments_1 = ','.join(comments_1[1:])
-                comments_2 = self._header[6].strip().split(',')
-                if len(comments_2) > 0:
-                    self.comments_2 = ','.join(comments_2[1:])
-
-                self._is_header_loaded = True
-
-            if import_header_only:
-                return
-
-            # read first line of data to overwrite the number of fields
-            if original_header_load:
-                for i in xrange(7):
-                    epwin.readline()
-            line = epwin.readline()
-            self._num_of_fields = min(len(line.strip().split(',')), 35)
-
-            # create an annual analysis period
-            analysis_period = AnalysisPeriod(is_leap_year=self.is_leap_year)
-
-            # create headers and an empty list for each field in epw file
-            headers = []
-            for field_number in xrange(self._num_of_fields):
-                field = EPWFields.field_by_number(field_number)
-                header = Header(data_type=field.name, unit=field.unit,
-                                analysis_period=analysis_period,
-                                metadata=dict(self._metadata))
-                headers.append(header)
-                self._data.append([])
-
-            # collect hourly data
-            while line:
-                data = line.strip().split(',')
-
-                for field_number in xrange(self._num_of_fields):
-                    value_type = EPWFields.field_by_number(field_number).value_type
-                    try:
-                        value = value_type(data[field_number])
-                    except ValueError as e:
-                        # failed to convert the value for the specific TypeError
-                        if value_type != int:
-                            raise ValueError(e)
-                        value = int(round(float(data[field_number])))
-
-                    self._data[field_number].append(value)
-
-                line = epwin.readline()
-
-            # if the first value is at 1 AM, move last item to start position
-            for field_number in xrange(self._num_of_fields):
-                point_in_time = headers[field_number].data_type.point_in_time
-                if point_in_time:
-                    # move the last hour to first position
-                    last_hour = self._data[field_number].pop()
-                    self._data[field_number].insert(0, last_hour)
-
-            # finally, build the data collection objects from the headers and data
-            for i in xrange(self._num_of_fields):
-                self._data[i] = HourlyContinuousCollection(headers[i], self._data[i])
-
-            self._is_data_loaded = True
-
     @property
     def header(self):
         """A list of text representing the full header (the first 8 lines) of the EPW."""
@@ -728,7 +760,7 @@ class EPW(object):
         grnd_st = 'GROUND TEMPERATURES,{}'.format(len(self._monthly_ground_temps.keys()))
         for depth in sorted(self._monthly_ground_temps.keys()):
             grnd_st = grnd_st + ',{},{}'.format(
-                depth, self._format_grndt(self._monthly_ground_temps[depth]))
+                depth, self._format_ground_temp(self._monthly_ground_temps[depth]))
         grnd_st = grnd_st + '\n'
         leap_yr = 'Yes' if self._is_leap_year else 'No'
         leap_str = 'HOLIDAYS/DAYLIGHT SAVINGS,{},{},{},0\n'.format(
@@ -743,7 +775,7 @@ class EPW(object):
         return '{},{},{}/{},{}/{}'.format(name, type, a_per.st_month, a_per.st_day,
                                           a_per.end_month, a_per.end_day)
 
-    def _format_grndt(self, data_c):
+    def _format_ground_temp(self, data_c):
         """Format monthly ground data collection into string for the EPW header."""
         monthly_str = '{},{},{},{}'.format(
             data_c.header.metadata['soil conductivity'],
@@ -751,83 +783,6 @@ class EPW(object):
             data_c.header.metadata['soil specific heat'],
             ','.join(['%.2f' % x for x in data_c.values]))
         return monthly_str
-
-    def save(self, file_path):
-        """Save epw object as an epw file.
-
-        Args:
-            file_path: A string representing the path to write the epw file to.
-        """
-        # load data if it's  not loaded convert to SI if it is in IP
-        if not self.is_data_loaded:
-            self._import_data()
-        originally_ip = False
-        if self.is_ip:
-            self.convert_to_si()
-            originally_ip = True
-
-        # write the file
-        lines = self.header
-        try:
-            # if the first value is at 1AM, move first item to end position
-            for field in xrange(0, self._num_of_fields):
-                point_in_time = self._data[field].header.data_type.point_in_time
-                if point_in_time:
-                    first_hour = self._data[field]._values.pop(0)
-                    self._data[field]._values.append(first_hour)
-
-            annual_a_per = AnalysisPeriod(is_leap_year=self.is_leap_year)
-            for hour in xrange(0, len(annual_a_per.datetimes)):
-                line = []
-                for field in xrange(0, self._num_of_fields):
-                    line.append(str(self._data[field]._values[hour]))
-                lines.append(",".join(line) + "\n")
-        except IndexError:
-            # cleaning up
-            length_error_msg = 'Data length is not for a full year and cannot be ' + \
-                'saved as an EPW file.'
-            raise ValueError(length_error_msg)
-        else:
-            file_data = ''.join(lines)
-            write_to_file(file_path, file_data, True)
-        finally:
-            del(lines)
-            # move last item to start position for fields on the hour
-            for field in xrange(0, self._num_of_fields):
-                point_in_time = self._data[field].header.data_type.point_in_time
-                if point_in_time:
-                    last_hour = self._data[field]._values.pop()
-                    self._data[field]._values.insert(0, last_hour)
-
-        if originally_ip:
-            self.convert_to_ip()
-
-        return file_path
-
-    def convert_to_ip(self):
-        """Convert all Data Collections of this EPW object to IP units.
-
-        This is useful when one knows that all graphics produced from this
-        EPW should be in Imperial units."""
-        if not self.is_data_loaded:
-            self._import_data()
-        if not self.is_ip:
-            for coll in self._data:
-                coll.convert_to_ip()
-        self._is_ip = True
-
-    def convert_to_si(self):
-        """Convert all Data Collections of this EPW object to SI units.
-
-        This is useful when one needs to convert the EPW back to SI units
-        from imperial units for processes like computing thermal comfort
-        from EPW data."""
-        if not self.is_data_loaded:
-            self._import_data()
-        if self.is_ip:
-            for coll in self._data:
-                coll.convert_to_si()
-        self._is_ip = False
 
     def _get_data_by_field(self, field_number):
         """Return a data field by field number.
@@ -854,9 +809,9 @@ class EPW(object):
     def import_data_by_field(self, field_number):
         """Return an annual data collection for any field_number in epw file.
 
-        This is a useful method to get the values for fields that Ladybug currently
-        doesn't import by default. You can find list of fields by typing
-        EPWFields.fields
+        This is useful to get data for fields that the EPW object currently doesn't
+        have properties for (eg. Uncertainty Flags). You can find list of fields
+        by using EPWFields.fields.
 
         Args:
             field_number: A value between 0 to 34 for different available epw fields.
@@ -866,7 +821,7 @@ class EPW(object):
                 *   2 Day
                 *   3 Hour
                 *   4 Minute
-                *   5 -
+                *   5 Uncertainty Flags
                 *   6 Dry Bulb Temperature
                 *   7 Dew Point Temperature
                 *   8 Relative Humidity
@@ -1325,14 +1280,6 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         sky_temp_data = [calc_sky_temperature(hir) for hir in horiz_ir]
         return HourlyContinuousCollection(sky_temp_header, sky_temp_data)
 
-    def _get_wea_header(self):
-        return "place %s\n" % self.location.city + \
-            "latitude %.2f\n" % self.location.latitude + \
-            "longitude %.2f\n" % -self.location.longitude + \
-            "time_zone %d\n" % (-self.location.time_zone * 15) + \
-            "site_elevation %.1f\n" % self.location.elevation + \
-            "weather_data_file_unit 1\n"
-
     def approximate_design_day(self, day_type='SummerDesignDay', percentile=0.4):
         """Get a DesignDay object derived from percentile analysis of annual EPW data.
 
@@ -1365,7 +1312,7 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         if day_type == 'WinterDesignDay':  # create winter design day criteria
             # get temperature at percentile and indices of coldest hours
             temp = self.dry_bulb_temperature.percentile(percentile)
-            temps, indices = self.dry_bulb_temperature.lowest_values(hr_count)
+            _, indices = self.dry_bulb_temperature.lowest_values(hr_count)
             # get average wind speed and direction at coldest hours
             wind_speed = round(sum(self.wind_speed[i] for i in indices) / hr_count, 1)
             wind_dir = round(sum(self.wind_direction[i] for i in indices) / hr_count)
@@ -1381,7 +1328,7 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         elif day_type == 'SummerDesignDay':  # create summer design day criteria
             # get temperature at percentile and indices of hottest hours
             temp = self.dry_bulb_temperature.percentile(100 - percentile)
-            temps, indices = self.dry_bulb_temperature.highest_values(hr_count)
+            _, indices = self.dry_bulb_temperature.highest_values(hr_count)
             # get average humidity, wind speed and direction at hottest hours
             dew_pt = sum(self.dew_point_temperature[i] for i in indices) / hr_count
             rh = rel_humid_from_db_dpt(temp, dew_pt)
@@ -1410,11 +1357,69 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
                 'Unrecognized design day type "{}".\nChoose from: "SummerDesignDay", '
                 '"WinterDesignDay"'.format(day_type))
 
+    def best_available_design_days(self, percentile=0.4):
+        """Get the best available heating + cooling design days from this EPW.
+
+        This method will first check if there is a heating or cooling design day
+        that meets the input percentile within the EPW itself. If None is
+        found, the heating and cooling design days will be derived from analysis
+        of the annual data within the EPW, which is usually less accurate.
+
+        Args:
+            percentile: A number between 0 and 50 for the percentile difference
+                from the most extreme conditions within the EPW to be used for
+                the design day. Typical values are 0.4 and 1.0. (Default: 0.4).
+
+        Returns:
+            A tuple with two design day objects. The first is the heating design
+            day and the second is the cooling design day.
+        """
+        # get the heating design day
+        if percentile == 0.4 and self.annual_heating_design_day_996 is not None:
+            heating = self.annual_heating_design_day_996
+        elif percentile == 1 and self.annual_heating_design_day_990 is not None:
+            heating = self.annual_heating_design_day_990
+        else:
+            heating = self.approximate_design_day('WinterDesignDay', percentile)
+        # get the cooling design day
+        if percentile == 0.4 and self.annual_cooling_design_day_004 is not None:
+            cooling = self.annual_cooling_design_day_004
+        elif percentile == 1 and self.annual_cooling_design_day_010 is not None:
+            cooling = self.annual_cooling_design_day_010
+        else:
+            cooling = self.approximate_design_day('SummerDesignDay', percentile)
+        return heating, cooling
+
+    def convert_to_ip(self):
+        """Convert all Data Collections of this EPW object to IP units.
+
+        This is useful when one knows that all graphics produced from this
+        EPW should be in Imperial units."""
+        if not self.is_data_loaded:
+            self._import_data()
+        if not self.is_ip:
+            for coll in self._data:
+                coll.convert_to_ip()
+        self._is_ip = True
+
+    def convert_to_si(self):
+        """Convert all Data Collections of this EPW object to SI units.
+
+        This is useful when one needs to convert the EPW back to SI units
+        from imperial units for processes like computing thermal comfort
+        from EPW data."""
+        if not self.is_data_loaded:
+            self._import_data()
+        if self.is_ip:
+            for coll in self._data:
+                coll.convert_to_si()
+        self._is_ip = False
+
     def to_ddy(self, file_path, percentile=0.4):
         """Produce a DDY file with a heating + cooling design day from this EPW.
 
         This method will first check if there is a heating or cooling design day
-        that meet the input percentile contained within the EPW itself. If None is
+        that meets the input percentile within the EPW itself. If None is
         found, the heating and cooling design days will be derived from analysis
         of the annual data within the EPW, which is usually less accurate.
 
@@ -1424,36 +1429,13 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
                 from the most extreme conditions within the EPW to be used for
                 the design day. Typical values are 0.4 and 1.0. (Default: 0.4).
         """
-        # ensure the EPW file data is all in SI before creating design days
-        originally_ip = False
-        if self.is_ip:
-            self.convert_to_si()
-            originally_ip = True
-
         # get the design day objects
-        des_days = []
-        if percentile == 0.4 and self.annual_heating_design_day_996 is not None:
-            des_days.append(self.annual_heating_design_day_996)
-        elif percentile == 1 and self.annual_heating_design_day_990 is not None:
-            des_days.append(self.annual_heating_design_day_990)
-        else:
-            des_days.append(self.approximate_design_day('WinterDesignDay', percentile))
-
-        if percentile == 0.4 and self.annual_cooling_design_day_004 is not None:
-            des_days.append(self.annual_cooling_design_day_004)
-        elif percentile == 1 and self.annual_cooling_design_day_010 is not None:
-            des_days.append(self.annual_cooling_design_day_010)
-        else:
-            des_days.append(self.approximate_design_day('SummerDesignDay', percentile))
-
+        des_days = self.best_available_design_days(percentile)
         # write the DDY
         if not file_path.lower().endswith('.ddy'):
             file_path += '.ddy'
         ddy = DDY(self.location, des_days)
-        ddy.save(file_path)
-
-        if originally_ip:
-            self.convert_to_ip()
+        ddy.write(file_path)
         return file_path
 
     def to_wea(self, file_path, hoys=None):
@@ -1497,6 +1479,14 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
 
         return file_path
 
+    def _get_wea_header(self):
+        return "place %s\n" % self.location.city + \
+            "latitude %.2f\n" % self.location.latitude + \
+            "longitude %.2f\n" % -self.location.longitude + \
+            "time_zone %d\n" % (-self.location.time_zone * 15) + \
+            "site_elevation %.1f\n" % self.location.elevation + \
+            "weather_data_file_unit 1\n"
+
     def to_dict(self):
         """Convert the EPW to a dictionary."""
         # load data if it's not loaded
@@ -1532,12 +1522,75 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
             "type": 'EPW'
         }
 
+    def to_file_string(self):
+        """Get a text string for the entirety of the EPW file contents."""
+        # load data if it's  not loaded convert to SI if it is in IP
+        if not self.is_data_loaded:
+            self._import_data()
+        originally_ip = False
+        if self.is_ip:
+            self.convert_to_si()
+            originally_ip = True
+
+        # write the file
+        lines = self.header
+        try:
+            # if the first value is at 1AM, move first item to end position
+            for field in xrange(0, self._num_of_fields):
+                point_in_time = self._data[field].header.data_type.point_in_time
+                if point_in_time:
+                    first_hour = self._data[field]._values.pop(0)
+                    self._data[field]._values.append(first_hour)
+
+            annual_a_per = AnalysisPeriod(is_leap_year=self.is_leap_year)
+            for hour in xrange(0, len(annual_a_per.datetimes)):
+                line = []
+                for field in xrange(0, self._num_of_fields):
+                    line.append(str(self._data[field]._values[hour]))
+                lines.append(",".join(line) + "\n")
+        except IndexError:
+            length_error_msg = 'Data length is not for a full year and cannot be ' + \
+                'saved as an EPW file.'
+            raise ValueError(length_error_msg)
+        finally:  # move last item to start position for fields on the hour
+            for field in xrange(0, self._num_of_fields):
+                point_in_time = self._data[field].header.data_type.point_in_time
+                if point_in_time:
+                    last_hour = self._data[field]._values.pop()
+                    self._data[field]._values.insert(0, last_hour)
+
+        if originally_ip:  # put back the object as it was
+            self.convert_to_ip()
+        return ''.join(lines)
+
+    def write(self, file_path):
+        """Write EPW object as an .epw file and return the file path.
+
+        Args:
+            file_path: Text for the full path to where the .epw file will be written.
+        """
+        if not file_path.lower().endswith('.epw'):
+            file_path += '.epw'
+        file_data = self.to_file_string()
+        write_to_file(file_path, file_data, True)
+        return file_data
+
+    def save(self, file_path):
+        """Write EPW object as a file.
+
+        Args:
+            file_path: Text for the full path to where the file will be written.
+        """
+        file_data = self.to_file_string()
+        write_to_file(file_path, file_data, True)
+        return file_data
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
 
     def __repr__(self):
-        """epw file representation."""
+        """EPW representation."""
         return "EPW file Data for [%s]" % self.location.city
 
 

@@ -43,8 +43,19 @@ def test_import_tokyo_epw():
     assert epw.ashrae_climate_zone == '3A'
 
 
+def test_epw_from_file_string():
+    """Test initialization of EPW from a file string."""
+    relative_path = './tests/fixtures/epw/chicago.epw'
+    with open(relative_path, 'r') as epwin:
+        file_contents = epwin.read()
+    epw = EPW.from_file_string(file_contents)
+    assert epw.is_header_loaded
+    assert epw.is_data_loaded
+    assert len(epw.dry_bulb_temperature) == 8760
+
+
 def test_epw_from_missing_values():
-    """Test import custom epw with wrong types."""
+    """Test initialization of EPW from missing values."""
     epw = EPW.from_missing_values()
     assert epw.is_header_loaded
     assert epw.is_data_loaded
@@ -62,9 +73,20 @@ def test_dict_methods():
     assert epw_dict == rebuilt_epw.to_dict()
 
 
+def test_file_string_methods():
+    """Test serialization to/from EPW file strings"""
+    relative_path = './tests/fixtures/epw/chicago.epw'
+    epw = EPW(relative_path)
+
+    epw_contents = epw.to_file_string()
+    rebuilt_epw = EPW.from_file_string(epw_contents)
+    assert epw.location == rebuilt_epw.location
+    assert epw.dry_bulb_temperature == rebuilt_epw.dry_bulb_temperature
+
+
 def test_invalid_epw():
     """Test the import of incorrect file type and a non-existent epw file."""
-    path = './tests/fixtures/epw/non-exitent.epw'
+    path = './tests/fixtures/epw/non-existent.epw'
     with pytest.raises(Exception):
         epw = EPW(path)
         epw.location
@@ -288,8 +310,12 @@ def test_epw_header():
     """Check that the process of parsing the EPW header hasn't changed it."""
     relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
+
+    with open(relative_path, 'r') as epwin:
+        header_lines = [epwin.readline() for i in range(8)]
+
     for i in range(len(epw.header)):
-        line1, line2 = epw.header[i], epw._header[i]
+        line1, line2 = epw.header[i], header_lines[i]
         if i in (0, 1, 4, 5, 6, 7):
             # These lines should match exactly
             assert line1.rstrip() == line2.rstrip()
@@ -298,35 +324,35 @@ def test_epw_header():
             assert len(line1.split(',')) == len(line2.split(','))
 
 
-def test_save_epw():
+def test_write_epw():
     """Test save epw_rel."""
     path = './tests/fixtures/epw/tokyo.epw'
     epw = EPW(path)
 
     modified_path = './tests/fixtures/epw/tokyo_modified.epw'
-    epw.save(modified_path)
+    epw.write(modified_path)
     assert os.path.isfile(modified_path)
     assert os.stat(modified_path).st_size > 1
     os.remove(modified_path)
 
 
-def test_save_epw_from_missing_values():
+def test_write_epw_from_missing_values():
     """Test import custom epw with wrong types."""
     epw = EPW.from_missing_values()
     file_path = './tests/fixtures/epw/missing.epw'
-    epw.save(file_path)
+    epw.write(file_path)
     assert os.path.isfile(file_path)
     assert os.stat(file_path).st_size > 1
     os.remove(file_path)
 
 
-def test_save_converted_epw():
+def test_write_converted_epw():
     """Test that the saved EPW always has SI units."""
     relative_path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(relative_path)
     epw.convert_to_ip()
     modified_path = './tests/fixtures/epw/chicago_modified.epw'
-    epw.save(modified_path)
+    epw.write(modified_path)
     assert epw.dry_bulb_temperature.header.unit == 'F'
     assert epw.dry_bulb_temperature.values[0] == pytest.approx(21.02, rel=1e-2)
 
@@ -336,8 +362,8 @@ def test_save_converted_epw():
     os.remove(modified_path)
 
 
-def test_save_ddy():
-    """Test save wea_rel."""
+def test_to_ddy():
+    """Test to_ddy."""
     path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(path)
 
@@ -354,8 +380,8 @@ def test_save_ddy():
     os.remove(ddy_path)
 
 
-def test_save_wea():
-    """Test save wea_rel."""
+def test_to_wea():
+    """Test to_wea."""
     path = './tests/fixtures/epw/chicago.epw'
     epw = EPW(path)
     wea_path = './tests/fixtures/wea/chicago_epw.wea'
