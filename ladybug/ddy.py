@@ -110,17 +110,6 @@ class DDY(object):
         """
         return cls(design_day.location, [design_day])
 
-    def save(self, file_path):
-        """Save ddy object as a .ddy file.
-
-        Args:
-            file_path: A string representing the path to write the ddy file to.
-        """
-        data = self.location.to_idf() + '\n\n'
-        for d_day in self.design_days:
-            data = data + d_day.to_idf() + '\n\n'
-        write_to_file(file_path, data, True)
-
     def filter_by_keyword(self, keyword):
         """Return a list of ddys that have a certain keyword in their name.
 
@@ -163,8 +152,12 @@ class DDY(object):
 
     @design_days.setter
     def design_days(self, data):
-        assert isinstance(data, list), 'Expected' \
-            ' a list of design days. Got {}'.format(type(data))
+        try:
+            if not isinstance(data, list):
+                data = list(data)
+        except TypeError:
+            raise TypeError('Expected list or tuple for DDY design_days. '
+                            'Got {}'.format(type(data)))
         for item in data:
             assert isinstance(item, DesignDay), 'Expected' \
                 ' DesignDay type. Got {}'.format(type(item))
@@ -181,6 +174,34 @@ class DDY(object):
             'location': self.location.to_dict(),
             'design_days': [des_d.to_dict() for des_d in self.design_days]
         }
+
+    def to_file_string(self):
+        """Get a text string for the entirety of the DDY file contents."""
+        data = self.location.to_idf() + '\n\n'
+        for d_day in self.design_days:
+            data = data + d_day.to_idf() + '\n\n'
+        return data
+
+    def write(self, file_path):
+        """Write DDY object as a .ddy file and return the file path.
+
+        Args:
+            file_path: Text for the full path to where the .ddy file will be written.
+        """
+        if not file_path.lower().endswith('.ddy'):
+            file_path += '.ddy'
+        file_data = self.to_file_string()
+        write_to_file(file_path, file_data, True)
+        return file_data
+
+    def save(self, file_path):
+        """Write DDY object as a file.
+
+        Args:
+            file_path: Text for the full path to where the file will be written.
+        """
+        file_data = self.to_file_string()
+        write_to_file(file_path, file_data, True)
 
     def duplicate(self):
         """Get a copy of this object."""

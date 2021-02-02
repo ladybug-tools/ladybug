@@ -965,8 +965,19 @@ class Wea(object):
             base['datetimes'] = [dat.to_array() for dat in dts]
         return base
 
+    def to_file_string(self):
+        """Get a text string for the entirety of the Wea file contents."""
+        lines = [self.header]
+        for dir_rad, dif_rad, dt in zip(self.direct_normal_irradiance,
+                                        self.diffuse_horizontal_irradiance,
+                                        self.datetimes):
+            line = "%d %d %.3f %d %d\n" \
+                % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
+            lines.append(line)
+        return ''.join(lines)
+
     def write(self, file_path, write_hours=False):
-        """Write the Wea object to a .wea file.
+        """Write the Wea object to a .wea file and return the file path.
 
         Args:
             file_path: Text string for the path to where the .wea file should be written.
@@ -974,26 +985,17 @@ class Wea(object):
                 next to the .wea file, which lists the hours of the year (hoys)
                 contained within the .wea file.
         """
-        # prepare input file path and make header
+        # write the .wea file
         if not file_path.lower().endswith('.wea'):
             file_path += '.wea'
-        lines = [self.header]
-
-        # write values and datetimes
-        for dir_rad, dif_rad, dt in zip(self.direct_normal_irradiance,
-                                        self.diffuse_horizontal_irradiance,
-                                        self.datetimes):
-            line = "%d %d %.3f %d %d\n" \
-                % (dt.month, dt.day, dt.float_hour, dir_rad, dif_rad)
-            lines.append(line)
-        file_data = ''.join(lines)
+        file_data = self.to_file_string()
         write_to_file(file_path, file_data, True)
 
-        if write_hours:  # write the .hrs file if requested
+        # write the .hrs file if requested
+        if write_hours:
             hrs_file_path = file_path[:-4] + '.hrs'
             hrs_data = ','.join(str(h) for h in self.hoys) + '\n'
             write_to_file(hrs_file_path, hrs_data, True)
-
         return file_path
 
     def _aligned_collection(self, header, values):

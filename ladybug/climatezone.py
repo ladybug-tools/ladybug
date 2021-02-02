@@ -20,7 +20,7 @@ def ashrae_climate_zone(dry_bulb_temperature, annual_precipitation=None):
             climate has the "dry" classification. If None, the climate will always
             be assumed to be humid (type "A"), which tends to be more common than
             the dry classification (type "B").
-    
+
     Returns:
         Text for the ASHRAE climate zone classification (eg. "4A").
     """
