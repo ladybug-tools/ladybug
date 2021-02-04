@@ -1,5 +1,4 @@
 """ladybug file translation commands."""
-
 import click
 import sys
 import logging

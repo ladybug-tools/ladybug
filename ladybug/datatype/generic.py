@@ -70,3 +70,18 @@ class GenericType(DataTypeBase):
     def to_si(self, values, from_unit):
         """Return values in SI and the units to which the values have been converted."""
         return values, from_unit
+
+    def to_dict(self):
+        """Get Generic data type as a dictionary."""
+        return {
+            'type': 'DataTypeBase',
+            'name': self.name,
+            'data_type': self.__class__.__name__,
+            'base_unit': self.units[0],
+            'min': self._min,
+            'max': self._max,
+            'abbreviation': self._abbreviation,
+            'unit_descr': self._unit_descr,
+            'point_in_time': self._point_in_time,
+            'cumulative': self._cumulative
+        }

@@ -10,6 +10,7 @@ sphinx-bootstrap-theme==0.7.1
 sphinxcontrib-fulltoc==1.2.0
 sphinxcontrib-websupport==1.1.2;python_version<'3.0'
 sphinxcontrib-websupport==1.2.4;python_version>='3.6'
+sphinx-click==2.5.0
 twine==1.13.0;python_version<'3.0'
 twine==3.3.0;python_version>='3.6'
 wheel==0.36.2

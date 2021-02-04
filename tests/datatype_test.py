@@ -42,11 +42,12 @@ def test_to_from_dict():
 
 def test_dict_generic():
     """Test the from dict for a generic type."""
-    sample_dict = {'name': 'Days Since Last Snowfall',
-                   'data_type': 'GenericType',
-                   'base_unit': 'days'}
+    unit_descr = {-1: 'High', 0: 'Medium', 1: 'High'}
+    test_type = generic.GenericType('Test Type', 'widgets', unit_descr=unit_descr)
+    sample_dict = test_type.to_dict()
     new_type = base.DataTypeBase.from_dict(sample_dict)
     assert isinstance(new_type, base.DataTypeBase)
+    assert new_type.unit_descr == unit_descr
 
 
 def test_generic_type():
