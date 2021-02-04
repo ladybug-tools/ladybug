@@ -61,7 +61,6 @@ class DataTypeBase(object):
                 {
                     "name": ""  # data type name of the data type as a string
                     "data_type": ""  # the class name of the data type as a string
-                    "base_unit": ""  # the base unit of the data type
                 }
         """
         assert 'name' in data, 'Required keyword "name" is missing!'
@@ -72,7 +71,10 @@ class DataTypeBase(object):
         if data['data_type'] == 'GenericType':
             assert 'base_unit' in data, \
                 'Keyword "base_unit" is missing and is required for GenericType.'
-            return cls._type_enumeration._GENERICTYPE(data['name'], data['base_unit'])
+            return cls._type_enumeration._GENERICTYPE(
+                data['name'], data['base_unit'], data['min'], data['max'],
+                data['abbreviation'], data['unit_descr'], data['point_in_time'],
+                data['cumulative'])
         elif data['data_type'] in cls._type_enumeration._TYPES:
             clss = cls._type_enumeration._TYPES[data['data_type']]
             if data['data_type'] == data['name'].title().replace(' ', ''):
@@ -165,7 +167,6 @@ class DataTypeBase(object):
         return {
             'name': self.name,
             'data_type': self.__class__.__name__,
-            'base_unit': self.units[0],
             'type': 'DataTypeBase'
         }
 
