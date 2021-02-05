@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Volume Flow Rate data type."""
+"""Volume Flow Rate Intensity data type."""
 from __future__ import division
 
 from .base import DataTypeBase

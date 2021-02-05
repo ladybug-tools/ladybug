@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Generic data type."""
+"""R-Value data type."""
 from __future__ import division
 
 from .base import DataTypeBase

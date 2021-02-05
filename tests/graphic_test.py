@@ -69,7 +69,7 @@ def test_init_graphic_con_invalid():
 
 
 def test_init_graphic_con_vertex_based():
-    """Test the initialization of ResultMesh objects with vertex-based input."""
+    """Test the initialization of GraphicContainer objects with vertex-based input."""
     mesh2d = Mesh2D.from_grid(num_x=2, num_y=2)
     mesh3d = Mesh3D.from_mesh2d(mesh2d)
     data = [0, 1, 2, 3, 4, 5, 6, 7, 8]
@@ -86,7 +86,7 @@ def test_init_graphic_con_vertex_based():
 
 
 def test_init_graphic_con_legend_parameters():
-    """Test the initialization of ResultMesh objects with a LegendParameters."""
+    """Test the initialization of GraphicContainer objects with a LegendParameters."""
     mesh2d = Mesh2D.from_grid(num_x=2, num_y=2)
     mesh3d = Mesh3D.from_mesh2d(mesh2d)
     data = [-1, 0, 1, 2]
@@ -129,10 +129,28 @@ def test_init_graphic_con_data_type():
 
 
 def test_init_graphic_con_data_type_ordinal():
-    """Test the ResultMesh objects with a DataType with unit_descr."""
+    """Test the GraphicContainer objects with a DataType with unit_descr."""
     mesh2d = Mesh2D.from_grid(num_x=2, num_y=2)
     mesh3d = Mesh3D.from_mesh2d(mesh2d)
     data = [-1, 0, 1, 2]
+    graphic_con = GraphicContainer(data, mesh3d.min, mesh3d.max,
+                                   data_type=PredictedMeanVote(), unit='PMV')
+
+    assert graphic_con.legend_parameters.min == -3
+    assert graphic_con.legend_parameters.max == 3
+    assert graphic_con.legend_parameters.segment_count == 7
+    assert not graphic_con.legend_parameters.is_title_default
+    assert graphic_con.legend_parameters.title == 'PMV'
+    assert graphic_con.legend.segment_text == ['Cold', 'Cool', 'Slightly Cool',
+                                               'Neutral',
+                                               'Slightly Warm', 'Warm', 'Hot']
+
+
+def test_graphic_con_data_type_ordinal_all_same():
+    """Test the GraphicContainer with a DataType with unit_descr and all equal values."""
+    mesh2d = Mesh2D.from_grid(num_x=2, num_y=2)
+    mesh3d = Mesh3D.from_mesh2d(mesh2d)
+    data = [0] * 3
     graphic_con = GraphicContainer(data, mesh3d.min, mesh3d.max,
                                    data_type=PredictedMeanVote(), unit='PMV')
 

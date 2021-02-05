@@ -7,7 +7,7 @@ from ladybug.datatype import angle, area, distance, energy, energyflux, \
     energyintensity, fraction, generic, illuminance, luminance, mass, massflowrate, \
     power, pressure, rvalue, speed, temperature, temperaturedelta, temperaturetime, \
     thermalcondition, time, specificenergy, uvalue, volume, volumeflowrate, \
-    volumeflowrateintensity
+    volumeflowrateintensity, voltage, current
 
 import pytest
 import math
@@ -337,6 +337,36 @@ def test_energy_flux():
     assert energyf_type.to_unit([1], 'W/m2', 'kBtu/h-ft2')[0] == pytest.approx(3154.59075, rel=1e-1)
     assert energyf_type.to_unit([1], 'W/m2', 'W/ft2')[0] == pytest.approx(10.7639, rel=1e-1)
     assert energyf_type.to_unit([1], 'W/m2', 'met')[0] == pytest.approx(58.2, rel=1e-1)
+
+
+def test_voltage():
+    """Test Voltage type."""
+    voltage_type = voltage.Voltage()
+    for unit in voltage_type.units:
+        assert voltage_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+        ip_vals, ip_u = voltage_type.to_ip([1], unit)
+        assert len(ip_vals) == 1
+        si_vals, si_u = voltage_type.to_si([1], unit)
+        assert len(si_vals) == 1
+        for other_unit in voltage_type.units:
+            assert len(voltage_type.to_unit([1], other_unit, unit)) == 1
+    assert voltage_type.to_unit([1], 'kV', 'V')[0] == 0.001
+    assert voltage_type.to_unit([1], 'V', 'kV')[0] == 1000
+
+
+def test_current():
+    """Test Current type."""
+    current_type = current.Current()
+    for unit in current_type.units:
+        assert current_type.to_unit([1], unit, unit)[0] == pytest.approx(1, rel=1e-5)
+        ip_vals, ip_u = current_type.to_ip([1], unit)
+        assert len(ip_vals) == 1
+        si_vals, si_u = current_type.to_si([1], unit)
+        assert len(si_vals) == 1
+        for other_unit in current_type.units:
+            assert len(current_type.to_unit([1], other_unit, unit)) == 1
+    assert current_type.to_unit([1], 'A', 'mA')[0] == 0.001
+    assert current_type.to_unit([1], 'mA', 'A')[0] == 1000
 
 
 def test_illuminance():
