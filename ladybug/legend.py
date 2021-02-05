@@ -129,7 +129,7 @@ class Legend(object):
         if self._legend_par.min == self._legend_par.max and not \
                 isinstance(self._legend_par, LegendParametersCategorized) and \
                 self._legend_par.is_segment_count_default:
-            self._legend_par.segment_count = 1
+            self._legend_par._segment_count = 1
 
         # set the default segment width if the legend is horizontal
         if not self._legend_par.vertical and self._legend_par.is_segment_width_default:

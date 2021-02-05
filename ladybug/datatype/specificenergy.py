@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Energy data type."""
+"""Specific Energy data type."""
 from __future__ import division
 
 from .base import DataTypeBase
