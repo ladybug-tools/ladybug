@@ -7,6 +7,8 @@ from ladybug.wea import Wea
 from ladybug.ddy import DDY
 from ladybug.epw import EPW
 
+from ._helper import _load_analysis_period_json
+
 _logger = logging.getLogger(__name__)
 
 
@@ -18,6 +20,9 @@ def translate():
 @translate.command('epw-to-wea')
 @click.argument('epw-file', type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+@click.option('--analysis-period', '-ap', help='An AnalysisPeriod JSON to filter '
+              'the datetimes in the resulting Wea. If unspecified, the Wea will '
+              'be annual.', default=None, type=str)
 @click.option('--timestep', '-t', help='An optional integer to set the number of '
               'time steps per hour. Default is 1 for one value per hour. Note that '
               'this input will only do a linear interpolation over the data in the EPW '
@@ -25,7 +30,7 @@ def translate():
 @click.option('--output-file', '-f', help='Optional .wea file path to output the Wea '
               'string of the translation. By default this will be printed out to stdout',
               type=click.File('w'), default='-')
-def epw_to_wea(epw_file, timestep, output_file):
+def epw_to_wea(epw_file, analysis_period, timestep, output_file):
     """Translate an .epw file to a .wea file.
 
     \b
@@ -34,6 +39,9 @@ def epw_to_wea(epw_file, timestep, output_file):
     """
     try:
         wea_obj = Wea.from_epw_file(epw_file, timestep)
+        analysis_period = _load_analysis_period_json(analysis_period)
+        if analysis_period is not None:
+            wea_obj = wea_obj.filter_by_analysis_period(analysis_period)
         output_file.write(wea_obj.to_file_string())
     except Exception as e:
         _logger.exception('Wea translation failed.\n{}'.format(e))
