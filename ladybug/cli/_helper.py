@@ -7,13 +7,11 @@ import json
 from ladybug.analysisperiod import AnalysisPeriod
 
 
-def _load_analysis_period_json(analysis_period_json):
+def _load_analysis_period_str(analysis_period_str):
     """Load an AnalysisPeriod from a JSON file.
     
     Args:
-        analysis_period_json: A JSON file of an AnalysisPeriod to be loaded.
+        analysis_period_str: A JSON file of an AnalysisPeriod to be loaded.
     """
-    if analysis_period_json is not None and analysis_period_json != 'None':
-        with open(analysis_period_json) as json_file:
-            data = json.load(json_file)
-        return AnalysisPeriod.from_dict(data)
+    if analysis_period_str is not None and analysis_period_str != 'None':
+        return AnalysisPeriod.from_string(analysis_period_str)

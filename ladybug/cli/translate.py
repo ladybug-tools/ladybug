@@ -7,7 +7,7 @@ from ladybug.wea import Wea
 from ladybug.ddy import DDY
 from ladybug.epw import EPW
 
-from ._helper import _load_analysis_period_json
+from ._helper import _load_analysis_period_str
 
 _logger = logging.getLogger(__name__)
 
@@ -20,9 +20,9 @@ def translate():
 @translate.command('epw-to-wea')
 @click.argument('epw-file', type=click.Path(
     exists=True, file_okay=True, dir_okay=False, resolve_path=True))
-@click.option('--analysis-period', '-ap', help='An AnalysisPeriod JSON to filter '
-              'the datetimes in the resulting Wea. If unspecified, the Wea will '
-              'be annual.', default=None, type=str)
+@click.option('--analysis-period', '-ap', help='An AnalysisPeriod string to filter the '
+              'datetimes in the resulting Wea (eg. "6/21 to 9/21 between 8 and 16 @1"). '
+              'If unspecified, the Wea will be annual.', default=None, type=str)
 @click.option('--timestep', '-t', help='An optional integer to set the number of '
               'time steps per hour. Default is 1 for one value per hour. Note that '
               'this input will only do a linear interpolation over the data in the EPW '
@@ -39,7 +39,7 @@ def epw_to_wea(epw_file, analysis_period, timestep, output_file):
     """
     try:
         wea_obj = Wea.from_epw_file(epw_file, timestep)
-        analysis_period = _load_analysis_period_json(analysis_period)
+        analysis_period = _load_analysis_period_str(analysis_period)
         if analysis_period is not None:
             wea_obj = wea_obj.filter_by_analysis_period(analysis_period)
         output_file.write(wea_obj.to_file_string())

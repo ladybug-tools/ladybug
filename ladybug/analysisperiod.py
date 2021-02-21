@@ -64,7 +64,6 @@ class AnalysisPeriod(object):
         '_timestamps_data', '_datetimes'
     )
 
-    # TODO: handle timestep between 1-60
     def __init__(self, st_month=1, st_day=1, st_hour=0, end_month=12,
                  end_day=31, end_hour=23, timestep=1, is_leap_year=False):
         """Init an analysis period.
