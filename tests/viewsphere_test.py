@@ -61,3 +61,19 @@ def test_horizontal_radial_patches():
     assert len(view_vec) == 576
     assert all(isinstance(vec, Vector3D) for vec in view_vec)
     assert isinstance(view_mesh, Mesh3D)
+
+
+def test_dome_radial_patches():
+    view_mesh, view_vec = view_sphere.dome_radial_patches()
+    assert len(view_vec) == 1296
+    assert all(isinstance(vec, Vector3D) for vec in view_vec)
+    assert isinstance(view_mesh, Mesh3D)
+
+    view_mesh, view_vec = view_sphere.dome_radial_patches(72 * 2, 18 * 2)
+    assert len(view_vec) == 1296 * 4
+    assert all(isinstance(vec, Vector3D) for vec in view_vec)
+    assert isinstance(view_mesh, Mesh3D)
+
+    view_weights = view_sphere.dome_radial_patch_weights()
+    assert len(view_weights) == 1296
+    assert sum(view_weights) == pytest.approx(1, rel=1e-3)
