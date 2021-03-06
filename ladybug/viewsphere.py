@@ -4,6 +4,7 @@ from __future__ import division
 
 import math
 
+from ladybug_geometry.geometry2d.pointvector import Vector2D
 from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
 from ladybug_geometry.geometry3d.mesh import Mesh3D
 
@@ -192,7 +193,7 @@ class ViewSphere(object):
 
     def horizontal_radial_patches(self, offset_angle=30, division_count=1,
                                   subdivide_in_place=False):
-        """Get a Vector3Ds within a certain angle offset from the horizontal plane.
+        """Get Vector3Ds within a certain angle offset from the horizontal plane.
 
         Args:
             offset_angle: A number between 0 and 90 for the angle offset from the
@@ -227,7 +228,7 @@ class ViewSphere(object):
         m_all, v_all = self.dome_patches(division_count, subdivide_in_place)
         pattern = [True] * patch_count + \
             [False] * (sum(patch_row_count) - patch_count + 6 * division_count)
-        m_top, v_pattern = m_all.remove_faces(pattern)
+        m_top, _ = m_all.remove_faces(pattern)
         v_top = tuple(vec for vec, val in zip(v_all, pattern) if val)
 
         # reverse the vectors and negate all the z values of the sky patch mesh
@@ -257,7 +258,7 @@ class ViewSphere(object):
         return [p_area / avg_patch_area for p_area in relevant_patches] * 2
 
     def dome_patches(self, division_count=1, subdivide_in_place=False):
-        """Get a Vector3Ds and a correcponding Mesh3D for a dome.
+        """Get Vector3Ds and a correcponding Mesh3D for a dome.
 
         Args:
             division_count: A positive integer for the number of times that the
@@ -292,8 +293,7 @@ class ViewSphere(object):
             subdivide_in_place else math.pi / (2 * len(patch_row_count) + 1)
 
         # loop through the patch values and generate points for each vertex
-        vertices = []
-        faces = []
+        vertices, faces = [], []
         pt_i = -2  # track the number of vertices in the mesh
         for row_i, row_count in enumerate(patch_row_count):
             pt_i += 2  # advance the number of vertices by two
@@ -306,7 +306,7 @@ class ViewSphere(object):
             vec1 = vec01.rotate_xy(correction_angle)
             vec2 = vec02.rotate_xy(correction_angle)
             vertices.extend((Point3D(v.x, v.y, v.z) for v in (vec1, vec2)))
-            for patch_i in range(row_count):  # generate the row of patches
+            for _ in range(row_count):  # generate the row of patches
                 vec3 = vec1.rotate_xy(horiz_angle)
                 vec4 = vec2.rotate_xy(horiz_angle)
                 vertices.extend((Point3D(v.x, v.y, v.z) for v in (vec3, vec4)))
@@ -339,13 +339,13 @@ class ViewSphere(object):
             area of that patch. The aveage value of all the patches is equal to 1.
         """
         # get the areas of the patches
-        patch_areas, patch_row_count = self._dome_patch_areas(division_count)
+        patch_areas, _ = self._dome_patch_areas(division_count)
         # normalize the patch areas so that they average to 1
         avg_patch_area = 2 * math.pi / len(patch_areas)
         return [p_area / avg_patch_area for p_area in patch_areas]
 
     def sphere_patches(self, division_count=1, subdivide_in_place=False):
-        """Get a Vector3Ds and a correcponding Mesh3D for a sphere.
+        """Get Vector3Ds and a correcponding Mesh3D for a sphere.
 
         Args:
             division_count: A positive integer for the number of times that the
@@ -389,10 +389,188 @@ class ViewSphere(object):
             area of that patch. The aveage value of all the patches is equal to 1.
         """
         # get the areas of the patches
-        patch_areas, patch_row_count = self._dome_patch_areas(division_count)
+        patch_areas, _ = self._dome_patch_areas(division_count)
         # normalize the patch areas so that they average to 1
         avg_patch_area = 2 * math.pi / len(patch_areas)
         return [p_area / avg_patch_area for p_area in patch_areas] * 2
+
+    def dome_radial_patches(self, azimuth_count=72, altitude_count=18):
+        """Get Vector3Ds and a correcponding Mesh3D for a a radial dome.
+
+        Args:
+            azimuth_count: A positive integer for the number of times that
+                the horizontal circle will be subdivided into azimuth
+                patches. (Default: 72).
+            altitude_count: A positive integer for the number of times that
+                the dome quarter-circle will be subdivided into altitude
+                patches. (Default: 18).
+
+        Returns:
+            A tuple with two elements
+
+            -   patch_mesh: A ladybug_geometry Mesh3D that represents the patches at
+                the input azimuth_count and altitude_count.
+
+            -   patch_vectors: A list of ladybug_geometry Vector3D with one vector
+                per mesh face. These will align with the faces of the patch_mesh.
+                All vectors are unit vectors.
+        """
+        # set up starting vectors and points
+        base_vec, rotate_axis = Vector3D(0, 1, 0), Vector3D(1, 0, 0)
+        horiz_angle = -2 * math.pi / azimuth_count
+        vertical_angle = math.pi / (2 * altitude_count)
+
+        # loop through the patch values and generate points for each vertex
+        vertices, faces = [], []
+        pt_i = -2  # track the number of vertices in the mesh
+        for row_i in range(altitude_count - 1):
+            pt_i += 2  # advance the number of vertices by two
+            vec1 = base_vec.rotate(rotate_axis, vertical_angle * row_i)
+            vec2 = vec1.rotate(rotate_axis, vertical_angle)
+            vertices.extend((Point3D(v.x, v.y, v.z) for v in (vec1, vec2)))
+            for _ in range(azimuth_count):  # generate the row of patches
+                vec3 = vec1.rotate_xy(horiz_angle)
+                vec4 = vec2.rotate_xy(horiz_angle)
+                vertices.extend((Point3D(v.x, v.y, v.z) for v in (vec3, vec4)))
+                faces.append((pt_i, pt_i + 1, pt_i + 3, pt_i + 2))
+                pt_i += 2  # advance the number of vertices by two
+                vec1, vec2 = vec3, vec4  # reset vec1 and vec2 for the next patch
+
+        # add triangular faces to represent the last circular patch
+        end_vert_i = len(vertices)
+        start_vert_i = len(vertices) - azimuth_count * 2 - 1
+        vertices.append(Point3D(0, 0, 1))
+        for tr_i in range(0, azimuth_count * 2, 2):
+            faces.append((start_vert_i + tr_i, end_vert_i, start_vert_i + tr_i + 2))
+
+        # create the Mesh3D object and derive the patch vectors from the mesh
+        patch_mesh = Mesh3D(vertices, faces)
+        patch_vectors = patch_mesh.face_normals
+        return patch_mesh, patch_vectors
+
+    def dome_radial_patch_weights(self, azimuth_count=72, altitude_count=18):
+        """Get a list of numbers corresponding to the area weight of each dome patch.
+
+        Args:
+            azimuth_count: A positive integer for the number of times that
+                the horizontal circle will be subdivided into azimuth
+                patches. (Default: 72).
+            altitude_count: A positive integer for the number of times that
+                the dome quarter-circle will be subdivided into altitude
+                patches. (Default: 18).
+
+        Returns:
+            A list of numbers with a value for each patch that corresponds to the
+            area of that patch. The aveage value of all the patches is equal to 1.
+        """
+        # get the areas of the patches
+        patch_areas = self._dome_radial_patch_areas(azimuth_count, altitude_count)
+        # normalize the patch areas so that they average to 1
+        total_patch_area = 2 * math.pi
+        return [p_area / total_patch_area for p_area in patch_areas]
+
+    @staticmethod
+    def orientation_pattern(plane_normal, view_vectors):
+        """Get booleans for whether view vectors are blocked by a plane.
+
+        Args:
+            plane_normal: A Vector3D for the normal of the plane.
+            view_vectors: A list of view vectors which will be evaluated to determine
+                if they are blocked by the plane or not.
+
+        Returns:
+            A tuple with two values.
+
+            -   mask_pattern -- A list of booleans for whether each of the view
+                vectors are blocked by the plane (True) or not (False).
+
+            -   angles -- A list of angles in radians for the angle between the
+                plane normal and each view vector.
+        """
+        mask_pattern, angles, max_angle = [], [], math.pi / 2
+        for vec in view_vectors:
+            ang = vec.angle(plane_normal)
+            angles.append(ang)
+            mask_pattern.append(ang > max_angle)
+        return mask_pattern, angles
+
+    @staticmethod
+    def overhang_pattern(plane_normal, overhang_angle, view_vectors):
+        """Get booleans for whether a view vectors are blocked by a overhang.
+
+        Args:
+            plane_normal: A Vector3D for the normal of the plane.
+            overhang_angle: A number between 0 and 90 for the projection angle
+                of an overhang in degrees.
+            view_vectors: A list of view vectors which will be evaluated to
+                determine if they are blocked by the plane or not.
+
+        Returns:
+            A list of booleans for whether each of the view vectors are blocked by
+            the overhang (True) or not (False).
+        """
+        overhang_norm = plane_normal.reverse()
+        rotation_axis = overhang_norm.rotate_xy(-math.pi / 2)
+        rotation_axis = Vector3D(rotation_axis.x, rotation_axis.y, 0)
+        overhang_norm = overhang_norm.rotate(rotation_axis, math.radians(overhang_angle))
+        max_angle = math.pi / 2
+        return [vec.angle(overhang_norm) < max_angle for vec in view_vectors]
+
+    @staticmethod
+    def fin_pattern(plane_normal, left_fin_angle, right_fin_angle, view_vectors):
+        """Get booleans for whether a view vectors are blocked by left and right fins.
+
+        Args:
+            plane_normal: A Vector3D for the normal of the plane.
+            left_fin_angle: A number between 0 and 90 for the projection angle of a
+                fin on the left side in degrees.
+            right_fin_angle: A number between 0 and 90 for the projection angle of a
+                fin on the right side in degrees.
+            view_vectors: A list of view vectors which will be evaluated to determine
+                if they are blocked by the plane or not.
+
+        Returns:
+            A list of booleans for whether each of the view vectors are blocked by
+            the fins (True) or not (False).
+        """
+        # get the min and max angles for the area not blocked by fins
+        y_axis, norm_2d = Vector2D(0, 1), Vector2D(plane_normal.x, plane_normal.y)
+        srf_angle = math.degrees(norm_2d.angle_clockwise(y_axis))
+        angle_min = srf_angle - 90 + right_fin_angle \
+            if right_fin_angle else srf_angle - 90
+        angle_max = srf_angle + 90 - left_fin_angle \
+            if left_fin_angle else srf_angle + 90
+        if angle_max > 360:
+            angle_max, angle_min = angle_max - 360, angle_min - 360
+        if angle_max < 0:
+            angle_max, angle_min = angle_max + 360, angle_min + 360
+
+        # evaluate the view_vectors in relation to the min and max angle
+        mask_pattern = []
+        for vec in view_vectors:
+            ang = math.degrees(Vector2D(vec.x, vec.y).angle_clockwise(y_axis))
+            is_visible = (ang < angle_max and ang > angle_min) if angle_min > 0 else \
+                (ang < angle_max or ang > angle_min + 360)
+            mask_pattern.append(not is_visible)
+        return mask_pattern
+
+    @staticmethod
+    def _dome_radial_patch_areas(azimuth_count=72, altitude_count=18):
+        """Get the area of each patch in a radial dome."""
+        # get the areas of each spherical cap moving up the unit dome
+        vert_angle = math.pi / (2 * altitude_count)
+        cap_areas = [2 * math.pi]
+        current_angle = vert_angle
+        for i in range(altitude_count):
+            cap_areas.append(2 * math.pi * (1 - math.sin(current_angle)))
+            current_angle += vert_angle
+
+        # get the area of each row and subdivide it by the patch count of the row
+        row_areas = [cap_areas[i] - cap_areas[i + 1] for i in range(len(cap_areas) - 1)]
+        patch_areas = []
+        for row_area in row_areas:
+            patch_areas.extend([row_area / azimuth_count] * azimuth_count)
+        return patch_areas
 
     @staticmethod
     def _dome_patch_areas(division_count):

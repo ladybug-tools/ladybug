@@ -90,7 +90,7 @@ def test_init_colorset_by_name():
     assert len(Colorset.glare_study()) > 1
     assert len(Colorset.annual_comfort()) > 1
     assert len(Colorset.thermal_comfort()) > 1
-    assert len(Colorset.thermal_comfort_utci()) > 1
+    assert len(Colorset.peak_load_balance()) > 1
     assert len(Colorset.heat_sensation()) > 1
     assert len(Colorset.cold_sensation()) > 1
     assert len(Colorset.benefit_harm()) > 1

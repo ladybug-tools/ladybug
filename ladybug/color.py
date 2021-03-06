@@ -216,8 +216,8 @@ class Colorset(object):
         6: [(156, 217, 255), (255, 243, 77), (255, 115, 0), (255, 0, 0), (0, 0, 0)],
         7: [(0, 0, 0), (110, 0, 153), (255, 0, 0), (255, 255, 102), (255, 255, 255)],
         8: _thermalcomfort,
-        9: [(0, 136, 255), (67, 176, 255), (134, 215, 255), (174, 228, 255),
-            (215, 242, 255), (255, 255, 255), (255, 243, 243), (255, 0, 0)],
+        9: [(255, 251, 0), (255, 0, 0), (148, 24, 24), (135, 178, 224),
+            (255, 175, 46), (255, 242, 140), (204, 204, 204)],
         10: _thermalcomfort[2:],
         11: list(reversed(_thermalcomfort[:3])),
         12: _benefitharm,
@@ -298,8 +298,8 @@ class Colorset(object):
         return tuple(Color(*color) for color in cls._colors[8])
 
     @classmethod
-    def thermal_comfort_utci(cls):
-        """Thermal comfort colors weighted for the UTCI scale (heat more than cold)."""
+    def peak_load_balance(cls):
+        """Colors for the typical terms of a peak load balance."""
         return tuple(Color(*color) for color in cls._colors[9])
 
     @classmethod
