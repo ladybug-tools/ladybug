@@ -1888,7 +1888,7 @@ pdfs_v8.4.0/AuxiliaryPrograms.pdf
 class EPWField(object):
     """An EPW field.
 
-    Attributes:
+    Args:
         name: Name of the field.
         value_type: field value type (e.g. int, float, str)
         unit: Field unit.

@@ -13,16 +13,28 @@ Installation
 ``pip install -U ladybug-core``
 
 
+CLI Docs
+=============
+
+For command line interface documentation and API documentation see the pages below.
+
+
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-.. include:: modules.rst
-.. include:: cli.rst
+   cli/index
 
+
+ladybug
+=======
+
+.. toctree::
+  :maxdepth: 4
+
+  modules
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

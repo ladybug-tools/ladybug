@@ -521,8 +521,10 @@ class Sunpath(object):
             projection: Text for the name of the projection to use from the sky
                 dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose
                 from the following:
-                    * Orthographic
-                    * Stereographic
+
+                * Orthographic
+                * Stereographic
+
             origin: A ladybug_geometry Point2D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
             daytime_only: A boolean to note whether only the daytime hours should
@@ -603,8 +605,10 @@ class Sunpath(object):
             projection: Text for the name of the projection to use from the sky
                 dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose
                 from the following:
-                    * Orthographic
-                    * Stereographic
+
+                * Orthographic
+                * Stereographic
+
             origin: A ladybug_geometry Point2D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
             daytime_only: A boolean to note whether None should be returned if
@@ -676,8 +680,10 @@ class Sunpath(object):
             projection: Text for the name of the projection to use from the sky
                 dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose
                 from the following:
-                    * Orthographic
-                    * Stereographic
+
+                * Orthographic
+                * Stereographic
+
             origin: A ladybug_geometry Point2D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
             daytime_only: A boolean to note whether arcs should be excluded from the
@@ -889,8 +895,10 @@ class Sunpath(object):
             plines_3d: An array of Polyline3D to be projected to 2D space.
             projection: Text for the name of the projection to use from the sky
                 dome hemisphere to the 2D plane. Choose from the following:
-                    * Orthographic
-                    * Stereographic
+
+                * Orthographic
+                * Stereographic
+
             origin_3d: Point3D for the origin around which projection will occur.
         """
         plines_2d = []
@@ -1088,8 +1096,10 @@ class Sun(object):
             projection: Text for the name of the projection to use from the sky
                 dome hemisphere to the 2D plane. (Default: 'Orthographic'). Choose
                 from the following:
-                    * Orthographic
-                    * Stereographic
+
+                * Orthographic
+                * Stereographic
+
             origin: A ladybug_geometry Point2D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
 
