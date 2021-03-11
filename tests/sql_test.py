@@ -12,7 +12,7 @@ from ladybug.datacollection import HourlyContinuousCollection, DailyCollection, 
 
 def test_sqlite_init():
     """Test the initialization of SQLiteResult and basic properties."""
-    sql_path = './tests/fixtures/sql/eplusout_hourly.sql'
+    sql_path = './tests/assets/sql/eplusout_hourly.sql'
     sql_obj = SQLiteResult(sql_path)
     str(sql_obj)  # test the string representation
 
@@ -34,7 +34,7 @@ def test_sqlite_init():
 
 def test_available_results_info():
     """Test the available_results_info property."""
-    sql_path = './tests/fixtures/sql/eplusout_hourly.sql'
+    sql_path = './tests/assets/sql/eplusout_hourly.sql'
     sql_obj = SQLiteResult(sql_path)
 
     assert len(sql_obj.available_outputs_info) == 8
@@ -48,7 +48,7 @@ def test_available_results_info():
 
 def test_sqlite_run_period():
     """Test the run_period property of SQLiteResult."""
-    sql_path = './tests/fixtures/sql/eplusout_hourly.sql'
+    sql_path = './tests/assets/sql/eplusout_hourly.sql'
     sql_obj = SQLiteResult(sql_path)
 
     assert len(sql_obj.run_periods) == 1
@@ -60,7 +60,7 @@ def test_sqlite_run_period():
     assert len(sql_obj.run_period_names) == 1
     assert sql_obj.run_period_names[0] == 'CUSTOMRUNPERIOD'
 
-    sql_path = './tests/fixtures/sql/eplusout_design_days.sql'
+    sql_path = './tests/assets/sql/eplusout_design_days.sql'
     sql_obj = SQLiteResult(sql_path)
     assert len(sql_obj.run_periods) == 7
     assert len(sql_obj.run_period_names) == 7
@@ -70,7 +70,7 @@ def test_sqlite_run_period():
 
 def test_sqlite_zone_sizing():
     """Test the properties and methods related to zone sizes."""
-    sql_path = './tests/fixtures/sql/eplusout_hourly.sql'
+    sql_path = './tests/assets/sql/eplusout_hourly.sql'
     sql_obj = SQLiteResult(sql_path)
 
     cool_sizes = sql_obj.zone_cooling_sizes
@@ -103,7 +103,7 @@ def test_sqlite_zone_sizing():
 
 def test_sqlite_component_sizing():
     """Test the properties and methods related to component sizes."""
-    sql_path = './tests/fixtures/sql/eplusout_hourly.sql'
+    sql_path = './tests/assets/sql/eplusout_hourly.sql'
     sql_obj = SQLiteResult(sql_path)
 
     comp_sizes = sql_obj.component_sizes
@@ -131,7 +131,7 @@ def test_sqlite_component_sizing():
 
 def test_sqlite_sizing_odd():
     """Test the properties and methods related to zone sizes with an odd SQL file."""
-    sql_path = './tests/fixtures/sql/eplusout_odd_zonesize.sql'
+    sql_path = './tests/assets/sql/eplusout_odd_zonesize.sql'
     sql_obj = SQLiteResult(sql_path)
 
     cool_sizes = sql_obj.zone_cooling_sizes
@@ -150,7 +150,7 @@ def test_sqlite_sizing_odd():
 
 def test_sqlite_data_collections_by_output_name():
     """Test the data_collections_by_output_name method."""
-    sql_path = './tests/fixtures/sql/eplusout_hourly.sql'
+    sql_path = './tests/assets/sql/eplusout_hourly.sql'
     sql_obj = SQLiteResult(sql_path)
 
     data_colls = sql_obj.data_collections_by_output_name(
@@ -184,7 +184,7 @@ def test_sqlite_data_collections_by_output_name():
 
 def test_sqlite_data_collections_by_output_name_single():
     """Test the data_collections_by_output_name method with a single data."""
-    sql_path = './tests/fixtures/sql/eplusout_openstudio_error.sql'
+    sql_path = './tests/assets/sql/eplusout_openstudio_error.sql'
     sql_obj = SQLiteResult(sql_path)
 
     data_colls = sql_obj.data_collections_by_output_name(
@@ -199,7 +199,7 @@ def test_sqlite_data_collections_by_output_name_single():
 
 def test_sqlite_data_collections_by_output_names():
     """Test the data_collections_by_output_name method with multiple names."""
-    sql_path = './tests/fixtures/sql/eplusout_hourly.sql'
+    sql_path = './tests/assets/sql/eplusout_hourly.sql'
     sql_obj = SQLiteResult(sql_path)
 
     data_colls = sql_obj.data_collections_by_output_name(
@@ -217,7 +217,7 @@ def test_sqlite_data_collections_by_output_names():
 
 def test_sqlite_data_collections_by_output_name_openstudio():
     """Test the data_collections_by_output_name method with openstudio values."""
-    sql_path = './tests/fixtures/sql/eplusout_openstudio.sql'
+    sql_path = './tests/assets/sql/eplusout_openstudio.sql'
     sql_obj = SQLiteResult(sql_path)
 
     data_colls = sql_obj.data_collections_by_output_name(
@@ -238,7 +238,7 @@ def test_sqlite_data_collections_by_output_name_openstudio():
 
 def test_sqlite_data_collections_by_output_name_timestep():
     """Test the data_collections_by_output_name method with timestep values."""
-    sql_path = './tests/fixtures/sql/eplusout_timestep.sql'
+    sql_path = './tests/assets/sql/eplusout_timestep.sql'
     sql_obj = SQLiteResult(sql_path)
 
     assert sql_obj.reporting_frequency == 6
@@ -251,7 +251,7 @@ def test_sqlite_data_collections_by_output_name_timestep():
 
 def test_sqlite_data_collections_by_output_name_daily():
     """Test the data_collections_by_output_name method with daily values."""
-    sql_path = './tests/fixtures/sql/eplusout_daily.sql'
+    sql_path = './tests/assets/sql/eplusout_daily.sql'
     sql_obj = SQLiteResult(sql_path)
 
     assert sql_obj.reporting_frequency == 'Daily'
@@ -265,7 +265,7 @@ def test_sqlite_data_collections_by_output_name_daily():
 
 def test_sqlite_data_collections_by_output_name_monthly():
     """Test the data_collections_by_output_name method with monthly values."""
-    sql_path = './tests/fixtures/sql/eplusout_monthly.sql'
+    sql_path = './tests/assets/sql/eplusout_monthly.sql'
     sql_obj = SQLiteResult(sql_path)
 
     assert sql_obj.reporting_frequency == 'Monthly'
@@ -279,7 +279,7 @@ def test_sqlite_data_collections_by_output_name_monthly():
 
 def test_sqlite_data_collections_by_output_name_design_day():
     """Test the data_collections_by_output_name method with several design day results."""
-    sql_path = './tests/fixtures/sql/eplusout_design_days.sql'
+    sql_path = './tests/assets/sql/eplusout_design_days.sql'
     sql_obj = SQLiteResult(sql_path)
 
     data_colls = sql_obj.data_collections_by_output_name(
@@ -292,7 +292,7 @@ def test_sqlite_data_collections_by_output_name_design_day():
 
 def test_sqlite_data_collections_by_output_name_dday_runperiod():
     """Test the data_collections_by_output_name method with several design day results."""
-    sql_path = './tests/fixtures/sql/eplusout_dday_runper.sql'
+    sql_path = './tests/assets/sql/eplusout_dday_runper.sql'
     sql_obj = SQLiteResult(sql_path)
 
     data_colls = sql_obj.data_collections_by_output_name(
@@ -308,7 +308,7 @@ def test_sqlite_data_collections_by_output_name_dday_runperiod():
 
 def test_sqlite_tabular_data():
     """Test the tabular_data_by_name method."""
-    sql_path = './tests/fixtures/sql/eplusout_monthly.sql'
+    sql_path = './tests/assets/sql/eplusout_monthly.sql'
     sql_obj = SQLiteResult(sql_path)
 
     data = sql_obj.tabular_data_by_name('Utility Use Per Conditioned Floor Area')

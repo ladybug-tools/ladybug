@@ -10,7 +10,7 @@ from ladybug.ddy import DDY
 
 def test_import_ddy():
     """Test import standard ddy."""
-    relative_path = './tests/fixtures/ddy/chicago.ddy'
+    relative_path = './tests/assets/ddy/chicago.ddy'
     abs_path = os.path.abspath(relative_path)
 
     ddy_rel = DDY.from_ddy_file(relative_path)
@@ -23,7 +23,7 @@ def test_import_ddy():
 
 def test_dict_methods():
     """Test dict methods for the DDY object."""
-    relative_path = './tests/fixtures/ddy/chicago.ddy'
+    relative_path = './tests/assets/ddy/chicago.ddy'
     ddy = DDY.from_ddy_file(relative_path)
 
     ddy_dict = ddy.to_dict()
@@ -35,7 +35,7 @@ def test_dict_methods():
 
 def test_ddy_from_design_day():
     """Test ddy from design day method."""
-    relative_path = './tests/fixtures/ddy/chicago_monthly.ddy'
+    relative_path = './tests/assets/ddy/chicago_monthly.ddy'
     ddy = DDY.from_ddy_file(relative_path)
     new_ddy = DDY.from_design_day(ddy.design_days[0])
     assert ddy.location == new_ddy.location
@@ -44,15 +44,15 @@ def test_ddy_from_design_day():
 
 def test_write_ddy():
     """Test write ddy."""
-    relative_path = './tests/fixtures/ddy/chicago.ddy'
+    relative_path = './tests/assets/ddy/chicago.ddy'
     ddy = DDY.from_ddy_file(relative_path)
-    new_file_path = './tests/fixtures/ddy/chicago_edited.ddy'
+    new_file_path = './tests/assets/ddy/chicago_edited.ddy'
     ddy.save(new_file_path)
 
 
 def test_standard_ddy_properties():
     """Test properties of a standard ddy."""
-    relative_path = './tests/fixtures/ddy/tokyo.ddy'
+    relative_path = './tests/assets/ddy/tokyo.ddy'
 
     ddy = DDY.from_ddy_file(relative_path)
 
@@ -72,7 +72,7 @@ def test_standard_ddy_properties():
 
 def test_duplicate():
     """Test duplicate method for the DDY object."""
-    relative_path = './tests/fixtures/ddy/chicago_monthly.ddy'
+    relative_path = './tests/assets/ddy/chicago_monthly.ddy'
     ddy = DDY.from_ddy_file(relative_path)
     ddy_dup = ddy.duplicate()
 
@@ -85,7 +85,7 @@ def test_duplicate():
 
 def test_duplicate_design_day():
     """Test duplicate method for the DesignDay object."""
-    relative_path = './tests/fixtures/ddy/chicago_monthly.ddy'
+    relative_path = './tests/assets/ddy/chicago_monthly.ddy'
     ddy = DDY.from_ddy_file(relative_path)
 
     des_day = ddy[0]
@@ -100,7 +100,7 @@ def test_duplicate_design_day():
 
 def test_monthly_ddy_properties():
     """Test properties of a monthly ddy."""
-    relative_path = './tests/fixtures/ddy/chicago_monthly.ddy'
+    relative_path = './tests/assets/ddy/chicago_monthly.ddy'
     ddy = DDY.from_ddy_file(relative_path)
 
     # Test accuracy of import

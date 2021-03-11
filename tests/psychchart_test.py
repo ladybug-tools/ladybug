@@ -96,7 +96,7 @@ def test_psychchart_init():
 
 def test_psychchart_from_epw():
     """Test the initialization of PsychrometricChart from an EPW file."""
-    path = './tests/fixtures/epw/tokyo.epw'
+    path = './tests/assets/epw/tokyo.epw'
     psych_chart = PsychrometricChart.from_epw(
         path, base_point=Point2D(100, 100), min_temperature=-10, max_temperature=40)
 
@@ -107,7 +107,7 @@ def test_psychchart_from_epw():
 
 def test_data_mesh():
     """Test the data_mesh meshod."""
-    path = './tests/fixtures/epw/tokyo.epw'
+    path = './tests/assets/epw/tokyo.epw'
     epw = EPW(path)
     psych_chart = PsychrometricChart(epw.dry_bulb_temperature, epw.relative_humidity)
 

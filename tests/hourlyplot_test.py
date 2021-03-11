@@ -214,7 +214,7 @@ def test_hourlyplot_custom_hour_labels():
 
 def test_hourlyplot_epw():
     """Test the initialization of HourlyPlot with EPW data collections."""
-    path = './tests/fixtures/epw/tokyo.epw'
+    path = './tests/assets/epw/tokyo.epw'
     epw = EPW(path)
 
     hour_plot = HourlyPlot(epw.dry_bulb_temperature)
