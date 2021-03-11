@@ -188,7 +188,7 @@ def test_frequency_intervals():
     """Test the distance of frequency_intervals"""
 
     # Plot windrose
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/tokyo.epw')
     epw = EPW(epw_path)
 
     w = WindRose(epw.wind_direction, epw.wind_speed, 3)
@@ -258,7 +258,7 @@ def test_simple_windrose_mesh():
 
 def test_windrose_mesh():
     # Plot windrose
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/tokyo.epw')
     epw = EPW(epw_path)
 
     w = WindRose(epw.wind_direction, epw.wind_speed, 16)
@@ -292,7 +292,7 @@ def test_windrose_mesh():
 def test_windrose_frequency_lines():
     """Test frequency Polygon2Ds"""
 
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/tokyo.epw')
     epw = EPW(epw_path)
 
     w = WindRose(epw.wind_direction, epw.wind_speed, 5)
@@ -321,7 +321,7 @@ def test_windrose_frequency_lines():
 def test_windrose_mesh_number_of_directions():
     # Test if mesh number of directions
 
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/tokyo.epw')
     epw = EPW(epw_path)
 
     # Test 16 directions
@@ -349,7 +349,7 @@ def test_windrose_graphic_analysis_values():
     """Test visualization analysis values"""
 
     # Test w/ zeros
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/tokyo.epw')
     epw = EPW(epw_path)
 
     # Test 16 directions
@@ -372,7 +372,7 @@ def test_windrose_graphic_analysis_values():
 def test_windrose_set_legend_parameters():
     """Test setting legend params property"""
 
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/tokyo.epw')
     epw = EPW(epw_path)
     w = WindRose(epw.wind_direction, epw.wind_speed, 5)
 
@@ -398,7 +398,7 @@ def test_windrose_set_legend_parameters():
 def test_windrose_set_north():
     """Test setting north property"""
 
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/tokyo.epw')
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/tokyo.epw')
     epw = EPW(epw_path)
     w = WindRose(epw.wind_direction, epw.wind_speed, 5)
 
@@ -452,7 +452,7 @@ def test_windrose_mesh_size():
     assert w.mesh_radius == pytest.approx(zero_dist + (intervals * hdist))
 
     # Test size with windrose from actual epw data
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/chicago.epw')
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/chicago.epw')
     epw = EPW(epw_path)
     w = WindRose(epw.wind_direction, epw.wind_speed, 3)
 
@@ -505,7 +505,7 @@ def test_prevailing_direction():
     assert set(w.prevailing_direction) == test_prev_dir
 
     # Test with epw
-    epw_path = os.path.join(os.getcwd(), 'tests/fixtures/epw/chicago.epw')
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/chicago.epw')
     epw = EPW(epw_path)
 
     # Test 5 directions

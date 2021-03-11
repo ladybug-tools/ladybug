@@ -9,7 +9,7 @@ import os
 
 def test_import_stat():
     """Test import standard stat."""
-    relative_path = './tests/fixtures/stat/chicago.stat'
+    relative_path = './tests/assets/stat/chicago.stat'
     abs_path = os.path.abspath(relative_path)
 
     stat_rel = STAT(relative_path)
@@ -23,7 +23,7 @@ def test_import_stat():
 
 def test_stat_location():
     """Test the location within the stat object."""
-    relative_path = './tests/fixtures/stat/tokyo.stat'
+    relative_path = './tests/assets/stat/tokyo.stat'
     stat = STAT(relative_path)
 
     # Test accuracy of import
@@ -49,7 +49,7 @@ def test_stat_location():
 
 def test_annual_heating_design_days():
     """Test the annual heating design days within the stat object."""
-    relative_path = './tests/fixtures/stat/chicago.stat'
+    relative_path = './tests/assets/stat/chicago.stat'
     stat = STAT(relative_path)
 
     ann_hdd_96 = stat.annual_heating_design_day_996
@@ -78,7 +78,7 @@ def test_annual_heating_design_days():
 
 def test_annual_cooling_design_days():
     """Test the annual cooling design days within the stat object."""
-    relative_path = './tests/fixtures/stat/tokyo.stat'
+    relative_path = './tests/assets/stat/tokyo.stat'
     stat = STAT(relative_path)
     ann_cdd_04 = stat.annual_cooling_design_day_004
     ann_cdd_10 = stat.annual_cooling_design_day_010
@@ -107,7 +107,7 @@ def test_annual_cooling_design_days():
 
 def test_monthly_cooling_design_days():
     """Test the monthly cooling design days within the stat object."""
-    relative_path = './tests/fixtures/stat/chicago.stat'
+    relative_path = './tests/assets/stat/chicago.stat'
     stat = STAT(relative_path)
 
     m_ddy_050 = stat.monthly_cooling_design_days_050
@@ -118,14 +118,14 @@ def test_monthly_cooling_design_days():
     assert len(m_ddy_050) == len(m_ddy_100) == len(m_ddy_020) == \
         len(m_ddy_004) == 12
 
-    ddy_path = './tests/fixtures/ddy/chicago_monthly.ddy'
+    ddy_path = './tests/assets/ddy/chicago_monthly.ddy'
     monthly_ddy = DDY(stat.location, m_ddy_050)
     monthly_ddy.save(ddy_path)
 
 
 def test_typical_extreme_weeks():
     """Test the typical and extreme weeks within the stat object."""
-    relative_path = './tests/fixtures/stat/chicago.stat'
+    relative_path = './tests/assets/stat/chicago.stat'
     stat = STAT(relative_path)
 
     extreme_cold = stat.extreme_cold_week
@@ -145,7 +145,7 @@ def test_typical_extreme_weeks():
 
 def test_dict_methods():
     """Test dictionary serialization methods."""
-    relative_path = './tests/fixtures/stat/chicago.stat'
+    relative_path = './tests/assets/stat/chicago.stat'
     stat_obj = STAT(relative_path)
 
     stat_dict = stat_obj.to_dict()

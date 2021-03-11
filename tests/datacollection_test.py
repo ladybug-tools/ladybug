@@ -1237,7 +1237,7 @@ def test_get_aligned_collection_continuous():
 
 def test_compute_function_aligned():
     """Test the method for computing functions with aligned collections."""
-    epw_file_path = './tests/fixtures/epw/chicago.epw'
+    epw_file_path = './tests/assets/epw/chicago.epw'
     chicago_epw = EPW(epw_file_path)
     pressure_at_chicago = 95000
     hr_inputs = [chicago_epw.dry_bulb_temperature,
