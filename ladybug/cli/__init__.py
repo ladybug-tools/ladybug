@@ -59,6 +59,7 @@ import logging
 import json
 
 from ..config import folders
+from ladybug.cli.setconfig import set_config
 from ladybug.cli.translate import translate
 
 _logger = logging.getLogger(__name__)
@@ -95,6 +96,7 @@ def viz():
     click.echo('viiiiiiiiiiiiizzzzzzzzz!')
 
 
+main.add_command(set_config, name='set-config')
 main.add_command(translate)
 
 if __name__ == "__main__":
