@@ -45,7 +45,7 @@ def ladybug_tools_folder(folder_path):
 @set_config.command('default-epw-folder')
 @click.argument('folder-path', required=False, type=click.Path(
     exists=True, file_okay=False, dir_okay=True, resolve_path=True))
-def ladybug_tools_folder(folder_path):
+def default_epw_folder(folder_path):
     """Set the default-epw-folder configuration variable.
 
     \b
