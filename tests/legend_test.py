@@ -18,6 +18,7 @@ def test_init_legend_parameters():
     """Test the initialization of LegendParameter objects."""
     leg_par = LegendParameters(0, 1000)
     str(leg_par)  # Test the LegendParameters representation
+    hash(leg_par)
 
     assert leg_par.min == 0
     assert leg_par.max == 1000
@@ -32,6 +33,17 @@ def test_init_legend_parameters():
     assert leg_par_copy.min == leg_par.min
     assert leg_par_copy.max == leg_par.max
     assert leg_par_copy.segment_count == leg_par.segment_count
+
+
+def test_equality():
+    """Test the equality of legend parameters."""
+    leg_par = LegendParameters(0, 1000)
+    leg_par_dup = leg_par.duplicate()
+
+    assert leg_par is not leg_par_dup
+    assert leg_par == leg_par_dup
+    leg_par_dup.segment_count = 3
+    assert leg_par != leg_par_dup
 
 
 def test_to_from_dict():
@@ -252,6 +264,7 @@ def test_init_legend():
     """Test the initialization of Legend objects."""
     legend = Legend([0, 10])
     str(legend)  # Test the Legend representation
+    hash(legend)
 
     assert len(legend) == 2
     assert legend[0] == 0
@@ -285,6 +298,10 @@ def test_init_legend():
     assert legend_copy.legend_parameters.is_segment_height_default
     assert legend_copy.legend_parameters.is_segment_width_default
     assert legend_copy.legend_parameters.is_text_height_default
+
+    assert legend_copy == legend
+    legend_copy.legend_parameters.segment_count = 3
+    assert legend_copy != legend
 
 
 def test_init_legend_with_parameter():
@@ -430,6 +447,7 @@ def test_init_legend_parameters_categorized():
     leg_par = LegendParametersCategorized([300, 2000], leg_colors)
     leg_par.decimal_count = 0
     str(leg_par)  # Test the LegendParametersCategorized representation
+    hash(leg_par)
 
     assert leg_par.domain == (300, 2000)
     assert leg_par.colors == tuple(leg_colors)
@@ -447,6 +465,10 @@ def test_init_legend_parameters_categorized():
     assert leg_par_copy.domain == leg_par.domain
     assert leg_par_copy.colors == leg_par.colors
     assert leg_par_copy.category_names == leg_par.category_names
+
+    assert leg_par_copy == leg_par
+    leg_par_copy.segment_height = 0.5
+    assert leg_par_copy != leg_par
 
 
 def test_categorized_to_from_dict():

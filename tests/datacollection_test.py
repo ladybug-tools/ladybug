@@ -44,6 +44,7 @@ def test_init():
     assert dc1.average == avg
     str(dc1)  # Test the string representation of the collection
     str(dc1.header)  # Test the string representation of the header
+    hash(dc1)
 
     dc1.header.metadata = {'type': 'Room Air Temperature'}
 
@@ -149,6 +150,7 @@ def test_init_continuous():
     assert dc1.is_continuous
     str(dc1)  # Test the string representation of the collection
     str(dc1.header)  # Test the string representation of the header
+    hash(dc1)
 
 
 def test_init_continuous_incorrect():

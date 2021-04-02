@@ -2,9 +2,11 @@
 import click
 import sys
 import logging
+import os
 import json
 
 from ladybug.config import folders
+from ladybug.futil import nukedir
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +28,8 @@ def ladybug_tools_folder(folder_path):
             If unspecified, the ladybug-tools-folder will be set back to the default.
     """
     try:
-        config_file = folders.config_file
+        # load up the config file and reset the variable
+        config_file, original_lbt = folders.config_file, folders.ladybug_tools_folder
         with open(config_file) as inf:
             data = json.load(inf)
         data['ladybug_tools_folder'] = folder_path if folder_path is not None else ''
@@ -34,6 +37,11 @@ def ladybug_tools_folder(folder_path):
             json.dump(data, fp, indent=4)
         msg_end = 'reset to default' if folder_path is None \
             else 'set to: {}'.format(folder_path)
+        # clean up the case where loading the config created the default epw folder
+        if os.listdir(original_lbt) == ['resources']:
+            if os.listdir(os.path.join(original_lbt, 'resources')) == ['weather']:
+                # this was just a weather folder created by running ladybug-core
+                nukedir(original_lbt, True)
         print('ladybug-tools-folder successfully {}.'.format(msg_end))
     except Exception as e:
         _logger.exception('Failed to set ladybug-tools-folder.\n{}'.format(e))

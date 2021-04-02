@@ -81,3 +81,32 @@ def epw_to_ddy(epw_file, percentile, output_file):
         sys.exit(1)
     else:
         sys.exit(0)
+
+
+@translate.command('wea-to-constant')
+@click.argument('wea-file', type=click.Path(
+    exists=True, file_okay=True, dir_okay=False, resolve_path=True))
+@click.option('--value', '-v', help='The direct and diffuse irradiance value that '
+              'will be written in for all datetimes of the Wea.',
+              type=int, default=1000, show_default=True)
+@click.option('--output-file', '-f', help='Optional .wea file path to output the Wea '
+              'string of the translation. By default this will be printed out to stdout',
+              type=click.File('w'), default='-')
+def wea_to_constant(wea_file, value, output_file):
+    """Convert a Wea file to have a constant value for each datetime.
+
+    This is useful in workflows where hourly irradiance values are inconsequential
+    to the analysis and one is only using the Wea as a format to pass location
+    and datetime information (eg. for direct sun hours).
+
+    \b
+    Args:
+        wea_file: Full path to .wea file.
+    """
+    try:
+        output_file.write(Wea.to_constant_value(wea_file, value))
+    except Exception as e:
+        _logger.exception('Wea translation failed.\n{}'.format(e))
+        sys.exit(1)
+    else:
+        sys.exit(0)

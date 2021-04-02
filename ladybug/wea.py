@@ -3,6 +3,7 @@ from __future__ import division
 
 import math
 import os
+from copy import deepcopy
 
 from ladybug_geometry.geometry3d.pointvector import Vector3D
 
@@ -50,21 +51,24 @@ class Wea(object):
             collection must be aligned with the direct_normal_irradiance.
 
     Properties:
-        * datetimes
+        * location
         * direct_normal_irradiance
         * diffuse_horizontal_irradiance
         * direct_horizontal_irradiance
         * global_horizontal_irradiance
-        * header
+        * enforce_on_hour
+        * datetimes
         * hoys
+        * analysis_period
         * timestep
         * is_leap_year
         * is_continuous
         * is_annual
-        * location
+        * header
     """
-    __slots__ = ('_timestep', '_is_leap_year', '_location', 'metadata',
-                 '_direct_normal_irradiance', '_diffuse_horizontal_irradiance')
+    __slots__ = \
+        ('_timestep', '_is_leap_year', '_location', 'metadata', '_enforce_on_hour',
+         '_direct_normal_irradiance', '_diffuse_horizontal_irradiance')
 
     def __init__(self, location, direct_normal_irradiance, diffuse_horizontal_irradiance):
         """Create a Wea object."""
@@ -78,6 +82,7 @@ class Wea(object):
             'irradiance collections must be aligned with one another.'
 
         # assign the location, irradiance, metadata, timestep and leap year
+        self._enforce_on_hour = False  # False by default
         self.location = location
         self._direct_normal_irradiance = direct_normal_irradiance
         self._diffuse_horizontal_irradiance = diffuse_horizontal_irradiance
@@ -536,19 +541,28 @@ class Wea(object):
         return cls(location, dni, dhi)
 
     @property
-    def header(self):
-        """Get the Wea header as a string."""
-        return "place %s\n" % self.location.city + \
-            "latitude %.2f\n" % self.location.latitude + \
-            "longitude %.2f\n" % -self.location.longitude + \
-            "time_zone %d\n" % (-self.location.time_zone * 15) + \
-            "site_elevation %.1f\n" % self.location.elevation + \
-            "weather_data_file_units 1\n"
+    def enforce_on_hour(self):
+        """Get or set a boolean for whether datetimes occur on the hour.
+
+        By default, datetimes will be on the half-hour whenever the Wea has a
+        timestep of 1, which aligns best with epw data. Setting this property
+        to True will force the datetimes to be on the hour. Note that this
+        property has no effect when the Wea timestep is not 1.
+        """
+        return self._enforce_on_hour
+
+    @enforce_on_hour.setter
+    def enforce_on_hour(self, value):
+        self._enforce_on_hour = bool(value)
 
     @property
-    def analysis_period(self):
-        """Get an AnalysisPeriod for the Wea data."""
-        return self._direct_normal_irradiance.header.analysis_period
+    def datetimes(self):
+        """Get the datetimes in the Wea as a tuple of datetimes."""
+        if self.timestep == 1 and not self._enforce_on_hour:
+            return tuple(dt.add_minute(30) for dt in
+                         self.direct_normal_irradiance.datetimes)
+        else:
+            return self.direct_normal_irradiance.datetimes
 
     @property
     def hoys(self):
@@ -556,13 +570,9 @@ class Wea(object):
         return tuple(dt.hoy for dt in self.datetimes)
 
     @property
-    def datetimes(self):
-        """Get the datetimes in the Wea as a tuple of datetimes."""
-        if self.timestep == 1:
-            return tuple(dt.add_minute(30) for dt in
-                         self.direct_normal_irradiance.datetimes)
-        else:
-            return self.direct_normal_irradiance.datetimes
+    def analysis_period(self):
+        """Get an AnalysisPeriod for the Wea data."""
+        return self._direct_normal_irradiance.header.analysis_period
 
     @property
     def timestep(self):
@@ -583,6 +593,16 @@ class Wea(object):
     def is_annual(self):
         """Get a boolean for whether the irradiance data is for an entire year."""
         return self.is_continuous and self.analysis_period.is_annual
+
+    @property
+    def header(self):
+        """Get the Wea header as a string."""
+        return "place %s\n" % self.location.city + \
+            "latitude %.2f\n" % self.location.latitude + \
+            "longitude %.2f\n" % -self.location.longitude + \
+            "time_zone %d\n" % (-self.location.time_zone * 15) + \
+            "site_elevation %.1f\n" % self.location.elevation + \
+            "weather_data_file_units 1\n"
 
     @property
     def location(self):
@@ -998,6 +1018,38 @@ class Wea(object):
             write_to_file(hrs_file_path, hrs_data, True)
         return file_path
 
+    def duplicate(self):
+        """Duplicate location."""
+        return self.__copy__()
+
+    @staticmethod
+    def to_constant_value(wea_file, value=1000):
+        """Convert a Wea file to have a constant value for each datetime.
+
+        This is useful in workflows where hourly irradiance values are inconsequential
+        to the analysis and one is only using the Wea as a format to pass location
+        and datetime information (eg. for direct sun hours).
+
+        Args:
+            wea_file: Full path to .wea file.
+            value: The direct and diffuse irradiance value that will be written
+                in for all datetimes of the Wea.
+
+        Returns:
+            Text string of Wea file contents with all irradiance values replaces
+            with the input value.
+        """
+        assert os.path.isfile(wea_file), 'Failed to find {}'.format(wea_file)
+        new_lines, value = [], str(int(value))
+        with open(wea_file, readmode) as weaf:
+            for i in range(6):
+                new_lines.append(weaf.readline())
+            for line in weaf:
+                vals = line.split()
+                vals[-2], vals[-1] = value, value
+                new_lines.append(' '.join(vals) + '\n')
+        return ''.join(new_lines)
+
     def _aligned_collection(self, header, values):
         """Process a header and values into a collection aligned with Wea data."""
         if self.is_continuous:
@@ -1075,6 +1127,16 @@ class Wea(object):
 
     def __ne__(self, value):
         return not self.__eq__(value)
+
+    def __copy__(self):
+        new_wea = Wea(
+            self.location.duplicate(),
+            self.direct_normal_irradiance.duplicate(),
+            self.diffuse_horizontal_irradiance.duplicate()
+        )
+        new_wea._enforce_on_hour = self._enforce_on_hour
+        new_wea.metadata = deepcopy(self.metadata)
+        return new_wea
 
     def __repr__(self):
         """Wea object representation."""
