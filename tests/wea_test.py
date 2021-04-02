@@ -4,6 +4,7 @@ from ladybug.location import Location
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.epw import EPW
 from ladybug.datacollection import HourlyContinuousCollection, HourlyDiscontinuousCollection
+from ladybug.dt import DateTime
 
 import pytest
 import os
@@ -92,6 +93,10 @@ def test_from_epw():
     assert wea_from_epw.diffuse_horizontal_irradiance[8] == 47
     assert wea_from_epw.diffuse_horizontal_irradiance.datetimes[8].hour == 8
     assert wea_from_epw.diffuse_horizontal_irradiance.datetimes[8].minute == 0
+
+    assert wea_from_epw.datetimes[0] == DateTime(1, 1, 0, 30)
+    wea_from_epw.enforce_on_hour = True
+    assert wea_from_epw.datetimes[0] == DateTime(1, 1, 0, 0)
 
 
 def test_from_epw_fine_timestep():
@@ -219,7 +224,7 @@ def test_equality():
     """Test the equality of files imported from the same source."""
     wea_file = './tests/assets/wea/chicago.wea'
     wea_1 = Wea.from_file(wea_file)
-    wea_2 = Wea.from_file(wea_file)
+    wea_2 = wea_1.duplicate()
     assert wea_1 == wea_2
 
     wea_2.direct_normal_irradiance[12] = 200
@@ -360,6 +365,11 @@ def test_leap_year():
     assert wea.diffuse_horizontal_irradiance.datetimes[1416 + 12].month == 2
     assert wea.diffuse_horizontal_irradiance.datetimes[1416 + 12].day == 29
     assert wea.diffuse_horizontal_irradiance.datetimes[1416 + 12].hour == 12
+
+    ghi = wea.global_horizontal_irradiance
+    assert ghi.datetimes[1416].month == 2
+    assert ghi.datetimes[1416].day == 29
+    assert ghi.datetimes[1416].hour == 0
 
 
 def test_filter_by_pattern():

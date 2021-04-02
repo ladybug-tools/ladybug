@@ -855,10 +855,6 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         col_obj = self._enumeration['immutable'][self._collection_type]
         return col_obj(self.header, self.values)
 
-    def duplicate(self):
-        """Return a copy of the current Data Collection."""
-        return self.__class__(self.header.duplicate(), list(self._values))
-
     def get_aligned_collection(self, value=0, data_type=None, unit=None, mutable=None):
         """Return a Collection aligned with this one composed of one repeated value.
 
@@ -1008,6 +1004,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
     def __key(self):
         return (self.header, self.values)
+
+    def __copy__(self):
+        return self.__class__(self.header.duplicate(), list(self._values))
 
     def __repr__(self):
         """Hourly Discontinuous Collection representation."""

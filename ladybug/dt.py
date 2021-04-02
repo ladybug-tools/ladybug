@@ -241,7 +241,7 @@ class DateTime(datetime):
             minute: An integer value for minutes.
         """
         _moy = self.moy + int(minute)
-        return self.__class__.from_moy(_moy)
+        return self.__class__.from_moy(_moy, self.leap_year)
 
     def sub_minute(self, minute):
         """Create a new DateTime after the minutes are subtracted.

@@ -2,7 +2,7 @@
 from click.testing import CliRunner
 import os
 
-from ladybug.cli.translate import epw_to_wea, epw_to_ddy
+from ladybug.cli.translate import epw_to_wea, epw_to_ddy, wea_to_constant
 from ladybug.analysisperiod import AnalysisPeriod
 
 
@@ -43,3 +43,13 @@ def test_epw_to_ddy():
     assert result.exit_code == 0
     assert os.path.isfile(output_ddy)
     os.remove(output_ddy)
+
+
+def test_wea_to_constant():
+    runner = CliRunner()
+    input_wea = './tests/assets/wea/chicago.wea'
+
+    result = runner.invoke(wea_to_constant, [input_wea, '-v', '500'])
+    assert result.exit_code == 0
+    lines = result.output.split('\n')
+    assert '500' in lines[10]

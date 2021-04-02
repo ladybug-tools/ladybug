@@ -406,6 +406,19 @@ class Legend(object):
         """Iterate through the values."""
         return iter(self._values)
 
+    def __key(self):
+        return (self._legend_par, self._is_min_default, self._is_max_default) + \
+            tuple(self._values)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, Legend) and self.__key() == other.__key()
+
+    def __ne__(self, value):
+        return not self.__eq__(value)
+
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
@@ -955,6 +968,27 @@ class LegendParameters(object):
         new_par._is_text_height_default = self._is_text_height_default
         return new_par
 
+    def __key(self):
+        return \
+            (self.min, self.max, self.segment_count, self.title, hash(self.base_plane),
+             self._continuous_legend, self._ordinal_dictionary, self._decimal_count,
+             self._include_larger_smaller, self._vertical, self._segment_height,
+             self._segment_width, self._text_height, self._font,
+             self._is_segment_count_default, self._are_colors_default,
+             self._is_title_default, self._is_base_plane_default,
+             self._is_segment_height_default, self._is_segment_width_default,
+             self._is_text_height_default) + \
+            tuple(hash(col) for col in self.colors)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, LegendParameters) and self.__key() == other.__key()
+
+    def __ne__(self, value):
+        return not self.__eq__(value)
+
     def ToString(self):
         """Overwrite .NET ToString method."""
         return self.__repr__()
@@ -1273,6 +1307,28 @@ class LegendParametersCategorized(LegendParameters):
         new_par._is_segment_width_default = self._is_segment_width_default
         new_par._is_text_height_default = self._is_text_height_default
         return new_par
+
+    def __key(self):
+        return \
+            (self._domain, self._category_names, self.title, hash(self.base_plane),
+             self._continuous_colors, self._continuous_legend, self._decimal_count,
+             self._include_larger_smaller, self._vertical, self._segment_height,
+             self._segment_width, self._text_height, self._font,
+             self._is_segment_count_default, self._are_colors_default,
+             self._is_title_default, self._is_base_plane_default,
+             self._is_segment_height_default, self._is_segment_width_default,
+             self._is_text_height_default) + \
+            tuple(hash(col) for col in self.colors)
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, LegendParametersCategorized) and \
+            self.__key() == other.__key()
+
+    def __ne__(self, value):
+        return not self.__eq__(value)
 
     def __repr__(self):
         """Legend parameter representation."""

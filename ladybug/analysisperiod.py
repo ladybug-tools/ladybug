@@ -360,6 +360,9 @@ class AnalysisPeriod(object):
 
     def duplicate(self):
         """Return a copy of the analysis period."""
+        return self.__copy__()
+
+    def __copy__(self):
         return AnalysisPeriod(self.st_month, self.st_day, self.st_hour,
                               self.end_month, self.end_day, self.end_hour,
                               self.timestep, self.is_leap_year)

@@ -430,10 +430,7 @@ class BaseCollection(object):
 
     def duplicate(self):
         """Get a copy of this Data Collection."""
-        collection = self.__class__(
-            self.header.duplicate(), list(self._values), self.datetimes)
-        collection._validated_a_period = self._validated_a_period
-        return collection
+        return self.__copy__()
 
     def to_dict(self):
         """Convert Data Collection to a dictionary."""
@@ -1101,11 +1098,20 @@ class BaseCollection(object):
     def __key(self):
         return self.header, self.values, self.datetimes, self.validated_a_period
 
+    def __hash__(self):
+        return hash(self.__key())
+
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.__key() == other.__key()
 
     def __ne__(self, value):
         return not self.__eq__(value)
+
+    def __copy__(self):
+        collection = self.__class__(
+            self.header.duplicate(), list(self._values), self.datetimes)
+        collection._validated_a_period = self._validated_a_period
+        return collection
 
     def ToString(self):
         """Overwrite .NET ToString method."""

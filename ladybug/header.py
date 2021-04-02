@@ -104,9 +104,11 @@ class Header(object):
 
     def duplicate(self):
         """Return a copy of the header."""
+        return self.__copy__()
+
+    def __copy__(self):
         a_per = self.analysis_period.duplicate() if self.analysis_period else None
-        return self.__class__(self.data_type, self.unit,
-                              a_per, deepcopy(self.metadata))
+        return self.__class__(self.data_type, self.unit, a_per, deepcopy(self.metadata))
 
     def to_tuple(self):
         """Return Ladybug header as a list."""
@@ -137,10 +139,14 @@ class Header(object):
         return self.__repr__()
 
     def __key(self):
-        return (self.data_type, self.unit, self.analysis_period, self.metadata)
+        return (str(self.data_type), self.unit, self.analysis_period)
+
+    def __hash__(self):
+        return hash(self.__key())
 
     def __eq__(self, other):
-        return isinstance(other, Header) and self.__key() == other.__key()
+        return isinstance(other, Header) and self.__key() == other.__key() and \
+            self.metadata == other.metadata
 
     def __ne__(self, value):
         return not self.__eq__(value)
