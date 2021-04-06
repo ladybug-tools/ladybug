@@ -14,6 +14,7 @@
 #
 from datetime import datetime
 import os
+import re
 import sys
 sys.path.insert(0, os.path.abspath('../'))
 
@@ -51,7 +52,6 @@ extensions = [
     'sphinxcontrib.fulltoc',
     'sphinx.ext.napoleon',
     'sphinx_click.ext'
-
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -232,12 +232,10 @@ additional documentation reST files(.rst) need to be generated in docs\\cli fold
 
 Note:
     This process assumes that each CLI module represent a group of subcommands.
-    Important: Use hash tables below to address special cases such as
-    command group names different from their module file name.
 """
-# Activate this CLI documentation process
+# Activate this CLI documentation process.
 custom_cli_docs = True
-# Override existing reSt files found in docs//cli folder
+# Override existing reSt files found in docs//cli folder.
 cli_overwrite = False
 
 # Repository/library hash table.
@@ -252,18 +250,6 @@ ht_repo_lib = {}
 # Format: {library_name: tool_name}
 ht_lib_tool = {}
 
-# Cli_file/cli_group hash table.
-# Created to address CLI file names that differ from the included CLI group name
-# Format: {
-#    library_name_1: {CLI_filename_1: group_name_1,
-#                     CLI_filename_2: group_name_2
-#                    },
-#    library_name_2: {CLI_filename_3: group_name_3,
-#                     CLI_filename_4: group_name_4
-#                    }
-# }
-ht_cli_file_group = {}
-
 
 def create_cli_files():
     """Generate additional files required by sphinx to build well structured
@@ -272,37 +258,57 @@ def create_cli_files():
     The process consists in generating reST files with sphinx-click directives
     for each click group detected in the library's cli folder and updating
     the index.rst file to include a list of the click groups found.
+
+    Returns:
+        1 on success.
+        0 if no update was generated.
+        -1 on error.
     """
 
     # Get CLI data from library
     proj_folder = os.path.dirname(__file__)
     result = get_cli_data(proj_folder)
-    if not result:
-        return
+    if not result:  # return if no CLI module found.
+        return 0
 
-    all_groups, lib_name, tool_name = result
+    ht_cli, lib_name, tool_name = result
 
-    # Prepare docs folder and reST files to create
+    # Prepare docs folder and reST files to create.
     doc_folder = os.path.join(proj_folder, 'cli')
     if not os.path.isdir(doc_folder):
         os.mkdir(doc_folder)
 
-    # Exclude CLI groups if corresponding reST file detected in docs/cli
-    new_groups = [name for name in all_groups
-                  if name + ".rst" not in os.listdir(doc_folder)]
+    # Create new groups only list by excluding CLI groups that have a reST file.
+    # inside docs/cli
+    def get_missing_groups():
+        ht_new_cli_groups = {}
+        for mod_name in ht_cli.keys():
+            if mod_name + ".rst" not in os.listdir(doc_folder):
+                ht_new_cli_groups[mod_name] = ht_cli[mod_name]
+        return ht_new_cli_groups
 
-    if not cli_overwrite and not new_groups:
-        print("[CLI]: No new CLI files created.")
-        return
+    # Prepare all/missing group list.
+    if not cli_overwrite:
+        ht_missing_cli = get_missing_groups()
+        if not ht_missing_cli:
+            print("[CLI]: No new CLI files created.")
+            return 0
+    else:
+        ht_missing_cli = ht_cli
 
     # Create CLI reST files for each module(command group) found.
-    click_groups = all_groups if cli_overwrite else new_groups
-    result = write_cli_files(click_groups, lib_name, tool_name, doc_folder)
-    if not result:
-        print("[CLI]: Something went wrong during CLI docs generation")
+    if not write_cli_files(ht_missing_cli, lib_name, tool_name, doc_folder):
+        return -1
 
-    # Update/Create index file with command group section included
-    update_cli_index(os.path.join(doc_folder, 'index.rst'), all_groups)
+    # Update/Create CLI index file with command group section included.
+    if not update_cli_index(os.path.join(doc_folder, 'index.rst'),
+                            list(ht_cli.keys())):
+        return -1
+
+    # Update package index file to include CLI docs section
+    update_doc_index(proj_folder, lib_name)
+
+    return 1
 
 
 def get_cli_data(project_folder):
@@ -315,8 +321,9 @@ def get_cli_data(project_folder):
     Returns:
         A tuple with three elements.
 
-        -   module_names:
-            A list with the names of the CLI modules found in the repository.
+        -   ht_mod_group:
+            A dictionary with module file names and the corresponding
+            group names found.
 
         -   lib_name: The name of the library found in the repository.
 
@@ -325,18 +332,21 @@ def get_cli_data(project_folder):
     """
     print("[CLI data]: Retrieveing CLI data from {}".format(project_folder))
 
-    # Check in hash table for a library name based on repository name
+    # Check in hash table for a library name based on repository name.
     repo_path = os.path.abspath(os.path.join(project_folder, os.pardir))
     repo_name = os.path.split(repo_path)[1]
 
-    # Look up the library name in hashtable
-    lib_name = ht_repo_lib[repo_name] if repo_name in ht_repo_lib else None
-    # Otherwise exract library name from modules.rst file (from heading)
-    if not lib_name:
+    # Look up the library name in hashtable.
+    if repo_name in ht_repo_lib:
+        lib_name = ht_repo_lib[repo_name]
+    # Otherwise exract library name from modules.rst file heading and replace
+    # dash(-) to underscore(_).
+    else:
         modules_file = os.path.join(os.path.join(project_folder, 'modules.rst'))
         with open(modules_file, 'r') as mod_file:
             lines = mod_file.readlines()
         lib_name = lines[0][0:-1]
+        lib_name.replace("-", "_")
 
     # Check in hash table for a command line tool name that is different
     # from its library name beyond the underscore(_) to dash(-) difference.
@@ -349,32 +359,88 @@ def get_cli_data(project_folder):
         return None
 
     cli_path = os.path.join(lib_path, 'cli')
-    if not os.path.isdir(lib_path):
+    if not os.path.isdir(cli_path):
         print("[CLI data]: No CLI library found")
         return None
 
-    # Generate a list with the module source files(.py).
-    module_names = [os.path.splitext(file)[0] for file in os.listdir(cli_path)
-                    if os.path.splitext(file)[1] == ".py"]
+    # Get CLI module names and their corresponding group names as a dictionary.
+    ht_mod_group = get_cli_groups(cli_path)
 
-    # Remove files that aren't a cli module
-    discard_names = ["__init__", "util", "_helper"]
-    module_names = [name for name in module_names if name not in discard_names]
-
-    if not module_names:
+    if ht_mod_group == {}:
         print("[CLI data]: No CLI modules detected in /cli folder.")
         return None
 
     # Return library data
-    return module_names, lib_name, tool_name
+    return ht_mod_group, lib_name, tool_name
 
 
-def write_cli_files(group_filenames, lib_name, tool_name, doc_folder):
+def get_cli_groups(cli_path):
+    """Retrieve CLI group data found inside a specified cli path.
+
+    Args:
+        cli_path: the path that contains the CLI modules to extract group
+        data from.
+
+    Returns:
+        A dictionary with module file names and the corresponding
+        group names found.
+    """
+    module_names = [os.path.splitext(file)[0] for file in os.listdir(cli_path)
+                    if os.path.splitext(file)[1] == ".py"]
+
+    # Look for group function names inside their CLI module. Assume (1) group
+    # and (1) function per module. Assumme possible multiple groups and
+    # functions in '__init.py'.
+
+    init_text = ""
+    ht_groups = {}
+    for name in module_names:
+        with open(os.path.join(cli_path, name + ".py"), 'r') as cli_file:
+            text = cli_file.read()
+        # Use regex pattern to get function name after click group decorator
+        fnd = re.findall(r'^@click\.group\(.*\n(@click.*\n){0,2}def\s(\w*)\s*\(\):\n',
+                         text, flags=re.MULTILINE)
+        # Add multiple commands found in each group inside '__init__.py'
+        if name == "__init__":
+            init_text = text
+            for result in fnd:
+                tr, cli_comm = result
+                comm_exp = r'^@' + cli_comm + r'.command\(\'([\w-]+)'
+                im = re.findall(comm_exp, text, flags=re.MULTILINE)
+                if im:
+                    # add sub-group key with list of commands to the
+                    # 'main' group dict. key
+                    if 'main' not in ht_groups:
+                        ht_groups['main'] = {}
+                    ht_groups['main'][cli_comm] = list(im)
+
+        else:
+            # Store module function name and initial command name in hash table.
+            if fnd:
+                ht_groups[name] = [fnd[0][1], fnd[0][1]]
+
+    # Check if any group/function has a new command name specified inisde
+    # "add_command" function.
+    if init_text:
+        named_groups = re.findall(
+            r'add_command\( *([\w-]+) *, *(name=)? *\'([\w-]+)\' *\)',
+            init_text, flags=re.MULTILINE)
+        for group in named_groups:
+            cli_func, tr, cli_comm = group
+            for file in ht_groups:
+                # 'main' groups are excluded, assumes not used in CLI.
+                if file != 'main' and ht_groups[file][0] == cli_func:
+                    ht_groups[file][1] = cli_comm
+
+    return ht_groups
+
+
+def write_cli_files(ht_cli_data, lib_name, tool_name, doc_folder):
     """Writes a reST file with CLI directives for each click group provided.
 
     Args:
-        group_filenames: A list containing the names of the CLI files that
-            rst files will be generated for.
+        ht_cli_data: A dictionary containing the names of the reSt CLI files
+            that will be generated and their corresponding CLI group name.
         lib_name: The name of the library the click groups belong to. For
             example ``honeybee_energy``, ``dragonfly`` or ``honeybee_radiance``
             are possible library names.
@@ -384,34 +450,42 @@ def write_cli_files(group_filenames, lib_name, tool_name, doc_folder):
         doc_folder: The path where the CLI documentation files will be saved.
     """
 
-    # Creating missing CLI reST files
+    # Creating missing CLI reST files.
+    group_filenames = ht_cli_data.keys()
     print("[CLI files]: Creating ({}) CLI rst files: {}...".format(
-        len(group_filenames), group_filenames))
+        len(group_filenames), list(group_filenames)))
 
-    # Retrieve valid group names where the file name and CLI group name don't
-    # match
-    group_names = list.copy(group_filenames)
-    if lib_name in ht_cli_file_group:
-        ht_file_group = ht_cli_file_group[lib_name]
-        group_names = [ht_file_group[
-            name] if name in ht_file_group else name for name in group_names]
-
-    # Write sphinx-click directive with options for each CLI group
-    for file, group in zip(group_filenames, group_names):
+    # Write sphinx-click directive with options for each CLI group.
+    for file in group_filenames:
         cli_content = ["{}\n".format(file),
-                       "{}\n".format("=" * len(file)),
-                       "\n",
-                       ".. click:: {}.cli.{}:{}\n".format(
-                           lib_name, file, group),
-                       "   :prog: {} {}\n".format(tool_name, group),
-                       "   :show-nested:\n"
-                       ]
+                       "{}\n".format("=" * len(file))]
+        if file != "main":
+            # one command(with all its subcommands) per cli module.
+            cli_content += ["\n",
+                            ".. click:: {}.cli.{}:{}\n".format(
+                                lib_name, file, ht_cli_data[file][0]),
+                            "   :prog: {} {}\n".format(
+                                    tool_name, ht_cli_data[file][1]),
+                            "   :show-nested:\n"]
+        else:
+            # multiple commands in the 'main' group (implicitly named to
+            # avoid commands from other modules to be included). Also specify
+            # commands as a root command.
+            for group in ht_cli_data[file].keys():
+                cli_content += ["\n",
+                                ".. click:: {}.cli.{}:{}\n".
+                                format(lib_name, "__init__", group),
+                                "   :prog: {}\n".format(tool_name),
+                                "   :show-nested:\n",
+                                "   :commands: " + " ,".
+                                join(ht_cli_data[file][group]) + "\n"
+                                ]
 
-        # Create CLI group reST file
+        # Create CLI group reST file.
         with open(os.path.join(doc_folder, file + ".rst"), 'w') as group_file:
             group_file.writelines(cli_content)
 
-    return True
+    return 1
 
 
 def update_cli_index(index_path, group_filenames):
@@ -423,21 +497,20 @@ def update_cli_index(index_path, group_filenames):
         group_filenames: Name of the click groups to include in the
             index \'Commands\' section.
     """
-
-    print("[CLI index]: Updating index.rst file...")
-
-    # Include exisitng index.rst data if present
+    # Include exisitng cli/index.rst data if present.
     cli_content = []
     if os.path.isfile(index_path):
         with open(index_path, 'r') as index_file:
             lines = index_file.readlines()
         cli_content = lines[:lines.index("Commands\n")
                             ] if "Commands\n" in lines else lines
+        print("[CLI cli\\index]: Updating index.rst file...")
     else:
-        # Otherwise create a "CLI" heading
+        # Otherwise create a "CLI" heading.
         cli_content = ["CLI\n", "===\n", "\n"]
+        print("[CLI cli\\index]: Creating index.rst file...")
 
-    # Add 'Commands' section with directive and options
+    # Add 'Commands' section with directive and options.
     cli_content += ["\n"
                     "Commands\n",
                     "--------\n",
@@ -446,15 +519,74 @@ def update_cli_index(index_path, group_filenames):
                     "\n"
                     ]
 
-    # Add sub-command groups to content
+    # Add sub-command groups to content.
+    if "main" in group_filenames:
+        group_filenames.remove('main')
+        group_filenames.insert(0, 'main')
     for file in group_filenames:
         cli_content.append("   {}\n".format(file))
 
-    # Append section to file
+    # Append section to existing file or create new file.
     with open(index_path, 'w') as index_file:
         index_file.writelines(cli_content)
 
-    return True
+    return 1
+
+
+def update_doc_index(proj_folder, lib_name):
+    """Update the documenation index.rst file inside the \\docs folder to include
+    a CLI Docs section if not present already.
+
+    Args:
+        proj_folder: The documentation file path where the package documentation
+            index.rst file is located.
+        lib_name: The name of the library the click groups belong to. For
+            example ``honeybee_energy``, ``dragonfly`` or ``honeybee_radiance``
+            are possible library names.
+    Returns:
+        1 on success.
+        -1 on error.
+    """
+    index_fpath = os.path.join(proj_folder, "index.rst")
+    if not os.path.isfile(index_fpath):
+        print("[CLI doc\\index]: No index.rst file found.")
+        return -1
+    with open(index_fpath, 'r') as index_file:
+        text = index_file.read()
+
+    # Check if CLI Docs section already present
+    if re.search(r'^ *cli\/\/index *\n|^CLI Docs *\n=+\n', text, flags=re.MULTILINE):
+        return 1
+
+    print("[CLI doc\\index]: Updating index.rst file...")
+    # Add CLi Docs section
+    cli_text = "\n" + \
+               "CLI Docs\n" + \
+               "========\n" + \
+               "\n" + \
+               "For command line interface documentation and API " + \
+               "documentation see the pages below.\n" + \
+               "\n" + \
+               ".. toctree::\n" + \
+               "   :maxdepth: 2\n" + \
+               "\n" + \
+               "   cli//index\n" + \
+               "\n" + \
+               "\n"
+
+    # Find insert location, add text and save
+    lib_exp = r'^' + lib_name + ' *\n=+\n'
+    m = re.search(lib_exp, text, flags=re.MULTILINE)
+    if m:
+        text_updated = text[:m.start()-1] + cli_text + text[m.start():]
+        with open(os.path.join(proj_folder, "index.rst"), 'w') as index_file:
+            text = index_file.write(text_updated)
+    else:
+        print("[CLI doc\\index]: index.rst update not possible - content \
+              format cannot be recognized.")
+        return -1
+
+    return 1
 
 
 # Custom CLI docs function call.
@@ -466,7 +598,6 @@ if custom_cli_docs:
 
 def setup(app):
     """Run custom code with access to the Sphinx application object
-
     Args:
         app: the Sphinx application object
     """
