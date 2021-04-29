@@ -1,0 +1,19 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "11:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: setuptools
+    versions:
+    - 54.1.3
+  - dependency-name: coveralls
+    versions:
+    - 3.0.1
+  commit-message:
+    prefix: fix
+    prefix-development: chore
+    include: scope
