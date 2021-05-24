@@ -1,6 +1,6 @@
 coverage==5.5
 coveralls==1.7.0;python_version<'3.0'
-coveralls==2.2.0;python_version>='3.6'
+coveralls==3.1.0;python_version>='3.6'
 pytest==4.6.9;python_version<'3.0'
 pytest==6.2.4;python_version>='3.6'
 pytest-cov==2.12.0
