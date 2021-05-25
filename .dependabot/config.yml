@@ -14,17 +14,17 @@ update_configs:
           dependency_name: "sphinxcontrib-websupport"
       - match:
           dependency_name: "coveralls"
-      -match:
+      - match:
           dependency_name: "coverage"
-      -match:
+      - match:
           dependency_name: "pytest"
-      -match:
+      - match:
           dependency_name: "pytest-cov"
-      -match:
+      - match:
           dependency_name: "twine"
-      -match:
+      - match:
           dependency_name: "setuptools"
-      -match:
+      - match:
           dependency_name: "importlib-metadata"
     automerged_updates:
       - match:
