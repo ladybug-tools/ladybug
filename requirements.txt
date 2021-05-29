@@ -1,2 +1,2 @@
-ladybug-geometry==1.23.6
+ladybug-geometry==1.23.7
 click==7.1.2
