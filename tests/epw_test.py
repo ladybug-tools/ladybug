@@ -61,6 +61,8 @@ def test_epw_from_missing_values():
     assert epw.is_data_loaded
     assert len(epw.dry_bulb_temperature) == 8760
     assert list(epw.dry_bulb_temperature.values) == [99.9] * 8760
+    day_vals = epw.import_data_by_field(2)
+    assert day_vals[24] == 1
 
 
 def test_dict_methods():
