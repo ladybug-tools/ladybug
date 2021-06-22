@@ -29,6 +29,31 @@ except ImportError:
 class EPW(object):
     """An EPW object containing all of the data of an .epw file.
 
+    Most of the data available in the EPW will be accessible through objects
+    that house various properties (eg. Location). All timeseries data sets are
+    represented as HourlyContinuousCollection objects with values and datetimes
+    corresponding to those in the EPW file.
+    
+    In order to handle the fact that EPW values run from 1:00 on Jan 1 to
+    midnight of the following year, all timeseries data will have the ending
+    value moved to the start of the hourly data collection upon import from
+    the .epw file to an EPW object. This ensures that the datetimes of the data
+    collections align with the times listed in the .epw file. This also allows
+    the use of "true" datetimes in the hourly data collections, which start from
+    0:00 rather than ending with 24:00. When saving the data from a EPW object
+    back to an .epw file, the start date time at 0:00 on Jan 1 will be moved to
+    the end of the file, ensuring imported .epw files can be saved back to their
+    original state without any loss of data.
+
+    The only exceptions to this movement of the last datetime are the timeseries
+    data sets for radiation and illuminance. These data sets are left as they are
+    when imported/exported to/from the .epw file given that they are meant to
+    be an accumulation or average over the previous hour in the .epw file.
+    Accordingly, such values can be thought of as an accumulation or average over
+    the following hour when they are found within an hourly data collection of
+    an EPW object. So the radiation with the 12:00 datetime in the hourly data
+    collection represents the accumulated radiation in between 12:00 and 13:00.
+
     Args:
         file_path: Local file address to an .epw file.
 
