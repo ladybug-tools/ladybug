@@ -3,7 +3,8 @@ from ladybug.wea import Wea
 from ladybug.location import Location
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.epw import EPW
-from ladybug.datacollection import HourlyContinuousCollection, HourlyDiscontinuousCollection
+from ladybug.datacollection import HourlyContinuousCollection, \
+    HourlyDiscontinuousCollection
 from ladybug.dt import DateTime
 
 import pytest
@@ -229,6 +230,7 @@ def test_equality():
 
     wea_2.direct_normal_irradiance[12] = 200
     assert wea_1 != wea_2
+    assert Wea.count_timesteps(wea_file) == 8760
 
 
 def test_dict_methods():
