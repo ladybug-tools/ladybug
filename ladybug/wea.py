@@ -70,7 +70,9 @@ class Wea(object):
         ('_timestep', '_is_leap_year', '_location', 'metadata', '_enforce_on_hour',
          '_direct_normal_irradiance', '_diffuse_horizontal_irradiance')
 
-    def __init__(self, location, direct_normal_irradiance, diffuse_horizontal_irradiance):
+    def __init__(
+        self, location, direct_normal_irradiance, diffuse_horizontal_irradiance
+    ):
         """Create a Wea object."""
         # Check that input collections are of the right type and aligned to each other
         acceptable_colls = (HourlyContinuousCollection, HourlyDiscontinuousCollection)
@@ -92,8 +94,10 @@ class Wea(object):
         self._is_leap_year = direct_normal_irradiance.header.analysis_period.is_leap_year
 
     @classmethod
-    def from_annual_values(cls, location, direct_normal_irradiance,
-                           diffuse_horizontal_irradiance, timestep=1, is_leap_year=False):
+    def from_annual_values(
+        cls, location, direct_normal_irradiance, diffuse_horizontal_irradiance,
+        timestep=1, is_leap_year=False
+    ):
         """Create an annual Wea from an array of irradiance values.
 
         Args:
@@ -249,7 +253,7 @@ class Wea(object):
 
         Note that this method is only required when the .wea file generated from
         DAYSIM has a timestep greater than 1, which results in the file using
-        times of day greater than 23:59. DAYSIM wea's with a timestep of 1 can
+        times of day greater than 23:59. DAYSIM weas with a timestep of 1 can
         use the from_file method without issues.
 
         Args:
@@ -301,7 +305,7 @@ class Wea(object):
                                       epw.diffuse_horizontal_radiation.values,
                                       epw.metadata, 1, epw.is_leap_year)
         if timestep != 1:
-            print("Note: timesteps greater than 1 on epw-generated Wea's \n"
+            print("Note: timesteps greater than 1 on epw-generated Weas \n"
                   "are suitable for thermal models but are not recommended \n"
                   "for daylight models.")
             # interpolate the data
@@ -714,7 +718,8 @@ class Wea(object):
         return Wea(
             self.location,
             self.direct_normal_irradiance.filter_by_analysis_period(analysis_period),
-            self.diffuse_horizontal_irradiance.filter_by_analysis_period(analysis_period))
+            self.diffuse_horizontal_irradiance.filter_by_analysis_period(analysis_period)
+        )
 
     def filter_by_hoys(self, hoys):
         """Create a new filtered Wea from this Wea using a list of hours of the year.
@@ -1050,6 +1055,24 @@ class Wea(object):
                 new_lines.append(' '.join(vals) + '\n')
         return ''.join(new_lines)
 
+    @staticmethod
+    def count_timesteps(wea_file):
+        """Count the number of timesteps represented within a Wea file.
+
+        This is useful in workflows where one needs to compute cumulative values
+        over a Wea (eg. cumulative radiation).
+
+        Args:
+            wea_file: Full path to .wea file.
+
+        Returns:
+            integer for the number of timesteps in the Wea.
+        """
+        assert os.path.isfile(wea_file), 'Failed to find {}'.format(wea_file)
+        with open(wea_file, readmode) as weaf:
+            count = len(weaf.readlines()) - 6
+        return count
+
     def _aligned_collection(self, header, values):
         """Process a header and values into a collection aligned with Wea data."""
         if self.is_continuous:
@@ -1112,7 +1135,8 @@ class Wea(object):
         return len(self.direct_normal_irradiance)
 
     def __getitem__(self, key):
-        return self.direct_normal_irradiance[key], self.diffuse_horizontal_irradiance[key]
+        return self.direct_normal_irradiance[key], \
+            self.diffuse_horizontal_irradiance[key]
 
     def __iter__(self):
         return zip(self.direct_normal_irradiance.values,
