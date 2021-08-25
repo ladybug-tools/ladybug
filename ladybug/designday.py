@@ -184,8 +184,8 @@ class DesignDay(object):
         # extract humidity conditions
         h_type = ep_fields[9]
         h_val = 0 if ep_fields[10] == '' else float(ep_fields[10])
-        rain = True if ep_fields[18].lower() == 'yes' else False
-        snow = True if ep_fields[19].lower() == 'yes' else False
+        rain = True if len(ep_fields) > 18 and ep_fields[18].lower() == 'yes' else False
+        snow = True if len(ep_fields) > 19 and ep_fields[19].lower() == 'yes' else False
         if h_type == 'HumidityRatio':
             h_val = float(ep_fields[12])
         elif h_type == 'Enthalpy':
@@ -197,19 +197,25 @@ class DesignDay(object):
         wind_condition = WindCondition(float(ep_fields[16]), float(ep_fields[17]))
 
         # extract the sky conditions
-        sky_model = ep_fields[21]
-        dl_save = True if ep_fields[20].lower() == 'yes' else False
         date_obj = Date(int(ep_fields[2]), int(ep_fields[3]))
-        if sky_model == 'ASHRAEClearSky':
-            sky_condition = ASHRAEClearSky(date_obj, float(ep_fields[26]), dl_save)
-        elif sky_model == 'ASHRAETau':
-            sky_condition = ASHRAETau(date_obj, float(ep_fields[24]),
-                                      float(ep_fields[25]), dl_save)
-        else:
-            sky_condition = _SkyCondition(date_obj, dl_save)
-        if sky_model == 'Schedule':
-            sky_condition.beam_schedule = ep_fields[22]
-            sky_condition.diffuse_schedule = ep_fields[23]
+        dl_save = True if len(ep_fields) > 20 and ep_fields[20].lower() == 'yes' \
+            else False
+        if len(ep_fields) > 21:
+            sky_model = ep_fields[21]
+            if sky_model == 'ASHRAEClearSky':
+                sky_clr = float(ep_fields[26]) if len(ep_fields) > 26 else 0
+                sky_condition = ASHRAEClearSky(date_obj, sky_clr, dl_save)
+            elif sky_model == 'ASHRAETau':
+                t_b = float(ep_fields[24]) if len(ep_fields) > 24 else 0
+                t_d = float(ep_fields[25]) if len(ep_fields) > 25 else 0
+                sky_condition = ASHRAETau(date_obj, t_b, t_d, dl_save)
+            else:
+                sky_condition = _SkyCondition(date_obj, dl_save)
+            if sky_model == 'Schedule':
+                sky_condition.beam_schedule = ep_fields[22]
+                sky_condition.diffuse_schedule = ep_fields[23]
+        else:  # default of no sky condition
+            sky_condition = ASHRAEClearSky(date_obj, 0, dl_save)
 
         return cls(name, day_type, location, dry_bulb_condition,
                    humidity_condition, wind_condition, sky_condition)
