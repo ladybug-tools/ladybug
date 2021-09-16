@@ -35,7 +35,7 @@ class SQLiteResult(object):
         * component_sizes
         * component_types
     """
-    _interval_codes = ('Timestep', 'Hourly', 'Daily', 'Monthly', 'Annual')
+    _interval_codes = ('Timestep', 'Hourly', 'Daily', 'Monthly', 'Annual', 'Annual')
 
     def __init__(self, file_path):
         """Initialize SQLiteResult"""
@@ -267,7 +267,9 @@ class SQLiteResult(object):
             obj_type = row[1] if 'Surface' not in output_name else 'Surface'
             meta_datas.append({'type': row[3], obj_type: row[2]})
         headers = []
-        if isinstance(run_period, list):  # multiple run periods
+        if report_frequency == 'Annual':
+            pass
+        elif isinstance(run_period, list):  # multiple run periods
             for runper in run_period:
                 for m_data in meta_datas:
                     headers.append(Header(data_type, units, runper, m_data))
@@ -303,7 +305,7 @@ class SQLiteResult(object):
                 data_colls.append(MonthlyCollection(
                     head, values, head.analysis_period.months_int))
         else:  # Annual data; just return the values as they are
-            return all_values
+            return [val[0] for val in all_values]
         # ensure all imported data gets marked as valid; this increases speed elsewhere
         for data in data_colls:
             data._validated_a_period = True
@@ -666,6 +668,8 @@ class SQLiteResult(object):
 
         # convert the extracted data into an AnalysisPeriod object
         leap_year = True if end[0] != 0 and end[0] % 4 == 0 else False
+        if reporting_frequency == 'Annual':
+            return None, reporting_frequency, multiple_period
         if reporting_frequency == 'Monthly':
             st_date = DateTime(start[1], 1, 0)
         else:
