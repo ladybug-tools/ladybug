@@ -242,10 +242,12 @@ class SQLiteResult(object):
             rel_indices = tuple(row[0] for row in header_rows)
             if len(rel_indices) == 1:
                 c.execute('SELECT Value, TimeIndex FROM ReportData WHERE '
-                          'ReportDataDictionaryIndex=?', rel_indices)
+                          'ReportDataDictionaryIndex=? ORDER BY '
+                          'TimeIndex', rel_indices)
             else:
                 c.execute('SELECT Value, TimeIndex FROM ReportData WHERE '
-                          'ReportDataDictionaryIndex IN {}'.format(rel_indices))
+                          'ReportDataDictionaryIndex IN {} ORDER BY '
+                          'TimeIndex'.format(rel_indices))
             data = c.fetchall()
             conn.close()  # ensure connection is always closed
         except Exception as e:
