@@ -470,7 +470,12 @@ class WindRose(object):
         data_range = (min_data, max_data)
         histogram_data_stacked, bin_range = WindRose._histogram_data_nested(
             self.histogram_data, data_range, bin_count)
-        data_step = bin_range[1] - bin_range[0]
+        try:
+            data_step = bin_range[1] - bin_range[0]
+        except IndexError:  # all of the wind data is the same value
+            raise ValueError(
+                'All data is the same value of : {}\nWind rose mesh could not be '
+                'drawn.'.format(self._analysis_data_collection[0]))
 
         if not self.show_freq:
             for i in range(self._number_of_directions):
@@ -584,7 +589,7 @@ class WindRose(object):
             # colored_mesh property computes windrose geometry with appropriate checks
             # for user-defined parameters, so all windrose geometry properties are set
             # there. If _poly_array is not set, compute colored_mesh.
-            _ = self.colored_mesh
+            self.colored_mesh
 
         return [self._transform(Polygon2D(vecs)) for vecs in self._poly_array]
 
@@ -592,7 +597,7 @@ class WindRose(object):
     def mesh_radius(self):
         """Get the radius of the windrose mesh (with zero values).
 
-        This number will not neccessarily align to the frequency spacing intervals,
+        This number will not necessarily align to the frequency spacing intervals,
         since fractional values are permitted.
         """
         return self._nonzero_mesh_radius + self._zero_mesh_radius

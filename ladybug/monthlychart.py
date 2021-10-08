@@ -64,6 +64,9 @@ class MonthlyChart(object):
         * month_lines
         * month_label_points
         * month_labels
+        * time_ticks
+        * time_label_points
+        * time_labels
         * y_axis_title_text1
         * y_axis_title_location1
         * y_axis_title_text2
@@ -80,7 +83,11 @@ class MonthlyChart(object):
                  '_stack', '_percentile', '_time_interval', '_grouped_data',
                  '_units', '_data_types', '_color_map', '_minimums', '_maximums',
                  '_seg_count', '_container', '_analysis_period', '_months_int',
-                 '_y_axis_points', '_month_points', '_month_label_points', '_month_text')
+                 '_y_axis_points', '_month_points', '_month_label_points',
+                 '_month_text', '_time_points')
+
+    # editing HOUR_LABELS will change the labels produced for the entire chart
+    HOUR_LABELS = (0, 6, 12, 18)
 
     def __init__(self, data_collections, legend_parameters=None, base_point=Point2D(),
                  x_dim=10, y_dim=40, stack=False, percentile=34):
@@ -126,6 +133,7 @@ class MonthlyChart(object):
         self._month_points = None
         self._month_label_points = None
         self._month_text = None
+        self._time_points = None
 
         # group the input data by data type and figure out the max + min of the Y-axes
         self._grouped_data, self._data_types, self._units, self._color_map = \
@@ -320,6 +328,35 @@ class MonthlyChart(object):
         return self._month_text
 
     @property
+    def time_ticks(self):
+        """Get a list of LineSegment2D for the time-of-day labels of the chart."""
+        if not self._time_points:
+            self._compute_time_pts()
+        txt_hght = self.legend_parameters.text_height
+        vec = Vector2D(0, -txt_hght / 2)
+        return [LineSegment2D(pt, vec) for pt in self._time_points]
+
+    @property
+    def time_label_points(self):
+        """Get a list of Point2Ds for the time-of-day text labels for the chart."""
+        if not self._time_points:
+            self._compute_time_pts()
+        txt_hght = self.legend_parameters.text_height * 1.5
+        return [Point2D(pt.x, pt.y - txt_hght) for pt in self._time_points]
+
+    @property
+    def time_labels(self):
+        """Get a list of text strings for the time-of-day labels for the chart."""
+        time_text = []
+        for hr in self.HOUR_LABELS:
+            hr_val = hr if hr <= 12 else hr - 12
+            am_pm = 'PM' if 12 <= hr < 24 else 'AM'
+            if hr_val == 0:
+                hr_val = 12
+            time_text.append('{} {}'.format(hr_val, am_pm))
+        return time_text * len(self._months_int) + ['12 AM']
+
+    @property
     def y_axis_title_text1(self):
         """Text string for the suggested title of the left-side Y-axis."""
         return '{} ({})'.format(self._data_types[0], self._units[0])
@@ -450,30 +487,46 @@ class MonthlyChart(object):
             d_range = self._maximums[j] - self._minimums[j]
             d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
-            prev_y_low = self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
-            prev_y_up = self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
-            for i, data in enumerate(data_arr):
-                # get all of the upper and lower y-values of the data
-                if self._stack:
-                    dat_total = sum(data[-1].values)
-                    prev_y = prev_y_up if dat_total > 0 else prev_y_low
-                    low_vals = self._hour_y_values_stack(
-                        data[0], d_range, min_val, step, prev_y)
-                    up_vals = self._hour_y_values_stack(
-                        data[-1], d_range, min_val, step, prev_y)
-                    if self._is_cumulative(t):  # set the start y so the next data stacks
-                        if dat_total > 0:
-                            prev_y_up = up_vals
-                        else:
-                            prev_y_low = low_vals
-                else:
+            if self._stack:
+                data_arr, _, data_sign = self._sort_data_by_axis_side(data_arr)
+                prev_y_low = self._hour_y_values_base(
+                    data_arr[0][0], d_range, min_val, step)
+                prev_y_up = self._hour_y_values_base(
+                    data_arr[0][0], d_range, min_val, step)
+                for i, (data, sign) in enumerate(zip(data_arr, data_sign)):
+                    if sign == '+/-' and self._is_cumulative(t):
+                        up_vals, low_vals = self._hour_y_values_stack_split(
+                            data, d_range, min_val, step, prev_y_up, prev_y_low)
+                        lines.extend(self._hour_polylines(low_vals, x_dist))
+                        lines.extend(self._hour_polylines(up_vals, x_dist))
+                        prev_y_up = up_vals
+                        prev_y_low = low_vals
+                    else:
+                        prev_y = prev_y_up if sign == '+' else prev_y_low
+                        low_vals = self._hour_y_values_stack(
+                            data[0], d_range, min_val, step, prev_y)
+                        up_vals = self._hour_y_values_stack(
+                            data[-1], d_range, min_val, step, prev_y)
+                        if self._is_cumulative(t):  # set start y so the next data stacks
+                            if sign == '+':
+                                prev_y_up = up_vals
+                            else:
+                                prev_y_low = low_vals
+                        lines.extend(self._hour_polylines(low_vals, x_dist))
+                        lines.extend(self._hour_polylines(up_vals, x_dist))
+                        if len(data) == 3:  # get the middle value if it exists
+                            mid_vals = self._hour_y_values(
+                                data[1], d_range, min_val, step)
+                            lines.extend(self._hour_polylines(mid_vals, x_dist))
+            else:
+                for data in data_arr:
                     low_vals = self._hour_y_values(data[0], d_range, min_val, step)
                     up_vals = self._hour_y_values(data[-1], d_range, min_val, step)
-                lines.extend(self._hour_polylines(low_vals, x_dist))
-                lines.extend(self._hour_polylines(up_vals, x_dist))
-                if len(data) == 3:  # get the middle value if it exists
-                    mid_vals = self._hour_y_values(data[1], d_range, min_val, step)
-                    lines.extend(self._hour_polylines(mid_vals, x_dist))
+                    lines.extend(self._hour_polylines(low_vals, x_dist))
+                    lines.extend(self._hour_polylines(up_vals, x_dist))
+                    if len(data) == 3:  # get the middle value if it exists
+                        mid_vals = self._hour_y_values(data[1], d_range, min_val, step)
+                        lines.extend(self._hour_polylines(mid_vals, x_dist))
         return lines
 
     def _compute_monthly_per_hour_lines(self):
@@ -493,7 +546,8 @@ class MonthlyChart(object):
                 if self._stack:
                     dat_total = sum(data.values)
                     prev_y = prev_y_up if dat_total > 0 else prev_y_low
-                    vals = self._hour_y_values_stack(data, d_range, min_val, step, prev_y)
+                    vals = self._hour_y_values_stack(
+                        data, d_range, min_val, step, prev_y)
                     if self._is_cumulative(t):  # set the start y so the next data stacks
                         if dat_total > 0:
                             prev_y_up = vals
@@ -640,31 +694,88 @@ class MonthlyChart(object):
             d_range = self._maximums[j] - self._minimums[j]
             d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
-            prev_y_low = self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
-            prev_y_up = self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
-            for i, data in enumerate(data_arr):
-                # get all of the upper and lower y-values of the data
-                if self._stack:
-                    dat_total = sum(data[-1].values)
-                    prev_y = prev_y_up if dat_total > 0 else prev_y_low
-                    low_vals = self._hour_y_values_stack(
-                        data[0], d_range, min_val, step, prev_y)
-                    up_vals = self._hour_y_values_stack(
-                        data[-1], d_range, min_val, step, prev_y)
-                    if self._is_cumulative(t):  # set start y so the next data stacks
-                        if dat_total > 0:
-                            prev_y_up = up_vals
-                        else:
-                            prev_y_low = low_vals
-                else:
+            mesh_cols = [colors[self._color_map[j][i]] for i in range(len(data_arr))]
+            if self._stack:
+                data_arr, mesh_cols, data_sign = \
+                    self._sort_data_by_axis_side(data_arr, mesh_cols)
+                prev_y_low = \
+                    self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
+                prev_y_up = \
+                    self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
+                for i, (data, sign) in enumerate(zip(data_arr, data_sign)):
+                    if sign == '+/-' and self._is_cumulative(t):
+                        up_vals, low_vals = self._hour_y_values_stack_split(
+                            data, d_range, min_val, step, prev_y_up, prev_y_low)
+                        verts1, faces1 = self._hour_mesh_components(
+                            prev_y_up, up_vals, x_dist)
+                        verts2, faces2 = self._hour_mesh_components(
+                            prev_y_low, low_vals, x_dist)
+                        prev_y_up = up_vals
+                        prev_y_low = low_vals
+                        verts = verts1 + verts2
+                        st_i = len(verts1)
+                        faces = faces1 + [tuple(v + st_i for v in f) for f in faces2]
+                    else:
+                        prev_y = prev_y_up if sign == '+' else prev_y_low
+                        low_vals = self._hour_y_values_stack(
+                            data[0], d_range, min_val, step, prev_y)
+                        up_vals = self._hour_y_values_stack(
+                            data[-1], d_range, min_val, step, prev_y)
+                        if self._is_cumulative(t):  # set start y so the next data stacks
+                            if sign == '+':
+                                prev_y_up = up_vals
+                            else:
+                                prev_y_low = low_vals
+                        verts, faces = self._hour_mesh_components(
+                            low_vals, up_vals, x_dist)
+                    # create the final colored mesh
+                    mesh_col = [mesh_cols[i]] * len(faces)
+                    meshes.append(Mesh2D(verts, faces, mesh_col))
+            else:
+                for i, data in enumerate(data_arr):
+                    # get all of the upper and lower y-values of the data
                     low_vals = self._hour_y_values(data[0], d_range, min_val, step)
                     up_vals = self._hour_y_values(data[-1], d_range, min_val, step)
-                # get the mesh components from upper/lower values
-                verts, faces = self._hour_mesh_components(low_vals, up_vals, x_dist)
-                # create the final colored mesh
-                mesh_col = [colors[self._color_map[j][i]]] * len(faces)
-                meshes.append(Mesh2D(verts, faces, mesh_col))
+                    verts, faces = self._hour_mesh_components(low_vals, up_vals, x_dist)
+                    # create the final colored mesh
+                    mesh_col = [mesh_cols[i]] * len(faces)
+                    meshes.append(Mesh2D(verts, faces, mesh_col))
         return meshes
+
+    @staticmethod
+    def _sort_data_by_axis_side(data_array, aligned_values=None):
+        """Sort a list of data collections based on whether they're positive/negative.
+
+        Data that has both positive and negative values will be first followed by
+        negative values and then positive values.
+
+        Args:
+            data_array: A list of data collections to be sorted.
+            aligned_values: An optional list of values that aligns with the data_array
+                and will be sorted along with it.
+        """
+        values = range(len(data_array)) if aligned_values is None else aligned_values
+        sort_dict = {'+': [], '-': [], '+/-': []}
+        val_dict = {'+': [], '-': [], '+/-': []}
+        for data, val in zip(data_array, values):
+            pos = all(v >= 0 for v in data[-1]._values)
+            if pos:
+                sort_dict['+'].append(data)
+                val_dict['+'].append(val)
+            else:
+                neg = all(v <= 0 for v in data[-1]._values)
+                if neg:
+                    sort_dict['-'].append(data)
+                    val_dict['-'].append(val)
+                else:
+                    sort_dict['+/-'].append(data)
+                    val_dict['+/-'].append(val)
+        new_data = sort_dict['+/-'] + sort_dict['-'] + sort_dict['+']
+        new_values = val_dict['+/-'] + val_dict['-'] + val_dict['+']
+        data_sign = ['+/-'] * len(sort_dict['+/-']) + \
+            ['-'] * len(sort_dict['-']) + \
+            ['+'] * len(sort_dict['+'])
+        return new_data, new_values, data_sign
 
     def _hour_mesh_components(self, low_vals, up_vals, x_hr_dist):
         """Get the vertices and faces of a mesh from upper/lower lists of values.
@@ -747,6 +858,28 @@ class MonthlyChart(object):
             y_values.append(month_val)
         return y_values
 
+    def _hour_y_values_stack_split(
+            self, data, d_range, minimum, step, st_y_up, st_y_low):
+        """Get lists of y-coordinates from a monthly-per-hour data collection."""
+        data_values = data[-1].values
+        zero_val = self._y_dim * (minimum / d_range)
+        y_values_up, y_values_low = [], []
+        for count, i in enumerate(range(0, len(data_values), step)):
+            month_val_up, month_val_low = [], []
+            for j, val in enumerate(data_values[i:i + step]):
+                rel_y = self._y_dim * ((val - minimum) / d_range)
+                if val >= 0:
+                    month_val_up.append(st_y_up[count][j] + rel_y + zero_val)
+                    month_val_low.append(st_y_low[count][j])
+                else:
+                    month_val_up.append(st_y_up[count][j])
+                    month_val_low.append(st_y_low[count][j] + rel_y + zero_val)
+            month_val_up.append(month_val_up[0])  # loop start/end for each month
+            month_val_low.append(month_val_low[0])  # loop start/end for each month
+            y_values_up.append(month_val_up)
+            y_values_low.append(month_val_low)
+        return y_values_up, y_values_low
+
     def _hour_y_values_base(self, data, d_range, minimum, step):
         """Get a list of base y-coordinates from a monthly-per-hour data collection."""
         y_values = []
@@ -782,7 +915,8 @@ class MonthlyChart(object):
         """Get a list of Y-axis labels using the index of the data in _data_types."""
         format_str = '%.{}f'.format(self.legend_parameters.decimal_count)
         y_axis_text = []
-        interval = (self._maximums[index] - self._minimums[index]) / (self._seg_count - 1)
+        interval = (self._maximums[index] - self._minimums[index]) / \
+            (self._seg_count - 1)
         base_val = self._minimums[index]
         for i in range(self._seg_count):
             val = base_val + (i * interval)
@@ -801,6 +935,19 @@ class MonthlyChart(object):
         for i in range(len(self._months_int)):
             pt = Point2D(start_x + (i * self._x_dim), self._base_point.y)
             self._month_label_points.append(pt)
+
+    def _compute_time_pts(self):
+        """Compute the points for the time lines and labels."""
+        self._time_points = []
+        for i in range(len(self._months_int)):
+            for t in self.HOUR_LABELS:
+                x_val = self._base_point.x + (i * self._x_dim) + (t * self._x_dim / 24)
+                pt = Point2D(x_val, self._base_point.y)
+                self._time_points.append(pt)
+        self._time_points.append(
+            Point2D(self._base_point.x + (len(self._months_int) * self._x_dim),
+                    self._base_point.y)
+        )
 
     def _compute_maximums_minimums(self):
         """Set the maximum and minimum values of the chart using self._grouped_data."""
