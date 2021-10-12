@@ -488,15 +488,16 @@ class MonthlyChart(object):
             d_range = 1 if d_range == 0 else d_range  # catch case of all same values
             min_val = self._minimums[j]
             if self._stack:
-                data_arr, _, data_sign = self._sort_data_by_axis_side(data_arr)
+                data_sign = self._compute_data_sign(data_arr)
                 prev_y_low = self._hour_y_values_base(
                     data_arr[0][0], d_range, min_val, step)
                 prev_y_up = self._hour_y_values_base(
                     data_arr[0][0], d_range, min_val, step)
                 for i, (data, sign) in enumerate(zip(data_arr, data_sign)):
-                    if sign == '+/-' and self._is_cumulative(t):
+                    if sign in ('+/-', '-/+') and self._is_cumulative(t):
+                        d_i = -1 if sign == '+/-' else 0
                         up_vals, low_vals = self._hour_y_values_stack_split(
-                            data, d_range, min_val, step, prev_y_up, prev_y_low)
+                            data, d_range, min_val, step, prev_y_up, prev_y_low, d_i)
                         lines.extend(self._hour_polylines(low_vals, x_dist))
                         lines.extend(self._hour_polylines(up_vals, x_dist))
                         prev_y_up = up_vals
@@ -696,16 +697,16 @@ class MonthlyChart(object):
             min_val = self._minimums[j]
             mesh_cols = [colors[self._color_map[j][i]] for i in range(len(data_arr))]
             if self._stack:
-                data_arr, mesh_cols, data_sign = \
-                    self._sort_data_by_axis_side(data_arr, mesh_cols)
+                data_sign = self._compute_data_sign(data_arr)
                 prev_y_low = \
                     self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
                 prev_y_up = \
                     self._hour_y_values_base(data_arr[0][0], d_range, min_val, step)
                 for i, (data, sign) in enumerate(zip(data_arr, data_sign)):
-                    if sign == '+/-' and self._is_cumulative(t):
+                    if sign in ('+/-', '-/+') and self._is_cumulative(t):
+                        d_i = -1 if sign == '+/-' else 0
                         up_vals, low_vals = self._hour_y_values_stack_split(
-                            data, d_range, min_val, step, prev_y_up, prev_y_low)
+                            data, d_range, min_val, step, prev_y_up, prev_y_low, d_i)
                         verts1, faces1 = self._hour_mesh_components(
                             prev_y_up, up_vals, x_dist)
                         verts2, faces2 = self._hour_mesh_components(
@@ -743,39 +744,25 @@ class MonthlyChart(object):
         return meshes
 
     @staticmethod
-    def _sort_data_by_axis_side(data_array, aligned_values=None):
-        """Sort a list of data collections based on whether they're positive/negative.
-
-        Data that has both positive and negative values will be first followed by
-        negative values and then positive values.
-
-        Args:
-            data_array: A list of data collections to be sorted.
-            aligned_values: An optional list of values that aligns with the data_array
-                and will be sorted along with it.
-        """
-        values = range(len(data_array)) if aligned_values is None else aligned_values
-        sort_dict = {'+': [], '-': [], '+/-': []}
-        val_dict = {'+': [], '-': [], '+/-': []}
-        for data, val in zip(data_array, values):
+    def _compute_data_sign(data_array):
+        """Get the sign of data collections (+, -, +/-, -/+)."""
+        data_sign = []
+        for data in data_array:
             pos = all(v >= 0 for v in data[-1]._values)
-            if pos:
-                sort_dict['+'].append(data)
-                val_dict['+'].append(val)
+            neutral = all(v == 0 for v in data[0]._values)
+            if pos and neutral:
+                data_sign.append('+')
             else:
-                neg = all(v <= 0 for v in data[-1]._values)
-                if neg:
-                    sort_dict['-'].append(data)
-                    val_dict['-'].append(val)
+                neg = all(v <= 0 for v in data[0]._values)
+                if neg and not neutral:
+                    data_sign.append('-')
                 else:
-                    sort_dict['+/-'].append(data)
-                    val_dict['+/-'].append(val)
-        new_data = sort_dict['+/-'] + sort_dict['-'] + sort_dict['+']
-        new_values = val_dict['+/-'] + val_dict['-'] + val_dict['+']
-        data_sign = ['+/-'] * len(sort_dict['+/-']) + \
-            ['-'] * len(sort_dict['-']) + \
-            ['+'] * len(sort_dict['+'])
-        return new_data, new_values, data_sign
+                    neutral2 = all(v == 0 for v in data[-1]._values)
+                    if neutral2:
+                        data_sign.append('-/+')
+                    else:
+                        data_sign.append('+/-')
+        return data_sign
 
     def _hour_mesh_components(self, low_vals, up_vals, x_hr_dist):
         """Get the vertices and faces of a mesh from upper/lower lists of values.
@@ -859,9 +846,9 @@ class MonthlyChart(object):
         return y_values
 
     def _hour_y_values_stack_split(
-            self, data, d_range, minimum, step, st_y_up, st_y_low):
+            self, data, d_range, minimum, step, st_y_up, st_y_low, d_index):
         """Get lists of y-coordinates from a monthly-per-hour data collection."""
-        data_values = data[-1].values
+        data_values = data[d_index].values
         zero_val = self._y_dim * (minimum / d_range)
         y_values_up, y_values_low = [], []
         for count, i in enumerate(range(0, len(data_values), step)):
