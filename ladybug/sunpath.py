@@ -178,8 +178,12 @@ class Sunpath(object):
         """Check if a datetime is within the daylight saving time."""
         if not self.daylight_saving_period:
             return False
-        return self.daylight_saving_period.st_time.moy <= datetime.moy < \
-            self.daylight_saving_period.end_time.moy
+        if self.daylight_saving_period.is_reversed:
+            return self.daylight_saving_period.end_time.moy <= datetime.moy or \
+                self.daylight_saving_period.st_time.moy >= datetime.moy
+        else:
+            return self.daylight_saving_period.st_time.moy <= datetime.moy < \
+                self.daylight_saving_period.end_time.moy
 
     def calculate_sun(self, month, day, hour, is_solar_time=False):
         """Get Sun data for an hour of the year.
