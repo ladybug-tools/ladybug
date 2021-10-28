@@ -999,6 +999,8 @@ class MonthlyChart(object):
                 if unit in UNITS[key]:
                     data_types.append(TYPESDICT[key]())
                     break
+            else:
+                data_types.append(GenericType)
 
         # convert hourly data collections into monthly-per-hour collections
         if self._time_interval == 'Hourly':
