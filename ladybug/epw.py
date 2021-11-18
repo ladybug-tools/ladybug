@@ -427,7 +427,8 @@ class EPW(object):
 
         # parse typical and extreme periods into analysis periods.
         week_data = header_lines[2].split(',')
-        num_weeks = int(week_data[1]) if len(week_data) >= 2 else 0
+        num_weeks = int(week_data[1]) if len(week_data) >= 2 \
+            and week_data[1] != '' else 0
         st_ind = 2
         for _ in xrange(num_weeks):
             week_dat = week_data[st_ind:st_ind + 4]
@@ -447,7 +448,8 @@ class EPW(object):
 
         # parse the monthly ground temperatures in the header.
         grnd_data = header_lines[3].strip().split(',')
-        num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 else 0
+        num_depths = int(grnd_data[1]) if len(grnd_data) >= 2 \
+            and grnd_data[1] != '' else 0
         st_ind = 2
         for _ in xrange(num_depths):
             header_meta = dict(self._metadata)  # copying the metadata dictionary
