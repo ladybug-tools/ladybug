@@ -281,7 +281,12 @@ class SQLiteResult(object):
 
         # format the data such that we have one list for each of the header rows
         if isinstance(run_period, list):  # multiple run periods
-            chunks = [len(runper) for runper in run_period]
+            if report_frequency == 'Monthly':
+                chunks = [len(runper.months_int) for runper in run_period]
+            elif report_frequency == 'Daily':
+                chunks = [len(runper.doys_int) for runper in run_period]
+            else:
+                chunks = [len(runper) for runper in run_period]
             if units == 'kWh':
                 all_values = self._partition_and_convert_timeseries_chunks(data, chunks)
             else:
@@ -808,10 +813,10 @@ class SQLiteResult(object):
             chunks: A list of integers for the chunking pattern (eg. [24, 24, 8760]).
         """
         n_lists = int(len(data) / sum(chunks))
-        zero_cum_chunks = [0] + SQLiteResult._accumulate(chunks)
+        zero_sum_chunks = [0] + SQLiteResult._accumulate(chunks)
         all_values = []
         for j, chunk in enumerate(chunks):
-            start = zero_cum_chunks[j] * n_lists
+            start = zero_sum_chunks[j] * n_lists
             day_vals = []
             for i in range(0, chunk * n_lists, n_lists):
                 day_vals.append([val[0] / 3600000. for val in
