@@ -34,7 +34,7 @@ from __future__ import division
 from ._datacollectionbase import BaseCollection
 from .header import Header
 from .analysisperiod import AnalysisPeriod
-from .dt import DateTime
+from .dt import DateTime, Date, Time
 
 from collections import OrderedDict
 try:
@@ -62,6 +62,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         * average
         * bounds
         * datetimes
+        * datetime_strings
         * header
         * is_continuous
         * is_mutable
@@ -100,17 +101,20 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
         .. code-block:: python
 
-                {
-                "header": {}  # A Ladybug Header,
-                "values": []  # An array of values,
-                "datetimes": []  # An array of datetimes,
-                "validated_a_period": True  # Boolean for whether header
-                                            # analysis_period is valid
-                }
+            {
+                "type": "HourlyDiscontinuous",
+                "header": {},  # Ladybug Header
+                "values": [],  # array of values
+                "datetimes": [],  # array of datetimes
+                "validated_a_period": True  # boolean for valid analysis_period
+            }
         """
-        assert 'header' in data, 'Required keyword "header" is missing!'
-        assert 'values' in data, 'Required keyword "values" is missing!'
-        assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
+        assert 'type' in data, 'Required key "type" is missing!'
+        assert 'HourlyDiscontinuous' in data['type'], \
+            'Expected HourlyDiscontinuous collection. Got {}.'.format(data['type'])
+        assert 'header' in data, 'Required key "header" is missing!'
+        assert 'values' in data, 'Required key "values" is missing!'
+        assert 'datetimes' in data, 'Required key "datetimes" is missing!'
         collection = cls(Header.from_dict(data['header']), data['values'],
                          [DateTime.from_array(dat) for dat in data['datetimes']])
         if 'validated_a_period' in data:
@@ -456,7 +460,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
             'values': self._values,
             'datetimes': [dat.to_array() for dat in self.datetimes],
             'validated_a_period': self._validated_a_period,
-            'type': self.__class__.__name__
+            'type': self._collection_type
         }
 
     def _xxrange(self, start, end, step_count):
@@ -568,6 +572,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         * average
         * bounds
         * datetimes
+        * datetime_strings
         * header
         * is_continuous
         * is_mutable
@@ -609,13 +614,17 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
         .. code-block:: python
 
-                {
-                "header": {}  # A Ladybug Header,
-                "values": []  # An array of values,
-                }
+            {
+                "type": HourlyContinuousCollection,
+                "header": {},  # A Ladybug Header
+                "values": []  # An array of values
+            }
         """
-        assert 'header' in data, 'Required keyword "header" is missing!'
-        assert 'values' in data, 'Required keyword "values" is missing!'
+        assert 'type' in data, 'Required key "type" is missing!'
+        assert data['type'] == 'HourlyContinuous', \
+            'Expected HourlyContinuous collection. Got {}.'.format(data['type'])
+        assert 'header' in data, 'Required key "header" is missing!'
+        assert 'values' in data, 'Required key "values" is missing!'
         return cls(Header.from_dict(data['header']), data['values'])
 
     @property
@@ -934,7 +943,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         return {
             'header': self.header.to_dict(),
             'values': self._values,
-            'type': self.__class__.__name__
+            'type': self._collection_type
         }
 
     def _get_analysis_period_subset(self, a_per):
@@ -1030,6 +1039,7 @@ class DailyCollection(BaseCollection):
         * average
         * bounds
         * datetimes
+        * datetime_strings
         * header
         * is_continuous
         * is_mutable
@@ -1055,6 +1065,15 @@ class DailyCollection(BaseCollection):
         self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
+
+    @property
+    def datetime_strings(self):
+        """Get a list of datetime strings for this collection.
+
+        These provides a human-readable way to interpret the datetimes.
+        """
+        lp_yr = self.header.analysis_period.is_leap_year
+        return [str(Date.from_doy(d, lp_yr)) for d in self._datetimes]
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -1268,6 +1287,7 @@ class MonthlyCollection(BaseCollection):
         * average
         * bounds
         * datetimes
+        * datetime_strings
         * header
         * is_continuous
         * is_mutable
@@ -1294,6 +1314,14 @@ class MonthlyCollection(BaseCollection):
         self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
+
+    @property
+    def datetime_strings(self):
+        """Get a list of datetime strings for this collection.
+
+        These provides a human-readable way to interpret the datetimes.
+        """
+        return [self.header.analysis_period.MONTHNAMES[int(d)] for d in self._datetimes]
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -1410,6 +1438,7 @@ class MonthlyPerHourCollection(BaseCollection):
         * average
         * bounds
         * datetimes
+        * datetime_strings
         * header
         * is_continuous
         * is_mutable
@@ -1436,6 +1465,20 @@ class MonthlyPerHourCollection(BaseCollection):
         self._datetimes = tuple(datetimes)
         self.values = values
         self._validated_a_period = False
+
+    @property
+    def datetime_strings(self):
+        """Get a list of datetime strings for this collection.
+
+        These provides a human-readable way to interpret the datetimes.
+        """
+        return [
+            '{} {}'.format(
+                self.header.analysis_period.MONTHNAMES[int(d[0])],
+                Time(d[1], d[2])
+            ) 
+            for d in self._datetimes
+        ]
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.

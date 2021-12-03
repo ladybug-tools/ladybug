@@ -87,6 +87,21 @@ class DataTypeBase(object):
             raise ValueError(
                 'Data Type {} could not be recognized'.format(data['data_type']))
 
+    @classmethod
+    def from_string(cls, data_type_string):
+        """Create a data type from a string.
+
+        Args:
+            data: A data type string.
+        """
+        # first, see if it is a standard data type
+        d_type_class = data_type_string.title().replace(' ', '')
+        if d_type_class in cls._type_enumeration._TYPES:
+            clss = cls._type_enumeration._TYPES[d_type_class]
+            return clss()
+        # assume that it's a Generic data type
+        return cls._type_enumeration._GENERICTYPE.from_string(data_type_string)
+
     def is_unit_acceptable(self, unit, raise_exception=True):
         """Check if a certain unit is acceptable for the data type.
 
@@ -169,6 +184,10 @@ class DataTypeBase(object):
             'data_type': self.__class__.__name__,
             'type': 'DataTypeBase'
         }
+
+    def to_string(self):
+        """Get data type as a string."""
+        return self.name
 
     def _is_numeric(self, values):
         """Check to be sure values are numbers before doing numerical operations."""

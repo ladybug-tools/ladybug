@@ -63,6 +63,16 @@ class GenericType(DataTypeBase):
         self._point_in_time = point_in_time
         self._cumulative = cumulative
 
+    @classmethod
+    def from_string(cls, data_type_string):
+        """Create a Generic data type from a string.
+
+        Args:
+            data: A data type string.
+        """
+        props = data_type_string.split(' | ')
+        return cls(*props)
+
     def to_ip(self, values, from_unit):
         """Return values in IP and the units to which the values have been converted."""
         return values, from_unit
@@ -85,3 +95,9 @@ class GenericType(DataTypeBase):
             'point_in_time': self._point_in_time,
             'cumulative': self._cumulative
         }
+
+    def to_string(self):
+        """Get data type as a string."""
+        return '{} | {} | {} | {} | {} | {} | {} | {}'.format(
+            self.name, self.units[0], self._min, self._max, self._abbreviation,
+            self._unit_descr, self._point_in_time, self._cumulative)

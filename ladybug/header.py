@@ -75,6 +75,16 @@ class Header(object):
         metadata = data['metadata'] if 'metadata' in data else None
         return cls(data_type, data['unit'], ap, metadata)
 
+    @classmethod
+    def from_csv_strings(cls, csv_strings, analysis_period):
+        """Load a header from a list of CSV strings.
+        
+        Args:
+            csv_strings: A list of CSV strings representing the header.
+            analysis_period: An AnalysisPeriod object for the header.
+        """
+        data_type = DataTypeBase.from_string(csv_strings[0])
+
     @property
     def data_type(self):
         """Get a DataType object."""
@@ -133,6 +143,20 @@ class Header(object):
             'metadata': self.metadata,
             'type': 'Header',
         }
+    
+    def to_csv_strings(self, metadata_per_row=False):
+        """Return the header as a list of CSV strings.
+        
+        Args:
+            metadata_per_row: Boolean to note whether each metadata variable
+                should be a separate item in the resulting list or all items
+                should be on a single line. (Default: False).
+        """
+        meta_str = ['{}: {}'.format(k, v) for k, v in self.metadata.items()]
+        if metadata_per_row:
+            return [self.data_type.to_string(), self.unit] + meta_str
+        else:
+            return [self.data_type.to_string(), self.unit, ' | '.join(meta_str)]
 
     def ToString(self):
         """Overwrite .NET ToString."""
