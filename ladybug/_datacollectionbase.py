@@ -59,13 +59,15 @@ class BaseCollection(object):
         .. code-block:: python
 
             {
-            "header": {},  # A Ladybug Header
-            "values": [],  # An array of values
-            "datetimes": [],  # An array of datetimes
-            "validated_a_period": True  # Boolean for whether header analysis_period
-                                        # is valid
+                "header": {},  # Ladybug Header
+                "values": [],  # array of values
+                "datetimes": [],  # array of datetimes
+                "validated_a_period": True  # boolean for valid analysis_period
             }
         """
+        assert 'type' in data, 'Required key "type" is missing!'
+        assert cls._collection_type == data['type'], \
+            'Expected {}. Got {}.'.format(cls._collection_type, data['type'])
         assert 'header' in data, 'Required keyword "header" is missing!'
         assert 'values' in data, 'Required keyword "values" is missing!'
         assert 'datetimes' in data, 'Required keyword "datetimes" is missing!'
@@ -101,6 +103,14 @@ class BaseCollection(object):
         This will always be True when a collection is derived from a continuous one.
         """
         return self._validated_a_period
+
+    @property
+    def datetime_strings(self):
+        """Get a list of datetime strings for this collection.
+
+        These provide a human-readable way to interpret the datetimes.
+        """
+        return [str(d) for d in self._datetimes]
 
     @property
     def bounds(self):
@@ -373,8 +383,7 @@ class BaseCollection(object):
         same number of values and have matching datetimes.
 
         Args:
-            data_collection: The Data Collection which you want to test if this
-                collection is aligned with.
+            data_collection: The Data Collection for which alignment will be tested.
 
         Returns:
             True if collections are aligned, False if not aligned
@@ -428,6 +437,21 @@ class BaseCollection(object):
         collection._validated_a_period = self._validated_a_period
         return collection
 
+    def is_metadata_aligned(self, data_collection):
+        """Check if the metadata in this Data Collection header is aligned with another.
+
+        Aligned metadata means that the number of metadata items is the same
+        between the two collections.
+
+        Args:
+            data_collection: The Data Collection for which metadata alignment
+                will be tested.
+
+        Returns:
+            True if the metadata in the collections are aligned, False if not aligned.
+        """
+        return len(self.header.metadata) == len(data_collection.header.metadata)
+
     def duplicate(self):
         """Get a copy of this Data Collection."""
         return self.__copy__()
@@ -439,7 +463,7 @@ class BaseCollection(object):
             'values': self._values,
             'datetimes': self.datetimes,
             'validated_a_period': self._validated_a_period,
-            'type': self.__class__.__name__
+            'type': self._collection_type
         }
 
     @staticmethod
@@ -508,8 +532,10 @@ class BaseCollection(object):
         same number of values and have matching datetimes.
 
         Args:
-            data_collections: A list of Data Collections for which you want to
-                test if they are al aligned with one another.
+            data_collections: A list of Data Collections for which alignment
+                will be tested.
+            raise_exception: Boolean to note if an exception should be raised
+                when collections are not aligned with one another.
 
         Returns:
             True if collections are aligned, False if not aligned
@@ -587,6 +613,34 @@ class BaseCollection(object):
             for i in xrange(val_len):
                 result[i] = funct(*[col[i] for col in data_collections])
             return result
+
+    @staticmethod
+    def are_metadatas_aligned(data_collections, raise_exception=True):
+        """Test if a series of Data Collections have aligned metadata.
+
+        Aligned metadata means that the number of metadata items is the same
+        between the two collections.
+
+        Args:
+            data_collections: A list of Data Collections for which metadata
+                alignment will be tested.
+            raise_exception: Boolean to note if an exception should be raised
+                when collection metadatas are not aligned with one another.
+
+        Returns:
+            True if metadatas are aligned, False if not aligned
+        """
+        if len(data_collections) > 1:
+            first_coll = data_collections[0]
+            for coll in data_collections[1:]:
+                if not first_coll.is_metadata_aligned(coll):
+                    if raise_exception:
+                        error_msg = '{} Data Collection metadata is not aligned with '\
+                            '{} Data Collection.'.format(
+                                first_coll.header.data_type, coll.header.data_type)
+                        raise ValueError(error_msg)
+                    return False
+        return True
 
     def _time_aggregated_collection(self, timestep):
         """Get a time-aggregated version of this collection."""
