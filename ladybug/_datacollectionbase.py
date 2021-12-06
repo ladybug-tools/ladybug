@@ -110,7 +110,7 @@ class BaseCollection(object):
 
         These provide a human-readable way to interpret the datetimes.
         """
-        return [str(d) for d in self._datetimes]
+        return [str(d) for d in self.datetimes]
 
     @property
     def bounds(self):

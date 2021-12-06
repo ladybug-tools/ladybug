@@ -163,7 +163,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         Return:
             A new Data Collection with filtered data
         """
-        _moys = tuple(int(hour * 60) for hour in hoys)
+        _moys = tuple(int(round(hour * 60)) for hour in hoys)
         return self.filter_by_moys(_moys)
 
     def filter_by_moys(self, moys):
@@ -769,7 +769,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         """
         existing_hoys = self.header.analysis_period.hoys
         hoys = [h for h in hoys if h in existing_hoys]
-        _moys = tuple(int(hour * 60) for hour in hoys)
+        _moys = tuple(int(round(hour * 60)) for hour in hoys)
         return self.filter_by_moys(_moys)
 
     def filter_by_moys(self, moys):
@@ -1321,7 +1321,7 @@ class MonthlyCollection(BaseCollection):
 
         These provides a human-readable way to interpret the datetimes.
         """
-        return [self.header.analysis_period.MONTHNAMES[int(d)] for d in self._datetimes]
+        return [AnalysisPeriod.MONTHNAMES[int(d)] for d in self._datetimes]
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -1473,10 +1473,7 @@ class MonthlyPerHourCollection(BaseCollection):
         These provides a human-readable way to interpret the datetimes.
         """
         return [
-            '{} {}'.format(
-                self.header.analysis_period.MONTHNAMES[int(d[0])],
-                Time(d[1], d[2])
-            ) 
+            '{} {}'.format(AnalysisPeriod.MONTHNAMES[int(d[0])], Time(d[1], d[2])) 
             for d in self._datetimes
         ]
 

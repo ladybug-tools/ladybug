@@ -57,12 +57,12 @@ class Header(object):
 
         .. code-block:: python
 
-                {
+            {
                 "data_type": {},  # Type of data (e.g. Temperature)
                 "unit": "",  # string
                 "analysis_period": {},  # A Ladybug AnalysisPeriod
                 "metadata": {}  # A dictionary of metadata
-                }
+            }
         """
         # assign default values
         assert 'data_type' in data, 'Required Header key "data_type" is missing!'
@@ -84,6 +84,15 @@ class Header(object):
             analysis_period: An AnalysisPeriod object for the header.
         """
         data_type = DataTypeBase.from_string(csv_strings[0])
+        if len(csv_strings) > 2:
+            all_props = [p for prop in csv_strings[2:] for p in prop.split(' | ')]
+            metadata = {}
+            for p in all_props:
+                p_split = p.split(': ')
+                metadata[p_split[0]] = p_split[1]
+        else:
+            metadata = None
+        return cls(data_type, csv_strings[1], analysis_period, metadata)
 
     @property
     def data_type(self):
