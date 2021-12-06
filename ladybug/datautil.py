@@ -1,6 +1,8 @@
 """Utilities for serializing Data Collections to and from files."""
 import os
 import json
+
+from ladybug.dt import DateTime
 try:  # check if we are in IronPython
     import cPickle as pickle
 except ImportError:  # wea re in cPython
@@ -11,6 +13,7 @@ from .datacollection import BaseCollection, HourlyDiscontinuousCollection, \
     MonthlyPerHourCollection
 from .header import Header
 from .analysisperiod import AnalysisPeriod
+from .dt import DateTime, Date
 
 
 def collections_to_csv(data_collections, folder, file_name='data.csv'):
@@ -86,7 +89,7 @@ def collections_from_csv(data_file):
     with open(data_file) as inf:
         # first load all of the header information
         for row in inf:
-            row_data = row.split(',')
+            row_data = row.strip().split(',')
             headers.append(row_data[1:])
             if row_data[0] in coll_types:
                 coll_class = coll_types[row_data[0]]
@@ -97,11 +100,32 @@ def collections_from_csv(data_file):
         for row in inf:
             row_data = row.split(',')
             datetimes.append(row_data[0])
-            values.extend((float(v) for v in row_data[1:]))
+            values.append([float(v) for v in row_data[1:]])
 
     # reconstruct data collections from the loaded data
-    for head in headers:
-        pass
+    heads = [Header.from_csv_strings(h, aper) for h in zip(*headers)]
+    t_vals = zip(*values)
+    if coll_class == HourlyContinuousCollection:
+        data = [HourlyContinuousCollection(h, v) for h, v in zip(heads, t_vals)]
+    elif coll_class == HourlyDiscontinuousCollection:
+        dts = [DateTime.from_date_time_string(d) for d in datetimes]
+        data = [HourlyDiscontinuousCollection(h, v, dts) for h, v in zip(heads, t_vals)]
+    elif coll_class == MonthlyCollection:
+        inv_map = {v: k for k, v in AnalysisPeriod.MONTHNAMES.items()}
+        dts = [inv_map[d] for d in datetimes]
+        data = [MonthlyCollection(h, v, dts) for h, v in zip(heads, t_vals)]
+    elif coll_class == DailyCollection:
+        dts = [Date.from_date_string(d, aper.is_leap_year) for d in datetimes]
+        data = [DailyCollection(h, v, dts) for h, v in zip(heads, t_vals)]
+    elif coll_class == MonthlyPerHourCollection:
+        inv_map = {v: k for k, v in AnalysisPeriod.MONTHNAMES.items()}
+        dt_strs = [d.split(' ') for d in datetimes]
+        dts = [(inv_map[d[0]], int(d[1].split(':')[0]), int(d[1].split(':')[1]))
+               for d in dt_strs]
+        data = [MonthlyPerHourCollection(h, v, dts) for h, v in zip(heads, t_vals)]
+    for d in data:
+        d._validated_a_period = True
+    return data
 
 
 def collections_to_json(data_collections, folder, file_name='data.json', indent=None):

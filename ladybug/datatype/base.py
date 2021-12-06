@@ -63,11 +63,12 @@ class DataTypeBase(object):
                     "data_type": ""  # the class name of the data type as a string
                 }
         """
+        # load up all of the types if they aren't already loaded
         assert 'name' in data, 'Required keyword "name" is missing!'
         assert 'data_type' in data, 'Required keyword "data_type" is missing!'
         if cls._type_enumeration is None:
             cls._type_enumeration = _DataTypeEnumeration(import_modules=False)
-
+        # load the data type from the dictionary
         if data['data_type'] == 'GenericType':
             assert 'base_unit' in data, \
                 'Keyword "base_unit" is missing and is required for GenericType.'
@@ -94,6 +95,9 @@ class DataTypeBase(object):
         Args:
             data: A data type string.
         """
+        # load up all of the types if they aren't already loaded
+        if cls._type_enumeration is None:
+            cls._type_enumeration = _DataTypeEnumeration(import_modules=False)
         # first, see if it is a standard data type
         d_type_class = data_type_string.title().replace(' ', '')
         if d_type_class in cls._type_enumeration._TYPES:
