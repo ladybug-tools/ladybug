@@ -904,8 +904,6 @@ class EPW(object):
         this is a full numeric field (i.e. 23.6) and not an integer representation
         with tenths. Valid values range from -70C to 70 C. Missing value for this
         field is 99.9.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(6)
 
@@ -916,8 +914,6 @@ class EPW(object):
         This is the dew point temperature in C at the time indicated. Note that this is
         a full numeric field (i.e. 23.6) and not an integer representation with tenths.
         Valid values range from -70 C to 70 C. Missing value for this field is 99.9
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(7)
 
@@ -927,8 +923,6 @@ class EPW(object):
 
         This is the Relative Humidity in percent at the time indicated. Valid values
         range from 0% to 110%. Missing value for this field is 999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(8)
 
@@ -939,8 +933,6 @@ class EPW(object):
         This is the station pressure in Pa at the time indicated. Valid values range
         from 31,000 to 120,000. (These values were chosen from the standard barometric
         pressure for all elevations of the World). Missing value for this field is 999999
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(9)
 
@@ -951,8 +943,6 @@ class EPW(object):
         This is the Extraterrestrial Horizontal Radiation in Wh/m2. It is not currently
         used in EnergyPlus calculations. It should have a minimum value of 0; missing
         value for this field is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(10)
 
@@ -965,8 +955,6 @@ class EPW(object):
         of the atmosphere during the number of minutes preceding the time indicated).
         It is not currently used in EnergyPlus calculations. It should have a minimum
         value of 0; missing value for this field is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(11)
 
@@ -978,8 +966,6 @@ class EPW(object):
         it is calculated from the Opaque Sky Cover field as shown in the following
         explanation. It should have a minimum value of 0; missing value for this field
         is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(12)
 
@@ -992,8 +978,6 @@ class EPW(object):
         number of minutes preceding the time indicated.) It is not currently used in
         EnergyPlus calculations. It should have a minimum value of 0; missing value
         for this field is 9999.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(13)
 
@@ -1006,8 +990,6 @@ class EPW(object):
         sun's rays, during the number of minutes preceding the time indicated.) If the
         field is missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such
         missing values are totaled and presented at the end of the runperiod.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(14)
 
@@ -1020,8 +1002,6 @@ class EPW(object):
         during the number of minutes preceding the time indicated.) If the field is
         missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such missing
         values are totaled and presented at the end of the runperiod
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(15)
 
@@ -1035,8 +1015,6 @@ class EPW(object):
         currently used in EnergyPlus calculations. It should have a minimum value of 0;
         missing value for this field is 999999 and will be considered missing if greater
         than or equal to 999900.
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(16)
 
@@ -1050,9 +1028,6 @@ class EPW(object):
         It is not currently used in EnergyPlus calculations. It should have a minimum
         value of 0; missing value for this field is 999999 and will be considered missing
         if greater than or equal to 999900.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(17)
 
@@ -1066,9 +1041,6 @@ class EPW(object):
         It is not currently used in EnergyPlus calculations. It should have a minimum
         value of 0; missing value for this field is 999999 and will be considered missing
         if greater than or equal to 999900.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(18)
 
@@ -1080,9 +1052,6 @@ class EPW(object):
         the sky's zenith in tens of Cd/m2 during the number of minutes preceding
         the time indicated.) It is not currently used in EnergyPlus calculations.
         It should have a minimum value of 0; missing value for this field is 9999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(19)
 
@@ -1094,9 +1063,6 @@ class EPW(object):
         East=90.0, South=180.0, West=270.0. (Wind direction in degrees at the time
         indicated. If calm, direction equals zero.) Values can range from 0 to 360.
         Missing value is 999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(20)
 
@@ -1106,9 +1072,6 @@ class EPW(object):
 
         This is the wind speed in m/sec. (Wind speed at time indicated.) Values can
         range from 0 to 40. Missing value is 999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(21)
 
@@ -1120,9 +1083,6 @@ class EPW(object):
         covered. 10 is total coverage). (Amount of sky dome in tenths covered by clouds
         or obscuring phenomena at the hour indicated at the time indicated.) Minimum
         value is 0; maximum value is 10; missing value is 99.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(22)
 
@@ -1137,9 +1097,6 @@ class EPW(object):
         Infrared Radiation Intensity is missing and then it is used to calculate
         Horizontal Infrared Radiation Intensity. Minimum value is 0; maximum value is
         10; missing value is 99.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(23)
 
@@ -1150,9 +1107,6 @@ class EPW(object):
         This is the value for visibility in km. (Horizontal visibility at the time
         indicated.) It is not currently used in EnergyPlus calculations. Missing
         value is 9999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(24)
 
@@ -1163,9 +1117,6 @@ class EPW(object):
         This is the value for ceiling height in m. (77777 is unlimited ceiling height.
         88888 is cirroform ceiling.) It is not currently used in EnergyPlus calculations.
         Missing value is 99999
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(25)
 
@@ -1178,9 +1129,6 @@ class EPW(object):
         assumed. Since the primary use of these fields (Present Weather Observation and
         Present Weather Codes) is for rain/wet surfaces, a missing observation field or
         a missing weather code implies no rain.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(26)
 
@@ -1197,9 +1145,6 @@ class EPW(object):
         WeatherConverter processing. Also note that the most important fields are those
         representing liquid precipitation - where the surfaces of the building would be
         wet. EnergyPlus uses "Snow Depth" to determine if snow is on the ground.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(27)
 
@@ -1212,9 +1157,6 @@ class EPW(object):
         Precipitation Depth field). It is not currently used in EnergyPlus calculations
         (primarily due to the unreliability of the reporting of this value). Missing
         value is 999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(28)
 
@@ -1224,9 +1166,6 @@ class EPW(object):
 
         This is the value for Aerosol Optical Depth in thousandths. It is not currently
         used in EnergyPlus calculations. Missing value is .999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(29)
 
@@ -1237,9 +1176,6 @@ class EPW(object):
         This is the value for Snow Depth in cm. This field is used to tell when snow
         is on the ground and, thus, the ground reflectance may change. Missing value
         is 999.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(30)
 
@@ -1249,9 +1185,6 @@ class EPW(object):
 
         This is the value for Days Since Last Snowfall. It is not currently used in
         EnergyPlus calculations. Missing value is 99.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(31)
 
@@ -1261,9 +1194,6 @@ class EPW(object):
 
         The ratio (unitless) of reflected solar irradiance to global horizontal
         irradiance. It is not currently used in EnergyPlus.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(32)
 
@@ -1276,9 +1206,6 @@ class EPW(object):
         not missing, then it is used and overrides the "precipitation" flag as rainfall.
         Conversely, if the precipitation flag shows rain and this field is missing or
         zero, it is set to 1.5 (mm).
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs\
-/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(33)
 
@@ -1288,9 +1215,6 @@ class EPW(object):
 
         The period of accumulation (hr) for the liquid precipitation depth field.
         It is not currently used in EnergyPlus.
-
-        Read more at: https://energyplus.net/sites/all/modules/custom/nrel_custom/\
-pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         """
         return self._get_data_by_field(34)
 
@@ -1301,8 +1225,8 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
         This value in degrees Celsius is derived from the Horizontal Infrared
         Radiation Intensity in Wh/m2. It represents the long wave radiant
         temperature of the sky
-        Read more at: https://bigladdersoftware.com/epx/docs/8-9/engineering-reference\
-/climate-calculations.html#energyplus-sky-temperature-calculation
+        Read more at: https://bigladdersoftware.com/epx/docs/9-6/engineering-reference/\
+climate-calculations.html#energyplus-sky-temperature-calculation
         """
         # create sky temperature header
         sky_temp_header = Header(data_type=temperature.SkyTemperature(), unit='C',
@@ -1631,9 +1555,8 @@ pdfs/pdfs_v8.4.0/AuxiliaryPrograms.pdf (Chapter 2.9.1)
 class EPWFields(object):
     """EPW weather file fields.
 
-    Read more at https://energyplus.net/sites/all/modules/custom/nrel_custom/pdfs/\
-pdfs_v8.4.0/AuxiliaryPrograms.pdf
-    (Chapter 2.9.1)
+    Read more at https://bigladdersoftware.com/epx/docs/9-6/auxiliary-programs/\
+energyplus-weather-file-epw-data-dictionary.html
     """
 
     _fields = {
