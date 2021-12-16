@@ -5,9 +5,11 @@ import pytest
 
 from ladybug.datatype.speed import Speed
 from ladybug.datatype.generic import GenericType
+from ladybug.datatype.fraction import Fraction
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.header import Header
-from ladybug.datacollection import HourlyDiscontinuousCollection
+from ladybug.datacollection import HourlyDiscontinuousCollection, \
+    HourlyContinuousCollection
 from ladybug.dt import DateTime
 from ladybug.epw import EPW
 from ladybug.windrose import WindRose
@@ -723,3 +725,18 @@ def test_wind_polygons():
     chk_poly_num = 4
     w.colored_mesh
     assert chk_poly_num == len(w.windrose_lines)
+
+
+def test_with_constant_values():
+    """Test drawing of a wind rose with constant values."""
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/tokyo.epw')
+    epw = EPW(epw_path)
+
+    header = Header(Fraction(), 'fraction', AnalysisPeriod())
+    values = [0] * 8760
+    data = HourlyContinuousCollection(header, values)
+
+    wind_rose = WindRose(epw.wind_direction, epw.wind_speed)
+    wind_rose = WindRose(epw.wind_direction, data)
+
+    assert isinstance(wind_rose.colored_mesh, Mesh2D)
