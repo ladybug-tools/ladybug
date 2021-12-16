@@ -445,6 +445,8 @@ class WindRose(object):
         assert self._number_of_directions > 2, 'The number of directions must be ' \
             'greater then three to plot the wind rose. Currently the ' \
             'number_of_directions parameter is: {}'.format(self._number_of_directions)
+        assert not all(len(h) == 0 for h in self.histogram_data), \
+            'No data is available to plot on the wind rose. Mesh cannot be drawn.'
 
         # Reset computed graphics to account for changes to cached viz properties
         self._compass = None
@@ -458,7 +460,7 @@ class WindRose(object):
             # Compute the array for calm rose
             zero_data = [[0] for _ in self.histogram_data]
             zero_data_stacked = [[[0]] for _ in self.histogram_data]
-            zero_poly_array, zero_color_array = WindRose._compute_colored_mesh_array(
+            zero_poly_array, zero_color_array = self._compute_colored_mesh_array(
                 zero_data, zero_data_stacked, self.bin_vectors, 0, min_bar_radius,
                 show_freq=False)
 
@@ -468,14 +470,12 @@ class WindRose(object):
         min_data = min(self.analysis_values) if self.show_zeros else min(flat_data)
         bin_count = self.legend_parameters.segment_count
         data_range = (min_data, max_data)
-        histogram_data_stacked, bin_range = WindRose._histogram_data_nested(
+        histogram_data_stacked, bin_range = self._histogram_data_nested(
             self.histogram_data, data_range, bin_count)
         try:
             data_step = bin_range[1] - bin_range[0]
         except IndexError:  # all of the wind data is the same value
-            raise ValueError(
-                'All data is the same value of : {}\nWind rose mesh could not be '
-                'drawn.'.format(self._analysis_data_collection[0]))
+            data_step = 0
 
         if not self.show_freq:
             for i in range(self._number_of_directions):
@@ -484,7 +484,7 @@ class WindRose(object):
                 if len(vals) > 0:
                     mean_val = sum(vals) / float(len(vals))
                     histogram_data_stacked[i] = [[mean_val for b in a] for a in stack]
-        poly_array, color_array = WindRose._compute_colored_mesh_array(
+        poly_array, color_array = self._compute_colored_mesh_array(
             self.histogram_data, histogram_data_stacked, self.bin_vectors,
             min_bar_radius, max_bar_radius, self.show_freq)
 
@@ -856,7 +856,10 @@ class WindRose(object):
         # Calculate number of hours per frequency segment
         for bar_data_vals in histogram_data:
             _analysis = histogram(bar_data_vals, bins)
-            _histogram_data_nested.append(_analysis)
+            if len(_analysis) == 0:  # all values are the same
+                _histogram_data_nested.append([bar_data_vals])
+            else:  # it is a normal histogram
+                _histogram_data_nested.append(_analysis)
 
         return _histogram_data_nested, bins
 
