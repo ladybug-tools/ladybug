@@ -33,7 +33,7 @@ class EPW(object):
     that house various properties (eg. Location). All timeseries data sets are
     represented as HourlyContinuousCollection objects with values and datetimes
     corresponding to those in the EPW file.
-    
+
     In order to handle the fact that EPW values run from 1:00 on Jan 1 to
     midnight of the following year, all timeseries data will have the ending
     value moved to the start of the hourly data collection upon import from
@@ -218,7 +218,7 @@ class EPW(object):
             if dt.hour != 0:
                 hr, dy = dt.hour, dt.day
             else:
-                hr= 24
+                hr = 24
                 try:
                     dy = dt.sub_hour(24).day
                 except ValueError:  # negative datetime for the year; it's 31 Dec
@@ -406,7 +406,8 @@ class EPW(object):
         self._metadata = {
             'source': self._location.source,
             'country': self._location.country,
-            'city': self._location.city
+            'city': self._location.city,
+            'time-zone': self._location.time_zone
         }
 
     def _import_header(self, header_lines):
