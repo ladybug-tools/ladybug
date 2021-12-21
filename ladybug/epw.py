@@ -1444,7 +1444,7 @@ climate-calculations.html#energyplus-sky-temperature-calculation
             "longitude %.2f\n" % -self.location.longitude + \
             "time_zone %d\n" % (-self.location.time_zone * 15) + \
             "site_elevation %.1f\n" % self.location.elevation + \
-            "weather_data_file_unit 1\n"
+            "weather_data_file_units 1\n"
 
     def to_dict(self):
         """Convert the EPW to a dictionary."""
