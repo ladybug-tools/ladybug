@@ -360,27 +360,51 @@ class EPW(object):
         assert self._file_path.lower().endswith('epw'), '{} is not an .epw file. \n' \
             'It does not possess the .epw file extension.'.format(self._file_path)
 
-        with open(self._file_path, readmode) as epwin:
-            # import the header data to the object
-            line = epwin.readline()
-            original_header_load = bool(self._is_header_loaded)
-            if not self._is_header_loaded:
-                self._import_location(line)
-                header_lines = [line] + [epwin.readline() for i in xrange(7)]
-                self._import_header(header_lines)
-            if import_header_only:
-                return
-
-            # import the body of the data to the object
-            if original_header_load:
-                for _ in xrange(7):
-                    epwin.readline()
-            body_lines = []
-            while line:
+        try:
+            with open(self._file_path, readmode) as epwin:
+                # import the header data to the object
                 line = epwin.readline()
-                body_lines.append(line)
-            del body_lines[-1]  # last line is a blank space
-            self._import_body(body_lines)
+                original_header_load = bool(self._is_header_loaded)
+                if not self._is_header_loaded:
+                    self._import_location(line)
+                    header_lines = [line] + [epwin.readline() for i in xrange(7)]
+                    self._import_header(header_lines)
+                if import_header_only:
+                    return
+
+                # import the body of the data to the object
+                if original_header_load:
+                    for _ in xrange(7):
+                        epwin.readline()
+                body_lines = []
+                while line:
+                    line = epwin.readline()
+                    body_lines.append(line)
+                del body_lines[-1]  # last line is a blank space
+                self._import_body(body_lines)
+        except UnicodeDecodeError:  # let's hope it's just latin characters
+            # TODO: do a better job of trying to sense the encoding
+            with open(self._file_path, readmode, encoding='latin-1') as epwin:
+                # import the header data to the object
+                line = epwin.readline()
+                original_header_load = bool(self._is_header_loaded)
+                if not self._is_header_loaded:
+                    self._import_location(line)
+                    header_lines = [line] + [epwin.readline() for i in xrange(7)]
+                    self._import_header(header_lines)
+                if import_header_only:
+                    return
+
+                # import the body of the data to the object
+                if original_header_load:
+                    for _ in xrange(7):
+                        epwin.readline()
+                body_lines = []
+                while line:
+                    line = epwin.readline()
+                    body_lines.append(line)
+                del body_lines[-1]  # last line is a blank space
+                self._import_body(body_lines)
 
     def _import_location(self, line):
         """Set the EPW location from the first line of the EPW.

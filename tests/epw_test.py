@@ -43,6 +43,18 @@ def test_import_tokyo_epw():
     assert epw.ashrae_climate_zone == '3A'
 
 
+def test_import_non_utf_epw():
+    """Test import of an epw with non-UTF characters."""
+    path = './tests/assets/epw/mannheim.epw'
+    epw = EPW(path)
+
+    dbt = epw.dry_bulb_temperature
+    skyt = epw.sky_temperature  # test sky temperature calculation
+    assert epw.is_data_loaded
+    assert len(dbt) == 8760
+    assert len(skyt) == 8760
+
+
 def test_epw_from_file_string():
     """Test initialization of EPW from a file string."""
     relative_path = './tests/assets/epw/chicago.epw'
