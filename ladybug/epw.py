@@ -384,7 +384,7 @@ class EPW(object):
                 self._import_body(body_lines)
         except UnicodeDecodeError:  # let's hope it's just latin characters
             # TODO: do a better job of trying to sense the encoding
-            with open(self._file_path, readmode, encoding='latin-1') as epwin:
+            with open(self._file_path, readmode, errors='ignore') as epwin:
                 # import the header data to the object
                 line = epwin.readline()
                 original_header_load = bool(self._is_header_loaded)
