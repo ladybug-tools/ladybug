@@ -442,7 +442,7 @@ class AnalysisPeriod(object):
 
         The length will be number of hours * timestep.
         """
-        if self.st_hour == 1 and self.end_hour == 23:  # use fast method
+        if self.st_hour == 0 and self.end_hour == 23:  # use fast method
             if not self._is_reversed:
                 return (self.end_time.int_hoy + 1 - self.st_time.int_hoy) * self.timestep
             else:
