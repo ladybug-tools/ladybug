@@ -47,4 +47,3 @@ class RValue(DataTypeBase):
 
 class ClothingInsulation(RValue):
     _abbreviation = 'Rclo'
-    _unit_descr = {0: 'No Clothing', 0.5: 'T-shirt + Shorts', 1: '3-piece Suit'}
