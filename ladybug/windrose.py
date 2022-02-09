@@ -466,17 +466,19 @@ class WindRose(object):
 
         # Calculate stacked_data
         flat_data = [b for a in self.histogram_data for b in a]
-        max_data = max(flat_data)
-        min_data = min(self.analysis_values) if self.show_zeros else min(flat_data)
+        max_data = self._legend_parameters.max if self._legend_parameters is not None \
+            and self._legend_parameters.max is not None else max(flat_data)
+        if self.show_zeros:
+            min_data = min(self.analysis_values)
+        else:
+            min_data = self._legend_parameters.min if self._legend_parameters is not \
+                None and self._legend_parameters.min is not None else min(flat_data)
         bin_count = self.legend_parameters.segment_count
         data_range = (min_data, max_data)
         histogram_data_stacked, bin_range = self._histogram_data_nested(
             self.histogram_data, data_range, bin_count)
-        try:
-            data_step = bin_range[1] - bin_range[0]
-        except IndexError:  # all of the wind data is the same value
-            data_step = 0
 
+        # Compute colors
         if not self.show_freq:
             for i in range(self._number_of_directions):
                 stack = histogram_data_stacked[i]
@@ -487,20 +489,6 @@ class WindRose(object):
         poly_array, color_array = self._compute_colored_mesh_array(
             self.histogram_data, histogram_data_stacked, self.bin_vectors,
             min_bar_radius, max_bar_radius, self.show_freq)
-
-        # Compute colors
-        # If show_freq, assign colors to intervals. Else keep averages.
-        if self.show_freq:
-            for i, mean_val in enumerate(color_array):
-                for j in range(len(bin_range) - 1):
-                    if bin_range[j] <= mean_val < bin_range[j+1]:
-                        color_array[i] = j
-                        break
-            if self.show_zeros:
-                color_array = [c + 1 for c in color_array]
-
-            # convert bin legend interval to the average interval (interval midpoint)
-            color_array = [(c * data_step) + min_data for c in color_array]
         poly_array += zero_poly_array
         color_array += zero_color_array
 
@@ -893,14 +881,12 @@ class WindRose(object):
         color_array = []
         if show_freq:
             for stack in hist_data_stacked:
-                i = 0
                 for j in range(len(stack)):
                     try:
-                        mean_val = sum(stack[j]) / float(len(stack[j]))
+                        mean_val = sum(stack[j]) / len(stack[j])
                         color_array.append(mean_val)
                     except ZeroDivisionError:
                         mean_val = 0
-                    i += 1
         else:
             for stack in hist_data_stacked:
                 # Value is already averaged

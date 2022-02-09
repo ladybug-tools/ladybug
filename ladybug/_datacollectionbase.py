@@ -842,7 +842,7 @@ class BaseCollection(object):
                 zip([0, 0, 0.9, 1, 1.5, 1.99],
                     ['a', 'b', 'c', 'd', 'e', 'f']),
                     (0, 1, 2), key=lambda k: k[0])
-            # >> [[(0, 'a'), (0, 'b'), (0.9, 'c')], [(1, 'd'), (1.5, 'e'), (1.99, 'f')]]
+            # >> [[], [(0, a), (0, b), (0.9, c)], [(1, d), (1.5, e), (1.99, f)], []]
         """
         if key is None:
             def key(v):
@@ -853,13 +853,17 @@ class BaseCollection(object):
         bin_bound_num = len(bins)
 
         # Init histogram bins
-        hist = [[] for i in range(bin_bound_num - 1)]
+        hist = [[] for i in range(bin_bound_num + 1)]
         bin_index = 0
 
         for val in vals:
             k = key(val)
             # Ignore values out of range
-            if k < min_bound or k > max_bound:
+            if k < min_bound:
+                hist[0].append(val)
+                continue
+            elif k >= max_bound:
+                hist[-1].append(val)
                 continue
 
             # This loop will iterate through the bin upper bounds.
@@ -867,7 +871,7 @@ class BaseCollection(object):
             # of the bin_index is updated, and the loop is broken
             for i in range(bin_index, bin_bound_num - 1):
                 if k < bins[i + 1]:
-                    hist[i].append(val)
+                    hist[i + 1].append(val)
                     bin_index = i
                     break
         return hist
