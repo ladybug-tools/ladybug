@@ -1215,7 +1215,8 @@ class LegendParametersCategorized(LegendParameters):
         if categories is not None:
             assert isinstance(categories, Iterable) \
                 and not isinstance(categories, (str, dict, bytes, bytearray)), \
-                'Category names should be a list or tuple. Got {}'.format(type(categories))
+                'Category names should be a list or tuple. Got {}'.format(
+                    type(categories))
             self._category_names = tuple(str(x) for x in categories)
             assert len(self._category_names) == len(self._domain) + 1, 'The length of ' \
                 'category_names must be one more than length of the colors for a ' \

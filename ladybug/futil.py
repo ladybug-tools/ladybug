@@ -217,8 +217,8 @@ def _download_py2(link, path, __hdr__):
         raise Exception(' Download failed with the error:\n{}'.format(e))
 
     with open(path, 'wb') as outf:
-        for l in u:
-            outf.write(l)
+        for line in u:
+            outf.write(line)
     u.close()
 
 
@@ -231,8 +231,8 @@ def _download_py3(link, path, __hdr__):
         raise Exception(' Download failed with the error:\n{}'.format(e))
 
     with open(path, 'wb') as outf:
-        for l in u:
-            outf.write(l)
+        for line in u:
+            outf.write(line)
     u.close()
 
 

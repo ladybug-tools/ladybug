@@ -202,7 +202,7 @@ def test_frequency_intervals():
     assert w.frequency_intervals_compass == pytest.approx(test_freq_int, abs=1e-10)
     assert w.frequency_intervals_mesh == pytest.approx(test_freq_int, abs=1e-10)
 
-    # Test changing interals from 18
+    # Test changing intervals from 18
     # Reduce
     w.frequency_intervals_compass = 10.0
     test_freq_int = 10.0
@@ -559,8 +559,8 @@ def test_histogram_data_nested():
     # Check
     assert len(chk_histstack) == len(histstack)
     for cbins, bins in zip(chk_histstack, histstack):
-        assert len(cbins) == len(bins)
-        for cbin, bin in zip(cbins, bins):
+        assert len(cbins) + 2 == len(bins)
+        for cbin, bin in zip(cbins, bins[1:]):
             assert len(cbin) == len(bin)
             for cval, val in zip(cbin, bin):
                 assert abs(cval - val) <= 1e-10, (cval, val)
@@ -633,8 +633,8 @@ def test_color_array():
     chk_color_array = [(c * data_step) + min_val for c in chk_color_array]
 
     assert len(chk_color_array) == len(w._color_array)
-    for cc, c in zip(chk_color_array, w._color_array):
-        assert abs(cc - c) < 1e-10
+    for cc, c in zip(chk_color_array[:-1], w._color_array):
+        assert abs(cc - c) < data_step
 
     # Check freq=True, zeros=True
     # Modify range for easier calcs
@@ -656,8 +656,8 @@ def test_color_array():
     chk_color_array = [(c * zero_data_step) + zero_min_val for c in chk_color_array]
     chk_color_array += [0, 0, 0, 0]
     assert len(chk_color_array) == len(w._color_array)
-    for cc, c in zip(chk_color_array, w._color_array):
-        assert abs(cc - c) < 1e-10
+    for cc, c in zip(chk_color_array[:-1], w._color_array):
+        assert abs(cc - c) < zero_data_step
 
     # Check freq=False, zeros=False
     w = WindRose(dir_data, spd_data, 4)
@@ -684,8 +684,8 @@ def test_color_array():
     chk_color_array += [0, 0, 0, 0]
 
     assert len(chk_color_array) == len(w._color_array)
-    for cc, c in zip(chk_color_array, w._color_array):
-        assert abs(cc - c) < 1e-10
+    for cc, c in zip(chk_color_array[:-1], w._color_array):
+        assert abs(cc - c) < zero_data_step
 
 
 def test_wind_polygons():

@@ -1439,36 +1439,36 @@ def test_arange():
 
 
 def test_histogram():
-    """Test the windrose histogram."""
+    """Test the histogram."""
 
     # Test simple 2 div
     bin_arr = linspace(0, 2, 3)
     assert bin_arr == [0, 1, 2]
     vals = [0, 0, 0, 1, 1, 1, 2, 2]
     hist = histogram(vals, bin_arr)
-    assert hist == [[0, 0, 0], [1, 1, 1]]
+    assert hist == [[], [0, 0, 0], [1, 1, 1], [2, 2]]
 
     # Test out of bounds with 3 divisions
     bin_arr = linspace(0, 3, 4)
     vals = [0, 0, 0, 1, 1, 1, 2, 2]
     hist = histogram(vals, bin_arr)
-    assert hist == [[0, 0, 0], [1, 1, 1], [2, 2]]
+    assert hist == [[], [0, 0, 0], [1, 1, 1], [2, 2], []]
 
     # Test out of bounds with 2 divisions
     bin_arr = linspace(-3, 3, 3)
     vals = [-1, -2, 10, 0, 0, 0, 1, 1, 1, 2, 2, 34]
     hist = histogram(vals, bin_arr)
-    assert hist == [[-2, -1], [0, 0, 0, 1, 1, 1, 2, 2]], hist
+    assert hist == [[], [-2, -1], [0, 0, 0, 1, 1, 1, 2, 2], [10, 34]], hist
 
     # Test edge bounds
     bin_arr = linspace(0, 3, 3)
     vals = [0, 0, 0, 1, 1, 1, 2, 2, 3, 3]
     hist = histogram(vals, bin_arr)
-    assert hist == [[0, 0, 0, 1, 1, 1], [2, 2]], hist
+    assert hist == [[], [0, 0, 0, 1, 1, 1], [2, 2], [3, 3]], hist
 
     # Test edge bounds 2
     hist = histogram([0, 0, 0.9, 1, 1.5, 1.99, 2, 3], (0, 1, 2, 3))
-    assert hist == [[0, 0, 0.9], [1, 1.5, 1.99], [2]], hist
+    assert hist == [[], [0, 0, 0.9], [1, 1.5, 1.99], [2], [3]], hist
 
 
 def test_histogram_circular():
