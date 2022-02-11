@@ -70,9 +70,12 @@ class GraphicContainer(object):
                 self.legend_parameters.ordinal_dictionary = data_type.unit_descr
                 sorted_keys = sorted(data_type.unit_descr.keys())
                 if self.legend.is_min_default:
-                    self.legend_parameters.min = sorted_keys[0]
+                    self.legend_parameters._min = sorted_keys[0]
                 if self.legend.is_max_default:
-                    self.legend_parameters.max = sorted_keys[-1]
+                    self.legend_parameters._max = sorted_keys[-1]
+                assert self.legend_parameters._min <= self.legend_parameters._max, \
+                    'Legend min is greater than legend max. {} > {}.'.format(
+                        self.legend_parameters._min, self.legend_parameters._max)
                 if self.legend_parameters.is_segment_count_default:
                     try:  # try to set the number of segments to align with ordinal text
                         min_i = sorted_keys.index(self.legend_parameters.min)
