@@ -115,7 +115,8 @@ class Compass(object):
 
     @property
     def spacing_factor(self):
-        """Get or set a number for the fraction of radius occupied by labels and ticks."""
+        """Get or set a number for the fraction of radius occupied by labels and ticks.
+        """
         return self._spacing_factor
 
     @spacing_factor.setter
@@ -176,7 +177,9 @@ class Compass(object):
         """Get a list of circles for the orthographic altitude labels."""
         circles = []
         for angle in self.ALTITUDES:
-            circles.append(Arc2D(self.center, self.radius * math.cos(math.radians(angle))))
+            circles.append(
+                Arc2D(self.center, self.radius * math.cos(math.radians(angle)))
+            )
         return circles
 
     @property
@@ -210,7 +213,8 @@ class Compass(object):
             spacing_fac = self.radius * 0.01  # spacing factor
             ang = math.radians(angle)
             pt3d = Point3D(math.cos(ang), 0, math.sin(ang))
-            add_y = (self.point3d_to_stereographic(pt3d, 1).x * self.radius) - spacing_fac
+            add_y = (self.point3d_to_stereographic(pt3d, 1).x * self.radius) \
+                - spacing_fac
             pts.append(Point2D(self.center.x, self.center.y + add_y))
         if self._north_angle != 0:
             pts = [pt.rotate(self._north_angle, self.center) for pt in pts]

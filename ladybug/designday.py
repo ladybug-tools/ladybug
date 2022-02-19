@@ -276,7 +276,7 @@ class DesignDay(object):
                 for pressure at sea level.
         """
         db_key = 'DB996' if not use_990 else 'DB990'
-        perc_str = '99.6' if not use_990 else '99.0'
+        perc_str = '99.6' if not use_990 else '99'
         pressure = pressure if pressure is not None else 101325
         db_cond = DryBulbCondition(float(ashrae_dict[db_key]), 0)
         hu_cond = HumidityCondition('Wetbulb', float(ashrae_dict[db_key]), pressure)
@@ -284,7 +284,7 @@ class DesignDay(object):
                                 float(ashrae_dict['WD_DB996']))
         date_obj = Date(int(ashrae_dict['Month']), 21)
         sky_cond = ASHRAEClearSky(date_obj, 0)
-        name = '{}% Heating Design Day for {}'.format(perc_str, location.city)
+        name = '{} Heating Design Day {}% Condns DB'.format(location.city, perc_str)
         return cls(name, 'WinterDesignDay', location,
                    db_cond, hu_cond, ws_cond, sky_cond)
 
@@ -312,7 +312,7 @@ class DesignDay(object):
         """
         db_key = 'DB004' if not use_010 else 'DB010'
         wb_key = 'WB_DB004' if not use_010 else 'WB_DB010'
-        perc_str = '0.4' if not use_010 else '1.0'
+        perc_str = '0.4' if not use_010 else '1'
         pressure = pressure if pressure is not None else 101325
         db_cond = DryBulbCondition(float(ashrae_dict[db_key]), float(ashrae_dict['DBR']))
         hu_cond = HumidityCondition('Wetbulb', float(ashrae_dict[wb_key]), pressure)
@@ -323,7 +323,8 @@ class DesignDay(object):
             sky_cond = ASHRAETau(date_obj, tau[0], tau[1])
         else:
             sky_cond = ASHRAEClearSky(date_obj)
-        name = '{}% Cooling Design Day for {}'.format(perc_str, location.city)
+        name = '{} Cooling Design Day {}% Condns DB=>MWB'.format(
+            location.city, perc_str)
         return cls(name, 'SummerDesignDay', location,
                    db_cond, hu_cond, ws_cond, sky_cond)
 

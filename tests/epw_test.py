@@ -394,6 +394,18 @@ def test_to_ddy():
     os.remove(ddy_path)
 
 
+def test_to_ddy_monthly_cooling():
+    """Test to_ddy_monthly_cooling."""
+    path = './tests/assets/epw/chicago.epw'
+    epw = EPW(path)
+
+    ddy_path = './tests/assets/epw/chicago_epw_monthly.ddy'
+    epw.to_ddy_monthly_cooling(ddy_path)
+    assert os.path.isfile(ddy_path)
+    assert os.stat(ddy_path).st_size > 1
+    os.remove(ddy_path)
+
+
 def test_to_wea():
     """Test to_wea."""
     path = './tests/assets/epw/chicago.epw'
