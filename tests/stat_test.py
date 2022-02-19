@@ -56,7 +56,7 @@ def test_annual_heating_design_days():
     ann_hdd_90 = stat.annual_heating_design_day_990
 
     assert ann_hdd_96.day_type == 'WinterDesignDay'
-    assert ann_hdd_96.name == '99.6% Heating Design Day for Chicago Ohare Intl Ap'
+    assert ann_hdd_96.name == 'Chicago Ohare Intl Ap Heating Design Day 99.6% Condns DB'
     assert ann_hdd_96.analysis_period.st_month == \
         ann_hdd_96.analysis_period.end_month == \
         ann_hdd_96.sky_condition.date.month == 1
@@ -71,7 +71,7 @@ def test_annual_heating_design_days():
     assert isinstance(ann_hdd_96.sky_condition, ASHRAEClearSky)
     assert ann_hdd_96.sky_condition.clearness == 0
 
-    assert ann_hdd_90.name == '99.0% Heating Design Day for Chicago Ohare Intl Ap'
+    assert ann_hdd_90.name == 'Chicago Ohare Intl Ap Heating Design Day 99% Condns DB'
     assert ann_hdd_90.dry_bulb_condition.dry_bulb_max == \
         ann_hdd_90.humidity_condition.humidity_value == -16.6
 
@@ -84,7 +84,7 @@ def test_annual_cooling_design_days():
     ann_cdd_10 = stat.annual_cooling_design_day_010
 
     assert ann_cdd_04.day_type == 'SummerDesignDay'
-    assert ann_cdd_04.name == '0.4% Cooling Design Day for TOKYO HYAKURI'
+    assert ann_cdd_04.name == 'TOKYO HYAKURI Cooling Design Day 0.4% Condns DB=>MWB'
     assert ann_cdd_04.analysis_period.st_month == \
         ann_cdd_04.analysis_period.end_month == \
         ann_cdd_04.sky_condition.date.month == 8
@@ -100,7 +100,7 @@ def test_annual_cooling_design_days():
     assert ann_cdd_04.sky_condition.tau_b == 0.546
     assert ann_cdd_04.sky_condition.tau_d == 1.827
 
-    assert ann_cdd_10.name == '1.0% Cooling Design Day for TOKYO HYAKURI'
+    assert ann_cdd_10.name == 'TOKYO HYAKURI Cooling Design Day 1% Condns DB=>MWB'
     assert ann_cdd_10.dry_bulb_condition.dry_bulb_max == 30.9
     assert ann_cdd_10.humidity_condition.humidity_value == 25.8
 
@@ -121,6 +121,30 @@ def test_monthly_cooling_design_days():
     ddy_path = './tests/assets/ddy/chicago_monthly.ddy'
     monthly_ddy = DDY(stat.location, m_ddy_050)
     monthly_ddy.save(ddy_path)
+
+
+def test_to_ddy():
+    """Test the to_ddy method."""
+    relative_path = './tests/assets/stat/chicago.stat'
+    stat = STAT(relative_path)
+
+    ddy_path = './tests/assets/stat/chicago_stat.ddy'
+    stat.to_ddy(ddy_path)
+    assert os.path.isfile(ddy_path)
+    assert os.stat(ddy_path).st_size > 1
+    os.remove(ddy_path)
+
+
+def test_to_ddy_monthly_cooling():
+    """Test the to_ddy_monthly_cooling method."""
+    relative_path = './tests/assets/stat/chicago.stat'
+    stat = STAT(relative_path)
+
+    ddy_path = './tests/assets/stat/chicago_stat_monthly.ddy'
+    stat.to_ddy_monthly_cooling(ddy_path)
+    assert os.path.isfile(ddy_path)
+    assert os.stat(ddy_path).st_size > 1
+    os.remove(ddy_path)
 
 
 def test_typical_extreme_weeks():

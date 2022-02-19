@@ -2,6 +2,9 @@
 from __future__ import division
 
 import os
+import math
+
+from ladybug_geometry.geometry2d.pointvector import Vector2D
 
 from .dt import Date
 from .analysisperiod import AnalysisPeriod
@@ -1291,6 +1294,7 @@ climate-calculations.html#energyplus-sky-temperature-calculation
         pressure = round(avg_pres) if avg_pres != 999999 else 101325
         avg_mon_temp = self.dry_bulb_temperature.average_monthly()
         hr_count = int(87.6 * percentile * 2)
+        per_name = int(percentile) if int(percentile) == percentile else percentile
 
         if day_type == 'WinterDesignDay':  # create winter design day criteria
             # get temperature at percentile and indices of coldest hours
@@ -1298,12 +1302,15 @@ climate-calculations.html#energyplus-sky-temperature-calculation
             _, indices = self.dry_bulb_temperature.lowest_values(hr_count)
             # get average wind speed and direction at coldest hours
             wind_speed = round(sum(self.wind_speed[i] for i in indices) / hr_count, 1)
-            wind_dir = round(sum(self.wind_direction[i] for i in indices) / hr_count)
+            rel_dirs = [math.radians(self.wind_direction[i]) for i in indices]
+            avg_dir = Vector2D.circular_mean(rel_dirs)
+            wind_dir = int(math.degrees(avg_dir))
+            wind_dir = wind_dir + 360 if wind_dir < 0 else wind_dir
             # get the date as the 21st of the coldest month
             date_obj = Date(avg_mon_temp.lowest_values(1)[1][0] + 1, 21)
             # return the design day object
-            day_name = '{}% Heating Design Day for {}'.format(
-                100 - percentile, self.location.city)
+            day_name = '{} Heating Design Day {}% Condns DB'.format(
+                self.location.city, 100 - per_name)
             return DesignDay.from_design_day_properties(
                 day_name, day_type, self.location, date_obj, temp, 0,
                 'Wetbulb', temp, pressure, wind_speed, wind_dir,
@@ -1317,7 +1324,10 @@ climate-calculations.html#energyplus-sky-temperature-calculation
             rh = rel_humid_from_db_dpt(temp, dew_pt)
             wb_temp = round(wet_bulb_from_db_rh(temp, rh, pressure), 1)
             wind_speed = round(sum(self.wind_speed[i] for i in indices) / hr_count, 1)
-            wind_dir = round(sum(self.wind_direction[i] for i in indices) / hr_count)
+            rel_dirs = [math.radians(self.wind_direction[i]) for i in indices]
+            avg_dir = Vector2D.circular_mean(rel_dirs)
+            wind_dir = int(math.degrees(avg_dir))
+            wind_dir = wind_dir + 360 if wind_dir < 0 else wind_dir
             # get the date as the 21st of the hottest month
             date_obj = Date(avg_mon_temp.highest_values(1)[1][0] + 1, 21)
             # compute the daily range of temperature from the days of the hottest month
@@ -1329,8 +1339,8 @@ climate-calculations.html#energyplus-sky-temperature-calculation
                     temp_ranges.append(max(day) - min(day))
             temp_range = round(sum(temp_ranges) / len(temp_ranges), 1)
             # return the design day object
-            day_name = '{}% Cooling Design Day for {}'.format(
-                percentile, self.location.city)
+            day_name = '{} Cooling Design Day {}% Condns DB=>MWB'.format(
+                self.location.city, per_name)
             return DesignDay.from_design_day_properties(
                 day_name, day_type, self.location, date_obj, temp, temp_range,
                 'Wetbulb', wb_temp, pressure, wind_speed, wind_dir,
@@ -1341,7 +1351,7 @@ climate-calculations.html#energyplus-sky-temperature-calculation
                 '"WinterDesignDay"'.format(day_type))
 
     def best_available_design_days(self, percentile=0.4):
-        """Get the best available heating + cooling design days from this EPW.
+        """Get the best available sensible heating + cooling design days from this EPW.
 
         This method will first check if there is a heating or cooling design day
         that meets the input percentile within the EPW itself. If None is
@@ -1372,6 +1382,66 @@ climate-calculations.html#energyplus-sky-temperature-calculation
         else:
             cooling = self.approximate_design_day('SummerDesignDay', percentile)
         return heating, cooling
+
+    def monthly_cooling_design_days(self, percentile=5):
+        """Get a list of 12 monthly cooling design days from this EPW.
+
+        Note that these design days are always derived from analysis of the annual
+        data within the EPW, which is usually less accurate than the monthly
+        design days available via a STAT or DDY file. However, such data is not
+        always availabe in these files and so this method gives a means of
+
+        Args:
+            percentile: A number between 0 and 50 for the percentile difference
+                from the most extreme conditions within each month to be used for
+                the design day. Typical values are 10, 5, 2, and 0.4. Note that
+                5% aligns with an annual precentile of 0.4%. (Default: 5).
+
+        Returns:
+            A list with 12 design day objects. These represent cooling design
+            days ranging from January to December.
+        """
+        # get values used across all cooling design days
+        avg_pres = self.atmospheric_station_pressure.average
+        pressure = round(avg_pres) if avg_pres != 999999 else 101325
+        per_name = int(percentile) if int(percentile) == percentile else percentile
+
+        # loop through the months and create the design days
+        design_days = []
+        for month in range(1, 13):
+            aper = AnalysisPeriod(st_month=month, end_month=month)
+            # get temperature at percentile and indices of hottest hours
+            db_temp = self.dry_bulb_temperature.filter_by_analysis_period(aper)
+            hr_count = int((len(db_temp) * percentile * 2) / 100)
+            temp = db_temp.percentile(100 - percentile)
+            _, indices = db_temp.highest_values(hr_count)
+            # get average humidity, wind speed and direction at hottest hours
+            dp_temp = self.dew_point_temperature.filter_by_analysis_period(aper)
+            dew_pt = sum(dp_temp[i] for i in indices) / hr_count
+            rh = rel_humid_from_db_dpt(temp, dew_pt)
+            wb_temp = round(wet_bulb_from_db_rh(temp, rh, pressure), 1)
+            w_speed = self.wind_speed.filter_by_analysis_period(aper)
+            wind_speed = round(sum(w_speed[i] for i in indices) / hr_count, 1)
+            w_dir = self.wind_direction.filter_by_analysis_period(aper)
+            rel_dirs = [math.radians(w_dir[i]) for i in indices]
+            avg_dir = Vector2D.circular_mean(rel_dirs)
+            wind_dir = int(math.degrees(avg_dir))
+            wind_dir = wind_dir + 360 if wind_dir < 0 else wind_dir
+            # compute the daily range of temperature from the days of the hottest month
+            temp_ranges = []
+            for day in db_temp.group_by_day().values():
+                if day != []:
+                    temp_ranges.append(max(day) - min(day))
+            temp_range = round(sum(temp_ranges) / len(temp_ranges), 1)
+            # return the design day object
+            day_name = '{} {} {}% Condns DB=>MCWB'.format(
+                self.location.city, aper.MONTHNAMES[month], per_name)
+            m_d_day = DesignDay.from_design_day_properties(
+                day_name, 'SummerDesignDay', self.location, Date(month, 21),
+                temp, temp_range, 'Wetbulb', wb_temp, pressure, wind_speed, wind_dir,
+                'ASHRAEClearSky', [1.0])
+            design_days.append(m_d_day)
+        return design_days
 
     def convert_to_ip(self):
         """Convert all Data Collections of this EPW object to IP units.
@@ -1415,6 +1485,46 @@ climate-calculations.html#energyplus-sky-temperature-calculation
         # get the design day objects
         des_days = self.best_available_design_days(percentile)
         # write the DDY
+        if not file_path.lower().endswith('.ddy'):
+            file_path += '.ddy'
+        ddy = DDY(self.location, des_days)
+        ddy.write(file_path)
+        return file_path
+
+    def to_ddy_monthly_cooling(
+            self, file_path, annual_percentile=0.4, monthly_percentile=5):
+        """Produce a DDY file with 1 heating and 12 cooling design days.
+
+        The heating design day represents a cold and completely dark day whereas
+        the cooling design days represent the warmest conditions in each month.
+        This type of DDY file is useful when the peak cooling might not be driven
+        by warm outdoor temperatures but instead by the highest-intensity
+        solar condition, which may not conincide with the highest temperature.
+
+        Args:
+            file_path: Full file path for output ddy file.
+            annual_percentile: A number between 0 and 50 for the percentile difference
+                from the most extreme annual conditions within the EPW to be used for
+                the heating design day. Typical values are 0.4 and 1.0. (Default: 0.4).
+            monthly_percentile: A number between 0 and 50 for the percentile difference
+                from the most extreme conditions within each month to be used for the
+                cooling design days. Typical values are 10, 5, 2, and 0.4. (Default: 5).
+        """
+        # get the heating design day object
+        if annual_percentile == 0.4 and self.annual_heating_design_day_996 is not None:
+            heating = self.annual_heating_design_day_996
+        elif annual_percentile == 1 and self.annual_heating_design_day_990 is not None:
+            heating = self.annual_heating_design_day_990
+        else:
+            heating = self.approximate_design_day('WinterDesignDay', annual_percentile)
+        # get the cooling design day objects
+        cooling = self.monthly_cooling_design_days(monthly_percentile)
+        ann_eq = round(monthly_percentile / 12, 1)
+        ann_eq = int(ann_eq) if int(ann_eq) == ann_eq else ann_eq
+        for cd in cooling:
+            cd.name = '{} ({}% Condns DB=>MWB)'.format(cd.name, ann_eq)
+        # write the DDY
+        des_days = [heating] + cooling
         if not file_path.lower().endswith('.ddy'):
             file_path += '.ddy'
         ddy = DDY(self.location, des_days)

@@ -13,6 +13,7 @@ from .designday import DesignDay
 from .designday import DryBulbCondition
 from .designday import HumidityCondition
 from .designday import WindCondition
+from .ddy import DDY
 from .dt import Date
 from .location import Location
 
@@ -100,14 +101,17 @@ class STAT(object):
     _windd_patterns = tuple(re.compile(
         r"Monthly Wind Direction %[\s\S]*" + dir + r"\s(.*)") for dir in _wind_dir_names)
 
-    __slots__ = ('_file_path', '_winter_des_day_dict', '_summer_des_day_dict',
-                 '_monthly_wind_dirs', '_location', '_ashrae_climate_zone',
-                 '_koppen_climate_zone', '_extreme_cold_week', '_extreme_hot_week',
-                 '_typical_weeks', '_monthly_db_50', '_monthly_wb_50', '_monthly_db_range_50',
-                 '_monthly_wb_range_50', '_monthly_db_100', '_monthly_wb_100', '_monthly_db_20',
-                 '_monthly_wb_20', '_monthly_db_04', '_monthly_wb_04', '_monthly_wind',
-                 '_stand_press_at_elev', '_monthly_tau_beam', '_monthly_tau_diffuse',
-                 '_header', '_body')
+    __slots__ = (
+        '_file_path', '_winter_des_day_dict', '_summer_des_day_dict',
+        '_monthly_wind_dirs', '_location',
+        '_ashrae_climate_zone', '_koppen_climate_zone',
+        '_extreme_cold_week', '_extreme_hot_week', '_typical_weeks', '_monthly_db_50',
+        '_monthly_wb_50', '_monthly_db_range_50', '_monthly_wb_range_50',
+        '_monthly_db_100', '_monthly_wb_100', '_monthly_db_20', '_monthly_wb_20',
+        '_monthly_db_04', '_monthly_wb_04', '_monthly_wind',
+        '_stand_press_at_elev', '_monthly_tau_beam', '_monthly_tau_diffuse',
+        '_header', '_body'
+    )
 
     def __init__(self, file_path):
         """Initialize the class.
@@ -543,7 +547,7 @@ class STAT(object):
             ws_conds = self.monthly_wind_conditions
             sky_conds = self.monthly_clear_sky_conditions
             return [DesignDay(
-                '5% Cooling Design Day for {}'.format(self._months[i]),
+                'Cooling Design Day {} 5% Condns DB=>MCWB'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
                 for i in xrange(12)]
@@ -562,7 +566,7 @@ class STAT(object):
             ws_conds = self.monthly_wind_conditions
             sky_conds = self.monthly_clear_sky_conditions
             return [DesignDay(
-                '10% Cooling Design Day for {}'.format(self._months[i]),
+                'Cooling Design Day {} 10% Condns DB=>MCWB'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
                 for i in xrange(12)]
@@ -581,7 +585,7 @@ class STAT(object):
             ws_conds = self.monthly_wind_conditions
             sky_conds = self.monthly_clear_sky_conditions
             return [DesignDay(
-                '2% Cooling Design Day for {}'.format(self._months[i]),
+                'Cooling Design Day {} 2% Condns DB=>MCWB'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
                 for i in xrange(12)]
@@ -600,7 +604,7 @@ class STAT(object):
             ws_conds = self.monthly_wind_conditions
             sky_conds = self.monthly_clear_sky_conditions
             return [DesignDay(
-                '0.4% Cooling Design Day for {}'.format(self._months[i]),
+                'Cooling Design Day {} 0.4% Condns DB=>MCWB'.format(self._months[i]),
                 'SummerDesignDay', self._location,
                 db_conds[i], hu_conds[i], ws_conds[i], sky_conds[i])
                 for i in xrange(12)]
@@ -674,6 +678,92 @@ class STAT(object):
         HVAC systems.
         """
         return self._monthly_tau_diffuse
+
+    def to_ddy(self, file_path, percentile=0.4):
+        """Produce a DDY file with a heating + cooling design day from this STAT.
+
+        If design days following the input percentile are not found in the STAT
+        data, a ValueError will be raised.
+
+        Args:
+            file_path: Full file path for output ddy file.
+            percentile: A number for the percentile difference from the most
+                extreme conditions for the design days. Choose from 0.4 and
+                1.0. (Default: 0.4).
+        """
+        # get the design day objects
+        if percentile == 0.4:
+            des_days = \
+                [self.annual_heating_design_day_996, self.annual_cooling_design_day_004]
+        elif percentile == 1:
+            des_days = \
+                [self.annual_heating_design_day_990, self.annual_cooling_design_day_010]
+        else:
+            raise ValueError('STAT files do not contain design days for '
+                             '{}% percentile.'.format(percentile))
+        if None in des_days:
+            raise ValueError('The STAT file do not contain design days for '
+                             '{}% percentile.'.format(percentile))
+        # write the DDY
+        if not file_path.lower().endswith('.ddy'):
+            file_path += '.ddy'
+        ddy = DDY(self.location, des_days)
+        ddy.write(file_path)
+        return file_path
+
+    def to_ddy_monthly_cooling(
+            self, file_path, annual_percentile=0.4, monthly_percentile=5):
+        """Produce a DDY file with 1 heating and 12 cooling design days.
+
+        The heating design day represents a cold and completely dark day whereas
+        the cooling design days represent the warmest conditions in each month.
+        If design days following the input percentile are not found in the STAT
+        data, a ValueError will be raised.
+
+        Args:
+            file_path: Full file path for output ddy file.
+            annual_percentile: A number for the percentile difference from the most
+                extreme conditions for the design days. Choose from 0.4 and
+                1.0. (Default: 0.4).
+            monthly_percentile: A number between for the percentile difference from the
+                most extreme conditions within each month to be used for the cooling
+                design days. Choose from 10, 5, 2 or 0.04. (Default: 5).
+        """
+        # get the heating design day object
+        if annual_percentile == 0.4:
+            heating = self.annual_heating_design_day_996
+        elif annual_percentile == 1:
+            heating = self.annual_heating_design_day_990
+        else:
+            raise ValueError('STAT files do not contain heating design days for '
+                             '{}% percentile.'.format(annual_percentile))
+        # get the cooling design day objects
+        if monthly_percentile == 5:
+            cooling = self.monthly_cooling_design_days_050
+        elif monthly_percentile == 10:
+            cooling = self.monthly_cooling_design_days_100
+        elif monthly_percentile == 2:
+            cooling = self.monthly_cooling_design_days_020
+        elif monthly_percentile == 0.4:
+            cooling = self.monthly_cooling_design_days_004
+        else:
+            raise ValueError('STAT files do not contain monthly cooling design days for '
+                             '{}% percentile.'.format(monthly_percentile))
+        ann_eq = round(monthly_percentile / 12, 1)
+        ann_eq = int(ann_eq) if int(ann_eq) == ann_eq else ann_eq
+        for cd in cooling:
+            cd.name = '{} ({}% Condns DB=>MWB)'.format(cd.name, ann_eq)
+        # write the DDY
+        des_days = [heating] + cooling
+        if None in des_days:
+            msg = 'heating design days for {}'.format(annual_percentile) if heating \
+                is None else 'cooling design days for {}'.format(monthly_percentile)
+            raise ValueError('The STAT file do not contain {}% percentile.'.format(msg))
+        if not file_path.lower().endswith('.ddy'):
+            file_path += '.ddy'
+        ddy = DDY(self.location, des_days)
+        ddy.write(file_path)
+        return file_path
 
     def to_dict(self):
         """Convert the stat object to a dictionary."""
