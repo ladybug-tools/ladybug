@@ -204,7 +204,7 @@ class PsychrometricChart(object):
                 of the plot. (Default: (0, 0)).
             x_dim: A number to set the X dimension of each degree of temperature on the
                 chart. (Default: 1).
-            y_dim: A number to set the Y dimension of a unity humidity ratio on the chart.
+            y_dim: A number to set the Y dimension of unity humidity ratio on the chart.
                 Note that most maximum humidity ratios are around 0.03. (Default: 1500).
             min_temperature: An integer for the minimum temperature on the chart in
                 degrees. This should be celsius if use_ip is False and fahrenheit if
@@ -634,7 +634,8 @@ class PsychrometricChart(object):
             x_vals = self._x_range
         else:  # build up custom temperatures and HRs
             hr_vals = [humid_ratio_from_db_rh(self._temp_range[0], rh, prs)]
-            x_vals, t_diff = [self._x_range[0]], 5 / subdivisions
+            x_vals = [self._x_range[0]]
+            t_diff = (self._temp_range[1] - self._temp_range[0]) / subdivisions
             x_diff = (self._x_range[1] - self._x_range[0]) / subdivisions
             for i in range(len(self._temp_range) - 1):
                 st_t, st_x = self._temp_range[i], self._x_range[i]
