@@ -121,6 +121,13 @@ class Folders(object):
 
         An attempt will be made to create the directory if it does not already exist.
         """
+        # first check if there's a user-defined folder in AppData
+        app_folder = os.getenv('APPDATA')
+        if app_folder is not None:
+            epw_folder = os.path.join(app_folder, 'ladybug_tools', 'weather')
+            if os.path.isdir(epw_folder):
+                return epw_folder
+        # if not, then just default to the ladybug_tools folder
         epw_folder = os.path.join(self.ladybug_tools_folder, 'resources', 'weather')
         if not os.path.isdir(epw_folder):
             try:
