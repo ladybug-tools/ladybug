@@ -8,6 +8,9 @@ Usage:
     folders.default_epw_folder = "C:/epw_data"
 """
 import os
+import platform
+import sys
+import subprocess
 import json
 
 
@@ -25,6 +28,11 @@ class Folders(object):
     Properties:
         * ladybug_tools_folder
         * default_epw_folder
+        * python_package_path
+        * python_scripts_path
+        * python_exe_path
+        * python_version
+        * python_version_str
         * config_file
         * mute
     """
@@ -35,6 +43,10 @@ class Folders(object):
 
         # load paths from the config JSON file
         self.config_file = config_file
+
+        # set python version to only be retrived if requested
+        self._python_version = None
+        self._python_version_str = None
 
     @property
     def ladybug_tools_folder(self):
@@ -67,6 +79,81 @@ class Folders(object):
         if not self.mute and self._default_epw_folder:
             print('Path to the default epw folder is set to: '
                   '{}'.format(self._default_epw_folder))
+
+    @property
+    def python_package_path(self):
+        """Get the path to where this Python package is installed."""
+        # check the ladybug_tools folder for a Python installation
+        py_pack = None
+        lb_install = self.ladybug_tools_folder
+        if os.path.isdir(lb_install):
+            if os.name == 'nt':
+                py_pack = os.path.join(lb_install, 'python', 'Lib', 'site-packages')
+            elif platform.system() == 'Darwin':  # on mac, python version is in path
+                py_pack = os.path.join(
+                    lb_install, 'python', 'lib', 'python3.7', 'site-packages')
+        if py_pack is not None and os.path.isdir(py_pack):
+            return py_pack
+        return os.path.split(os.path.dirname(__file__))[0]  # we're on some other cPython
+
+    @property
+    def python_scripts_path(self):
+        """Get the path to where Python CLI executable files are installed.
+
+        This can be used to call command line interface (CLI) executable files
+        directly (instead of using their usual entry points).
+        """
+        # check the ladybug_tools folder for a Python installation
+        lb_install = self.ladybug_tools_folder
+        if os.path.isdir(lb_install):
+            py_scripts = os.path.join(lb_install, 'python', 'Scripts') \
+                if os.name == 'nt' else \
+                os.path.join(lb_install, 'python', 'bin')
+            if os.path.isdir(py_scripts):
+                return py_scripts
+        sys_dir = os.path.dirname(sys.executable)  # assume we are on some other cPython
+        return os.path.join(sys_dir, 'Scripts') if os.name == 'nt' else sys_dir
+
+    @property
+    def python_exe_path(self):
+        """Get the path to the Python executable to be used for Ladybug Tools CLI calls.
+
+        If a version of Python is found within the ladybug_tools installation folder,
+        this will be the path to that version of Python. Otherwise, it will be
+        assumed that this is package is installed in cPython outside of the ladybug_tools
+        folder and the sys.executable will be returned.
+        """
+        # check the ladybug_tools folder for a Python installation
+        lb_install = self.ladybug_tools_folder
+        if os.path.isdir(lb_install):
+            py_exe_file = os.path.join(lb_install, 'python', 'python.exe') \
+                if os.name == 'nt' else \
+                os.path.join(lb_install, 'python', 'bin', 'python3')
+            if os.path.isfile(py_exe_file):
+                return py_exe_file
+        return sys.executable  # assume we are on some other cPython
+
+    @property
+    def python_version(self):
+        """Get a tuple for the version of python (eg. (3, 8, 2)).
+
+        This will be None if the version could not be sensed or if no Python
+        installation was found.
+        """
+        if self._python_version_str is None and self.python_exe_path:
+            self._python_version_from_cli()
+        return self._python_version
+
+    @property
+    def python_version_str(self):
+        """Get text for the full version of python (eg."3.8.2").
+
+        This will be None if the version could not be sensed or if no Python
+        installation was found.
+        """
+        if self._python_version_str is None and self.python_exe_path:
+            self._python_version_from_cli()
+        return self._python_version_str
 
     @property
     def config_file(self):
@@ -115,6 +202,20 @@ class Folders(object):
         # set paths for the ladybug_tools_folder and default_epw_folder
         self.ladybug_tools_folder = default_path["ladybug_tools_folder"]
         self.default_epw_folder = default_path["default_epw_folder"]
+
+    def _python_version_from_cli(self):
+        """Set this object's Python version by making a call to a Python command."""
+        cmds = [self.python_exe_path, '--version']
+        use_shell = True if os.name == 'nt' else False
+        process = subprocess.Popen(cmds, stdout=subprocess.PIPE, shell=use_shell)
+        stdout = process.communicate()
+        base_str = str(stdout[0]).replace("b'", '').replace(r"\r\n'", '')
+        self._python_version_str = base_str.split(' ')[-1]
+        try:
+            self._python_version = \
+                tuple(int(i) for i in self._python_version_str.split('.'))
+        except Exception:
+            pass  # failed to parse the version into values
 
     def _find_default_epw_folder(self):
         """Find the the default EPW folder in its usual location.
