@@ -1,1 +1,9 @@
 include ladybug/config.json
+recursive-exclude tests *
+recursive-exclude docs *
+recursive-exclude .github *
+exclude .gitignore
+exclude .dockerignore
+exclude .releaserc.json
+exclude deploy.sh
+exclude Dockerfile
