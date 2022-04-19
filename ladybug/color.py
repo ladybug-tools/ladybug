@@ -151,28 +151,33 @@ class Colorset(object):
     """Ladybug Color-range repository.
 
     A list of default Ladybug colorsets for color range:
-        * 0 - original Ladybug
-        * 1 - nuanced Ladybug
+        * 0 - Original Ladybug
+        * 1 - Nuanced Ladybug
         * 2 - Multi-colored Ladybug
-        * 3 - View Analysis 1
-        * 4 - View Analysis 2 (Red,Green,Blue)
-        * 5 - Sunlight Hours
-        * 6 - ecotect
-        * 7 - thermal Comfort Percentage
-        * 8 - thermal Comfort Colors
-        * 9 - thermal Comfort Colors (UTCI)
-        * 10 - Hot Hours
-        * 11 - Cold Hours
-        * 12 - Shade Benefit/Harm
-        * 13 - thermal Comfort Colors v2 (UTCI)
-        * 14 - Shade Harm
-        * 15 - Shade Benefit
-        * 16 - Black to White
-        * 17 - CFD Colors 1
-        * 18 - CFD Colors 2
-        * 19 - Energy Balance
+        * 3 - Ecotect
+        * 4 - View Study
+        * 5 - Shadow Study
+        * 6 - Glare Study
+        * 7 - Annual Comfort
+        * 8 - Thermal Comfort
+        * 9 - Peak Load Balance
+        * 10 - Heat Sensation
+        * 11 - Cold Sensation
+        * 12 - Benefit/Harm
+        * 13 - Harm
+        * 14 - Benefit
+        * 15 - Shade Benefit/Harm
+        * 16 - Shade Harm
+        * 17 - Shade Benefit
+        * 18 - Energy Balance
+        * 19 - Energy Balance w/ Storage
         * 20 - THERM
         * 21 - Cloud Cover
+        * 22 - Black to White
+        * 23 - Blue, Green, Red
+        * 24 - Multicolored 2
+        * 25 - Multicolored 3
+        * 26 - OpenStudio Palette
 
     Usage:
 
