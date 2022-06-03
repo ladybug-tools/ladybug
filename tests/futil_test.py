@@ -5,6 +5,20 @@ import pytest
 import os
 
 
+"""
+def test_download_file():
+    wf_url = "https://energyplus-weather.s3.amazonaws.com/"\
+        "north_and_central_america_wmo_region_4/USA/NY/"\
+        "USA_NY_New.York-J.F.Kennedy.Intl.AP.744860_TMY3/"\
+        "USA_NY_New.York-J.F.Kennedy.Intl.AP.744860_TMY3.zip"
+    wf_name = os.path.join("./tests/fixtures/zip", "AUS_NSW.Sydney.947670_IWEC.zip")
+    futil.download_file(wf_url, wf_name)
+    assert os.path.isfile(wf_name)
+    assert 200000 < os.stat(wf_name).st_size
+    os.remove(wf_name)
+"""
+
+
 def test_unzip_file():
     """Test the unzip file capability"""
     folder = "./tests/assets/zip/extracted"
