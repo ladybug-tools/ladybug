@@ -3,6 +3,7 @@
 from __future__ import division
 
 import os
+import platform
 import shutil
 import zipfile
 import sys
@@ -224,11 +225,20 @@ def _download_py2(link, path, __hdr__):
 
 def _download_py3(link, path, __hdr__):
     """Download a file from a link in Python 3."""
-    try:
-        req = urllib.request.Request(link, headers=__hdr__)
-        u = urllib.request.urlopen(req)
-    except Exception as e:
-        raise Exception(' Download failed with the error:\n{}'.format(e))
+    if platform.system() == 'Darwin':
+        try:
+            import ssl
+            ssl._create_default_https_context = ssl._create_unverified_context
+            req = urllib.request.Request(link, headers=__hdr__)
+            u = urllib.request.urlopen(req)
+        except Exception as e:
+            raise Exception(' Download failed with the error:\n{}'.format(e))
+    else:
+        try:
+            req = urllib.request.Request(link, headers=__hdr__)
+            u = urllib.request.urlopen(req)
+        except Exception as e:
+            raise Exception(' Download failed with the error:\n{}'.format(e))
 
     with open(path, 'wb') as outf:
         for line in u:
