@@ -426,11 +426,11 @@ class SQLiteResult(object):
             fields_to_extract_str = ', '.join(fields_to_extract)
 
             if report_name is None:
-                c.execute(f'SELECT {fields_to_extract_str} FROM TabularDataWithStrings '
-                          'WHERE TableName=?', (table_name,))
+                query_str = 'SELECT %s FROM TabularDataWithStrings WHERE TableName=?' % fields_to_extract_str 
+                c.execute(query_str, (table_name,))
             else:
-                c.execute(f'SELECT {fields_to_extract_str} FROM TabularDataWithStrings '
-                          'WHERE TableName=? AND ReportName=?', (table_name, report_name))
+                query_str = 'SELECT %s FROM TabularDataWithStrings WHERE TableName=? AND ReportName=?' % fields_to_extract_str 
+                c.execute(query_str, (table_name, report_name))
 
             table_data = c.fetchall()
             conn.close()  # ensure connection is always closed
