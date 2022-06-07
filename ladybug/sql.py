@@ -399,7 +399,7 @@ class SQLiteResult(object):
             data._validated_a_period = True
         return data_colls
 
-    def tabular_data_by_name(self, table_name, j_to_kwh=True):
+    def tabular_data_by_name(self, table_name, j_to_kwh=True, report_name=None):
         """Get all the data within a table of a Summary Report using the table name.
 
         Args:
@@ -419,12 +419,19 @@ class SQLiteResult(object):
         try:
             # extract the data from the General table in AllSummary
             c = conn.cursor()
+
+            fields_to_extract = ['RowName', 'Value']
             if j_to_kwh:
-                c.execute('SELECT RowName, Value, Units FROM TabularDataWithStrings '
+                fields_to_extract.append('Units')
+            fields_to_extract_str = ', '.join(fields_to_extract)
+
+            if report_name is None:
+                c.execute(f'SELECT {fields_to_extract_str} FROM TabularDataWithStrings '
                           'WHERE TableName=?', (table_name,))
             else:
-                c.execute('SELECT RowName, Value FROM TabularDataWithStrings '
-                          'WHERE TableName=?', (table_name,))
+                c.execute(f'SELECT {fields_to_extract_str} FROM TabularDataWithStrings '
+                          'WHERE TableName=? AND ReportName=?', (table_name, report_name))
+
             table_data = c.fetchall()
             conn.close()  # ensure connection is always closed
         except Exception as e:
@@ -459,7 +466,7 @@ class SQLiteResult(object):
                     table_dict[item[0]] = [val]
         return table_dict
 
-    def tabular_column_names(self, table_name):
+    def tabular_column_names(self, table_name, report_name=None):
         """Get the names of the columns for a table of a Summary Report.
 
         Args:
@@ -473,8 +480,12 @@ class SQLiteResult(object):
         try:
             # extract the data from the General table in AllSummary
             c = conn.cursor()
-            c.execute('SELECT ColumnName FROM TabularDataWithStrings '
-                      'WHERE TableName=?', (table_name,))
+            if report_name is None:
+                c.execute('SELECT ColumnName FROM TabularDataWithStrings '
+                        'WHERE TableName=?', (table_name,))
+            else:
+                c.execute('SELECT ColumnName FROM TabularDataWithStrings '
+                        'WHERE TableName=? AND ReportName=?', (table_name, report_name))
             table_col_names = c.fetchall()
             conn.close()  # ensure connection is always closed
         except Exception as e:
