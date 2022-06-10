@@ -250,8 +250,20 @@ class Folders(object):
             try:
                 os.makedirs(install_folder)
             except Exception as e:
-                raise OSError('Failed to create default ladybug tools installation '
-                              'folder: %s\n%s' % (install_folder, e))
+                # very rare case of an inaccessible HOME folder
+                # try to fall back on the Python installation folder of this package
+                current_path = os.path.normpath(__file__)
+                path_vars = current_path.split(os.sep)
+                all_path = []
+                for var in path_vars:
+                    if 'python' in var.lower():
+                        break
+                    all_path.append(var)
+                if len(all_path) == len(path_vars):  # no Python identified
+                    raise OSError('Failed to create default ladybug tools installation '
+                                  'folder: %s\n%s' % (install_folder, e))
+                all_path[0] = all_path[0] + os.sep
+                install_folder = os.path.join(*all_path)
         return install_folder
 
 

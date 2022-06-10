@@ -317,3 +317,19 @@ def test_sqlite_tabular_data():
     col_names = sql_obj.tabular_column_names('Utility Use Per Conditioned Floor Area')
     assert len(col_names) == 6
     assert 'Electricity Intensity' in col_names[0]
+
+
+def test_sqlite_tabular_data_with_report_name():
+    """Test the tabular_data_by_name method."""
+    sql_path = './tests/assets/sql/eplusout_monthly.sql'
+    sql_obj = SQLiteResult(sql_path)
+    table_name = "End Uses"
+    report_name = "DemandEndUseComponentsSummary"
+
+    data = sql_obj.tabular_data_by_name(
+        table_name, report_name=report_name)
+    assert len(data) == 17
+    assert len(data['Heating']) == 6
+    col_names = sql_obj.tabular_column_names(table_name, report_name)
+    assert len(col_names) == 6
+    assert 'Electricity' in col_names[0]
