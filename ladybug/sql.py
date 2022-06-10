@@ -399,7 +399,7 @@ class SQLiteResult(object):
             data._validated_a_period = True
         return data_colls
 
-    def tabular_data_by_name(self, table_name, j_to_kwh=True):
+    def tabular_data_by_name(self, table_name, j_to_kwh=True, report_name=None):
         """Get all the data within a table of a Summary Report using the table name.
 
         Args:
@@ -408,6 +408,10 @@ class SQLiteResult(object):
             j_to_kwh: Boolean to note if any data in MJ or GJ should be
                 converted to kWh upon import of the table. This will also mean
                 that any area-normalized values will also be converted to kWh/m2.
+            report_name: An optional text string to indicate the report name from
+                which the table should be pulled. This is useful in cases where
+                tables have the same name in different reports. If None, data from
+                all available tables will be returned. (Default: None).
 
         Returns:
             An ordered dictionary representing a matrix (list of lists), where
@@ -417,14 +421,21 @@ class SQLiteResult(object):
         """
         conn = sqlite3.connect(self.file_path)
         try:
-            # extract the data from the General table in AllSummary
+            # get the cursor and list of fields to be extracted
             c = conn.cursor()
+            fields_to_extract = ['RowName', 'Value']
             if j_to_kwh:
-                c.execute('SELECT RowName, Value, Units FROM TabularDataWithStrings '
-                          'WHERE TableName=?', (table_name,))
+                fields_to_extract.append('Units')
+            fields_to_extract_str = ', '.join(fields_to_extract)
+            # extract the fields using a query
+            if report_name is None:
+                query_str = 'SELECT %s FROM TabularDataWithStrings ' \
+                    'WHERE TableName=?' % fields_to_extract_str
+                c.execute(query_str, (table_name,))
             else:
-                c.execute('SELECT RowName, Value FROM TabularDataWithStrings '
-                          'WHERE TableName=?', (table_name,))
+                query_str = 'SELECT %s FROM TabularDataWithStrings ' \
+                    'WHERE TableName=? AND ReportName=?' % fields_to_extract_str
+                c.execute(query_str, (table_name, report_name))
             table_data = c.fetchall()
             conn.close()  # ensure connection is always closed
         except Exception as e:
@@ -459,12 +470,16 @@ class SQLiteResult(object):
                     table_dict[item[0]] = [val]
         return table_dict
 
-    def tabular_column_names(self, table_name):
+    def tabular_column_names(self, table_name, report_name=None):
         """Get the names of the columns for a table of a Summary Report.
 
         Args:
             table_name: Text string for the name of a table within a summary
                 report. (eg. 'General').
+            report_name: An optional text string to indicate the report name from
+                which the table should be pulled. This is useful in cases where
+                tables have the same name in different reports. If None, data from
+                all available tables will be returned. (Default: None).
 
         Returns:
             A list of the column names of the table
@@ -473,8 +488,14 @@ class SQLiteResult(object):
         try:
             # extract the data from the General table in AllSummary
             c = conn.cursor()
-            c.execute('SELECT ColumnName FROM TabularDataWithStrings '
-                      'WHERE TableName=?', (table_name,))
+            if report_name is None:
+                c.execute('SELECT ColumnName FROM TabularDataWithStrings '
+                          'WHERE TableName=?', (table_name,))
+            else:
+                c.execute(
+                    'SELECT ColumnName FROM TabularDataWithStrings '
+                    'WHERE TableName=? AND ReportName=?', (table_name, report_name)
+                )
             table_col_names = c.fetchall()
             conn.close()  # ensure connection is always closed
         except Exception as e:
@@ -586,7 +607,7 @@ class SQLiteResult(object):
         """Get all of the ZoneSize objects of a certain load type.
 
         Args:
-            load_type: Text for the type of load to retrive.
+            load_type: Text for the type of load to retrieve.
                 This must be either 'Cooling' or 'Heating'.
         """
         conn = sqlite3.connect(self.file_path)
@@ -694,7 +715,7 @@ class SQLiteResult(object):
 
         Args:
             reporting_frequency: Text for the reporting frequency of the data.
-            timestep: Integer to note the timestep of the analsis periods. By the
+            timestep: Integer to note the timestep of the analysis periods. By the
                 time this function is running, this value should have been gotten
                 from the _extract_run_period method
             leap_year: Boolean to note whether the analysis periods are for a
@@ -765,10 +786,10 @@ class SQLiteResult(object):
 
     @staticmethod
     def _partition_timeseries(data, n_lists):
-        """Partition timeseries data that has been retrived from the SQL file.
+        """Partition timeseries data that has been retrieved from the SQL file.
 
         Args:
-            n_lists: An integer for the number of lists to partiton the data into.
+            n_lists: An integer for the number of lists to partition the data into.
         """
         all_values = []
         for i in range(0, len(data), n_lists):
@@ -777,10 +798,10 @@ class SQLiteResult(object):
 
     @staticmethod
     def _partition_and_convert_timeseries(data, n_lists):
-        """Partition data that retrived from the SQL file + convert it to kWh.
+        """Partition data that retrieved from the SQL file + convert it to kWh.
 
         Args:
-            n_lists: An integer for the number of lists to partiton the data into.
+            n_lists: An integer for the number of lists to partition the data into.
         """
         all_values = []
         for i in range(0, len(data), n_lists):
