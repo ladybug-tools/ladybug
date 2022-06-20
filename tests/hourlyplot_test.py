@@ -175,6 +175,22 @@ def test_hourlyplot_reversed_analysis_period():
     assert mesh.max == Point2D(31 * 2, 24)
 
 
+def test_hourlyplot_hour_reversed_analysis_period():
+    """Test the initialization of HourlyPlot with an hour reversed analysis period."""
+    header = Header(Temperature(), 'C', AnalysisPeriod())
+    values = list(range(8760))
+    data_coll = HourlyContinuousCollection(header, values)
+    period = AnalysisPeriod(1, 1, 22, 12, 31, 7)
+    data_coll = data_coll.filter_by_analysis_period(period)
+    hour_plot = HourlyPlot(data_coll, y_dim=1)
+
+    assert hour_plot.analysis_period == period
+    mesh = hour_plot.colored_mesh2d
+    assert isinstance(mesh, Mesh2D)
+    assert len(hour_plot.hour_labels) != 0
+    assert len(hour_plot.hour_label_points2d) != 0
+
+
 def test_hourlyplot_conditional_statement():
     """Test the initialization of HourlyPlot with a conditional statement."""
     header = Header(Temperature(), 'C', AnalysisPeriod())
