@@ -980,7 +980,7 @@ class MonthlyChart(object):
         """
         # group the data collections by their units
         grouped_data = []
-        units = []
+        units, other_types = [], []
         color_map = []
         for i, data in enumerate(self._data_collections):
             if data.header.unit in units:
@@ -989,18 +989,19 @@ class MonthlyChart(object):
                 color_map[ind].append(i)
             else:
                 units.append(data.header.unit)
+                other_types.append(data.header.data_type)
                 grouped_data.append([data])
                 color_map.append([i])
 
         # get the base type from the units
         data_types = []
-        for unit in units:
+        for i, unit in enumerate(units):
             for key in UNITS:
                 if unit in UNITS[key]:
                     data_types.append(TYPESDICT[key]())
                     break
             else:
-                data_types.append(GenericType)
+                data_types.append(other_types[i])
 
         # convert hourly data collections into monthly-per-hour collections
         if self._time_interval == 'Hourly':
