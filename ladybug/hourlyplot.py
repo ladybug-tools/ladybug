@@ -118,7 +118,10 @@ class HourlyPlot(object):
         if a_per.end_hour == 23:  # the last datetime is not included
             self._num_y = ((a_per.end_hour - a_per.st_hour + 1) * a_per.timestep)
         else:  # the last datetime is included
-            self._num_y = ((a_per.end_hour - a_per.st_hour) * a_per.timestep) + 1
+            if a_per.st_hour <= a_per.end_hour:
+                self._num_y = ((a_per.end_hour - a_per.st_hour) * a_per.timestep) + 1
+            else:
+                self._num_y = 24 * a_per.timestep
         x_dist = x_dim * self._num_x
         y_dist = y_dim * self._num_y
         max_pt = Point3D(base_point.x + x_dist, base_point.y + y_dist, base_point.z)
@@ -418,7 +421,7 @@ class HourlyPlot(object):
 
     def _compute_colored_mesh2d(self):
         """Compute a colored mesh from this object's data collection."""
-        # generate the base mesh as a stanadard grid
+        # generate the base mesh as a standard grid
         _colored_mesh2d = Mesh2D.from_grid(
             self.base_point, self._num_x, self._num_y, self.x_dim, self.y_dim)
 
@@ -429,15 +432,19 @@ class HourlyPlot(object):
             data_coll_moys.append(527100)  # extra value for the end of the list
             found_i = 0
             mesh_pattern = []
-            for moy in self.analysis_period.moys:
+            s_aper = self.analysis_period
+            m_aper = s_aper if s_aper.st_hour <= s_aper.end_hour else \
+                AnalysisPeriod(s_aper.st_month, s_aper.st_day, 0, s_aper.end_month,
+                               s_aper.end_day, 23, s_aper.timestep, s_aper.is_leap_year)
+            for moy in m_aper.moys:
                 if moy == data_coll_moys[found_i]:
                     mesh_pattern.append(True)
                     found_i += 1
                 else:
                     mesh_pattern.append(False)
             if self._reverse_y:
-                hr_diff = (self.analysis_period.end_hour - self.analysis_period.st_hour)
-                t_step = self.analysis_period.timestep
+                hr_diff = abs(m_aper.end_hour - m_aper.st_hour)
+                t_step = m_aper.timestep
                 t_diff = t_step * hr_diff + 1 if t_step == 1 or hr_diff != 23 else \
                     t_step * (hr_diff + 1)
                 mesh_pat_rev = []
@@ -466,9 +473,13 @@ class HourlyPlot(object):
 
     def _compute_hour_line_pts(self, hour_labels):
         """Compute the points for the hour lines and labels."""
-        st_hr = self.analysis_period.st_hour
-        end_hr = self.analysis_period.end_hour + 1
-        t_step = self.analysis_period.timestep
+        s_aper = self.analysis_period
+        m_aper = s_aper if s_aper.st_hour <= s_aper.end_hour else \
+            AnalysisPeriod(s_aper.st_month, s_aper.st_day, 0, s_aper.end_month,
+                            s_aper.end_day, 23, s_aper.timestep, s_aper.is_leap_year)
+        st_hr = m_aper.st_hour
+        end_hr = m_aper.end_hour + 1
+        t_step = m_aper.timestep
         _hour_points = []
         _hour_text = []
         last_hr = 0
