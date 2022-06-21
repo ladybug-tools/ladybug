@@ -523,17 +523,25 @@ class EPW(object):
             self._data.append([])
 
         # parse the hourly data
-        for line in body_lines:
+        msg_template = 'Failed to parse EPW data for field "{}" at index {}.\n{}'
+        for x, line in enumerate(body_lines):
+            if line == '\n':
+                continue
             data = line.strip().split(',')
             for field_number in xrange(self._num_of_fields):
                 value_type = EPWFields.field_by_number(field_number).value_type
                 try:
                     value = value_type(data[field_number])
                 except ValueError as e:
-                    # failed to convert the value for the specific TypeError
-                    if value_type != int:
-                        raise ValueError(e)
-                    value = int(round(float(data[field_number])))
+                    # failed to cast the data to the correct type
+                    if value_type != int:  # possibly an int to convert to float first
+                        msg = msg_template.format(headers[field_number].data_type, x, e)
+                        raise ValueError(msg)
+                    try:
+                        value = int(round(float(data[field_number])))
+                    except ValueError:
+                        msg = msg_template.format(headers[field_number].data_type, x, e)
+                        raise ValueError(msg)
                 self._data[field_number].append(value)
 
         # if the first value is at 1 AM, move last item to start position
