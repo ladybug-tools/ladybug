@@ -256,6 +256,55 @@ class BaseCollection(object):
                 '{} {}'.format(new_data_c._header.metadata['type'], 'Intensity')
         return new_data_c
 
+    def aggregate_by_area(self, area, area_unit):
+        """Get a Data Collection that is aggregated by an area value.
+
+        Note that this method will raise a ValueError if the data type in the header
+        of the data collection is not a normalized_type of another data type.
+
+        Args:
+            area: Number representing area by which all of the data is aggregated.
+            area_unit: Text for the units that the area value is in. Acceptable
+                inputs include 'm2', 'ft2' and any other unit that is supported
+                in the normalized_type of destination datacollection's data type.
+        """
+        # get an instance of the time aggregated data type
+        head = self.header
+        dat_type, agg_class = head.data_type, None
+        # first see if there's a specific data type for the current one
+        for typ_clss in TYPESDICT.values():
+            if typ_clss._normalized_type is None:
+                continue
+            elif dat_type.__class__ == typ_clss._normalized_type:
+                agg_class = typ_clss
+                break
+        # then, check to see if there's any base type
+        if agg_class is None:
+            for typ_clss_name in BASETYPES:
+                typ_clss = TYPESDICT[typ_clss_name]
+                if typ_clss._normalized_type is None:
+                    continue
+                elif isinstance(dat_type, typ_clss._normalized_type):
+                    agg_class = typ_clss
+                break
+        # if nothing was found, throw an error
+        if agg_class is None:
+            raise ValueError('Data type "{}" does not have a area-'
+                             'aggregated metric.'.format(head.data_type))
+
+        # create the new data collection and assign normalized values
+        new_data_c = self.duplicate()
+        new_data_c._values = [val * area for val in self.values]
+
+        # normalize the data type and unit in the header
+        new_data_c._header._unit = head.unit.replace('/{}'.format(area_unit), '')
+        new_data_c._header._data_type = agg_class()
+        new_data_c._header._data_type.is_unit_acceptable(new_data_c._header._unit)
+        if 'type' in head.metadata:  # key used to identify sophisticated data types
+            new_data_c._header.metadata['type'] = \
+                new_data_c._header.metadata['type'].replace(' Intensity', '')
+        return new_data_c
+
     def highest_values(self, count):
         """Get a list of the the x highest values of the Data Collection and their indices.
 
@@ -404,7 +453,7 @@ class BaseCollection(object):
         number of values and have matching datetimes.
 
         Args:
-            value: A value to be repeated in the aliged collection values or
+            value: A value to be repeated in the aligned collection values or
                 A list of values that has the same length as this collection.
                 Default: 0.
             data_type: The data type of the aligned collection. Default is to
