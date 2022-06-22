@@ -525,9 +525,10 @@ class EPW(object):
         # parse the hourly data
         msg_template = 'Failed to parse EPW data for field "{}" at index {}.\n{}'
         for x, line in enumerate(body_lines):
-            if line == '\n':
+            l_strip = line.strip()
+            if not l_strip:  # blank line
                 continue
-            data = line.strip().split(',')
+            data = l_strip.split(',')
             for field_number in xrange(self._num_of_fields):
                 value_type = EPWFields.field_by_number(field_number).value_type
                 try:
