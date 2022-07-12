@@ -105,6 +105,19 @@ def test_annual_cooling_design_days():
     assert ann_cdd_10.humidity_condition.humidity_value == 25.8
 
 
+def test_annual_cooling_design_days_partial_tau():
+    """Test the annual cooling design days with a STAT that has partial Tau data."""
+    relative_path = './tests/assets/stat/antartica.stat'
+    stat = STAT(relative_path)
+    ann_cdd_04 = stat.annual_cooling_design_day_004
+    ann_cdd_10 = stat.annual_cooling_design_day_010
+    m_cdd = stat.monthly_cooling_design_days_050
+
+    assert ann_cdd_04.day_type == 'SummerDesignDay'
+    assert ann_cdd_10.day_type == 'SummerDesignDay'
+    assert all(dd.day_type == 'SummerDesignDay' for dd in m_cdd)
+
+
 def test_monthly_cooling_design_days():
     """Test the monthly cooling design days within the stat object."""
     relative_path = './tests/assets/stat/chicago.stat'
