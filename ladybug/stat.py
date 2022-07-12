@@ -393,7 +393,7 @@ class STAT(object):
         if len(matches) > 0:
             raw_txt = matches[0].strip().split('\t')
             try:
-                return [float(i) if i != 'N' else None for i in raw_txt]
+                return [float(i) if i not in ('N', '  N_A') else None for i in raw_txt]
             except ValueError:
                 return [str(i) for i in raw_txt]
         else:
@@ -656,8 +656,9 @@ class STAT(object):
         """A list of 12 monthly clear sky conditions that are used on the design days."""
         if self._monthly_tau_diffuse is [] or self._monthly_tau_beam is []:
             return [ASHRAEClearSky(Date(i, 21)) for i in xrange(1, 13)]
-        return [ASHRAETau(Date(i, 21), x, y) for i, x, y in zip(
-            list(xrange(1, 13)), self._monthly_tau_beam, self._monthly_tau_diffuse)]
+        md = zip(list(xrange(1, 13)), self._monthly_tau_beam, self._monthly_tau_diffuse)
+        return [ASHRAETau(Date(i, 21), x, y) if x is not None
+                else ASHRAEClearSky(Date(i, 21)) for i, x, y in md]
 
     @property
     def monthly_tau_beam(self):
