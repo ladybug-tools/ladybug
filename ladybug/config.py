@@ -228,8 +228,12 @@ class Folders(object):
             epw_folder = os.path.join(app_folder, 'ladybug_tools', 'weather')
             if os.path.isdir(epw_folder):
                 return epw_folder
-        # if not, then just default to the ladybug_tools folder
-        epw_folder = os.path.join(self.ladybug_tools_folder, 'resources', 'weather')
+        # if we're not on Windows, just use the ladybug_tools installation folder
+        if os.name == 'nt' and app_folder is not None:
+            pass
+        else:
+            epw_folder = os.path.join(self.ladybug_tools_folder, 'resources', 'weather')
+        # create the folder if it does not exist
         if not os.path.isdir(epw_folder):
             try:
                 os.makedirs(epw_folder)
