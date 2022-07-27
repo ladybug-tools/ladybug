@@ -6,7 +6,7 @@ Site:Location,
   201.0;       !Elevation
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Jan,                               !- Name
+  Cooling Design Day Jan 5% Condns DB=>MCWB,                   !- Name
   1,                                                           !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -35,7 +35,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Feb,                               !- Name
+  Cooling Design Day Feb 5% Condns DB=>MCWB,                   !- Name
   2,                                                           !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -64,7 +64,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Mar,                               !- Name
+  Cooling Design Day Mar 5% Condns DB=>MCWB,                   !- Name
   3,                                                           !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -93,7 +93,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Apr,                               !- Name
+  Cooling Design Day Apr 5% Condns DB=>MCWB,                   !- Name
   4,                                                           !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -122,7 +122,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for May,                               !- Name
+  Cooling Design Day May 5% Condns DB=>MCWB,                   !- Name
   5,                                                           !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -151,7 +151,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Jun,                               !- Name
+  Cooling Design Day Jun 5% Condns DB=>MCWB,                   !- Name
   6,                                                           !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -180,7 +180,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Jul,                               !- Name
+  Cooling Design Day Jul 5% Condns DB=>MCWB,                   !- Name
   7,                                                           !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -209,7 +209,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Aug,                               !- Name
+  Cooling Design Day Aug 5% Condns DB=>MCWB,                   !- Name
   8,                                                           !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -238,7 +238,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Sep,                               !- Name
+  Cooling Design Day Sep 5% Condns DB=>MCWB,                   !- Name
   9,                                                           !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -267,7 +267,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Oct,                               !- Name
+  Cooling Design Day Oct 5% Condns DB=>MCWB,                   !- Name
   10,                                                          !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -296,7 +296,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Nov,                               !- Name
+  Cooling Design Day Nov 5% Condns DB=>MCWB,                   !- Name
   11,                                                          !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type
@@ -325,7 +325,7 @@ SizingPeriod:DesignDay,
 
 
 SizingPeriod:DesignDay,
-  5% Cooling Design Day for Dec,                               !- Name
+  Cooling Design Day Dec 5% Condns DB=>MCWB,                   !- Name
   12,                                                          !- Month
   21,                                                          !- Day of Month
   SummerDesignDay,                                             !- Day Type

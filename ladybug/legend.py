@@ -432,14 +432,14 @@ class LegendParameters(object):
     """Ladybug legend parameters used to customize legends.
 
     All properties of LegendParameters are set-able (except the
-    is_someproperty_default ones).
+    is_property_default ones).
 
     Args:
         min: A number to set the lower boundary of the legend. If None, the
             minimum of the values associated with the legend will be used.
         max: A number to set the upper boundary of the legend. If None, the
             maximum of the values associated with the legend will be used.
-        segment_count: An interger representing the number of steps between
+        segment_count: An integer representing the number of steps between
             the high and low boundary of the legend. The default is set to 11
             and any custom values input in here should always be greater than or
             equal to 2.
@@ -448,7 +448,7 @@ class LegendParameters(object):
             used here but the type of data might also be used. Default is
             an empty string.
         base_plane: A Ladybug Plane object to note the starting point from
-            where the legend will be genrated. The default is the world XY plane
+            where the legend will be generated. The default is the world XY plane
             at origin (0, 0, 0).
 
     Properties:
@@ -687,7 +687,7 @@ class LegendParameters(object):
     def ordinal_dictionary(self):
         """Get or set an optional dictionary that maps values to text categories.
 
-        If None, numerical values will be usedfor the legend segments. If not, text
+        If None, numerical values will be used for the legend segments. If not, text
         categories will be used and the legend will be ordinal. Note that, if the
         number if items in the dictionary are less than the segment_count, some segments
         won't receive any label. Examples for possible dictionaries include:
@@ -1025,7 +1025,7 @@ class LegendParametersCategorized(LegendParameters):
     binning values into groups based on custom ranges.
 
     Args:
-        domain: A list of one or more numbers noting the bondaries of the data
+        domain: A list of one or more numbers noting the boundaries of the data
             categories. For example, [100, 2000] creates three categories of
             (<100, 100-2000, >2000). Values must always be ordered from lowest
             to highest.
@@ -1039,7 +1039,7 @@ class LegendParametersCategorized(LegendParameters):
             used here but the type of data might also be used. Default is
             an empty string.
         base_plane: A Ladybug Plane object to note the starting point from
-            where the legend will be genrated. The default is the world XY plane
+            where the legend will be generated. The default is the world XY plane
             at origin (0, 0, 0).
 
     Properties:
