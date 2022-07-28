@@ -250,24 +250,30 @@ class Folders(object):
         """
         home_folder = os.getenv('HOME') or os.path.expanduser('~')
         install_folder = os.path.join(home_folder, 'ladybug_tools')
-        if not os.path.isdir(install_folder):
-            try:
-                os.makedirs(install_folder)
-            except Exception as e:
-                # very rare case of an inaccessible HOME folder
-                # try to fall back on the Python installation folder of this package
-                current_path = os.path.normpath(__file__)
-                path_vars = current_path.split(os.sep)
-                all_path = []
-                for var in path_vars:
-                    if 'python' in var.lower():
-                        break
-                    all_path.append(var)
-                if len(all_path) == len(path_vars):  # no Python identified
-                    raise OSError('Failed to create default ladybug tools installation '
-                                  'folder: %s\n%s' % (install_folder, e))
-                all_path[0] = all_path[0] + os.sep
-                install_folder = os.path.join(*all_path)
+        if not os.path.isdir(install_folder) or len(os.listdir(install_folder)) == 0:
+            program_folder = os.getenv('PROGRAMFILES')
+            if os.name == 'nt' and program_folder is not None and \
+                    os.path.isdir(os.path.join(program_folder, 'ladybug_tools')):
+                install_folder = os.path.join(program_folder, 'ladybug_tools')
+            else:
+                try:
+                    os.makedirs(install_folder)
+                except Exception as e:
+                    # very rare case of an inaccessible HOME folder
+                    # try to fall back on the Python installation folder of this package
+                    current_path = os.path.normpath(__file__)
+                    path_vars = current_path.split(os.sep)
+                    all_path = []
+                    for var in path_vars:
+                        if 'python' in var.lower():
+                            break
+                        all_path.append(var)
+                    if len(all_path) == len(path_vars):  # no Python identified
+                        raise OSError(
+                            'Failed to create default ladybug tools '
+                            'installation folder: %s\n%s' % (install_folder, e))
+                    all_path[0] = all_path[0] + os.sep
+                    install_folder = os.path.join(*all_path)
         return install_folder
 
 
