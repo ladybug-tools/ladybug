@@ -1,8 +1,7 @@
 
 ![Ladybug](http://www.ladybug.tools/assets/img/ladybug.png)
 
-
-[![Build Status](https://travis-ci.com/ladybug-tools/ladybug.svg?branch=master)](https://travis-ci.com/ladybug-tools/ladybug)
+[![Build Status](https://github.com/ladybug-tools/ladybug/workflows/CI/badge.svg)](https://github.com/ladybug-tools/ladybug/actions)
 [![Coverage Status](https://coveralls.io/repos/github/ladybug-tools/ladybug/badge.svg?branch=master)](https://coveralls.io/github/ladybug-tools/ladybug)
 
 [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/) [![Python 2.7](https://img.shields.io/badge/python-2.7-green.svg)](https://www.python.org/downloads/release/python-270/) [![IronPython](https://img.shields.io/badge/ironpython-2.7-red.svg)](https://github.com/IronLanguages/ironpython2/releases/tag/ipy-2.7.8/)

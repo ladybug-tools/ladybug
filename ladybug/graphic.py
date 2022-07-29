@@ -109,7 +109,7 @@ class GraphicContainer(object):
             assert isinstance(data_type, DataTypeBase), \
                 'data_type should be a ladybug DataType. Got {}'.format(type(data_type))
             if self.legend_parameters.is_title_default:
-                unit = data_type.units[0] if unit is None else unit
+                unit = unit if unit else data_type.units[0]
                 data_type.is_unit_acceptable(unit)
                 self.legend_parameters.title = unit if \
                     self.legend_parameters.vertical \
