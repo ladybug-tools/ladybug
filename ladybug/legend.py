@@ -653,7 +653,7 @@ class LegendParameters(object):
 
         If True, the legend mesh will be drawn vertex-by-vertex resulting in a
         continuous gradient instead of discrete segments. If False, the mesh will be
-        generated with one face for each of the segment_counts.
+        generated with one face for each of the segment_count.
         Default: False for depicting discrete categories.
         """
         return self._continuous_legend
@@ -737,7 +737,7 @@ class LegendParameters(object):
 
     @property
     def vertical(self):
-        """Boolean noting whether legend is vertical (True) of horizontal (False).
+        """Boolean noting whether legend is vertical (True) or horizontal (False).
 
         Default: True for a vertically-oriented legend.
         """
@@ -908,7 +908,7 @@ class LegendParameters(object):
         return base
 
     def _base_dict(self):
-        """Get a dictionary with the base properties shared by all LegendParemeters."""
+        """Get a dictionary with the base properties shared by all LegendParameters."""
         cols = None if self.are_colors_default else [c.to_dict() for c in self.colors]
         title = None if self.is_title_default else self.title
         base_plane = None if self.is_base_plane_default else self.base_plane.to_dict()
