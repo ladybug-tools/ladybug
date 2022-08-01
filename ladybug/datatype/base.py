@@ -186,7 +186,7 @@ class DataTypeBase(object):
         return {
             'name': self.name,
             'data_type': self.__class__.__name__,
-            'type': 'DataTypeBase'
+            'type': 'DataType'
         }
 
     def to_string(self):

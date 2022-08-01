@@ -1508,7 +1508,7 @@ climate-calculations.html#energyplus-sky-temperature-calculation
         the cooling design days represent the warmest conditions in each month.
         This type of DDY file is useful when the peak cooling might not be driven
         by warm outdoor temperatures but instead by the highest-intensity
-        solar condition, which may not conincide with the highest temperature.
+        solar condition, which may not coincide with the highest temperature.
 
         Args:
             file_path: Full file path for output ddy file.

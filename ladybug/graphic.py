@@ -134,7 +134,7 @@ class GraphicContainer(object):
                             len(sorted_keys[min_i:max_i + 1])
                     except IndexError:
                         pass
-        elif unit is not None and self.legend_parameters.is_title_default:
+        elif unit and self.legend_parameters.is_title_default:
             assert isinstance(unit, str), \
                 'Expected string for unit. Got {}.'.format(type(unit))
             self.legend_parameters.title = unit
