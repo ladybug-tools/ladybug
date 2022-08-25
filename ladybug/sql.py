@@ -7,6 +7,7 @@ import sqlite3
 from collections import OrderedDict
 
 import ladybug.datatype
+from ladybug.datatype.generic import GenericType
 from .dt import DateTime, datetime
 from .location import Location
 from .analysisperiod import AnalysisPeriod
@@ -221,7 +222,8 @@ class SQLiteResult(object):
         try:
             # extract all indices in the ReportDataDictionary with the output_name
             c = conn.cursor()
-            cols = 'ReportDataDictionaryIndex, IndexGroup, KeyValue, Name, Units'
+            cols = 'ReportDataDictionaryIndex, IndexGroup, KeyValue, Name, ' \
+                'ReportingFrequency, Units'
             if isinstance(output_name, str):  # assume it's a single output
                 query = 'SELECT {} FROM ReportDataDictionary WHERE Name=?'.format(cols)
                 c.execute(query, (output_name,))
@@ -237,6 +239,10 @@ class SQLiteResult(object):
             if len(header_rows) == 0:
                 conn.close()  # ensure connection is always closed
                 return []
+
+            # remove any data not of the same frequency
+            freq = header_rows[0][4]
+            header_rows = [row for row in header_rows if row[4] == freq]
 
             # extract all data of the relevant type from ReportData
             rel_indices = tuple(row[0] for row in header_rows)
@@ -263,7 +269,7 @@ class SQLiteResult(object):
 
         # create the header objects to be used for the resulting data collections
         units = header_rows[0][-1] if header_rows[0][-1] != 'J' else 'kWh'
-        data_type, units = self._data_type_from_unit(units)
+        data_type, units = self._data_type_from_unit(units, header_rows[0][3])
         meta_datas = []
         for row in header_rows:
             obj_type = row[1] if 'Surface' not in output_name else 'Surface'
@@ -338,7 +344,8 @@ class SQLiteResult(object):
         try:
             # extract all indices in the ReportDataDictionary with the output_name
             c = conn.cursor()
-            cols = 'ReportDataDictionaryIndex, IndexGroup, KeyValue, Name, Units'
+            cols = 'ReportDataDictionaryIndex, IndexGroup, KeyValue, Name, ' \
+                'ReportingFrequency, Units'
             query = 'SELECT {} FROM ReportDataDictionary WHERE Name=?'.format(cols)
             c.execute(query, (output_name,))
             header_rows = c.fetchall()
@@ -347,6 +354,10 @@ class SQLiteResult(object):
             if len(header_rows) == 0:
                 conn.close()  # ensure connection is always closed
                 return []
+
+            # remove any data not of the same frequency
+            freq = header_rows[0][4]
+            header_rows = [row for row in header_rows if row[4] == freq]
 
             # extract all data of the relevant type from ReportData
             rel_indices = tuple(row[0] for row in header_rows)
@@ -368,7 +379,7 @@ class SQLiteResult(object):
 
         # create the header objects to be used for the resulting data collections
         units = header_rows[0][-1] if header_rows[0][-1] != 'J' else 'kWh'
-        data_type, units = self._data_type_from_unit(units)
+        data_type, units = self._data_type_from_unit(units, header_rows[0][3])
         headers = []
         for row in header_rows:
             obj_type = row[1] if 'Surface' not in output_name else 'Surface'
@@ -582,7 +593,7 @@ class SQLiteResult(object):
             outp_dict['object_type'] = outp[1]
             outp_dict['units'] = outp[2] if outp[2] != 'J' else 'kWh'
             outp_dict['data_type'], outp_dict['units'] = \
-                self._data_type_from_unit(outp_dict['units'])
+                self._data_type_from_unit(outp_dict['units'], outp[0])
             self._available_outputs_info.append(outp_dict)
             self._reporting_frequency = outp[3]
 
@@ -773,16 +784,18 @@ class SQLiteResult(object):
         return run_periods
 
     @staticmethod
-    def _data_type_from_unit(from_unit):
+    def _data_type_from_unit(from_unit, data_name=''):
         """Get a Ladybug DataType object instance from a unit abbreviation.
 
         The returned object will be the base type (eg. Temperature, Energy, etc.).
         """
+        if from_unit == '':  # dimensionless data type
+            return ladybug.datatype.TYPESDICT['Fraction'](), 'fraction'
         for key in ladybug.datatype.UNITS:
             if from_unit in ladybug.datatype.UNITS[key]:
                 return ladybug.datatype.TYPESDICT[key](), from_unit
         # no units are specified; the values are dimensionless or fractional
-        return ladybug.datatype.TYPESDICT['Fraction'](), 'fraction'
+        return GenericType(data_name, from_unit), from_unit
 
     @staticmethod
     def _partition_timeseries(data, n_lists):
