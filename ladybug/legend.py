@@ -109,6 +109,9 @@ class Legend(object):
         assert isinstance(values, Iterable) \
             and not isinstance(values, (str, dict, bytes, bytearray)), \
             'values should be a list or tuple. Got {}'.format(type(values))
+        if not isinstance(values, tuple):
+            values = tuple(values)
+        assert len(values) != 0, 'There must be at least one value.'
         self._values = values
         if legend_parameters is not None:
             assert isinstance(legend_parameters, LegendParameters), \
