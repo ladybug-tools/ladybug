@@ -8,10 +8,6 @@ from .datatype.base import DataTypeBase
 from ladybug_geometry.geometry2d.pointvector import Point2D
 from ladybug_geometry.geometry3d.pointvector import Point3D
 from ladybug_geometry.geometry3d.plane import Plane
-from ladybug_geometry.geometry2d.mesh import Mesh2D
-from ladybug_geometry.geometry3d.mesh import Mesh3D
-from ladybug_geometry.geometry3d.polyface import Polyface3D
-from ladybug_geometry.dictutil import geometry_dict_to_object
 
 
 class GraphicContainer(object):
@@ -21,13 +17,9 @@ class GraphicContainer(object):
         values: A List or Tuple of numerical values that will be used to
             generate the legend and colors.
         min_point: A Point3D object for the minimum of the bounding box around
-            the graphic geometry. If None, then there must be an input for geometry
-            and the bounding box around this geometry will be used to set up the
-            graphic container. (Default: None).
+            the graphic geometry.
         max_point: A Point3D object for the maximum of the  bounding box around
-            the graphic geometry. If None, then there must be an input for geometry
-            and the bounding box around this geometry will be used to set up the
-            graphic container. (Default: None).
+            the graphic geometry.
         legend_parameters: An Optional LegendParameter object to override default
             parameters of the legend. None indicates that default legend parameters
             will be used. (Default: None).
@@ -37,12 +29,6 @@ class GraphicContainer(object):
             unless a unit below is specified. (Default: None).
         unit: Optional text string for the units of the values. (ie. 'C'). If None,
             the default units of the data_type will be used. (Default: None).
-        geometry: An optional ladybug-geometry object (or list of ladybug-geometry
-            objects) that's aligned with the input values. If a Mesh or Polyface
-            is specified here, it is expected that the number of values match the
-            number of faces or the number of vertices. If a list of geometry objects
-            is specified (ie. a list of Point3Ds), it is expected that the length
-            of this list align with the number of values. (Default: None).
 
     Properties:
         * values
@@ -51,30 +37,21 @@ class GraphicContainer(object):
         * legend_parameters
         * data_type
         * unit
-        * geometry
         * legend
         * value_colors
         * lower_title_location
         * upper_title_location
     """
-    __slots__ = ('_legend', '_min_point', '_max_point',
-                 '_data_type', '_unit', '_geometry')
+    __slots__ = ('_legend', '_min_point', '_max_point', '_data_type', '_unit')
 
-    def __init__(self, values, min_point=None, max_point=None,
-                 legend_parameters=None, data_type=None, unit=None, geometry=None):
-        """Initialize graphic container.
-        """
+    def __init__(self, values, min_point, max_point,
+                 legend_parameters=None, data_type=None, unit=None):
+        """Initialize graphic container."""
         # check the input points and legend information
-        if min_point is None or max_point is None:
-            assert isinstance(geometry, (Mesh2D, Mesh3D, Polyface3D)), \
-                'If min_point or max_point are unspecified, then geometry must be a ' \
-                'Mesh or Polyface to determine the bounding box.'
-            min_point = geometry.min if min_point is None else min_point
-            max_point = geometry.max if max_point is None else max_point
-            if isinstance(min_point, Point2D):
-                min_point = Point3D(min_point.x, min_point.y)
-            if isinstance(max_point, Point2D):
-                max_point = Point3D(max_point.x, max_point.y)
+        if isinstance(min_point, Point2D):
+            min_point = Point3D(min_point.x, min_point.y)
+        if isinstance(max_point, Point2D):
+            max_point = Point3D(max_point.x, max_point.y)
         assert isinstance(min_point, Point3D), \
             'min_point should be a ladybug Point3D. Got {}'.format(type(min_point))
         assert isinstance(max_point, Point3D), \
@@ -82,25 +59,6 @@ class GraphicContainer(object):
         self._legend = Legend(values, legend_parameters)
         self._min_point = min_point
         self._max_point = max_point
-
-        # process the geometry if it is specified
-        if geometry is not None:
-            if isinstance(geometry, (list, tuple)):
-                assert len(values) == len(geometry), 'Expected one value per geometry ' \
-                    'when geometry is a list. Number of values ({}) does not match ' \
-                    'number of geometries ({}).'.format(len(values), len(geometry))
-                if isinstance(geometry, list):
-                    geometry = tuple(geometry)
-            elif isinstance(geometry, (Mesh2D, Mesh3D, Polyface3D)):
-                assert len(values) == len(geometry.faces) or len(values) == \
-                    len(geometry.vertices), 'Expected number of values ({}) to match ' \
-                    'number of faces ({}) or number of vertices ({}).'.format(
-                        len(values), len(geometry.faces), len(geometry.vertices))
-            else:
-                msg = 'Expected geometry to be a list of geometries, a Mesh or a ' \
-                    'Polyface. Got {}.'.format(type(geometry))
-                raise ValueError(msg)
-        self._geometry = geometry
 
         # set default legend parameters based on input data_type and unit
         self._data_type = data_type
@@ -194,8 +152,7 @@ class GraphicContainer(object):
             "max_point": {"x": 10, "y": 10, "z": 0},
             "legend_parameters": {},  # optional LegendParameter specification
             "data_type": {},  # optional DataType object
-            "unit": "C",  # optional text for the units
-            "geometry": {}  # optional geometry associated with the values
+            "unit": "C"  # optional text for the units
             }
         """
         legend_parameters = None
@@ -211,16 +168,9 @@ class GraphicContainer(object):
             data_type = DataTypeBase.from_dict(data['data_type'])
         unit = data['unit'] if 'unit' in data else None
 
-        geometry = None
-        if 'geometry' in data and data['geometry'] is not None:
-            if isinstance(data['geometry'], (list, tuple)):
-                geometry = [geometry_dict_to_object(g) for g in data['geometry']]
-            else:
-                geometry = geometry_dict_to_object(data['geometry'])
-
         return cls(data['values'], Point3D.from_dict(data['min_point']),
                    Point3D.from_dict(data['max_point']),
-                   legend_parameters, data_type, unit, geometry)
+                   legend_parameters, data_type, unit)
 
     @property
     def values(self):
@@ -251,11 +201,6 @@ class GraphicContainer(object):
     def unit(self):
         """The unit input to this object (if it exists)."""
         return self._unit
-
-    @property
-    def geometry(self):
-        """Get a list of geometries, mesh or polyface associated with the values."""
-        return self._geometry
 
     @property
     def legend(self):
@@ -296,9 +241,6 @@ class GraphicContainer(object):
             base['data_type'] = self.data_type.to_dict()
         if self.unit is not None:
             base['unit'] = self.unit
-        if self.geometry is not None:
-            base['geometry'] = [g.to_dict() for g in self.geometry] if \
-                isinstance(self.geometry, tuple) else self.geometry.to_dict()
         return base
 
     def __len__(self):
@@ -318,5 +260,5 @@ class GraphicContainer(object):
         return self.__repr__()
 
     def __repr__(self):
-        """ResultMesh representation."""
-        return 'Ladybug Result Mesh ({} values)'.format(len(self))
+        """GraphicContainer representation."""
+        return 'Graphic Container ({} values)'.format(len(self))
