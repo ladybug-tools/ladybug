@@ -217,13 +217,15 @@ class EPW(object):
 
         # fill in missing datetime values and uncertainty flags.
         uncertainty = '?9?9?9?9E0?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9*9*9?9?9?9'
+        prev_month = 1
         for dt in analysis_period.datetimes:
             if dt.hour != 0:
                 hr, dy = dt.hour, dt.day
             else:
                 hr = 24
                 try:
-                    dy = dt.sub_hour(24).day
+                    dt = dt.sub_hour(24)
+                    dy = dt.day
                 except ValueError:  # negative datetime for the year; it's 31 Dec
                     dy = 31
             epw_obj._data[0].append(dt.year)
