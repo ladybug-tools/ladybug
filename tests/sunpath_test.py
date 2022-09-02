@@ -33,7 +33,7 @@ def test_init_sun():
     """Test the initialization of Sun."""
     dt1 = DateTime(3, 21, 12, 30)
     sun = Sun(dt1, 45, 100, True, False, 0)
-    
+
     str(sun)  # test the string representation
     hash(sun)  # ensure sun is hash-able
     assert sun.datetime == dt1
@@ -63,6 +63,7 @@ def test_azimuth_from_y_axis():
     assert sun1.azimuth_from_y_axis == 110
     sun1 = Sun(dt1, 45, 100, True, False, -270)
     assert sun1.azimuth_from_y_axis == 10
+
 
 def test_from_location():
     """Test the initialization of Sunpath from a Location."""
@@ -122,7 +123,7 @@ def test_sunrise_sunset():
 
     # use the depression for apparent sunrise/sunset
     srss_dict = sp.calculate_sunrise_sunset(6, 21, depression=0.8333)
-    
+
     assert srss_dict['sunrise'] == DateTime(6, 21, 7, 0)
     assert srss_dict['noon'] == DateTime(6, 21, 11, 57)
     assert srss_dict['sunset'] == DateTime(6, 21, 16, 54)
@@ -229,7 +230,7 @@ def test_analemma_suns():
 
     for sun in sp.analemma_suns(Time(12)):
         assert isinstance(sun, Sun)
-    
+
     assert len(sp.hourly_analemma_suns()) == 24
     for hr in sp.hourly_analemma_suns():
         for sun in hr:
@@ -302,7 +303,7 @@ def test_exact_solar_noon():
     """Test to be sure we don't get a math domain error at solar noon."""
     loc = Location('SHANGHAI', None, 'HONGQIAO', 31.17, 121.43, 8.0, 7.00)
     sp = Sunpath.from_location(loc)
-    
+
     suns = []
     for i in range(1, 13):
         sun = sp.calculate_sun(i, 21, 12, True)
@@ -322,3 +323,17 @@ def test_north_south_pole():
     sp = Sunpath.from_location(loc)
     suns = sp.hourly_analemma_suns()
     assert len(suns) == 24
+
+
+def test_sunpath_before_after_midnight_sunrise_sunset():
+    """Test the Sunpath with a before-midnight sunrise and after-midnight sunset.
+    """
+    after_mid_loc = Location(latitude=65.63, longitude=-16.12, time_zone=0)
+    sp = Sunpath.from_location(after_mid_loc)
+    arc_geos = sp.monthly_day_arc3d()
+    assert all(isinstance(arc, Arc3D) for arc in arc_geos)
+
+    before_mid_loc = Location(latitude=65.63, longitude=-16.12, time_zone=-2)
+    sp = Sunpath.from_location(before_mid_loc)
+    arc_geos = sp.monthly_day_arc3d()
+    assert all(isinstance(arc, Arc3D) for arc in arc_geos)
