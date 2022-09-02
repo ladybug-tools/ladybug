@@ -106,7 +106,7 @@ class Sunpath(object):
         """Get or set a number between -180 and 180 for the longitude in degrees.
 
         Note that you will also likely want to update the time zone of the
-        Sunpath if this value is set to somethign far from its original value.
+        Sunpath if this value is set to something far from its original value.
         """
         return math.degrees(self._longitude)
 
@@ -384,11 +384,11 @@ class Sunpath(object):
             # no sunrise/sunset on this day (eg. arctic circle in summer/winter)
             noon = 24 * noon
             return {
-                "sunrise": None,
-                "noon": DateTime(datetime.month, datetime.day,
+                'sunrise': None,
+                'noon': DateTime(datetime.month, datetime.day,
                                  *self._calculate_hour_and_minute(noon),
                                  leap_year=self.is_leap_year),
-                "sunset": None
+                'sunset': None
             }
         else:
             sunrise = noon - sunrise_hour_angle * 4 / 1440.0
@@ -397,17 +397,39 @@ class Sunpath(object):
             sunrise = 24 * sunrise
             sunset = 24 * sunset
 
-            return {
-                "sunrise": DateTime(datetime.month, datetime.day,
-                                    *self._calculate_hour_and_minute(sunrise),
-                                    leap_year=self.is_leap_year),
-                "noon": DateTime(datetime.month, datetime.day,
-                                 *self._calculate_hour_and_minute(noon),
-                                 leap_year=self.is_leap_year),
-                "sunset": DateTime(datetime.month, datetime.day,
-                                   *self._calculate_hour_and_minute(sunset),
-                                   leap_year=self.is_leap_year)
-            }
+            # compute sunrise datetime
+            if sunrise >= 0:
+                sunrise = DateTime(
+                    datetime.month, datetime.day,
+                    *self._calculate_hour_and_minute(sunrise),
+                    leap_year=self.is_leap_year)
+            else:  # sunrise before midnight
+                sr_dt = datetime.sub_hour(24)
+                hr, mn = self._calculate_hour_and_minute(sunrise)
+                hr = 23 + hr
+                mn = 60 + mn
+                sunrise = DateTime(
+                    sr_dt.month, sr_dt.day, hr, mn, leap_year=self.is_leap_year)
+
+            # compute noon datetime
+            noon = DateTime(
+                datetime.month, datetime.day, *self._calculate_hour_and_minute(noon),
+                leap_year=self.is_leap_year)
+
+            # compute sunset datetime
+            if sunset < 24:
+                sunset = DateTime(
+                    datetime.month, datetime.day,
+                    *self._calculate_hour_and_minute(sunset),
+                    leap_year=self.is_leap_year)
+            else:  # sunset after midnight
+                ss_dt = datetime.add_hour(24)
+                hr, mn = self._calculate_hour_and_minute(sunset)
+                hr = hr - 24
+                sunset = DateTime(
+                    ss_dt.month, ss_dt.day, hr, mn, leap_year=self.is_leap_year)
+
+            return {'sunrise': sunrise, 'noon': noon, 'sunset': sunset}
 
     def analemma_suns(self, time, daytime_only=False, is_solar_time=False):
         """Get an array of Suns that represent an analemma for a single time of day.
@@ -843,8 +865,8 @@ class Sunpath(object):
         hour = int(float_hour)
         minute = int(round((float_hour - int(float_hour)) * 60))
 
-        if minute == 60:
-            return hour + 1, 0
+        if minute >= 60:
+            return hour + 1, minute - 60
         else:
             return hour, minute
 
@@ -1073,7 +1095,7 @@ class Sun(object):
 
     @property
     def sun_vector_reversed(self):
-        """A ladybug_geomtry Vector3D representing the reversed vector for this sun.
+        """A ladybug_geometry Vector3D representing the reversed vector for this sun.
 
         Daytime sun_vector_reversed point upward (z will be positive).
         """
