@@ -13,7 +13,7 @@ from .datacollection import BaseCollection, HourlyDiscontinuousCollection, \
     MonthlyPerHourCollection
 from .header import Header
 from .analysisperiod import AnalysisPeriod
-from .dt import DateTime, Date
+from .dt import Date
 
 
 def collections_to_csv(data_collections, folder, file_name='data.csv'):
@@ -38,7 +38,7 @@ def collections_to_csv(data_collections, folder, file_name='data.csv'):
     header_len = 2 + len(data_collections[0].header.metadata) \
         if BaseCollection.are_metadatas_aligned(data_collections, False) else 3
     csv_data = []
-    
+
     # create the first column with the datetimes
     dt_column = [''] * (header_len - 2)
     dt_column.append(data_collections[0]._collection_type)
