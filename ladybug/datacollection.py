@@ -505,7 +505,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
 
     def _time_interval_operation(self, interval, operation, percentile=0):
         """Get a collection of a certain time interval with a given math operation."""
-        # retrive the function that correctly describes the operation
+        # retrieve the function that correctly describes the operation
         if operation == 'average':
             funct = self._average
         elif operation == 'total':
@@ -515,7 +515,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
                 'percentile must be between 0 and 100. Got {}'.format(percentile)
             funct = self._get_percentile_function(percentile)
 
-        # retrive the data that correctly describes the time interval
+        # retrieve the data that correctly describes the time interval
         if interval == 'monthly':
             data_dict = self.group_by_month()
             dates = self.header.analysis_period.months_int
@@ -740,11 +740,9 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         if analysis_period.st_hour == 0 and analysis_period.end_hour == 23:
             # We can still return an Hourly Continuous Data Collection
             t_s = 60 / analysis_period.timestep
-            st_ind = int((analysis_period.st_time.moy / t_s) -
-                         (self.header.analysis_period.st_time.moy / t_s))
-            end_ind = int((analysis_period.end_time.moy / t_s) -
-                          (analysis_period.st_time.moy / t_s) + st_ind +
-                          analysis_period.timestep)
+            stm, endm = analysis_period.st_time.moy, analysis_period.end_time.moy
+            st_ind = int((stm / t_s) - (self.header.analysis_period.st_time.moy / t_s))
+            end_ind = int((endm / t_s) - (stm / t_s) + st_ind + analysis_period.timestep)
             if end_ind > st_ind:
                 _filt_values = self._values[st_ind:end_ind]
             else:
@@ -871,7 +869,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         have the same number of values and have matching datetimes.
 
         Args:
-            value: A value to be repeated in the aliged collection values or
+            value: A value to be repeated in the aligned collection values or
                 A list of values that has the same length as this collection.
                 Default: 0.
             data_type: The data type of the aligned collection. Default is to
@@ -1229,7 +1227,7 @@ class DailyCollection(BaseCollection):
 
     def _monthly_operation(self, operation, percentile=0):
         """Get a MonthlyCollection given a certain operation."""
-        # Retrive the correct operation.
+        # Retrieve the correct operation.
         if operation == 'average':
             funct = self._average
         elif operation == 'total':
@@ -1473,7 +1471,7 @@ class MonthlyPerHourCollection(BaseCollection):
         These provides a human-readable way to interpret the datetimes.
         """
         return [
-            '{} {}'.format(AnalysisPeriod.MONTHNAMES[int(d[0])], Time(d[1], d[2])) 
+            '{} {}'.format(AnalysisPeriod.MONTHNAMES[int(d[0])], Time(d[1], d[2]))
             for d in self._datetimes
         ]
 
