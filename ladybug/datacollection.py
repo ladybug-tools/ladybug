@@ -31,12 +31,8 @@ are faster when the collection is continuous.
 """
 from __future__ import division
 
-from ._datacollectionbase import BaseCollection
-from .header import Header
-from .analysisperiod import AnalysisPeriod
-from .dt import DateTime, Date, Time
-
 from collections import OrderedDict
+from copy import deepcopy
 try:
     from collections.abc import Iterable  # python < 3.7
 except ImportError:
@@ -45,6 +41,11 @@ try:
     from itertools import izip as zip  # python 2
 except ImportError:
     xrange = range  # python 3
+
+from ._datacollectionbase import BaseCollection
+from .header import Header
+from .analysisperiod import AnalysisPeriod
+from .dt import DateTime, Date, Time
 
 
 class HourlyDiscontinuousCollection(BaseCollection):
@@ -534,7 +535,16 @@ class HourlyDiscontinuousCollection(BaseCollection):
             if vals != []:
                 new_data.append(funct(vals))
                 d_times.append(i)
-        new_header = self.header.duplicate()
+
+        if self.header.analysis_period.timestep != 1 and \
+                interval in ('monthly', 'daily'):
+            hd, ap = self.header, self.header.analysis_period
+            a_per = AnalysisPeriod(
+                ap.st_month, ap.st_day, ap.st_hour,
+                ap.end_month, ap.end_day, ap.end_hour, 1, ap.is_leap_year)
+            new_header = Header(hd.data_type, hd.unit, a_per, deepcopy(hd.metadata))
+        else:
+            new_header = self.header.duplicate()
         if operation == 'percentile':
             new_header.metadata['operation'] = '{} percentile'.format(percentile)
         else:
