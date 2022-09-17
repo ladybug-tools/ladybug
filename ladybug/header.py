@@ -78,7 +78,7 @@ class Header(object):
     @classmethod
     def from_csv_strings(cls, csv_strings, analysis_period):
         """Load a header from a list of CSV strings.
-        
+
         Args:
             csv_strings: A list of CSV strings representing the header.
             analysis_period: An AnalysisPeriod object for the header.
@@ -152,10 +152,10 @@ class Header(object):
             'metadata': self.metadata,
             'type': 'Header',
         }
-    
+
     def to_csv_strings(self, metadata_per_row=False):
         """Return the header as a list of CSV strings.
-        
+
         Args:
             metadata_per_row: Boolean to note whether each metadata variable
                 should be a separate item in the resulting list or all items
