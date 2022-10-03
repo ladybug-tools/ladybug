@@ -76,6 +76,16 @@ def test_colors():
         leg_par.colors = [0, 1]
 
 
+def test_colorset():
+    """Test the LegendParameter colors property."""
+    leg_par = LegendParameters()
+    leg_par.colors_by_set('ecotect')
+
+    assert leg_par.colors == Colorset.ecotect()
+    assert 'color_set' in leg_par.user_data
+    assert leg_par.user_data['color_set'] == 'ecotect'
+
+
 def test_continuous_legend():
     """Test the LegendParameter continuous_legend property."""
     leg_par = LegendParameters()

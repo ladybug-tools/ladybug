@@ -355,9 +355,9 @@ class Legend(object):
             _start_val = -_l_par.segment_width * self.segment_length
             _pt_2d = tuple(
                 Point2D(_start_val + i, -_l_par.text_height * 1.25)
-                for i in Legend._frange(0, _l_par.segment_width *
-                                        _l_par.segment_count,
-                                        _l_par.segment_width))
+                for i in Legend._frange(
+                    0, _l_par.segment_width * _l_par.segment_count,
+                    _l_par.segment_width))
         return _pt_2d
 
     def _segment_mesh_2d(self, base_pt=Point2D(0, 0)):
@@ -470,6 +470,7 @@ class LegendParameters(object):
         * segment_width
         * text_height
         * font
+        * user_data
 
         * is_segment_count_default
         * are_colors_default
@@ -487,14 +488,14 @@ class LegendParameters(object):
         lp.vertical = False
         lp.segment_width = 5
     """
-    __slots__ = ('_min', '_max', '_segment_count', '_colors',
-                 '_continuous_legend', '_title', '_ordinal_dictionary',
-                 '_decimal_count', '_include_larger_smaller', '_vertical',
-                 '_base_plane', '_segment_height', '_segment_width', '_text_height',
-                 '_font', '_is_segment_count_default', '_are_colors_default',
-                 '_is_title_default', '_is_base_plane_default',
-                 '_is_segment_height_default', '_is_segment_width_default',
-                 '_is_text_height_default')
+    __slots__ = (
+        '_min', '_max', '_segment_count', '_colors', '_continuous_legend',
+        '_title', '_ordinal_dictionary', '_decimal_count', '_include_larger_smaller',
+        '_vertical', '_base_plane', '_segment_height', '_segment_width',
+        '_text_height', '_font', '_user_data',
+        '_is_segment_count_default', '_are_colors_default', '_is_title_default',
+        '_is_base_plane_default', '_is_segment_height_default',
+        '_is_segment_width_default', '_is_text_height_default')
 
     def __init__(self, min=None, max=None, segment_count=None,
                  colors=None, title=None, base_plane=None):
@@ -508,6 +509,7 @@ class LegendParameters(object):
         self.colors = colors
         self.title = title
         self.base_plane = base_plane
+        self._user_data = None
 
         self.continuous_legend = None
         self.ordinal_dictionary = None
@@ -538,12 +540,10 @@ class LegendParameters(object):
         assert data['type'] == 'LegendParameters', \
             'Expected LegendParameters. Got {}.'.format(data['type'])
         default_dict = {'type': 'Default'}
-        optional_keys = ('min', 'max', 'segment_count',
-                         'colors', 'continuous_legend',
-                         'title', 'ordinal_dictionary',
-                         'decimal_count', 'include_larger_smaller',
-                         'vertical', 'base_plane', 'segment_height',
-                         'segment_width', 'text_height', 'font')
+        optional_keys = (
+            'min', 'max', 'segment_count', 'colors', 'continuous_legend', 'title',
+            'ordinal_dictionary', 'decimal_count', 'include_larger_smaller', 'vertical',
+            'base_plane', 'segment_height', 'segment_width', 'text_height', 'font')
         for key in optional_keys:
             if key not in data:
                 data[key] = None
@@ -568,6 +568,8 @@ class LegendParameters(object):
         leg_par.segment_width = data['segment_width']
         leg_par.text_height = data['text_height']
         leg_par.font = data['font']
+        if 'user_data' in data and data['user_data'] is not None:
+            leg_par.user_data = data['user_data']
         return leg_par
 
     @property
@@ -849,6 +851,22 @@ class LegendParameters(object):
             self._font = 'Arial'
 
     @property
+    def user_data(self):
+        """Get or set an optional dictionary for additional meta data for this object.
+        This will be None until it has been set. All keys and values of this
+        dictionary should be of a standard Python type to ensure correct
+        serialization of the object to/from JSON (eg. str, float, int, list, dict)
+        """
+        return self._user_data
+
+    @user_data.setter
+    def user_data(self, value):
+        if value is not None:
+            assert isinstance(value, dict), 'Expected dictionary for ' \
+                'object user_data. Got {}.'.format(type(value))
+        self._user_data = value
+
+    @property
     def is_segment_count_default(self):
         """Boolean noting whether the number of segments is defaulted."""
         return self._is_segment_count_default
@@ -882,6 +900,24 @@ class LegendParameters(object):
     def is_text_height_default(self):
         """Boolean noting whether the text height is defaulted."""
         return self._is_text_height_default
+
+    def colors_by_set(self, colorset_name):
+        """Set the colors of this object using the name of a Colorset.
+
+        This will also add the name of the color set to this LegendParameter's
+        user_data.
+
+        Args:
+            colorset_name: The name of a Colorset to dictate the colors of this
+                legend parameter object (eg. ecotect) (eg. benefit_harm). See
+                the the ladybug Colorset object for a complete list of color sets.
+        """
+        col_method = getattr(Colorset, colorset_name)
+        self.colors = col_method()
+        if self._user_data is None:
+            self.user_data = {'color_set': colorset_name}
+        else:
+            self._user_data['color_set'] = colorset_name
 
     def duplicate(self):
         """Return a copy of the current legend parameters."""
@@ -921,6 +957,8 @@ class LegendParameters(object):
             base['segment_width'] = self.segment_width
         if not self.is_text_height_default:
             base['text_height'] = self.text_height
+        if self.user_data is not None:
+            base['user_data'] = self.user_data
         return base
 
     @staticmethod
@@ -949,6 +987,7 @@ class LegendParameters(object):
         new_par._segment_width = self._segment_width
         new_par._text_height = self._text_height
         new_par._font = self._font
+        new_par._user_data = None if self.user_data is None else self.user_data.copy()
         new_par._is_segment_count_default = self._is_segment_count_default
         new_par._are_colors_default = self._are_colors_default
         new_par._is_title_default = self._is_title_default
@@ -1051,6 +1090,7 @@ class LegendParametersCategorized(LegendParameters):
         * min
         * max
         * segment_count
+        * user_data
 
         * is_title_default
         * is_base_plane_default
@@ -1089,6 +1129,7 @@ class LegendParametersCategorized(LegendParameters):
         self.segment_width = None
         self.text_height = None
         self.font = None
+        self._user_data = None
 
         # properties that have no meaning for this class
         self._ordinal_dictionary = None
@@ -1116,11 +1157,10 @@ class LegendParametersCategorized(LegendParameters):
         assert data['type'] == 'LegendParametersCategorized', \
             'Expected LegendParametersCategorized. Got {}.'.format(data['type'])
         default_dict = {'type': 'Default'}
-        optional_keys = ('category_names', 'continuous_legend', 'continuous_colors',
-                         'title', 'ordinal_dictionary',
-                         'decimal_count', 'include_larger_smaller',
-                         'vertical', 'base_plane', 'segment_height',
-                         'segment_width', 'text_height', 'font')
+        optional_keys = (
+            'category_names', 'continuous_legend', 'continuous_colors', 'title',
+            'ordinal_dictionary', 'decimal_count', 'include_larger_smaller', 'vertical',
+            'base_plane', 'segment_height', 'segment_width', 'text_height', 'font')
         for key in optional_keys:
             if key not in data:
                 data[key] = None
@@ -1143,6 +1183,8 @@ class LegendParametersCategorized(LegendParameters):
         leg_par.segment_width = data['segment_width']
         leg_par.text_height = data['text_height']
         leg_par.font = data['font']
+        if 'user_data' in data and data['user_data'] is not None:
+            leg_par.user_data = data['user_data']
         return leg_par
 
     @property
@@ -1265,10 +1307,10 @@ class LegendParametersCategorized(LegendParameters):
     def to_dict(self):
         """Get legend parameters categorized as a dictionary."""
         base = self._base_dict()
+        base['type'] = 'LegendParametersCategorized'
         base['domain'] = self.domain
         base['category_names'] = self.category_names
         base['continuous_colors'] = self.continuous_colors
-        base['type'] = 'LegendParametersCategorized'
         return base
 
     def __copy__(self):
@@ -1284,6 +1326,7 @@ class LegendParametersCategorized(LegendParameters):
         new_par._segment_width = self._segment_width
         new_par._text_height = self._text_height
         new_par._font = self._font
+        new_par._user_data = None if self.user_data is None else self.user_data.copy()
         new_par._is_title_default = self._is_title_default
         new_par._is_base_plane_default = self._is_base_plane_default
         new_par._is_segment_height_default = self._is_segment_height_default
