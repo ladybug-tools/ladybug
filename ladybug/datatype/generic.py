@@ -36,11 +36,15 @@ class GenericType(DataTypeBase):
         """
         assert isinstance(name, str), 'name must be a string. Got {}.'.format(type(name))
         assert isinstance(unit, str), 'unit must be a string. Got {}.'.format(type(unit))
+        if min == {'type': 'Default'}:
+            min = float('-inf')
+        if max == {'type': 'Default'}:
+            max = float('+inf')
         assert isinstance(min, (float, int)), 'min must be a number. ' \
             'Got {}.'.format(type(min))
         assert isinstance(max, (float, int)), 'max must be a number. ' \
             'Got {}.'.format(type(max))
-        if abbreviation is not None:
+        if abbreviation:
             assert isinstance(abbreviation, str), 'abbreviation must be a ' \
                 'string. Got {}.'.format(type(abbreviation))
         if unit_descr is not None:
@@ -58,7 +62,7 @@ class GenericType(DataTypeBase):
         self._units = [unit]
         self._min = min
         self._max = max
-        self._abbreviation = abbreviation if abbreviation is not None else name
+        self._abbreviation = abbreviation if abbreviation else name
         self._unit_descr = unit_descr
         self._point_in_time = point_in_time
         self._cumulative = cumulative
@@ -83,18 +87,25 @@ class GenericType(DataTypeBase):
 
     def to_dict(self):
         """Get Generic data type as a dictionary."""
-        return {
+        base = {
             'type': 'DataType',
             'name': self.name,
             'data_type': self.__class__.__name__,
-            'base_unit': self.units[0],
-            'min': self._min,
-            'max': self._max,
-            'abbreviation': self._abbreviation,
-            'unit_descr': self._unit_descr,
-            'point_in_time': self._point_in_time,
-            'cumulative': self._cumulative
+            'base_unit': self.units[0]
         }
+        if self._min != float('-inf'):
+            base['min'] = self._min
+        if self._max != float('+inf'):
+            base['max'] = self._max
+        if self._abbreviation != self.name:
+            base['abbreviation'] = self._abbreviation
+        if self._unit_descr is not None:
+            base['unit_descr'] = self._unit_descr
+        if not self._point_in_time:
+            base['point_in_time'] = self._point_in_time
+        if self._cumulative:
+            base['cumulative'] = self._cumulative
+        return base
 
     def to_string(self):
         """Get data type as a string."""
