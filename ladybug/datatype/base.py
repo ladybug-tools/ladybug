@@ -58,10 +58,10 @@ class DataTypeBase(object):
 
         .. code-block:: python
 
-                {
-                    "name": ""  # data type name of the data type as a string
-                    "data_type": ""  # the class name of the data type as a string
-                }
+            {
+                "name": ""  # data type name of the data type as a string
+                "data_type": ""  # the class name of the data type as a string
+            }
         """
         # load up all of the types if they aren't already loaded
         assert 'name' in data, 'Required keyword "name" is missing!'
@@ -72,10 +72,15 @@ class DataTypeBase(object):
         if data['data_type'] == 'GenericType':
             assert 'base_unit' in data, \
                 'Keyword "base_unit" is missing and is required for GenericType.'
+            d_min = data['min'] if 'min' in data else float('-inf')
+            d_max = data['max'] if 'max' in data else float('+inf')
+            abbr = data['abbreviation'] if 'abbreviation' in data else None
+            unit_descr = data['unit_descr'] if 'unit_descr' in data else None
+            point_in_time = data['point_in_time'] if 'point_in_time' in data else True
+            cumulative = data['cumulative'] if 'cumulative' in data else False
             return cls._type_enumeration._GENERICTYPE(
-                data['name'], data['base_unit'], data['min'], data['max'],
-                data['abbreviation'], data['unit_descr'], data['point_in_time'],
-                data['cumulative'])
+                data['name'], data['base_unit'], d_min, d_max, abbr,
+                unit_descr, point_in_time, cumulative)
         elif data['data_type'] in cls._type_enumeration._TYPES:
             clss = cls._type_enumeration._TYPES[data['data_type']]
             if data['data_type'] == data['name'].title().replace(' ', ''):
