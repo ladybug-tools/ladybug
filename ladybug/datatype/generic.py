@@ -88,7 +88,7 @@ class GenericType(DataTypeBase):
     def to_dict(self):
         """Get Generic data type as a dictionary."""
         base = {
-            'type': 'DataType',
+            'type': 'GenericDataType',
             'name': self.name,
             'data_type': self.__class__.__name__,
             'base_unit': self.units[0]
