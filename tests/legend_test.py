@@ -28,6 +28,11 @@ def test_init_legend_parameters():
     assert leg_par.is_segment_height_default
     assert leg_par.is_segment_width_default
     assert leg_par.is_text_height_default
+    assert leg_par.is_origin_x_default
+    assert leg_par.is_origin_y_default
+    assert leg_par.is_segment_height_2d_default
+    assert leg_par.is_segment_width_2d_default
+    assert leg_par.is_text_height_2d_default
 
     leg_par_copy = leg_par.duplicate()
     assert leg_par_copy.min == leg_par.min

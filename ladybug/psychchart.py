@@ -870,11 +870,11 @@ class PsychrometricChart(object):
         """Override the dimensions of the legend to ensure it fits the chart."""
         min_pt, max_pt = self.container.min_point, self.container.max_point
         if l_par.vertical and l_par.is_segment_height_default:
-            l_par.segment_height = (max_pt.y - min_pt.y) / 20
-            l_par._is_segment_height_default = True
+            l_par.properties_3d.segment_height = (max_pt.y - min_pt.y) / 20
+            l_par.properties_3d._is_segment_height_default = True
         elif l_par.vertical and l_par.is_segment_height_default:
-            l_par.segment_width = (max_pt.x - min_pt.x) / 20
-            l_par._is_segment_width_default = True
+            l_par.properties_3d.segment_width = (max_pt.x - min_pt.x) / 20
+            l_par.properties_3d._is_segment_width_default = True
 
     def _check_input(self, data_coll, dat_type, unit, name):
         """Check an input that can be either a number or a Data Collection."""

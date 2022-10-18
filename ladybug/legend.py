@@ -1,14 +1,6 @@
 # coding=utf-8
 from __future__ import division
-
-from .color import Color, Colorset, ColorRange
-
-from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
-from ladybug_geometry.geometry3d.plane import Plane
-from ladybug_geometry.geometry3d.mesh import Mesh3D
-from ladybug_geometry.geometry2d.pointvector import Point2D
-from ladybug_geometry.geometry2d.mesh import Mesh2D
-
+import re
 try:
     from collections.abc import Iterable  # python < 3.7
 except ImportError:
@@ -16,6 +8,14 @@ except ImportError:
 import sys
 if (sys.version_info > (3, 0)):  # python 3
     xrange = range
+
+from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
+from ladybug_geometry.geometry3d.plane import Plane
+from ladybug_geometry.geometry3d.mesh import Mesh3D
+from ladybug_geometry.geometry2d.pointvector import Point2D
+from ladybug_geometry.geometry2d.mesh import Mesh2D
+
+from .color import Color, Colorset, ColorRange
 
 
 class Legend(object):
@@ -137,9 +137,10 @@ class Legend(object):
         # set the default segment width if the legend is horizontal
         if not self._legend_par.vertical and self._legend_par.is_segment_width_default:
             max_len = len(str(int(self._legend_par.max)))
-            self._legend_par.segment_width = self._legend_par.text_height * \
+            self._legend_par.properties_3d.segment_width = \
+                self._legend_par.text_height * \
                 (max_len + self._legend_par.decimal_count + 2)
-            self._legend_par._is_segment_width_default = True  # it's been auto-assigned
+            self._legend_par.properties_3d._is_segment_width_default = True
 
     @classmethod
     def from_dict(cls, data):
@@ -465,12 +466,20 @@ class LegendParameters(object):
         * decimal_count
         * include_larger_smaller
         * vertical
+        * font
+        * user_data
+
+        * properties_3d
         * base_plane
         * segment_height
         * segment_width
         * text_height
-        * font
-        * user_data
+        * properties_2d
+        * origin_x
+        * origin_y
+        * segment_height_2d
+        * segment_width_2d
+        * text_height_2d
 
         * is_segment_count_default
         * are_colors_default
@@ -479,6 +488,11 @@ class LegendParameters(object):
         * is_segment_height_default
         * is_segment_width_default
         * is_text_height_default
+        * is_origin_x_default
+        * is_origin_y_default
+        * is_segment_height_2d_default
+        * is_segment_width_2d_default
+        * is_text_height_2d_default
 
     Usage:
 
@@ -491,16 +505,13 @@ class LegendParameters(object):
     __slots__ = (
         '_min', '_max', '_segment_count', '_colors', '_continuous_legend',
         '_title', '_ordinal_dictionary', '_decimal_count', '_include_larger_smaller',
-        '_vertical', '_base_plane', '_segment_height', '_segment_width',
-        '_text_height', '_font', '_user_data',
-        '_is_segment_count_default', '_are_colors_default', '_is_title_default',
-        '_is_base_plane_default', '_is_segment_height_default',
-        '_is_segment_width_default', '_is_text_height_default')
+        '_vertical', '_font', '_user_data', '_properties_3d', '_properties_2d',
+        '_is_segment_count_default', '_are_colors_default', '_is_title_default')
 
     def __init__(self, min=None, max=None, segment_count=None,
                  colors=None, title=None, base_plane=None):
-        """Initialize Ladybug Legend Parameters.
-        """
+        """Initialize Ladybug LegendParameters."""
+        # set the init arguments
         self._min = None
         self._max = None
         self.min = min
@@ -508,29 +519,31 @@ class LegendParameters(object):
         self.segment_count = segment_count
         self.colors = colors
         self.title = title
-        self.base_plane = base_plane
-        self._user_data = None
 
+        # set the other properties to None/default
         self.continuous_legend = None
         self.ordinal_dictionary = None
         self.decimal_count = None
         self.include_larger_smaller = None
         self.vertical = None
-        self.segment_height = None
-        self.segment_width = None
-        self.text_height = None
         self.font = None
+        self._user_data = None
+
+        # set the 3D and 2D properties
+        self.properties_3d = Legend3DParameters(base_plane)
+        self.properties_2d = Legend2DParameters()
 
     @classmethod
     def from_dict(cls, data):
         """Create LegendParameters from a dictionary.
 
-    Args:
-        data: A python dictionary in the following format
+        Args:
+            data: A python dictionary in the following format
 
-    .. code-block:: python
+        .. code-block:: python
 
             {
+            "type": "LegendParameters",
             "min": -3,
             "max": 3,
             "segment_count": 7
@@ -542,8 +555,8 @@ class LegendParameters(object):
         default_dict = {'type': 'Default'}
         optional_keys = (
             'min', 'max', 'segment_count', 'colors', 'continuous_legend', 'title',
-            'ordinal_dictionary', 'decimal_count', 'include_larger_smaller', 'vertical',
-            'base_plane', 'segment_height', 'segment_width', 'text_height', 'font')
+            'ordinal_dictionary', 'decimal_count', 'include_larger_smaller',
+            'vertical', 'font', 'properties_3d', 'properties_2d')
         for key in optional_keys:
             if key not in data:
                 data[key] = None
@@ -553,21 +566,19 @@ class LegendParameters(object):
         colors = None
         if data['colors'] is not None:
             colors = [Color.from_dict(col) for col in data['colors']]
-        base_plane = None
-        if data['base_plane'] is not None:
-            base_plane = Plane.from_dict(data['base_plane'])
 
         leg_par = cls(data['min'], data['max'], data['segment_count'],
-                      colors, data['title'], base_plane)
+                      colors, data['title'])
         leg_par.continuous_legend = data['continuous_legend']
         leg_par.ordinal_dictionary = data['ordinal_dictionary']
         leg_par.decimal_count = data['decimal_count']
         leg_par.include_larger_smaller = data['include_larger_smaller']
         leg_par.vertical = data['vertical']
-        leg_par.segment_height = data['segment_height']
-        leg_par.segment_width = data['segment_width']
-        leg_par.text_height = data['text_height']
         leg_par.font = data['font']
+        if data['properties_3d'] is not None:
+            leg_par.properties_3d = Legend3DParameters.from_dict(data['properties_3d'])
+        if data['properties_2d'] is not None:
+            leg_par.properties_2d = Legend2DParameters.from_dict(data['properties_2d'])
         if 'user_data' in data and data['user_data'] is not None:
             leg_par.user_data = data['user_data']
         return leg_par
@@ -748,90 +759,6 @@ class LegendParameters(object):
             self._vertical = True
 
     @property
-    def base_plane(self):
-        """Get or set a Ladybug Point3D for the base point of the legend."""
-        return self._base_plane
-
-    @base_plane.setter
-    def base_plane(self, base_pl):
-        if base_pl is not None:
-            assert isinstance(base_pl, Plane), \
-                'Expected Ladybug Plane for base_plane. Got {}.'.format(type(base_pl))
-            self._base_plane = base_pl
-            self._is_base_plane_default = False
-        else:
-            self._base_plane = Plane(Vector3D(0, 0, 1), Point3D(0, 0, 0))
-            self._is_base_plane_default = True
-
-    @property
-    def segment_height(self):
-        """Get or set the height for each of the legend segments.
-
-         Default is 1.
-        """
-        return self._segment_height
-
-    @segment_height.setter
-    def segment_height(self, seg_h):
-        if seg_h is not None:
-            assert isinstance(seg_h, (float, int)), \
-                'Expected number for segment_height. Got {}.'.format(type(seg_h))
-            assert seg_h > 0, 'segment_height must be greater than 0.' \
-                ' Got {}.'.format(seg_h)
-            self._segment_height = seg_h
-            self._is_segment_height_default = False
-        else:
-            self._segment_height = 1
-            self._is_segment_height_default = True
-
-    @property
-    def segment_width(self):
-        """Get or set the width for each of the legend segments.
-
-         Default is 1 when legend is vertical. When horizontal, the default is
-         text_height * (max_number_of_digits + 2) where max_number_of_digits is
-         the number of digits displaying in the legend parameter max.
-        """
-        if not self.vertical and self.is_segment_width_default:
-            return self.text_height * 5
-        return self._segment_width
-
-    @segment_width.setter
-    def segment_width(self, seg_w):
-        if seg_w is not None:
-            assert isinstance(seg_w, (float, int)), \
-                'Expected number for segment_width. Got {}.'.format(type(seg_w))
-            assert seg_w > 0, 'segment_width must be greater than 0.' \
-                ' Got {}.'.format(seg_w)
-            self._segment_width = seg_w
-            self._is_segment_width_default = False
-        else:
-            self._segment_width = 1
-            self._is_segment_width_default = True
-
-    @property
-    def text_height(self):
-        """Get or set the height for the legend text.
-
-        Default is 1/3 of the segment_height.
-        """
-        if self.is_text_height_default:
-            return self.segment_height * 0.33
-        return self._text_height
-
-    @text_height.setter
-    def text_height(self, txt_h):
-        if txt_h is not None:
-            assert isinstance(txt_h, (float, int)), \
-                'Expected number for text_height. Got {}.'.format(type(txt_h))
-            assert txt_h > 0, 'text_height must be greater than 0.' \
-                ' Got {}.'.format(txt_h)
-            self._is_text_height_default = False
-        else:
-            self._is_text_height_default = True
-        self._text_height = txt_h
-
-    @property
     def font(self):
         """Get or set the font for the legend text.
 
@@ -849,6 +776,120 @@ class LegendParameters(object):
             self._font = font
         else:
             self._font = 'Arial'
+
+    @property
+    def properties_3d(self):
+        """Get or set a Legend3DParameters for the properties of 3D legends."""
+        return self._properties_3d
+
+    @properties_3d.setter
+    def properties_3d(self, value):
+        if value is not None:
+            assert isinstance(value, Legend3DParameters), 'Expected Legend3DParameters' \
+                ' for properties_3d. Got {}.'.format(type(value))
+        else:
+            value = Legend3DParameters()
+        self._properties_3d = value
+        value._parent = self
+
+    @property
+    def base_plane(self):
+        """Get or set a Plane for the base point and orientation of the 3D legend.
+        """
+        return self.properties_3d.base_plane
+
+    @base_plane.setter
+    def base_plane(self, base_pl):
+        self.properties_3d.base_plane = base_pl
+
+    @property
+    def segment_height(self):
+        """Get or set the height for each of the legend segments in 3D space."""
+        return self.properties_3d.segment_height
+
+    @segment_height.setter
+    def segment_height(self, seg_h):
+        self.properties_3d.segment_height = seg_h
+
+    @property
+    def segment_width(self):
+        """Get or set the width for each of the legend segments in 3D space."""
+        return self.properties_3d.segment_width
+
+    @segment_width.setter
+    def segment_width(self, seg_w):
+        self.properties_3d.segment_width = seg_w
+
+    @property
+    def text_height(self):
+        """Get or set the height for the legend text in 3D space."""
+        return self.properties_3d.text_height
+
+    @text_height.setter
+    def text_height(self, txt_h):
+        self.properties_3d.text_height = txt_h
+
+    @property
+    def properties_2d(self):
+        """Get or set a Legend2DParameters for the properties of 2D legends."""
+        return self._properties_2d
+
+    @properties_2d.setter
+    def properties_2d(self, value):
+        if value is not None:
+            assert isinstance(value, Legend2DParameters), 'Expected Legend2DParameters' \
+                ' for properties_2d. Got {}.'.format(type(value))
+        else:
+            value = Legend2DParameters()
+        self._properties_2d = value
+        value._parent = self
+
+    @property
+    def origin_x(self):
+        """Get or set text for the X coordinate from where the 2D legend will be drawn.
+        """
+        return self.properties_2d.origin_x
+
+    @origin_x.setter
+    def origin_x(self, value):
+        self.properties_2d.origin_x = value
+
+    @property
+    def origin_y(self):
+        """Get or set text for the Y coordinate from where the 2D legend will be drawn.
+        """
+        return self.properties_2d.origin_y
+
+    @origin_y.setter
+    def origin_y(self, value):
+        self.properties_2d.origin_y = value
+
+    @property
+    def segment_height_2d(self):
+        """Get or set the height for each of the legend segments in 2D space."""
+        return self.properties_2d.segment_height
+
+    @segment_height_2d.setter
+    def segment_height_2d(self, seg_h):
+        self.properties_2d.segment_height = seg_h
+
+    @property
+    def segment_width_2d(self):
+        """Get or set the width for each of the legend segments in 2D space."""
+        return self.properties_2d.segment_width
+
+    @segment_width_2d.setter
+    def segment_width_2d(self, seg_w):
+        self.properties_2d.segment_width = seg_w
+
+    @property
+    def text_height_2d(self):
+        """Get or set the height for the legend text in 2D space."""
+        return self.properties_2d.text_height
+
+    @text_height_2d.setter
+    def text_height_2d(self, txt_h):
+        self.properties_2d.text_height = txt_h
 
     @property
     def user_data(self):
@@ -883,23 +924,48 @@ class LegendParameters(object):
 
     @property
     def is_base_plane_default(self):
-        """Boolean noting whether the base point is defaulted."""
-        return self._is_base_plane_default
+        """Boolean noting whether the base plane in 3D space is defaulted."""
+        return self.properties_3d.is_base_plane_default
 
     @property
     def is_segment_height_default(self):
-        """Boolean noting whether the segment height is defaulted."""
-        return self._is_segment_height_default
+        """Boolean noting whether the segment height in 3D space is defaulted."""
+        return self.properties_3d.is_segment_height_default
 
     @property
     def is_segment_width_default(self):
-        """Boolean noting whether the segment width is defaulted."""
-        return self._is_segment_width_default
+        """Boolean noting whether the segment width in 3D space is defaulted."""
+        return self.properties_3d.is_segment_width_default
 
     @property
     def is_text_height_default(self):
-        """Boolean noting whether the text height is defaulted."""
-        return self._is_text_height_default
+        """Boolean noting whether the text height in 3D space is defaulted."""
+        return self.properties_3d.is_text_height_default
+
+    @property
+    def is_origin_x_default(self):
+        """Boolean noting whether the X coordinate in 2D is defaulted."""
+        return self.properties_2d.is_origin_x_default
+
+    @property
+    def is_origin_y_default(self):
+        """Boolean noting whether the Y coordinate in 2D is defaulted."""
+        return self.properties_2d.is_origin_y_default
+
+    @property
+    def is_segment_height_2d_default(self):
+        """Boolean noting whether the segment height in 2D is defaulted."""
+        return self.properties_2d.is_segment_height_default
+
+    @property
+    def is_segment_width_2d_default(self):
+        """Boolean noting whether the segment width in 2D is defaulted."""
+        return self.properties_2d.is_segment_width_default
+
+    @property
+    def is_text_height_2d_default(self):
+        """Boolean noting whether the text height in 3D space is defaulted."""
+        return self.properties_2d.is_text_height_default
 
     def colors_by_set(self, colorset_name):
         """Set the colors of this object using the name of a Colorset.
@@ -949,14 +1015,10 @@ class LegendParameters(object):
             base['colors'] = [c.to_dict() for c in self.colors]
         if not self.is_title_default:
             base['title'] = self.title
-        if not self.is_base_plane_default:
-            base['base_plane'] = self.base_plane.to_dict()
-        if not self.is_segment_height_default:
-            base['segment_height'] = self.segment_height
-        if not self.is_segment_width_default:
-            base['segment_width'] = self.segment_width
-        if not self.is_text_height_default:
-            base['text_height'] = self.text_height
+        if not self.properties_3d.is_default:
+            base['properties_3d'] = self.properties_3d.to_dict()
+        if not self.properties_2d.is_default:
+            base['properties_2d'] = self.properties_2d.to_dict()
         if self.user_data is not None:
             base['user_data'] = self.user_data
         return base
@@ -976,38 +1038,31 @@ class LegendParameters(object):
         return cols
 
     def __copy__(self):
-        new_par = LegendParameters(self.min, self.max, self.segment_count,
-                                   self.colors, self.title, self.base_plane)
+        new_par = LegendParameters(
+            self.min, self.max, self.segment_count, self.colors, self.title)
         new_par._continuous_legend = self._continuous_legend
         new_par._ordinal_dictionary = self._ordinal_dictionary
         new_par._decimal_count = self._decimal_count
         new_par._include_larger_smaller = self._include_larger_smaller
         new_par._vertical = self._vertical
-        new_par._segment_height = self._segment_height
-        new_par._segment_width = self._segment_width
-        new_par._text_height = self._text_height
         new_par._font = self._font
+        new_par.properties_3d = self.properties_3d.duplicate()
+        new_par.properties_2d = self.properties_2d.duplicate()
         new_par._user_data = None if self.user_data is None else self.user_data.copy()
         new_par._is_segment_count_default = self._is_segment_count_default
         new_par._are_colors_default = self._are_colors_default
         new_par._is_title_default = self._is_title_default
-        new_par._is_base_plane_default = self._is_base_plane_default
-        new_par._is_segment_height_default = self._is_segment_height_default
-        new_par._is_segment_width_default = self._is_segment_width_default
-        new_par._is_text_height_default = self._is_text_height_default
         return new_par
 
     def __key(self):
-        return \
-            (self.min, self.max, self.segment_count, self.title, hash(self.base_plane),
-             self._continuous_legend, self._ordinal_dictionary, self._decimal_count,
-             self._include_larger_smaller, self._vertical, self._segment_height,
-             self._segment_width, self._text_height, self._font,
-             self._is_segment_count_default, self._are_colors_default,
-             self._is_title_default, self._is_base_plane_default,
-             self._is_segment_height_default, self._is_segment_width_default,
-             self._is_text_height_default) + \
-            tuple(hash(col) for col in self.colors)
+        return (
+            self.min, self.max, self.segment_count, self.title,
+            self._continuous_legend, self._ordinal_dictionary, self._decimal_count,
+            self._include_larger_smaller, self._vertical, self._font,
+            hash(self.properties_3d), hash(self.properties_2d),
+            self._is_segment_count_default, self._are_colors_default,
+            self._is_title_default
+        ) + tuple(hash(col) for col in self.colors)
 
     def __hash__(self):
         return hash(self.__key())
@@ -1029,21 +1084,14 @@ class LegendParameters(object):
         seg = '[default]' if self.is_segment_count_default \
             else self.segment_count
         title = '[default]' if self.is_title_default else self.title
-        base_pt = '[default]' if self.is_base_plane_default else self.base_plane.o
-        seg_h = '[default]' if self.is_segment_height_default else self.segment_height
-        seg_w = '[default]' if self.is_segment_width_default else self.segment_width
-        txt_h = '[default]' if self.is_text_height_default else self.text_height
         return 'Legend Parameters\n minimum: {}\n maximum: {}\n segments: {}\n' \
             ' colors:\n  {}\n continuous legend: {}\n' \
             ' title: {}\n ordinal text: {}\n number decimals: {}\n' \
-            ' include < >: {}\n vertical: {}\n base point:\n  {}\n' \
-            ' segment height: {}\n segment width: {}\n' \
-            ' text height: {}\n font: {}'.format(
+            ' include < >: {}\n vertical: {}\n font: {}\n {}\n{}'.format(
                 min, max, seg, '\n  '.join([str(c) for c in self.colors]),
-                self.continuous_legend, title,
-                self.ordinal_dictionary, self.decimal_count,
-                self.include_larger_smaller, self.vertical,
-                base_pt, seg_h, seg_w, txt_h, self.font)
+                self.continuous_legend, title, self.ordinal_dictionary,
+                self.decimal_count, self.include_larger_smaller,
+                self.vertical, self.font, self.properties_3d, self.properties_2d)
 
 
 class LegendParametersCategorized(LegendParameters):
@@ -1082,15 +1130,24 @@ class LegendParametersCategorized(LegendParameters):
         * decimal_count
         * include_larger_smaller
         * vertical
+        * font
+        * user_data
+
+        * properties_3d
         * base_plane
         * segment_height
         * segment_width
         * text_height
-        * font
+        * properties_2d
+        * origin_x
+        * origin_y
+        * segment_height_2d
+        * segment_width_2d
+        * text_height_2d
+
         * min
         * max
         * segment_count
-        * user_data
 
         * is_title_default
         * is_base_plane_default
@@ -1098,7 +1155,7 @@ class LegendParametersCategorized(LegendParameters):
         * is_segment_width_default
         * is_text_height_default
     """
-    __slots__ = ('_domain', '_category_names', '_continuous_colors',)
+    __slots__ = ('_domain', '_category_names', '_continuous_colors')
 
     def __init__(self, domain, colors, category_names=None, title=None, base_plane=None):
         """Initialize Ladybug Legend Parameters Categorized."""
@@ -1113,23 +1170,23 @@ class LegendParametersCategorized(LegendParameters):
         self._max = self._domain[-1]
         self._segment_count = len(self._domain) + 1
 
-        # set the other input arguments
+        # set the other init arguments
         self.colors = colors
         self.category_names = category_names
         self.title = title
-        self.base_plane = base_plane
 
-        # set all of the other inputs to None for now.
+        # set all of the other inputs to None/default
         self.continuous_colors = None
         self.continuous_legend = None
         self.decimal_count = None
         self.include_larger_smaller = None
         self.vertical = None
-        self.segment_height = None
-        self.segment_width = None
-        self.text_height = None
         self.font = None
         self._user_data = None
+
+        # set the 3D and 2D properties
+        self.properties_3d = Legend3DParameters(base_plane)
+        self.properties_2d = Legend2DParameters()
 
         # properties that have no meaning for this class
         self._ordinal_dictionary = None
@@ -1140,17 +1197,18 @@ class LegendParametersCategorized(LegendParameters):
     def from_dict(cls, data):
         """Create LegendParametersCategorized from a dictionary.
 
-    Args:
-        data: A python dictionary in the following format
+        Args:
+            data: A python dictionary in the following format
 
-    .. code-block:: python
+        .. code-block:: python
 
             {
+            "type": "LegendParametersCategorized",
             "domain": [100, 2000],
             "colors": [{'r': 0, 'g': 0, 'b': 0},
                        {'r': 0, 'g': 0, 'b': 100},
                        {'r': 255, 'g': 0, 'b': 0}],
-            "category_names": ["low", "desired", "too much"]
+            "category_names": ["low", "desired", "high"]
             }
         """
         data = data.copy()  # copy to avoid mutating the input dictionary
@@ -1159,8 +1217,8 @@ class LegendParametersCategorized(LegendParameters):
         default_dict = {'type': 'Default'}
         optional_keys = (
             'category_names', 'continuous_legend', 'continuous_colors', 'title',
-            'ordinal_dictionary', 'decimal_count', 'include_larger_smaller', 'vertical',
-            'base_plane', 'segment_height', 'segment_width', 'text_height', 'font')
+            'decimal_count', 'include_larger_smaller', 'vertical', 'font',
+            'properties_3d', 'properties_2d')
         for key in optional_keys:
             if key not in data:
                 data[key] = None
@@ -1168,21 +1226,18 @@ class LegendParametersCategorized(LegendParameters):
                 data[key] = None
 
         colors = [Color.from_dict(col) for col in data['colors']]
-        base_plane = None
-        if data['base_plane'] is not None:
-            base_plane = Plane.from_dict(data['base_plane'])
 
-        leg_par = cls(data['domain'], colors, data['category_names'],
-                      data['title'], base_plane)
+        leg_par = cls(data['domain'], colors, data['category_names'], data['title'])
         leg_par.continuous_colors = data['continuous_colors']
         leg_par.continuous_legend = data['continuous_legend']
         leg_par.decimal_count = data['decimal_count']
         leg_par.include_larger_smaller = data['include_larger_smaller']
         leg_par.vertical = data['vertical']
-        leg_par.segment_height = data['segment_height']
-        leg_par.segment_width = data['segment_width']
-        leg_par.text_height = data['text_height']
         leg_par.font = data['font']
+        if data['properties_3d'] is not None:
+            leg_par.properties_3d = Legend3DParameters.from_dict(data['properties_3d'])
+        if data['properties_2d'] is not None:
+            leg_par.properties_2d = Legend2DParameters.from_dict(data['properties_2d'])
         if 'user_data' in data and data['user_data'] is not None:
             leg_par.user_data = data['user_data']
         return leg_par
@@ -1315,36 +1370,26 @@ class LegendParametersCategorized(LegendParameters):
 
     def __copy__(self):
         new_par = LegendParametersCategorized(
-            self._domain, self._colors, self._category_names, self.title,
-            self.base_plane)
+            self._domain, self._colors, self._category_names, self.title)
         new_par._continuous_colors = self._continuous_colors
         new_par._continuous_legend = self._continuous_legend
         new_par._decimal_count = self._decimal_count
         new_par._include_larger_smaller = self._include_larger_smaller
         new_par._vertical = self._vertical
-        new_par._segment_height = self._segment_height
-        new_par._segment_width = self._segment_width
-        new_par._text_height = self._text_height
         new_par._font = self._font
+        new_par.properties_3d = self.properties_3d.duplicate()
+        new_par.properties_2d = self.properties_2d.duplicate()
         new_par._user_data = None if self.user_data is None else self.user_data.copy()
         new_par._is_title_default = self._is_title_default
-        new_par._is_base_plane_default = self._is_base_plane_default
-        new_par._is_segment_height_default = self._is_segment_height_default
-        new_par._is_segment_width_default = self._is_segment_width_default
-        new_par._is_text_height_default = self._is_text_height_default
         return new_par
 
     def __key(self):
-        return \
-            (self._domain, self._category_names, self.title, hash(self.base_plane),
-             self._continuous_colors, self._continuous_legend, self._decimal_count,
-             self._include_larger_smaller, self._vertical, self._segment_height,
-             self._segment_width, self._text_height, self._font,
-             self._is_segment_count_default, self._are_colors_default,
-             self._is_title_default, self._is_base_plane_default,
-             self._is_segment_height_default, self._is_segment_width_default,
-             self._is_text_height_default) + \
-            tuple(hash(col) for col in self.colors)
+        return (
+            self._domain, self._category_names, self.title,
+            self._continuous_colors, self._continuous_legend, self._decimal_count,
+            self._include_larger_smaller, self._vertical, self._font,
+            hash(self.properties_3d), hash(self.properties_2d), self._is_title_default
+        ) + tuple(hash(col) for col in self.colors)
 
     def __hash__(self):
         return hash(self.__key())
@@ -1359,20 +1404,577 @@ class LegendParametersCategorized(LegendParameters):
     def __repr__(self):
         """Legend parameter representation."""
         title = '[default]' if self.is_title_default else self.title
+        return 'Legend Parameters Categorized\n domain: {}\n colors:\n  {}\n' \
+            ' category names\n  {}\n continuous colors: {}\n continuous legend: {}\n' \
+            ' title: {}\n number decimals: {}\n' \
+            ' include < >: {}\n vertical: {}\n font: {}\n {}\n{}'.format(
+                self.domain,
+                '\n  '.join([str(c) for c in self.colors]),
+                '\n  '.join([str(c) for c in self.category_names]),
+                self.continuous_colors, self.continuous_legend, title,
+                self.decimal_count, self.include_larger_smaller, self.vertical,
+                self.font, self.properties_3d, self.properties_2d)
+
+
+class Legend3DParameters(object):
+    """Object to customize the properties of legends in the 3D scene.
+
+    Args:
+        base_plane: A Ladybug Plane object to note the starting point from where
+            the legend will be generated. If None, the default is the world XY plane
+            at origin (0, 0, 0) unless the legend is assigned to a specific geometry,
+            in which case the origin is in the lower right corner of the geometry
+            bounding box for vertical legends and the upper right corner for
+            horizontal legends.
+        segment_height: A number to set the height for each of the legend segments. If
+            None, the default is 1 unless the legend is assigned to a specific geometry,
+            in which case it is automatically set to a value on an appropriate scale
+            (some fraction of the bounding box around the geometry).
+        segment_width: A number to set the width for each of the legend segments. If
+            None, the default is 1 unless the legend is assigned to a specific geometry,
+            in which case it is automatically set to a value on an appropriate scale
+            (some fraction of the bounding box around the geometry).
+        text_height: A number to set the height for the legend text. If None,
+            the default is 1/3 of the segment_height.
+
+    Properties:
+        * base_plane
+        * segment_height
+        * segment_width
+        * text_height
+
+        * is_default
+        * is_base_plane_default
+        * is_segment_height_default
+        * is_segment_width_default
+        * is_text_height_default
+    """
+    __slots__ = (
+        '_base_plane', '_segment_height', '_segment_width', '_text_height',
+        '_is_base_plane_default', '_is_segment_height_default',
+        '_is_segment_width_default', '_is_text_height_default', '_parent')
+
+    def __init__(self, base_plane=None, segment_height=None, segment_width=None,
+                 text_height=None):
+        """Initialize Legend3DParameters."""
+        self.base_plane = base_plane
+        self.segment_height = segment_height
+        self.segment_width = segment_width
+        self.text_height = text_height
+        self._parent = None
+
+    @classmethod
+    def from_dict(cls, data):
+        """Create Legend3DParameters from a dictionary.
+
+    Args:
+        data: A python dictionary in the following format
+
+    .. code-block:: python
+
+            {
+            "type": "Legend3DParameters",
+            "base_plane": {"type": "Plane", "o": [11, 0, 0], "n": [0, 0, 1]},
+            "segment_height": 0.5,
+            "segment_width": 0.25,
+            "text_height": 0.25
+            }
+        """
+        data = data.copy()  # copy to avoid mutating the input dictionary
+        assert data['type'] == 'Legend3DParameters', \
+            'Expected Legend3DParameters. Got {}.'.format(data['type'])
+        default_dict = {'type': 'Default'}
+        optional_keys = ('base_plane', 'segment_height', 'segment_width', 'text_height')
+        for key in optional_keys:
+            if key not in data:
+                data[key] = None
+            elif data[key] == default_dict:
+                data[key] = None
+        base_plane = None
+        if data['base_plane'] is not None:
+            base_plane = Plane.from_dict(data['base_plane'])
+        return cls(base_plane, data['segment_height'],
+                   data['segment_width'], data['text_height'])
+
+    @property
+    def base_plane(self):
+        """Get or set a Ladybug Point3D for the base point of the legend."""
+        return self._base_plane
+
+    @base_plane.setter
+    def base_plane(self, base_pl):
+        if base_pl is not None:
+            assert isinstance(base_pl, Plane), \
+                'Expected Ladybug Plane for base_plane. Got {}.'.format(type(base_pl))
+            self._base_plane = base_pl
+            self._is_base_plane_default = False
+        else:
+            self._base_plane = Plane(Vector3D(0, 0, 1), Point3D(0, 0, 0))
+            self._is_base_plane_default = True
+
+    @property
+    def segment_height(self):
+        """Get or set the height for each of the legend segments.
+
+        The default is 1 unless the legend is assigned to a specific geometry,
+        in which case it is automatically set to a value on an appropriate scale
+        (some fraction of the bounding box around the geometry).
+        """
+        return self._segment_height
+
+    @segment_height.setter
+    def segment_height(self, seg_h):
+        if seg_h is not None:
+            assert isinstance(seg_h, (float, int)), \
+                'Expected number for segment_height. Got {}.'.format(type(seg_h))
+            assert seg_h > 0, 'segment_height must be greater than 0.' \
+                ' Got {}.'.format(seg_h)
+            self._segment_height = seg_h
+            self._is_segment_height_default = False
+        else:
+            self._segment_height = 1
+            self._is_segment_height_default = True
+
+    @property
+    def segment_width(self):
+        """Get or set the width for each of the legend segments.
+
+        Default is 1 when legend is vertical. When horizontal, the default is
+        text_height * (max_number_of_digits + 2) where max_number_of_digits is
+        the number of digits displaying in the legend parameter max.
+        """
+        if self.is_segment_width_default and self._parent is not None and \
+                not self._parent.vertical:
+            return self.text_height * 5
+        return self._segment_width
+
+    @segment_width.setter
+    def segment_width(self, seg_w):
+        if seg_w is not None:
+            assert isinstance(seg_w, (float, int)), \
+                'Expected number for segment_width. Got {}.'.format(type(seg_w))
+            assert seg_w > 0, 'segment_width must be greater than 0.' \
+                ' Got {}.'.format(seg_w)
+            self._segment_width = seg_w
+            self._is_segment_width_default = False
+        else:
+            self._segment_width = 1
+            self._is_segment_width_default = True
+
+    @property
+    def text_height(self):
+        """Get or set the height for the legend text.
+
+        Default is 1/3 of the segment_height.
+        """
+        if self.is_text_height_default:
+            return self.segment_height * 0.33
+        return self._text_height
+
+    @text_height.setter
+    def text_height(self, txt_h):
+        if txt_h is not None:
+            assert isinstance(txt_h, (float, int)), \
+                'Expected number for text_height. Got {}.'.format(type(txt_h))
+            assert txt_h > 0, 'text_height must be greater than 0.' \
+                ' Got {}.'.format(txt_h)
+            self._is_text_height_default = False
+        else:
+            self._is_text_height_default = True
+        self._text_height = txt_h
+
+    @property
+    def is_base_plane_default(self):
+        """Boolean noting whether the base plane is defaulted."""
+        return self._is_base_plane_default
+
+    @property
+    def is_segment_height_default(self):
+        """Boolean noting whether the segment height is defaulted."""
+        return self._is_segment_height_default
+
+    @property
+    def is_segment_width_default(self):
+        """Boolean noting whether the segment width is defaulted."""
+        return self._is_segment_width_default
+
+    @property
+    def is_text_height_default(self):
+        """Boolean noting whether the text height is defaulted."""
+        return self._is_text_height_default
+
+    @property
+    def is_default(self):
+        """Boolean noting whether all properties are defaulted."""
+        return all((
+            self._is_base_plane_default, self._is_segment_height_default,
+            self._is_segment_width_default, self._is_text_height_default
+        ))
+
+    def duplicate(self):
+        """Return a copy of the current Legend3DParameters."""
+        return self.__copy__()
+
+    def to_dict(self):
+        """Get Legend3DParameters as a dictionary."""
+        base = {'type': 'Legend3DParameters'}
+        if not self.is_base_plane_default:
+            base['base_plane'] = self.base_plane.to_dict()
+        if not self.is_segment_height_default:
+            base['segment_height'] = self.segment_height
+        if not self.is_segment_width_default:
+            base['segment_width'] = self.segment_width
+        if not self.is_text_height_default:
+            base['text_height'] = self.text_height
+        return base
+
+    def __copy__(self):
+        new_par = Legend3DParameters(
+            self._base_plane, self._segment_height,
+            self._segment_width, self._text_height)
+        new_par._is_base_plane_default = self._is_base_plane_default
+        new_par._is_segment_height_default = self._is_segment_height_default
+        new_par._is_segment_width_default = self._is_segment_width_default
+        new_par._is_text_height_default = self._is_text_height_default
+        return new_par
+
+    def __key(self):
+        return (
+            hash(self.base_plane), self._segment_height, self._segment_width,
+            self._text_height, self._is_base_plane_default,
+            self._is_segment_height_default, self._is_segment_width_default,
+            self._is_text_height_default
+        )
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, Legend3DParameters) and self.__key() == other.__key()
+
+    def __ne__(self, value):
+        return not self.__eq__(value)
+
+    def ToString(self):
+        """Overwrite .NET ToString method."""
+        return self.__repr__()
+
+    def __repr__(self):
+        """Legend3DParameters representation."""
         base_pt = '[default]' if self.is_base_plane_default else self.base_plane.o
         seg_h = '[default]' if self.is_segment_height_default else self.segment_height
         seg_w = '[default]' if self.is_segment_width_default else self.segment_width
         txt_h = '[default]' if self.is_text_height_default else self.text_height
-        return 'Legend Parameters Categorized\n domain: {}\n colors: {}\n' \
-            ' category names\n  {}\n continuous legend: {}\n' \
-            ' title: {}\n ordinal text: {}\n number decimals: {}\n' \
-            ' include < >: {}\n vertical: {}\n base point:\n  {}\n' \
-            ' segment height: {}\n segment width: {}\n' \
-            ' text height: {}\n font: {}'.format(
-                self.domain,
-                '\n  '.join([str(c) for c in self.colors]),
-                '\n  '.join([str(c) for c in self.category_names]),
-                self.continuous_legend, title,
-                self.ordinal_dictionary, self.decimal_count,
-                self.include_larger_smaller, self.vertical,
-                base_pt, seg_h, seg_w, txt_h, self.font)
+        return '3D Parameters\n  base point: {}\n' \
+            '  segment height: {}\n  segment width: {}\n' \
+            '  text height: {}'.format(base_pt, seg_h, seg_w, txt_h)
+
+
+class Legend2DParameters(object):
+    """Object to customize the properties of legends in the 2D plane of a screen.
+
+    Args:
+        origin_x: A text string to note the X coordinate of the base point from
+            where the legend will be generated (assuming an origin in the upper-left
+            corner of the screen with higher positive values of X moving to the right).
+            Text must be formatted as an integer followed by either "px" (to denote
+            the number of screen pixels) or "%" (to denote the percentage of the
+            screen). Examples include 10px, 5%. The default is set to make the legend
+            clearly visible on the screen (10px).
+        origin_y: A text string to note the Y coordinate of the base point from
+            where the legend will be generated (assuming an origin in the upper-left
+            corner of the screen with higher positive values of Y moving downward).
+            Text must be formatted as an integer followed by either "px" (to denote
+            the number of screen pixels) or "%" (to denote the percentage of the
+            screen). Examples include 10px, 5%. The default is set to make the legend
+            clearly visible on the screen (50px).
+        segment_height: A text string to note the height for each of the legend segments.
+            Text must be formatted as an integer followed by either "px" (to
+            denote the number of screen pixels) or "%" (to denote the percentage of the
+            screen). Examples include 10px, 5%. The default is set to make most
+            legends readable (25px for horizontal and 36px for vertical).
+        segment_width: A text string to set the width for each of the legend segments.
+            Text must be formatted as an integer followed by either "px" (to denote
+            the number of screen pixels) or "%" (to denote the percentage of the
+            screen). Examples include 10px, 5%. The default is set to make most
+            legends readable (36px for horizontal and 25px for vertical).
+        text_height: A text string to set the height for the legend text.
+            Text must be formatted as an integer followed by either "px" (to denote
+            the number of screen pixels) or "%" (to denote the percentage of the
+            screen). Examples include 10px, 5%. Default is 12px.
+
+    Properties:
+        * origin_x
+        * origin_y
+        * segment_height
+        * segment_width
+        * text_height
+
+        * is_default
+        * is_origin_x_default
+        * is_origin_y_default
+        * is_segment_height_default
+        * is_segment_width_default
+        * is_text_height_default
+    """
+    __slots__ = (
+        '_origin_x', '_origin_y', '_segment_height', '_segment_width', '_text_height',
+        '_is_origin_x_default', '_is_origin_y_default', '_is_segment_height_default',
+        '_is_segment_width_default', '_is_text_height_default', '_parent')
+    VALID_DIM = re.compile(r'^\d*px|\d*%$')
+
+    def __init__(self, origin_x=None, origin_y=None, segment_height=None,
+                 segment_width=None, text_height=None):
+        """Initialize Legend2DParameters."""
+        self.origin_x = origin_x
+        self.origin_y = origin_y
+        self.segment_height = segment_height
+        self.segment_width = segment_width
+        self.text_height = text_height
+        self._parent = None
+
+    @classmethod
+    def from_dict(cls, data):
+        """Create Legend2DParameters from a dictionary.
+
+    Args:
+        data: A python dictionary in the following format
+
+    .. code-block:: python
+
+            {
+            "type": "Legend2DParameters",
+            "origin_x": "20px",
+            "origin_y": "20px",
+            "segment_height": "5%",
+            "segment_width": "2%",
+            "text_height": "3%"
+            }
+        """
+        data = data.copy()  # copy to avoid mutating the input dictionary
+        assert data['type'] == 'Legend2DParameters', \
+            'Expected Legend2DParameters. Got {}.'.format(data['type'])
+        default_dict = {'type': 'Default'}
+        optional_keys = (
+            'origin_x', 'origin_y', 'segment_height', 'segment_width', 'text_height')
+        for key in optional_keys:
+            if key not in data:
+                data[key] = None
+            elif data[key] == default_dict:
+                data[key] = None
+        return cls(data['origin_x'], data['origin_y'], data['segment_height'],
+                   data['segment_width'], data['text_height'])
+
+    @property
+    def origin_x(self):
+        """Get or set text to note the X coordinate from where the legend will be drawn.
+
+        The default is set to make the legend clearly visible on the screen (10px).
+        """
+        return self._origin_x
+
+    @origin_x.setter
+    def origin_x(self, value):
+        if value is not None:
+            self.valid_dim_string(value, 'origin_x')
+            self._origin_x = value
+            self._is_origin_x_default = False
+        else:
+            self._origin_x = '10px'
+            self._is_origin_x_default = True
+
+    @property
+    def origin_y(self):
+        """Get or set text to note the Y coordinate from where the legend will be drawn.
+
+        The default is set to make the legend clearly visible on the screen (50px).
+        """
+        return self._origin_y
+
+    @origin_y.setter
+    def origin_y(self, value):
+        if value is not None:
+            self.valid_dim_string(value, 'origin_y')
+            self._origin_y = value
+            self._is_origin_y_default = False
+        else:
+            self._origin_y = '50px'
+            self._is_origin_y_default = True
+
+    @property
+    def segment_height(self):
+        """Get or set the height for each of the legend segments.
+
+        The default is set to make most legends readable (25px for horizontal
+        and 36px for vertical).
+        """
+        if self.is_segment_height_default and self._parent is not None and \
+                not self._parent.vertical:
+            return '25px'
+        return self._segment_height
+
+    @segment_height.setter
+    def segment_height(self, value):
+        if value is not None:
+            self.valid_dim_string(value, 'segment_height')
+            self._segment_height = value
+            self._is_segment_height_default = False
+        else:
+            self._segment_height = '36px'
+            self._is_segment_height_default = True
+
+    @property
+    def segment_width(self):
+        """Get or set the width for each of the legend segments.
+
+        The default is set to make most legends readable (36px for horizontal
+        and 25px for vertical).
+        """
+        if self.is_segment_width_default and self._parent is not None and \
+                not self._parent.vertical:
+            return '36px'
+        return self._segment_width
+
+    @segment_width.setter
+    def segment_width(self, value):
+        if value is not None:
+            self.valid_dim_string(value, 'segment_width')
+            self._segment_width = value
+            self._is_segment_width_default = False
+        else:
+            self._segment_width = '25px'
+            self._is_segment_width_default = True
+
+    @property
+    def text_height(self):
+        """Get or set the height for the legend text."""
+        return self._text_height
+
+    @text_height.setter
+    def text_height(self, value):
+        if value is not None:
+            self.valid_dim_string(value, 'text_height')
+            self._text_height = value
+            self._is_text_height_default = False
+        else:
+            self._text_height = '12px'
+            self._is_text_height_default = True
+
+    @property
+    def is_origin_x_default(self):
+        """Boolean noting whether the origin X coordinate is defaulted."""
+        return self._is_origin_x_default
+
+    @property
+    def is_origin_y_default(self):
+        """Boolean noting whether the origin Y coordinate is defaulted."""
+        return self._is_origin_y_default
+
+    @property
+    def is_segment_height_default(self):
+        """Boolean noting whether the segment height is defaulted."""
+        return self._is_segment_height_default
+
+    @property
+    def is_segment_width_default(self):
+        """Boolean noting whether the segment width is defaulted."""
+        return self._is_segment_width_default
+
+    @property
+    def is_text_height_default(self):
+        """Boolean noting whether the text height is defaulted."""
+        return self._is_text_height_default
+
+    @property
+    def is_default(self):
+        """Boolean noting whether all properties are defaulted."""
+        return all((
+            self._is_origin_x_default, self._is_origin_y_default,
+            self._is_segment_height_default, self._is_segment_width_default,
+            self._is_text_height_default
+        ))
+
+    def duplicate(self):
+        """Return a copy of the current Legend2DParameters."""
+        return self.__copy__()
+
+    def to_dict(self):
+        """Get Legend2DParameters as a dictionary."""
+        base = {'type': 'Legend2DParameters'}
+        if not self.is_origin_x_default:
+            base['origin_x'] = self.origin_x
+        if not self.is_origin_y_default:
+            base['origin_y'] = self.origin_y
+        if not self.is_segment_height_default:
+            base['segment_height'] = self.segment_height
+        if not self.is_segment_width_default:
+            base['segment_width'] = self.segment_width
+        if not self.is_text_height_default:
+            base['text_height'] = self.text_height
+        return base
+
+    @staticmethod
+    def valid_dim_string(dim_string, invalid_obj='Legend2DParameters',
+                         raise_exception=True):
+        """Check if a string is in a valid format for assigning 2D dimensions.
+
+        Args:
+            dim_string: Text to check if it fits the format for 2D dimensions.
+            invalid_obj: An optional name of the object to be reported in the
+                error message when raise_exception is True.
+            raise_exception: Boolean to note whether an exception should be
+                raised if the dim_string is not in the correct format. Otherwise,
+                this method will simply return True/False for whether the string
+                meets the format.
+        """
+        if Legend2DParameters.VALID_DIM.match(dim_string) is None:
+            if not raise_exception:
+                return False
+            msg = 'Invalid specification for {}.\nString "{}" does not match the ' \
+                'format expected for 2D dimensions. (eg. 10px, 5%)'.format(
+                    invalid_obj, dim_string)
+            raise ValueError(msg)
+        return True
+
+    def __copy__(self):
+        new_par = Legend2DParameters(
+            self._origin_x, self._origin_y, self._segment_height,
+            self._segment_width, self._text_height)
+        new_par._is_origin_x_default = self._is_origin_x_default
+        new_par._is_origin_y_default = self._is_origin_y_default
+        new_par._is_segment_height_default = self._is_segment_height_default
+        new_par._is_segment_width_default = self._is_segment_width_default
+        new_par._is_text_height_default = self._is_text_height_default
+        return new_par
+
+    def __key(self):
+        return (
+            self._origin_x, self._origin_y, self._segment_height, self._segment_width,
+            self._text_height, self._is_origin_x_default, self._is_origin_y_default,
+            self._is_segment_height_default, self._is_segment_width_default,
+            self._is_text_height_default
+        )
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        return isinstance(other, Legend2DParameters) and self.__key() == other.__key()
+
+    def __ne__(self, value):
+        return not self.__eq__(value)
+
+    def ToString(self):
+        """Overwrite .NET ToString method."""
+        return self.__repr__()
+
+    def __repr__(self):
+        """Legend2DParameters representation."""
+        origin_x = '[default]' if self.is_origin_x_default else self.origin_x
+        origin_y = '[default]' if self.is_origin_y_default else self.origin_y
+        seg_h = '[default]' if self.is_segment_height_default else self.segment_height
+        seg_w = '[default]' if self.is_segment_width_default else self.segment_width
+        txt_h = '[default]' if self.is_text_height_default else self.text_height
+        return '2D Parameters\n  base point: ({}, {})\n' \
+            '  segment height: {}\n  segment width: {}\n' \
+            '  text height: {}'.format(origin_x, origin_y, seg_h, seg_w, txt_h)
