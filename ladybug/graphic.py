@@ -109,8 +109,8 @@ class GraphicContainer(object):
                 seg_height = float((self._max_point.x - self._min_point.x) / (denom * 2))
                 if seg_height == 0:
                     seg_height = float((self._max_point.y - self._min_point.y) / denom)
-            self.legend_parameters.segment_height = seg_height
-            self.legend_parameters._is_segment_height_default = True
+            self.legend_parameters.properties_3d.segment_height = seg_height
+            self.legend_parameters.properties_3d._is_segment_height_default = True
 
         # set the default segment_width
         if self.legend_parameters.is_segment_width_default:
@@ -120,8 +120,8 @@ class GraphicContainer(object):
                 seg_width = self.legend_parameters.text_height * \
                     (len(str(int(self.legend_parameters.max))) +
                      self.legend_parameters.decimal_count + 2)
-            self.legend_parameters.segment_width = seg_width
-            self.legend_parameters._is_segment_width_default = True
+            self.legend_parameters.properties_3d.segment_width = seg_width
+            self.legend_parameters.properties_3d._is_segment_width_default = True
 
         # set the default base point
         if self.legend_parameters.is_base_plane_default:
@@ -134,8 +134,8 @@ class GraphicContainer(object):
                     self._max_point.x,
                     self._max_point.y + 3 * self.legend_parameters.text_height,
                     self._min_point.z)
-            self.legend_parameters.base_plane = Plane(o=base_pt)
-            self.legend_parameters._is_base_plane_default = True
+            self.legend_parameters.properties_3d.base_plane = Plane(o=base_pt)
+            self.legend_parameters.properties_3d._is_base_plane_default = True
 
     @classmethod
     def from_dict(cls, data):
