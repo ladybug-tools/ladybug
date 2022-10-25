@@ -846,13 +846,14 @@ class BaseCollection(object):
             arange(1, 351, 50)
             # >> [1, 51, 101, 151, 201, 251, 301]
         """
-
         val = start
 
         if start <= stop:
-            def ineq(a, b): return a < b
+            def ineq(a, b):
+                return a < b
         else:
-            def ineq(a, b): return a > b
+            def ineq(a, b):
+                return a > b
 
         while ineq(val, stop) and abs(val - stop) > 1e-10:
             yield val
