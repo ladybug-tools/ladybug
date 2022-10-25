@@ -431,7 +431,9 @@ class Sunpath(object):
 
             return {'sunrise': sunrise, 'noon': noon, 'sunset': sunset}
 
-    def analemma_suns(self, time, daytime_only=False, is_solar_time=False):
+    def analemma_suns(
+            self, time, daytime_only=False, is_solar_time=False,
+            start_month=1, end_month=12, steps_per_month=1):
         """Get an array of Suns that represent an analemma for a single time of day.
 
         Args:
@@ -443,6 +445,14 @@ class Sunpath(object):
             is_solar_time: A boolean to indicate if the output analemmas should
                 be for solar hours instead of the hours of the sunpath time
                 zone. (Default: False)
+            start_month: An integer from 1 to 12 to set the staring month for which
+                the analemma is drawn. (Default: 1).
+            end_month: An integer from 1 to 12 to set the ending month for which
+                the analemma is drawn. (Default: 12).
+            steps_per_month: An integer to set the number of sun positions that
+                will be used to represent a single month. Higher numbers will
+                take more time to compute but can produce smoother-looking
+                analemmas. (Default: 1).
 
         Returns:
             An array of suns representing an analemma for a specific time.
@@ -450,14 +460,23 @@ class Sunpath(object):
             if daytime_only is False.
         """
         analemma = []
-        for mon in range(1, 13):
-            dat_tim = DateTime(mon, 21, time.hour, time.minute)
-            analemma.append(self.calculate_sun_from_date_time(dat_tim, is_solar_time))
+        for mon in range(start_month, end_month + 1):
+            if steps_per_month == 1:  # use the 21st of each month
+                dat_t = DateTime(mon, 21, time.hour, time.minute)
+                analemma.append(self.calculate_sun_from_date_time(dat_t, is_solar_time))
+            else:
+                dpm = AnalysisPeriod.NUMOFDAYSEACHMONTH[mon - 1]
+                for day in range(1, dpm + 1, int(dpm / steps_per_month)):
+                    dat_t = DateTime(mon, day, time.hour, time.minute)
+                    dat_t_sun = self.calculate_sun_from_date_time(dat_t, is_solar_time)
+                    analemma.append(dat_t_sun)
         if daytime_only:  # filter out the nighttime sun positions
             analemma = [sun for sun in analemma if sun.is_during_day]
         return analemma
 
-    def hourly_analemma_suns(self, daytime_only=False, is_solar_time=False):
+    def hourly_analemma_suns(
+            self, daytime_only=False, is_solar_time=False,
+            start_month=1, end_month=12, steps_per_month=1):
         """Get a nested array of Suns with one sub-array for each hourly analemma.
 
         Args:
@@ -466,26 +485,43 @@ class Sunpath(object):
                 result in completely empty arrays for some hours. (Default: False)
             is_solar_time: A boolean to indicate if the output analemmas should
                 be for solar hours instead of the hours of the sunpath time
-                zone. (Default: False)
+                zone. (Default: False).
+            start_month: An integer from 1 to 12 to set the staring month for which
+                the analemma is drawn. (Default: 1).
+            end_month: An integer from 1 to 12 to set the ending month for which
+                the analemma is drawn. (Default: 12).
+            steps_per_month: An integer to set the number of sun positions that
+                will be used to represent a single month. Higher numbers will
+                take more time to compute but can produce smoother-looking
+                analemmas. (Default: 1).
 
         Returns:
             An array of 24 arrays with each sub-array representing an analemma.
-            Analemmas will each have 12 suns for the 12 months of the year
+            Analemmas will have a number of suns equal to (end_month - start_month) *
+            steps_per_month. The default is 12 suns for the 12 months of the year.
         """
         analemmas = []  # list of polylines
         for hr in range(24):
             analem = []
-            for mon in range(1, 13):
-                dat_tim = DateTime(mon, 21, hr)
-                analem.append(self.calculate_sun_from_date_time(dat_tim, is_solar_time))
+            for mon in range(start_month, end_month + 1):
+                if steps_per_month == 1:  # use the 21st of each month
+                    dat = DateTime(mon, 21, hr)
+                    analem.append(self.calculate_sun_from_date_time(dat, is_solar_time))
+                else:
+                    dpm = AnalysisPeriod.NUMOFDAYSEACHMONTH[mon - 1]
+                    for day in range(1, dpm + 1, int(dpm / steps_per_month)):
+                        dat = DateTime(mon, day, hr)
+                        dat_sun = self.calculate_sun_from_date_time(dat, is_solar_time)
+                        analem.append(dat_sun)
             analemmas.append(analem)
         if daytime_only:  # filter out the nighttime sun positions
             for i, analem in enumerate(analemmas):
                 analemmas[i] = [sun for sun in analem if sun.is_during_day]
         return analemmas
 
-    def hourly_analemma_polyline3d(self, origin=Point3D(), radius=100,
-                                   daytime_only=True, is_solar_time=False):
+    def hourly_analemma_polyline3d(
+            self, origin=Point3D(), radius=100, daytime_only=True, is_solar_time=False,
+            start_month=1, end_month=12, steps_per_month=1):
         """Get an array of ladybug_geometry Polyline3D for hourly analemmas.
 
         Args:
@@ -495,19 +531,30 @@ class Sunpath(object):
                 be represented in the output Polyline3D. (Default: True)
             is_solar_time: A boolean to indicate if the output analemmas should
                 be for solar hours instead of the hours of the sunpath time
-                zone. (Default: False)
+                zone. (Default: False).
+            start_month: An integer from 1 to 12 to set the staring month for which
+                the analemma is drawn. (Default: 1).
+            end_month: An integer from 1 to 12 to set the ending month for which
+                the analemma is drawn. (Default: 12).
+            steps_per_month: An integer to set the number of sun positions that
+                will be used to represent a single month. Higher numbers will
+                take more time to compute but can produce smoother-looking
+                analemmas. (Default: 1).
 
         Returns:
             An array of ladybug_geometry Polyline3D with at least one polyline
             for each analemma.
         """
         analemmas = []  # list of polylines
-        analem_suns = self.hourly_analemma_suns(is_solar_time=is_solar_time)
+        analem_suns = self.hourly_analemma_suns(
+            is_solar_time=is_solar_time, start_month=start_month, end_month=end_month,
+            steps_per_month=steps_per_month)
         for analem in analem_suns:
             pts = []
             for sun in analem:
                 pts.append(sun.position_3d(origin, radius))
-            pts.append(pts[0])  # ensure that the Polyline3D is closed
+            if start_month == 1 and end_month == 12:
+                pts.append(pts[0])  # ensure that the Polyline3D is closed
             analemmas.append(Polyline3D(pts, interpolated=True))
         if not daytime_only:  # no need to further process the analemmas
             return analemmas
@@ -539,8 +586,10 @@ class Sunpath(object):
                 daytime_analemmas.extend(day_lines)
         return daytime_analemmas
 
-    def hourly_analemma_polyline2d(self, projection='Orthographic', origin=Point2D(),
-                                   radius=100, daytime_only=True, is_solar_time=False):
+    def hourly_analemma_polyline2d(
+            self, projection='Orthographic', origin=Point2D(), radius=100,
+            daytime_only=True, is_solar_time=False, start_month=1, end_month=12,
+            steps_per_month=1):
         """Get an array of ladybug_geometry Polyline2D for hourly analemmas.
 
         Args:
@@ -557,7 +606,15 @@ class Sunpath(object):
                 be represented in the output Polyline2D. (Default: True)
             is_solar_time: A boolean to indicate if the output analemmas should
                 be for solar hours instead of the hours of the sunpath time
-                zone. (Default: False)
+                zone. (Default: False).
+            start_month: An integer from 1 to 12 to set the staring month for which
+                the analemma is drawn. (Default: 1).
+            end_month: An integer from 1 to 12 to set the ending month for which
+                the analemma is drawn. (Default: 12).
+            steps_per_month: An integer to set the number of sun positions that
+                will be used to represent a single month. Higher numbers will
+                take more time to compute but can produce smoother-looking
+                analemmas. (Default: 1).
 
         Returns:
             An array of ladybug_geometry Polyline2D with at least one polyline for
@@ -565,8 +622,9 @@ class Sunpath(object):
         """
         # compute the analemmas in 3D space
         o_3d = Point3D(origin.x, origin.y, 0)
-        plines_3d = self.hourly_analemma_polyline3d(o_3d, radius, daytime_only,
-                                                    is_solar_time)
+        plines_3d = self.hourly_analemma_polyline3d(
+            o_3d, radius, daytime_only, is_solar_time, start_month, end_month,
+            steps_per_month)
         return self._project_polyline_to_2d(plines_3d, projection, radius, o_3d)
 
     def day_arc3d(self, month, day, origin=Point3D(), radius=100, daytime_only=True,
@@ -620,8 +678,9 @@ class Sunpath(object):
             positions = (sun.position_3d(origin, radius) for sun in rise_noon_set_suns)
             return Arc3D.from_start_mid_end(*positions)
 
-    def day_polyline2d(self, month, day, projection='Orthographic', origin=Point2D(),
-                       radius=100, daytime_only=True, depression=0.5334):
+    def day_polyline2d(
+            self, month, day, projection='Orthographic', origin=Point2D(),
+            radius=100, daytime_only=True, depression=0.5334, divisions=10):
         """Get a Polyline2D for the path taken by the sun on a single day.
 
         Args:
@@ -652,6 +711,7 @@ class Sunpath(object):
                 Setting to 12 will return an arc that ends at the beginning/end
                 of nautical twilight. Setting to 18 will return an arc that
                 ends at the beginning/end of astronomical twilight. (Default: 0.5334)
+            
 
         Returns:
             A Polyline2D for the path of the sun taken over the course of a day. Will be
@@ -662,11 +722,11 @@ class Sunpath(object):
         o_3d = Point3D(origin.x, origin.y, 0)
         arc_3d = self.day_arc3d(month, day, o_3d, radius, daytime_only, depression)
         if arc_3d is not None:
-            pline_3d = arc_3d.to_polyline(10, interpolated=True)  # convert to polyline
+            pline_3d = arc_3d.to_polyline(divisions, interpolated=True)
             return self._project_polyline_to_2d([pline_3d], projection, radius, o_3d)[0]
 
-    def monthly_day_arc3d(self, origin=Point3D(), radius=100, daytime_only=True,
-                          depression=0.5334):
+    def monthly_day_arc3d(
+            self, origin=Point3D(), radius=100, daytime_only=True, depression=0.5334):
         """Get an array of Arc3Ds for the path taken by the sun on the 21st of each month.
 
         Args:
@@ -698,8 +758,9 @@ class Sunpath(object):
                 day_arcs.append(arc)
         return day_arcs
 
-    def monthly_day_polyline2d(self, projection='Orthographic', origin=Point2D(),
-                               radius=100, daytime_only=True, depression=0.5334):
+    def monthly_day_polyline2d(
+            self, projection='Orthographic', origin=Point2D(), radius=100,
+            daytime_only=True, depression=0.5334, divisions=10):
         """Get an array of Polyline2Ds for the sun path on the 21st of each month.
 
         Args:
@@ -727,6 +788,8 @@ class Sunpath(object):
                 Setting to 12 will return an arc that ends at the beginning/end
                 of nautical twilight. Setting to 18 will return an arc that
                 ends at the beginning/end of astronomical twilight. (Default: 0.5334)
+            divisions: An integer for the number of divisions to be used when
+                converting the daily arcs into Polyline2Ds. (Default: 10).
 
         Returns:
             An array of ladybug_geometry Polyline2D with a polyline for the 21st
@@ -735,7 +798,7 @@ class Sunpath(object):
         # compute the daily arcs in 3D space
         o_3d = Point3D(origin.x, origin.y, 0)
         arcs_3d = self.monthly_day_arc3d(o_3d, radius, daytime_only, depression)
-        plines_3d = [arc.to_polyline(10, interpolated=True) for arc in arcs_3d]
+        plines_3d = [arc.to_polyline(divisions, interpolated=True) for arc in arcs_3d]
         return self._project_polyline_to_2d(plines_3d, projection, radius, o_3d)
 
     def _calculate_solar_geometry(self, datetime):

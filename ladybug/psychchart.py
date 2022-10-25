@@ -117,7 +117,7 @@ class PsychrometricChart(object):
             relative_humidity, Fraction, '%', 'relative_humidity')
         if len(self._t_values) == 1:
             self._t_values = self._t_values_c = self._t_values * self._calc_length
-        if self._use_ip:  # convert everthing to Fahrenheit
+        if self._use_ip:  # convert everything to Fahrenheit
             self._t_values = self.TEMP_TYPE.to_unit(self._t_values, 'F', 'C')
         assert len(self._t_values) == len(self._rh_values), \
             'Number of temperature and humidity values must match.'
@@ -188,7 +188,7 @@ class PsychrometricChart(object):
 
         # check to be sure we don't have conditions above the boiling point
         assert self._temp_range[-1] < 100, \
-            'Temperatures above the boiling point of water are not plotable.'
+            'Temperatures above the boiling point of water are not plot-able.'
 
     @classmethod
     def from_epw(cls, epw_file, legend_parameters=None, base_point=Point2D(),
@@ -710,7 +710,7 @@ class PsychrometricChart(object):
 
             -   mesh_values: A list of numbers for the values of the mesh.
 
-            -   remove_pattern: A list of booleand for which faces of the full mesh
+            -   remove_pattern: A list of booleans for which faces of the full mesh
                 should be removed.
         """
         # create a matrix with a tally of the hours for all the data
@@ -764,7 +764,7 @@ class PsychrometricChart(object):
         return mesh
 
     def _compute_border(self):
-        """Compute a Polyline2D for the outer boerder of the chart."""
+        """Compute a Polyline2D for the outer border of the chart."""
         # get properties used to establish the border of the chart
         prs, bpt, hmax = self.average_pressure, self.base_point, self.max_humidity_ratio
         max_hr = humid_ratio_from_db_rh(self._temp_range[-1], 100, prs)
