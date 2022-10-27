@@ -48,10 +48,10 @@ class WindRose(object):
         * legend
         * legend_parameters
         * base_point
-        * radius
         * compass
         * container
         * prevailing_direction
+        * mesh_radius
         * compass_radius
         * colored_mesh
         * color_range
@@ -594,7 +594,7 @@ class WindRose(object):
     def compass_radius(self):
         """Get the radius of the windrose compass.
 
-        This value is different from the compass_radius if the frequency_maximum is
+        This value is different from the mesh_radius if the frequency_maximum is
         greater then the maximum frequency in the histogram data.
         """
         max_bar_radius = \
