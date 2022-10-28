@@ -699,11 +699,11 @@ class WindRose(object):
             ytick_dist_inc += (len(stacks[i]) / max_bar_num * curr_bar_radius)
 
             # Vector multiplication with y_dist_inc and add to bar_coords
-            bar_interval_vecs.append(base_vec_show_freq +
-                                     [(vec1[0] * ytick_dist_inc,
-                                       vec1[1] * ytick_dist_inc),
-                                      (vec2[0] * ytick_dist_inc,
-                                       vec2[1] * ytick_dist_inc)])
+            bar_interval_vecs.append(
+                base_vec_show_freq + [
+                    (vec1[0] * ytick_dist_inc, vec1[1] * ytick_dist_inc),
+                    (vec2[0] * ytick_dist_inc, vec2[1] * ytick_dist_inc)
+                ])
             # Update
             base_vec_show_freq = list(reversed(bar_interval_vecs[-1][-2:]))
 
