@@ -339,12 +339,34 @@ class HourlyPlot(object):
 
     @property
     def values(self):
-        """A list of values assigned to this hourly plot."""
+        """A list of values assigned to this hourly plot.
+
+        These will align correctly with the mesh faces, even when reverse_y is True.
+        """
+        if self._reverse_y:  # reverse each day of values before returning it
+            rev_values = []
+            dts = self._data_collection.datetimes
+            day_values = []
+            current_day = dts[0].day
+            for dat_t, col in zip(dts, self._data_collection.values):
+                if dat_t.day == current_day:
+                    day_values.append(col)
+                else:
+                    day_values.reverse()
+                    rev_values.extend(day_values)
+                    current_day = dat_t.day
+                    day_values = [col]
+            day_values.reverse()
+            rev_values.extend(day_values)
+            return rev_values
         return self._data_collection.values
 
     @property
     def colors(self):
-        """A list of colors assigned to the mesh faces of this hourly plot."""
+        """A list of colors assigned to the mesh faces of this hourly plot.
+
+        These will align correctly with the mesh faces, even when reverse_y is True.
+        """
         if self._reverse_y:  # reverse each day of colors before returning it
             rev_colors = []
             dts = self._data_collection.datetimes
@@ -476,7 +498,7 @@ class HourlyPlot(object):
         s_aper = self.analysis_period
         m_aper = s_aper if s_aper.st_hour <= s_aper.end_hour else \
             AnalysisPeriod(s_aper.st_month, s_aper.st_day, 0, s_aper.end_month,
-                            s_aper.end_day, 23, s_aper.timestep, s_aper.is_leap_year)
+                           s_aper.end_day, 23, s_aper.timestep, s_aper.is_leap_year)
         st_hr = m_aper.st_hour
         end_hr = m_aper.end_hour + 1
         t_step = m_aper.timestep
@@ -508,7 +530,8 @@ class HourlyPlot(object):
         end_mon = self.analysis_period.end_month
         st_day = self.analysis_period.st_day
         end_day = self.analysis_period.end_day
-        dpm = AnalysisPeriod.NUMOFDAYSEACHMONTHLEAP if self.analysis_period.is_leap_year \
+        dpm = AnalysisPeriod.NUMOFDAYSEACHMONTHLEAP \
+            if self.analysis_period.is_leap_year \
             else AnalysisPeriod.NUMOFDAYSEACHMONTH
 
         # create a list of days in each of the months and collect month text
