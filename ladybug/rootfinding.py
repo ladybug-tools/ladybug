@@ -4,7 +4,8 @@ from __future__ import division
 
 
 def secant(a, b, fn, epsilon):
-    """One of the fastest root-finding algorithms.
+    """Solve for a root using one of the fastest root-finding algorithms.
+
     The method calculates the slope of the function fn and this enables it to converge
     to a solution very fast. However, if started too far away from a root, the method
     may not converge (returning a None). For this reason, it is recommended that this
@@ -28,7 +29,8 @@ def secant(a, b, fn, epsilon):
         epsilon: The acceptable error in the target_desired_from_funct.
 
     Returns:
-        root -- The value that gives the target_desired_from_funct.
+        root -- The value that gives the target_desired_from_funct in the sample
+        above (aka. the value that returns 0 from the fn).
 
     References
     ----------
@@ -42,7 +44,7 @@ def secant(a, b, fn, epsilon):
     f2 = fn(b)
     if abs(f2) <= epsilon:
         return b
-    for i in range(100):
+    for _ in range(100):
         slope = (f2 - f1) / (b - a)
         c = b - f2 / slope
         f3 = fn(c)
@@ -57,7 +59,7 @@ def secant(a, b, fn, epsilon):
 
 
 def bisect(a, b, fn, epsilon, target):
-    """The simplest root-finding algorithm.
+    """Solve for a root using the simplest root-finding algorithm.
 
     It is extremely reliable. However, it converges slowly for this reason,
     it is recommended that this only be used after the secant() method has
@@ -102,3 +104,45 @@ def bisect(a, b, fn, epsilon, target):
             return -999
 
     return midpoint
+
+
+def secant_three_var(a, b, fn, epsilon, other_args):
+    """Solve the roots of a 3-variable function with one of the fastest algorithms.
+
+    Args:
+        a: A tuple with 3 numbers for the the lowest possible boundary of the roots.
+        b: A tuple with 3 numbers for the the lowest possible boundary of the roots.
+        fn: A function for which roots are to be solved. That is, where the output
+            of the function is a tuple of three zeros.
+        epsilon: The acceptable error in the resulting root.
+        other_args: Other input arguments for the fn other than the ones being
+            adjusted to solve the root.
+
+    Returns:
+        root -- a tuple of 3 values that return a vector of zeros from the fn.
+    """
+    args_1 = (a,) + other_args
+    f1 = fn(*args_1)
+    if all(abs(v) <= epsilon for v in f1):
+        return a
+    args_2 = (b,) + other_args
+    f2 = fn(*args_2)
+    if all(abs(v) <= epsilon for v in f2):
+        return b
+
+    for _ in range(1000):
+        try:
+            slope = tuple((v2 - v1) / (bv - av) for v1, v2, av, bv in zip(f1, f2, a, b))
+        except ZeroDivisionError:
+            return b  # failed to converge; return the best solution
+        c = tuple(bv - v2 / s for bv, v2, s in zip(b, f2, slope))
+        args_3 = (c,) + other_args
+        f3 = fn(*args_3)
+        if all(abs(v) <= epsilon for v in f3):
+            return c
+        a = b
+        b = c
+        f1 = f2
+        f2 = f3
+
+    return None
