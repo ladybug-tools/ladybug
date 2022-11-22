@@ -81,12 +81,40 @@ class MeanRadiantTemperature(Temperature):
     _abbreviation = 'MRT'
 
 
+class WetBulbGlobeTemperature(Temperature):
+    _abbreviation = 'WBGT'
+
+
+class WindChillTemperature(Temperature):
+    _abbreviation = 'WCT'
+
+
+class HeatIndexTemperature(Temperature):
+    _abbreviation = 'HIT'
+
+
 class StandardEffectiveTemperature(Temperature):
     _abbreviation = 'SET'
 
 
 class UniversalThermalClimateIndex(Temperature):
     _abbreviation = 'UTCI'
+
+
+class PhysiologicalEquivalentTemperature(Temperature):
+    _abbreviation = 'PET'
+
+
+class CoreBodyTemperature(Temperature):
+    _abbreviation = 'Tcore'
+
+
+class SkinTemperature(Temperature):
+    _abbreviation = 'Tskin'
+
+
+class ClothingTemperature(Temperature):
+    _abbreviation = 'Tclo'
 
 
 class PrevailingOutdoorTemperature(Temperature):

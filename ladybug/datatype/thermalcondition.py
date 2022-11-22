@@ -62,27 +62,27 @@ class ThermalConditionFivePoint(ThermalCondition):
     _min = -2
     _max = 2
     _abbreviation = 'Tcond-5'
-    _unit_descr = {-2: 'Strong/Extreme Cold', -1: 'Moderate Cold',
-                   0: 'No Thermal Stress', 1: 'Moderate Heat', 2: 'Strong/Extreme Heat'}
+    _unit_descr = {-2: 'Strong Cold', -1: 'Moderate Cold',
+                   0: 'No Thermal Stress', 1: 'Moderate Heat', 2: 'Strong Heat'}
 
 
 class ThermalConditionSevenPoint(ThermalCondition):
     _min = -3
     _max = 3
     _abbreviation = 'Tcond-7'
-    _unit_descr = {-3: 'Very Strong/Extreme Cold', -2: 'Strong Cold',
+    _unit_descr = {-3: 'Extreme Cold', -2: 'Strong Cold',
                    -1: 'Moderate Cold', 0: 'No Thermal Stress', 1: 'Moderate Heat',
-                   2: 'Strong Heat', 3: 'Very Strong/Extreme Heat'}
+                   2: 'Strong Heat', 3: 'Extreme Heat'}
 
 
 class ThermalConditionNinePoint(ThermalCondition):
     _min = -4
     _max = 4
     _abbreviation = 'Tcond-9'
-    _unit_descr = {-4: 'Very Strong/Extreme Cold', -3: 'Strong Cold',
+    _unit_descr = {-4: 'Extreme Cold', -3: 'Strong Cold',
                    -2: 'Moderate Cold', -1: 'Slight Cold', 0: 'No Thermal Stress',
                    1: 'Slight Heat', 2: 'Moderate Heat', 3: 'Strong Heat',
-                   4: 'Very Strong/Extreme Heat'}
+                   4: 'Extreme Heat'}
 
 
 class ThermalConditionElevenPoint(ThermalCondition):
@@ -104,3 +104,11 @@ class UTCICategory(ThermalCondition):
                    4: 'Slight Cold Stress', 5: 'No Thermal Stress',
                    6: 'Moderate Heat Stress', 7: 'Strong Heat Stress',
                    8: 'Strong Heat Stress', 9: 'Extreme Heat Stress'}
+
+
+class CoreTemperatureCategory(ThermalCondition):
+    _min = -2
+    _max = 2
+    _abbreviation = 'TCcond'
+    _unit_descr = {-2: 'Hypothermia', -1: 'Cold',
+                   0: 'Normal', 1: 'Hot', 2: 'Hyperthermia'}
