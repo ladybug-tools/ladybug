@@ -54,11 +54,10 @@ def secant(a, b, fn, epsilon):
         b = c
         f1 = f2
         f2 = f3
-
     return None
 
 
-def bisect(a, b, fn, epsilon, target):
+def bisect(a, b, fn, epsilon, target=0):
     """Solve for a root using the simplest root-finding algorithm.
 
     It is extremely reliable. However, it converges slowly for this reason,
@@ -91,7 +90,8 @@ def bisect(a, b, fn, epsilon, target):
     In Wikipedia, The Free Encyclopedia. Retrieved 18:16, December 30, 2018,
     from https://en.wikipedia.org/wiki/Root-finding_algorithm#Bisection_method
     """
-    while (abs(b - a) > 2 * epsilon):
+    max_e = 2 * epsilon
+    while (abs(b - a) > max_e):
         midpoint = (b + a) / 2
         a_t = fn(a)
         b_t = fn(b)
@@ -101,8 +101,7 @@ def bisect(a, b, fn, epsilon, target):
         elif (b_t - target) * (midpoint_t - target) < 0:
             a = midpoint
         else:
-            return -999
-
+            return midpoint
     return midpoint
 
 
@@ -110,8 +109,8 @@ def secant_three_var(a, b, fn, epsilon, other_args):
     """Solve the roots of a 3-variable function with one of the fastest algorithms.
 
     Args:
-        a: A tuple with 3 numbers for the the lowest possible boundary of the roots.
-        b: A tuple with 3 numbers for the the lowest possible boundary of the roots.
+        a: A tuple with 3 numbers for the the lowest boundary of the roots.
+        b: A tuple with 3 numbers for the the highest boundary of the roots.
         fn: A function for which roots are to be solved. That is, where the output
             of the function is a tuple of three zeros.
         epsilon: The acceptable error in the resulting root.
@@ -134,8 +133,11 @@ def secant_three_var(a, b, fn, epsilon, other_args):
         try:
             slope = tuple((v2 - v1) / (bv - av) for v1, v2, av, bv in zip(f1, f2, a, b))
         except ZeroDivisionError:
-            return b  # failed to converge; return the best solution
-        c = tuple(bv - v2 / s for bv, v2, s in zip(b, f2, slope))
+            return None  # failed to converge
+        try:
+            c = tuple(bv - v2 / s for bv, v2, s in zip(b, f2, slope))
+        except ZeroDivisionError:  # zero slope was found
+            return c
         args_3 = (c,) + other_args
         f3 = fn(*args_3)
         if all(abs(v) <= epsilon for v in f3):
@@ -146,3 +148,44 @@ def secant_three_var(a, b, fn, epsilon, other_args):
         f2 = f3
 
     return None
+
+
+def bisect_three_var(a, b, fn, epsilon, other_args):
+    """Solve the roots of a 3-variable function with the simplest root-finding algorithm.
+
+    It is extremely reliable. However, it converges slowly for this reason,
+    it is recommended that this only be used after the secant_three_var() method has
+    returned None.
+
+    Args:
+        a: A tuple with 3 numbers for the the lowest boundary of the roots.
+        b: A tuple with 3 numbers for the the highest boundary of the roots.
+        fn: A function for which roots are to be solved. That is, where the output
+            of the function is a tuple of three zeros.
+        epsilon: The acceptable error in the resulting root.
+        other_args: Other input arguments for the fn other than the ones being
+            adjusted to solve the root.
+
+    Returns:
+        root -- a tuple of 3 values that return a vector of zeros from the fn.
+    """
+    max_e = 3 * epsilon
+    while sum(abs(bv - av) for av, bv in zip(a, b)) > max_e:
+        midpoint = tuple((bv + av) / 2 for bv, av in zip(b, a))
+        args_1 = (a,) + other_args
+        a_t = fn(*args_1)
+        args_2 = (b,) + other_args
+        b_t = fn(*args_2)
+        args_3 = (midpoint,) + other_args
+        midpoint_t = fn(*args_3)
+        new_a, new_b = list(a), list(b)
+        for i, (at, bt, mt) in enumerate(zip(a_t, b_t, midpoint_t)):
+            if at * mt < 0:
+                new_b[i] = midpoint[i]
+            elif bt * mt < 0:
+                new_a[i] = midpoint[i]
+            else:
+                return midpoint
+        a = new_a
+        b = new_b
+    return midpoint

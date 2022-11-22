@@ -217,7 +217,6 @@ class EPW(object):
 
         # fill in missing datetime values and uncertainty flags.
         uncertainty = '?9?9?9?9E0?9?9?9?9?9?9?9?9?9?9?9?9?9?9?9*9*9?9?9?9'
-        prev_month = 1
         for dt in analysis_period.datetimes:
             if dt.hour != 0:
                 hr, dy = dt.hour, dt.day
