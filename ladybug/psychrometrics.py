@@ -331,10 +331,12 @@ def humid_ratio_from_db_wb(db_temp, wb_temp, b_press=101325):
     p_ws = saturated_vapor_pressure(wb_temp + 273.15)
     p_ws_star = 0.621945 * p_ws / (b_press - p_ws)
     if wb_temp >= 0:
-        humid_ratio = ((2501. - 2.326 * wb_temp) * p_ws_star - 1.006 * (db_temp - wb_temp)) \
+        humid_ratio = \
+            ((2501. - 2.326 * wb_temp) * p_ws_star - 1.006 * (db_temp - wb_temp)) \
             / (2501. + 1.86 * db_temp - 4.186 * wb_temp)
     else:
-        humid_ratio = ((2830. - 0.24 * wb_temp) * p_ws_star - 1.006 * (db_temp - wb_temp)) \
+        humid_ratio = \
+            ((2830. - 0.24 * wb_temp) * p_ws_star - 1.006 * (db_temp - wb_temp)) \
             / (2830. + 1.86 * db_temp - 2.1 * wb_temp)
     return humid_ratio
 
@@ -457,7 +459,7 @@ def wet_bulb_from_db_rh_fast(db_temp, rel_humid, b_press=101325):
     es = 6.112 * math.e**((17.67 * db_temp) / (db_temp + 243.5))
     e = (es * rel_humid) / 100
     t_w = 0
-    increse = 10.0
+    increase = 10.0
     previoussign = 1
     e_d = 1
     while math.fabs(e_d) > 0.005:
@@ -471,17 +473,17 @@ def wet_bulb_from_db_rh_fast(db_temp, rel_humid, b_press=101325):
                 cursign = -1
                 if cursign != previoussign:
                     previoussign = cursign
-                    increse = increse / 10
+                    increase = increase / 10
                 else:
-                    increse = increse
+                    increase = increase
             else:
                 cursign = 1
                 if cursign != previoussign:
                     previoussign = cursign
-                    increse = increse / 10
+                    increase = increase / 10
                 else:
-                    increse = increse
-        t_w = t_w + increse * previoussign
+                    increase = increase
+        t_w = t_w + increase * previoussign
     return t_w
 
 
