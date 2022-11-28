@@ -392,7 +392,7 @@ class BaseCollection(object):
                 The variable should always be named as 'a' (without quotations).
 
         Returns:
-            A new Data Collection containing only the filtered data
+            A new Data Collection containing only the filtered data.
         """
         _filt_values, _filt_datetimes = self._filter_by_statement(statement)
         if self._enumeration is None:
@@ -406,6 +406,36 @@ class BaseCollection(object):
         collection._validated_a_period = self._validated_a_period
         return collection
 
+    def filter_by_range(self, greater_than=float('-inf'), less_than=float('inf')):
+        """Filter the Data Collection based on whether values fall within a given range.
+
+        This is similar to the filter_by_conditional_statement but is often much
+        faster since it does not have all of the flexibility of the conditional
+        statement and uses native Python operators instead of eval() statements.
+
+        Args:
+            greater_than: A number which the data collection values should be
+                greater than in order to be included in the output
+                collection. (Default: Negative Infinity).
+            less_than: A number which the data collection values should be less than
+                in order to be included in the output collection. (Default: Infinity).
+
+        Returns:
+            A new Data Collection with filtered data.
+        """
+        _filt_values, _filt_datetimes = self._filter_by_range(greater_than, less_than)
+        if self._enumeration is None:
+            self._get_mutable_enumeration()
+        col_obj = self._enumeration['mutable'][self._collection_type]
+        try:
+            collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
+        except AssertionError as e:
+            raise AssertionError(
+                'No value was found in the range {} to {}.\n{}'.format(
+                    greater_than, less_than, e))
+        collection._validated_a_period = self._validated_a_period
+        return collection
+
     def filter_by_pattern(self, pattern):
         """Filter the Data Collection based on a list of booleans.
 
@@ -415,7 +445,7 @@ class BaseCollection(object):
                 but it can also be a pattern to be repeated over the Data Collection.
 
         Returns:
-            A new Data Collection with filtered data
+            A new Data Collection with filtered data.
         """
         _filt_values, _filt_datetimes = self._filter_by_pattern(pattern)
         if self._enumeration is None:
@@ -1005,6 +1035,15 @@ class BaseCollection(object):
         _filt_values, _filt_datetimes = [], []
         for i, a in enumerate(self._values):
             if eval(statement, {'a': a}):
+                _filt_values.append(a)
+                _filt_datetimes.append(self.datetimes[i])
+        return _filt_values, _filt_datetimes
+
+    def _filter_by_range(self, greater_than, less_than):
+        """Filter the data collection based on a range."""
+        _filt_values, _filt_datetimes = [], []
+        for i, a in enumerate(self._values):
+            if greater_than < a < less_than:
                 _filt_values.append(a)
                 _filt_datetimes.append(self.datetimes[i])
         return _filt_values, _filt_datetimes

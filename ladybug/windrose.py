@@ -342,7 +342,6 @@ class WindRose(object):
     def prevailing_direction(self):
         """Get a tuple of the predominant directions of the wind values.
         """
-
         if self._prevailing_direction is None:
             dirv_num = self._number_of_directions
             freqs = [len(b) for b in self._histogram_data]
@@ -619,6 +618,35 @@ class WindRose(object):
             zero_dist = self.frequency_spacing_hypot_distance * _ytick_num_frac
 
         return zero_dist
+
+    @staticmethod
+    def prevailing_direction_from_data(data, directions_count=8):
+        """Get a the prevailing wind direction(s) from a data collection of directions.
+
+        Args:
+            data: A data collection with direction angles in them.
+            directions_count: An integer for the number of directions around the
+                circle to evaluate. (Default: 8).
+
+        Returns:
+            A list with at least one value for the prevailing wind direction. This
+            will have multiple values in the event of a tie.
+        """
+        bin_array = WindRose._compute_angles(directions_count)
+        hist_data = histogram_circular(data.values, bin_array, (0, 360))
+        freqs = [len(b) for b in hist_data]
+        dirvs = [i / directions_count * 360.0 for i in range(directions_count)]
+
+        # to ensure ties are captured, iterate through check all values.
+        max_freq = 0
+        max_dirv = []
+        for freq, dirv in zip(freqs, dirvs):
+            if max_freq < freq:
+                max_freq = freq
+                max_dirv = [dirv]
+            elif max_freq == freq:
+                max_dirv.append(dirv)
+        return max_dirv
 
     @staticmethod
     def _compute_angles(num_of_dir):
