@@ -718,6 +718,29 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         collection._validated_a_period = True
         return collection
 
+    def filter_by_range(self, greater_than=float('-inf'), less_than=float('inf')):
+        """Filter the Data Collection based on whether values fall within a given range.
+
+        This is similar to the filter_by_conditional_statement but is often much
+        faster since it does not have all of the flexibility of the conditional
+        statement and uses native Python operators instead of eval() statements.
+
+        Args:
+            greater_than: A number which the data collection values should be
+                greater than in order to be included in the output
+                collection. (Default: Negative Infinity).
+            less_than: A number which the data collection values should be less than
+                in order to be included in the output collection. (Default: Infinity).
+
+        Returns:
+            A new Data Collection with filtered data.
+        """
+        _filt_values, _filt_datetimes = self._filter_by_range(greater_than, less_than)
+        collection = HourlyDiscontinuousCollection(
+            self.header.duplicate(), _filt_values, _filt_datetimes)
+        collection._validated_a_period = True
+        return collection
+
     def filter_by_pattern(self, pattern):
         """Filter the Data Collection based on a list of booleans.
 

@@ -21,7 +21,6 @@ from ladybug_geometry.geometry2d.polygon import Polygon2D
 
 import os
 import math
-from pprint import pprint as pp
 
 
 def _deg2rad(d):

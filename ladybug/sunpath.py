@@ -711,7 +711,6 @@ class Sunpath(object):
                 Setting to 12 will return an arc that ends at the beginning/end
                 of nautical twilight. Setting to 18 will return an arc that
                 ends at the beginning/end of astronomical twilight. (Default: 0.5334)
-            
 
         Returns:
             A Polyline2D for the path of the sun taken over the course of a day. Will be
