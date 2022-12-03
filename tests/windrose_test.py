@@ -739,3 +739,12 @@ def test_with_constant_values():
     wind_rose = WindRose(epw.wind_direction, data)
 
     assert isinstance(wind_rose.colored_mesh, Mesh2D)
+
+
+def test_prevailing_direction_from_data():
+    """Test the prevailing_direction_from_data staticmethod."""
+    epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/chicago.epw')
+    epw = EPW(epw_path)
+
+    prevailing = WindRose.prevailing_direction_from_data(epw.wind_direction)
+    assert prevailing[0] == 180
