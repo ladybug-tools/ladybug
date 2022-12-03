@@ -130,7 +130,7 @@ class WindProfile(object):
     def log_law(self):
         """A boolean to note whether the wind profile should be using a logarithmic law.
         """
-        return self._terrain
+        return self._log_law
 
     @log_law.setter
     def log_law(self, value):
@@ -275,6 +275,7 @@ class WindProfile(object):
         Returns:
             A ladybug-geometry Vector3D representing the wind vector.
         """
+        direction = self._flip_direction(direction)
         wind_speed = self.calculate_wind(meteorological_wind_speed, height)
         vec_mag = wind_speed * length_dimension * scale_factor
         if direction is None:
@@ -375,6 +376,7 @@ class WindProfile(object):
 
             - wind_speed: A number for the wind speed associated with the mesh arrow.
         """
+        direction = self._flip_direction(direction)
         # get an anchor point that represents the wind arrow
         bp = base_point
         if direction is None:
@@ -527,6 +529,7 @@ class WindProfile(object):
                 text to display in the 3D scene.
         """
         # construct the axis line along the world X axis
+        direction = self._flip_direction(direction)
         bp, max_speed = base_point, int(max_speed)
         end_x = bp.x + ((max_speed + 1) * length_dimension * scale_factor)
         ax_end_pt = Point3D(end_x, bp.y, bp.z)
@@ -619,6 +622,7 @@ class WindProfile(object):
                 text to display in the 3D scene.
         """
         # construct the axis line
+        direction = self._flip_direction(direction)
         bp = base_point
         end_v = (max_height + (tick_spacing / 2)) * scale_factor
         ax_end_pt = Point3D(bp.x, bp.y + end_v, bp.z) if direction is None \
@@ -701,6 +705,7 @@ class WindProfile(object):
         Returns:
             A ladybug-geometry Plane for the recommended legend plane.
         """
+        direction = self._flip_direction(direction)
         bp, max_speed = base_point, int(max_speed)
         end_x = bp.x + ((max_speed + 2) * length_dimension * scale_factor)
         origin_pt = Point3D(end_x, bp.y, bp.z)
@@ -737,6 +742,7 @@ class WindProfile(object):
         Returns:
             A ladybug-geometry Plane for the recommended title plane.
         """
+        direction = self._flip_direction(direction)
         bp = base_point
         step_d = length_dimension * scale_factor
         tick_d = step_d / 6
@@ -775,6 +781,15 @@ class WindProfile(object):
         self._met_log_denom = math.log(h_ratio)
 
     @staticmethod
+    def _flip_direction(direction):
+        """Flip the direction of a wind so it notes the orientation of arrows."""
+        if direction is not None:
+            if direction < 180:
+                return direction + 180
+            else:
+                return direction - 180
+
+    @staticmethod
     def _check_profile_inputs(max_height, vector_spacing):
         assert vector_spacing > 0, 'WindProfile vector spacing must be greater ' \
             'than zero. Got {}.'.format(vector_spacing)
@@ -787,6 +802,10 @@ class WindProfile(object):
         while start < stop:
             yield start
             start += step
+
+    def ToString(self):
+        """Overwrite .NET ToString method."""
+        return self.__repr__()
 
     def __repr__(self):
         """WindProfile representation."""
