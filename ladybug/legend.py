@@ -570,7 +570,9 @@ class LegendParameters(object):
         leg_par = cls(data['min'], data['max'], data['segment_count'],
                       colors, data['title'])
         leg_par.continuous_legend = data['continuous_legend']
-        leg_par.ordinal_dictionary = data['ordinal_dictionary']
+        if 'ordinal_dictionary' in data and data['ordinal_dictionary'] is not None:
+            leg_par.ordinal_dictionary = \
+                {int(i): val for i, val in data['ordinal_dictionary'].items()}
         leg_par.decimal_count = data['decimal_count']
         leg_par.include_larger_smaller = data['include_larger_smaller']
         leg_par.vertical = data['vertical']
