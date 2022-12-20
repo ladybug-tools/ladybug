@@ -358,13 +358,13 @@ def test_legend_title():
     assert legend.title == ''
     assert legend.legend_parameters.is_title_default
     assert legend.title_location.o == Point3D(0, 11.25, 0)
-    assert legend.title_location_2d == Point2D(0, 11.25)
+    assert legend.title_location_scene_2d == Point2D(0, 11.25)
 
     legend = Legend(range(5), LegendParameters(segment_count=5, title='C'))
     assert legend.title == 'C'
     assert not legend.legend_parameters.is_title_default
     assert legend.title_location.o == Point3D(0, 5.25, 0)
-    assert legend.title_location_2d == Point2D(0, 5.25)
+    assert legend.title_location_scene_2d == Point2D(0, 5.25)
 
 
 def test_segment_text():
@@ -375,7 +375,7 @@ def test_segment_text():
     assert legend.segment_text == ['0.00', '1.80', '3.60', '5.40', '7.20', '9.00']
     for pl in legend.segment_text_location:
         assert isinstance(pl, Plane)
-    for pt in legend.segment_text_location_2d:
+    for pt in legend.segment_text_location_scene_2d:
         assert isinstance(pt, Point2D)
     seg_num = [0, 1.8, 3.6, 5.4, 7.2, 9]
     for i, num in enumerate(legend.segment_numbers):
@@ -437,23 +437,23 @@ def test_segment_mesh():
     assert len(legend.segment_mesh.vertices) == 12
 
 
-def test_segment_mesh_2d():
-    """Test the segment_mesh_2d property."""
+def test_segment_mesh_scene_2d():
+    """Test the segment_mesh_scene_2d property."""
     legend = Legend(range(10), LegendParameters(segment_count=6))
 
-    assert isinstance(legend.segment_mesh_2d, Mesh2D)
-    assert len(legend.segment_mesh_2d.faces) == 6
-    assert len(legend.segment_mesh_2d.vertices) == 14
+    assert isinstance(legend.segment_mesh_scene_2d, Mesh2D)
+    assert len(legend.segment_mesh_scene_2d.faces) == 6
+    assert len(legend.segment_mesh_scene_2d.vertices) == 14
     legend.legend_parameters.vertical = False
-    assert len(legend.segment_mesh_2d.faces) == 6
-    assert len(legend.segment_mesh_2d.vertices) == 14
+    assert len(legend.segment_mesh_scene_2d.faces) == 6
+    assert len(legend.segment_mesh_scene_2d.vertices) == 14
 
     legend.legend_parameters.continuous_legend = True
-    assert len(legend.segment_mesh_2d.faces) == 5
-    assert len(legend.segment_mesh_2d.vertices) == 12
+    assert len(legend.segment_mesh_scene_2d.faces) == 5
+    assert len(legend.segment_mesh_scene_2d.vertices) == 12
     legend.legend_parameters.vertical = True
-    assert len(legend.segment_mesh_2d.faces) == 5
-    assert len(legend.segment_mesh_2d.vertices) == 12
+    assert len(legend.segment_mesh_scene_2d.faces) == 5
+    assert len(legend.segment_mesh_scene_2d.vertices) == 12
 
 
 def test_init_legend_parameters_categorized():
