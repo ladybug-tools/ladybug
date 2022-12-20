@@ -33,12 +33,12 @@ class Legend(object):
         * value_colors
         * title
         * title_location
-        * title_location_2d
+        * title_location_scene_2d
         * segment_text
         * segment_text_location
-        * segment_text_location_2d
+        * segment_text_location_scene_2d
         * segment_mesh
-        * segment_mesh_2d
+        * segment_mesh_scene_2d
         * color_range
         * segment_numbers
         * segment_colors
@@ -196,17 +196,18 @@ class Legend(object):
     def title_location(self):
         """A Plane for the location and orientation of the legend title."""
         _base_pl = self.legend_parameters.base_plane
-        _title_pt = self._title_point_2d()
+        _title_pt = self._title_point_scene_2d()
         return Plane(_base_pl.n, _base_pl.xy_to_xyz(_title_pt), _base_pl.x)
 
     @property
-    def title_location_2d(self):
+    def title_location_scene_2d(self):
         """A Point2D for the location of the title.
 
-        Useful for output to 2D interfaces.
+        The Point2D is derived from the 3D plane and properties of the legend
+        parameters, making it useful for output to certain 2D interfaces.
         """
         _base_o = self.legend_parameters.base_plane.o
-        _title_pt = self._title_point_2d()
+        _title_pt = self._title_point_scene_2d()
         return Point2D(_title_pt.x + _base_o.x, _title_pt.y + _base_o.y)
 
     @property
@@ -236,17 +237,18 @@ class Legend(object):
     def segment_text_location(self):
         """A list of Plane objects for the location of the legend segment text."""
         _base_pl = self.legend_parameters.base_plane
-        _pt_2d = self._segment_point_2d()
+        _pt_2d = self._segment_point_scene_2d()
         return [Plane(_base_pl.n, _base_pl.xy_to_xyz(pt), _base_pl.x) for pt in _pt_2d]
 
     @property
-    def segment_text_location_2d(self):
+    def segment_text_location_scene_2d(self):
         """A list of Point2D for the location of the legend segment text.
 
-        Useful for output to 2D interfaces.
+        The Point2Ds are derived from the 3D plane and properties of the legend
+        parameters, making them useful for output into certain 2D interfaces.
         """
         _base_o = self.legend_parameters.base_plane.o
-        _pt_2d = self._segment_point_2d()
+        _pt_2d = self._segment_point_scene_2d()
         return [Point2D(pt.x + _base_o.x, pt.y + _base_o.y) for pt in _pt_2d]
 
     @property
@@ -256,8 +258,11 @@ class Legend(object):
         return Mesh3D.from_mesh2d(_mesh_2d, self.legend_parameters.base_plane)
 
     @property
-    def segment_mesh_2d(self):
-        """A Ladybug Mesh2D for the legend colors."""
+    def segment_mesh_scene_2d(self):
+        """A Ladybug Mesh2D for the legend colors.
+
+        The Mesh2D is derived from the 3D plane and properties of the legend parameters.
+        """
         _o = self.legend_parameters.base_plane.o
         return self._segment_mesh_2d(Point2D(_o.x, _o.y))
 
@@ -314,6 +319,128 @@ class Legend(object):
         """
         return self._is_max_default
 
+    def title_location_2d(self, width=800, height=600):
+        """A Point2D for the location of the title.
+
+        The Point2D is derived from the 2D properties of the legend parameters.
+
+        Args:
+            width: The screen width in pixels, which is needed to interpret
+                dimensions specified in the percent of the screen. (Default: 800).
+            height: The screen height in pixels, which is needed to interpret
+                dimensions specified in the percent of the screen. (Default: 600).
+        """
+        or_x, or_y, sh, sw, th = self._pixel_dims_2d(width, height)
+        offset = sh * 0.5 if self.legend_parameters.vertical else sh * 0.75
+        base = Point2D(or_x, or_y - offset)
+        ln_break_count = self.legend_parameters.title.count('\n')
+        if ln_break_count != 0:  # offset the text so that it's not over the legend
+            offset = ln_break_count * th * 1.5
+            return Point2D(base.x, base.y + offset)
+        return base
+
+    def segment_text_location_2d(self, width=800, height=600):
+        """A list of Point2D for the location of legend segment text in the 2D screen.
+
+        The Point2Ds are derived from the 2D properties of the legend parameters.
+
+        Args:
+            width: The screen width in pixels, which is needed to interpret
+                dimensions specified in the percent of the screen. (Default: 800).
+            height: The screen height in pixels, which is needed to interpret
+                dimensions specified in the percent of the screen. (Default: 600).
+        """
+        _l_par = self.legend_parameters
+        or_x, or_y, sh, sw, th = self._pixel_dims_2d(width, height)
+        if _l_par.vertical:  # vertical
+            pt_x = or_x + sw + int(th * 0.25)
+            if not _l_par.continuous_legend:
+                return tuple(
+                    Point2D(pt_x, or_y + (i * sh) - th)
+                    for i in range(_l_par.segment_count, 0, -1))
+            else:
+                return tuple(
+                    Point2D(pt_x, or_y + (i * sh) - (th / 2))
+                    for i in range(_l_par.segment_count - 1, -1, -1))
+        else:  # horizontal
+            pt_y = or_y + sh + int(th * 0.75)
+            if not _l_par.continuous_legend:
+                return tuple(
+                    Point2D(or_x + (i * sw) + (sw * 0.5), pt_y)
+                    for i in range(_l_par.segment_count))
+            else:
+                return tuple(
+                    Point2D(or_x + (i * sw), pt_y)
+                    for i in range(_l_par.segment_count))
+
+    def color_map_2d(self, width=800, height=600):
+        """A Matrix of color values for the legend.
+
+        This is useful for generating images of the colored 2D legend to be
+        output into the plane of the screen.
+
+        Args:
+            width: The screen width in pixels, which is needed to interpret
+                dimensions specified in the percent of the screen. (Default: 800).
+            height: The screen height in pixels, which is needed to interpret
+                dimensions specified in the percent of the screen. (Default: 600).
+        """
+        _l_par = self.legend_parameters
+        or_x, or_y, sh, sw, th = self._pixel_dims_2d(width, height)
+        black = Color(0, 0, 0)
+        if _l_par.vertical:  # vertical
+            color_mtx = [[black] * sw]
+            if not _l_par.continuous_legend:  # discrete colors
+                for s, s_col in enumerate(self.segment_colors):
+                    col_row = [s_col] * sw
+                    col_row[0] = black
+                    col_row[-1] = black
+                    for h in range(sh):
+                        color_mtx.append(col_row)
+            else:  # compute continuous colors
+                _color_range = self.color_range
+                seg_num = self.segment_numbers
+                total_h = sh * (len(seg_num) - 1)
+                stn, endn = seg_num[0], seg_num[-1]
+                spn = (endn - stn) / total_h
+                all_cols = [_color_range.color(v) for v in self._frange(stn, endn, spn)]
+                for col in all_cols:
+                    col_row = [col] * sw
+                    col_row[0] = black
+                    col_row[-1] = black
+                    color_mtx.append(col_row)
+            color_mtx.append([black] * sw)
+        else:  # horizontal
+            if not _l_par.continuous_legend:  # discrete colors
+                s_cols = self.segment_colors
+                total_len = sw * len(s_cols)
+                color_mtx = [[black] * total_len]
+                col_row = []
+                for col in s_cols:
+                    col_row.extend([col] * sw)
+                col_row[0] = black
+                col_row[-1] = black
+                for h in range(sh):
+                    color_mtx.append(col_row)
+                color_mtx.append([black] * total_len)
+            else:  # compute continuous colors
+                _color_range = self.color_range
+                seg_num = self.segment_numbers
+                total_w = sw * (len(seg_num) - 1)
+                stn, endn = seg_num[0], seg_num[-1]
+                spn = (endn - stn) / total_w
+                color_mtx = [[black] * total_w]
+                all_cols = [_color_range.color(v) for v in self._frange(stn, endn, spn)]
+                if len(all_cols) > total_w:
+                    while len(all_cols) > total_w:
+                        all_cols.pop(-1)
+                all_cols[0] = black
+                all_cols[-1] = black
+                for h in range(sh):
+                    color_mtx.append(all_cols)
+                color_mtx.append([black] * total_w)
+        return color_mtx
+
     def duplicate(self):
         """Return a copy of the current legend."""
         return self.__copy__()
@@ -328,7 +455,31 @@ class Legend(object):
             'type': 'Legend'
         }
 
-    def _title_point_2d(self):
+    @staticmethod
+    def parse_dim_2d(dim_str, screen_dim):
+        """Parse a string for a 2D screen dimension into pixel width and height.
+
+        Args:
+            dim_str: A string for a screen dimension. (eg. 12px, 5%).
+            screen_dim: The total screen dimension in pixels, which is needed
+                to interpret dimensions specified in the percent of the screen.
+        """
+        if dim_str.endswith('px'):
+            return int(dim_str.replace('px', ''))
+        else:  # assume that it's a percentage dimension
+            return int(float(dim_str.replace('%', '')) * screen_dim * 0.01)
+
+    def _pixel_dims_2d(self, width, height):
+        """Get the pixel dimensions of the 2D legend given screen width and height."""
+        l_par = self.legend_parameters
+        or_x = self.parse_dim_2d(l_par.origin_x, width)
+        or_y = self.parse_dim_2d(l_par.origin_y, height)
+        sh = self.parse_dim_2d(l_par.segment_height_2d, height)
+        sw = self.parse_dim_2d(l_par.segment_width_2d, width)
+        th = self.parse_dim_2d(l_par.text_height_2d, height)
+        return or_x, or_y, sh, sw, th
+
+    def _title_point_scene_2d(self):
         """Point2D for the title in the 2D space of the legend."""
         _l_par = self.legend_parameters
         if _l_par.vertical:
@@ -343,23 +494,22 @@ class Legend(object):
             return Point2D(base.x, base.y + offset)
         return base
 
-    def _segment_point_2d(self):
+    def _segment_point_scene_2d(self):
         """Point2D for the segment text in the 2D space of the legend."""
         _l_par = self.legend_parameters
         if _l_par.vertical:  # vertical
-            _pt_2d = tuple(
+            return tuple(
                 Point2D(_l_par.segment_width + _l_par.text_height * 0.25, i)
                 for i in Legend._frange(
                     0, _l_par.segment_height * _l_par.segment_count,
                     _l_par.segment_height))
         else:  # horizontal
             _start_val = -_l_par.segment_width * self.segment_length
-            _pt_2d = tuple(
+            return tuple(
                 Point2D(_start_val + i, -_l_par.text_height * 1.25)
                 for i in Legend._frange(
                     0, _l_par.segment_width * _l_par.segment_count,
                     _l_par.segment_width))
-        return _pt_2d
 
     def _segment_mesh_2d(self, base_pt=Point2D(0, 0)):
         """Mesh2D for the segments in the 2D space of the legend."""
@@ -1679,30 +1829,30 @@ class Legend2DParameters(object):
         origin_x: A text string to note the X coordinate of the base point from
             where the legend will be generated (assuming an origin in the upper-left
             corner of the screen with higher positive values of X moving to the right).
-            Text must be formatted as an integer followed by either "px" (to denote
-            the number of screen pixels) or "%" (to denote the percentage of the
-            screen). Examples include 10px, 5%. The default is set to make the legend
+            Text must be formatted as an integer followed by "px" (to denote the number
+            of screen pixels) or a number followed by "%" (to denote the percentage of
+            the screen). Examples include 10px, 5%. The default is set to make the legend
             clearly visible on the screen (10px).
         origin_y: A text string to note the Y coordinate of the base point from
             where the legend will be generated (assuming an origin in the upper-left
             corner of the screen with higher positive values of Y moving downward).
-            Text must be formatted as an integer followed by either "px" (to denote
-            the number of screen pixels) or "%" (to denote the percentage of the
-            screen). Examples include 10px, 5%. The default is set to make the legend
+            Text must be formatted as an integer followed by "px" (to denote the number
+            of screen pixels) or a number followed by "%" (to denote the percentage of
+            the screen). Examples include 10px, 5%. The default is set to make the legend
             clearly visible on the screen (50px).
         segment_height: A text string to note the height for each of the legend segments.
-            Text must be formatted as an integer followed by either "px" (to
-            denote the number of screen pixels) or "%" (to denote the percentage of the
-            screen). Examples include 10px, 5%. The default is set to make most
+            Text must be formatted as an integer followed by "px" (to denote the number
+            of screen pixels) or a number followed by "%" (to denote the percentage of
+            the screen). Examples include 10px, 5%. The default is set to make most
             legends readable (25px for horizontal and 36px for vertical).
         segment_width: A text string to set the width for each of the legend segments.
-            Text must be formatted as an integer followed by either "px" (to denote
-            the number of screen pixels) or "%" (to denote the percentage of the
-            screen). Examples include 10px, 5%. The default is set to make most
+            Text must be formatted as an integer followed by "px" (to denote the number
+            of screen pixels) or a number followed by "%" (to denote the percentage of
+            the screen). Examples include 10px, 5%. The default is set to make most
             legends readable (36px for horizontal and 25px for vertical).
-        text_height: A text string to set the height for the legend text.
-            Text must be formatted as an integer followed by either "px" (to denote
-            the number of screen pixels) or "%" (to denote the percentage of the
+        text_height: A text string to set the height for the legend text. Text must be
+            formatted as an integer followed by "px" (to denote the number of screen
+            pixels) or a number followed by "%" (to denote the percentage of the
             screen). Examples include 10px, 5%. Default is 12px.
 
     Properties:
@@ -1723,7 +1873,7 @@ class Legend2DParameters(object):
         '_origin_x', '_origin_y', '_segment_height', '_segment_width', '_text_height',
         '_is_origin_x_default', '_is_origin_y_default', '_is_segment_height_default',
         '_is_segment_width_default', '_is_text_height_default', '_parent')
-    VALID_DIM = re.compile(r'^\d*px|\d*%$')
+    VALID_DIM = re.compile(r'^\d*px|\d*%$|\d*.\d*%$')
 
     def __init__(self, origin_x=None, origin_y=None, segment_height=None,
                  segment_width=None, text_height=None):
