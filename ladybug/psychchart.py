@@ -103,7 +103,7 @@ class PsychrometricChart(object):
     def __init__(self, temperature, relative_humidity, average_pressure=101325,
                  legend_parameters=None, base_point=Point2D(), x_dim=1, y_dim=1500,
                  min_temperature=-20, max_temperature=50, max_humidity_ratio=0.03,
-                 use_ip=False):
+                 use_ip=False): 
         """Initialize Psychrometric Chart."""
         # check and assign the temperature and humidity
         self._use_ip = bool(use_ip)
