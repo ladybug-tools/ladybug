@@ -363,7 +363,7 @@ class Wea(object):
         """Create a wea object representing an ASHRAE Revised Clear Sky ("Tau Model")
 
         ASHRAE Revised Clear Skies are intended to determine peak solar load
-        and sizing parmeters for HVAC systems.  The revised clear sky is
+        and sizing parameters for HVAC systems.  The revised clear sky is
         currently the default recommended sky model used to autosize HVAC
         systems in EnergyPlus. For more information on the ASHRAE Revised Clear
         Sky model, see the EnergyPlus Engineering Reference:
@@ -413,7 +413,7 @@ class Wea(object):
         """Create a wea object representing an original ASHRAE Clear Sky.
 
         The original ASHRAE Clear Sky is intended to determine peak solar load
-        and sizing parmeters for HVAC systems.  It is not the sky model
+        and sizing parameters for HVAC systems.  It is not the sky model
         currently recommended by ASHRAE since it usually overestimates the
         amount of solar irradiance in comparison to the newer ASHRAE Revised
         Clear Sky ("Tau Model"). However, the original model here is still
