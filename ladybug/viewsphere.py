@@ -246,7 +246,7 @@ class ViewSphere(object):
 
         Returns:
             A list of numbers with a value for each patch that corresponds to the
-            area of that patch. The aveage value of all the patches is equal to 1.
+            area of that patch. The average value of all the patches is equal to 1.
         """
         # get the areas of the patches and the number of patches to include in the offset
         patch_areas, patch_row_count = self._dome_patch_areas(division_count)
@@ -258,7 +258,7 @@ class ViewSphere(object):
         return [p_area / avg_patch_area for p_area in relevant_patches] * 2
 
     def dome_patches(self, division_count=1, subdivide_in_place=False):
-        """Get Vector3Ds and a correcponding Mesh3D for a dome.
+        """Get Vector3Ds and a corresponding Mesh3D for a dome.
 
         Args:
             division_count: A positive integer for the number of times that the
