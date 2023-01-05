@@ -32,9 +32,8 @@ class WindRose(object):
         analysis_data_collection: A HourlyContinuousCollection or
             HourlyDiscontinuousCollection of wind values, corresponding to the wind
             directions, which is "binned" by the calculated direction intervals.
-        number_of_directions: A number greater then zero that determines the number
-            of directions to "bin" the wind data by. The number of directions must
-            be greater then three to plot the wind rose (Default: 8).
+        direction_count: An integer greater than or equal to 3 that determines the
+            number of directions to "bin" the wind data by. (Default: 8).
 
     Properties:
         * direction_data_collection
@@ -71,7 +70,7 @@ class WindRose(object):
     DEFAULT_NORTH = 0.0
 
     def __init__(self, direction_data_collection, analysis_data_collection,
-                 number_of_directions=8):
+                 direction_count=8):
         """Initialize windrose plot."""
         # Check the input objects
         acceptable_colls = (HourlyContinuousCollection, HourlyDiscontinuousCollection)
@@ -86,10 +85,10 @@ class WindRose(object):
         assert direction_data_collection.is_collection_aligned(
             analysis_data_collection), 'Windrose direction_data_collection must be' \
             'aligned with analysis_data_collection. The provided values are not aligned.'
-        assert number_of_directions > 0, 'The number of directions must be ' \
+        assert direction_count > 0, 'The number of directions must be ' \
             'greater then one to bin the data, (and greater then three for ' \
-            'plotting the wind rose). Currently the number_of_directions parameter is: '\
-            '{}'.format(number_of_directions)
+            'plotting the wind rose). Currently the direction_count parameter is: '\
+            '{}'.format(direction_count)
 
         # Ensure the analysis period of the data collection has been validated
         if not direction_data_collection.validated_a_period:
@@ -105,10 +104,10 @@ class WindRose(object):
             [d % 360.0 for d in direction_data_collection.values]
         self._direction_data_collection = direction_data_collection.to_immutable()
         self._analysis_data_collection = analysis_data_collection.to_immutable()
-        self._number_of_directions = int(number_of_directions)
+        self._direction_count = int(direction_count)
 
         # Compute the windrose data and associated read-only properties
-        self._angles = WindRose._compute_angles(number_of_directions)
+        self._angles = WindRose._compute_angles(direction_count)
         self._is_speed_data_type = isinstance(
             self._analysis_data_collection.header.data_type, Speed)
         self._histogram_data, self._zero_count = \
@@ -211,7 +210,7 @@ class WindRose(object):
         approaches infinity equals the frequency_spacing_distance (as is the case
         with a circle).
         """
-        _theta = 360.0 / self._number_of_directions
+        _theta = 360.0 / self._direction_count
         theta = _theta / 2.0 / 180.0 * math.pi
         return self.frequency_spacing_distance / math.cos(theta)
 
@@ -343,7 +342,7 @@ class WindRose(object):
         """Get a tuple of the predominant directions of the wind values.
         """
         if self._prevailing_direction is None:
-            dirv_num = self._number_of_directions
+            dirv_num = self._direction_count
             freqs = [len(b) for b in self._histogram_data]
             dirvs = [i / dirv_num * 360.0 for i in range(dirv_num)]
 
@@ -441,9 +440,9 @@ class WindRose(object):
         Returns:
             A Mesh2D of the wind rose plot.
         """
-        assert self._number_of_directions > 2, 'The number of directions must be ' \
+        assert self._direction_count > 2, 'The number of directions must be ' \
             'greater then three to plot the wind rose. Currently the ' \
-            'number_of_directions parameter is: {}'.format(self._number_of_directions)
+            'direction_count parameter is: {}'.format(self._direction_count)
         assert not all(len(h) == 0 for h in self.histogram_data), \
             'No data is available to plot on the wind rose. Mesh cannot be drawn.'
 
@@ -479,7 +478,7 @@ class WindRose(object):
 
         # Compute colors
         if not self.show_freq:
-            for i in range(self._number_of_directions):
+            for i in range(self._direction_count):
                 stack = histogram_data_stacked[i]
                 vals = [b for a in stack for b in a]
                 if len(vals) > 0:

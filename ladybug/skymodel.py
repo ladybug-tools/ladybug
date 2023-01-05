@@ -11,7 +11,7 @@ except ImportError:  # python 3
     xrange = range
 
 
-"""ORIGINAL AHSRAE CLEAR SKY SOLAR MODEL"""
+"""ORIGINAL ASHRAE CLEAR SKY SOLAR MODEL"""
 
 
 def ashrae_clear_sky(altitudes, month, sky_clearness=1):
@@ -38,7 +38,7 @@ def ashrae_clear_sky(altitudes, month, sky_clearness=1):
         -   dir_norm_rad: A list of direct normal radiation values for each
             of the connected altitudes in W/m2.
 
-        -   dif_horiz_rad: A list of diffuse horizontall radiation values for each
+        -   dif_horiz_rad: A list of diffuse horizontal radiation values for each
             of the connected altitudes in W/m2.
     """
     # apparent solar irradiation at air mass m = 0

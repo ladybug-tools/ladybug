@@ -319,7 +319,7 @@ def test_windrose_frequency_lines():
     assert not freqs[0].vertices[0].is_equivalent(freqs[0].vertices[-1], 1e-10)
 
 
-def test_windrose_mesh_number_of_directions():
+def test_windrose_mesh_direction_count():
     # Test if mesh number of directions
 
     epw_path = os.path.join(os.getcwd(), 'tests/assets/epw/tokyo.epw')

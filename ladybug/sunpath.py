@@ -254,7 +254,7 @@ class Sunpath(object):
         # compute solar geometry
         sol_dec, eq_of_time = self._calculate_solar_geometry(datetime)
 
-        # get the correct mintue of the day for which solar position is to be computed
+        # get the correct minute of the day for which solar position is to be computed
         try:
             hour = datetime.float_hour
         except AttributeError:  # native Python datetime; try to compute manually
@@ -383,6 +383,8 @@ class Sunpath(object):
         except ValueError:
             # no sunrise/sunset on this day (eg. arctic circle in summer/winter)
             noon = 24 * noon
+            is_daylight_saving = self.is_daylight_saving_hour(datetime)
+            noon = noon - 1 if is_daylight_saving else noon  # spring forward!
             return {
                 'sunrise': None,
                 'noon': DateTime(datetime.month, datetime.day,
@@ -396,6 +398,10 @@ class Sunpath(object):
             noon = 24 * noon
             sunrise = 24 * sunrise
             sunset = 24 * sunset
+            if self.is_daylight_saving_hour(datetime):  # spring forward!
+                noon = noon - 1
+                sunrise = sunrise - 1
+                sunset = sunset - 1
 
             # compute sunrise datetime
             if sunrise >= 0:
