@@ -336,7 +336,7 @@ class ViewSphere(object):
 
         Returns:
             A list of numbers with a value for each patch that corresponds to the
-            area of that patch. The aveage value of all the patches is equal to 1.
+            area of that patch. The average value of all the patches is equal to 1.
         """
         # get the areas of the patches
         patch_areas, _ = self._dome_patch_areas(division_count)
@@ -345,7 +345,7 @@ class ViewSphere(object):
         return [p_area / avg_patch_area for p_area in patch_areas]
 
     def sphere_patches(self, division_count=1, subdivide_in_place=False):
-        """Get Vector3Ds and a correcponding Mesh3D for a sphere.
+        """Get Vector3Ds and a corresponding Mesh3D for a sphere.
 
         Args:
             division_count: A positive integer for the number of times that the
@@ -386,7 +386,7 @@ class ViewSphere(object):
 
         Returns:
             A list of numbers with a value for each patch that corresponds to the
-            area of that patch. The aveage value of all the patches is equal to 1.
+            area of that patch. The average value of all the patches is equal to 1.
         """
         # get the areas of the patches
         patch_areas, _ = self._dome_patch_areas(division_count)
@@ -395,7 +395,7 @@ class ViewSphere(object):
         return [p_area / avg_patch_area for p_area in patch_areas] * 2
 
     def dome_radial_patches(self, azimuth_count=72, altitude_count=18):
-        """Get Vector3Ds and a correcponding Mesh3D for a a radial dome.
+        """Get Vector3Ds and a corresponding Mesh3D for a a radial dome.
 
         Args:
             azimuth_count: A positive integer for the number of times that
@@ -461,7 +461,7 @@ class ViewSphere(object):
 
         Returns:
             A list of numbers with a value for each patch that corresponds to the
-            area of that patch. The aveage value of all the patches is equal to 1.
+            area of that patch. The average value of all the patches is equal to 1.
         """
         # get the areas of the patches
         patch_areas = self._dome_radial_patch_areas(azimuth_count, altitude_count)
