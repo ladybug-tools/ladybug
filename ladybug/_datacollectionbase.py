@@ -286,7 +286,7 @@ class BaseCollection(object):
                     continue
                 elif isinstance(dat_type, typ_clss._normalized_type):
                     agg_class = typ_clss
-                break
+                    break
         # if nothing was found, throw an error
         if agg_class is None:
             raise ValueError('Data type "{}" does not have a area-'
@@ -743,21 +743,13 @@ class BaseCollection(object):
         # get an instance of the time aggregated data type
         head = self.header
         dat_type, time_class = head.data_type, None
-        # first see if there's a specific data type for the current one
-        for typ_clss in TYPESDICT.values():
+        # see if there's a specific data type for the current one
+        for typ_clss_name in BASETYPES:
+            typ_clss = TYPESDICT[typ_clss_name]
             if typ_clss._time_aggregated_type is None:
                 continue
-            elif dat_type.__class__ == typ_clss._time_aggregated_type:
+            elif isinstance(dat_type, typ_clss._time_aggregated_type):
                 time_class = typ_clss
-                break
-        # then, check to see if there's any base type
-        if time_class is None:
-            for typ_clss_name in BASETYPES:
-                typ_clss = TYPESDICT[typ_clss_name]
-                if typ_clss._time_aggregated_type is None:
-                    continue
-                elif isinstance(dat_type, typ_clss._time_aggregated_type):
-                    time_class = typ_clss
                 break
         # if nothing was found, throw an error
         if time_class is None:
