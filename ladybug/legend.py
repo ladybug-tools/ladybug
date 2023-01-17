@@ -391,7 +391,7 @@ class Legend(object):
         if _l_par.vertical:  # vertical
             color_mtx = [[black] * sw]
             if not _l_par.continuous_legend:  # discrete colors
-                for s, s_col in enumerate(self.segment_colors):
+                for s, s_col in enumerate(reversed(self.segment_colors)):
                     col_row = [s_col] * sw
                     col_row[0] = black
                     col_row[-1] = black
