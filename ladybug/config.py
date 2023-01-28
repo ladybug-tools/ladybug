@@ -12,6 +12,7 @@ import platform
 import sys
 import subprocess
 import json
+import tempfile
 
 
 class Folders(object):
@@ -232,7 +233,11 @@ class Folders(object):
         if os.name == 'nt' and app_folder is not None:
             pass
         else:
-            epw_folder = os.path.join(self.ladybug_tools_folder, 'resources', 'weather')
+            # check for write permission
+            home_folder = self.ladybug_tools_folder
+            if not os.access(home_folder, os.W_OK):
+                home_folder = tempfile.gettempdir()
+            epw_folder = os.path.join(home_folder, 'resources', 'weather')
         # create the folder if it does not exist
         if not os.path.isdir(epw_folder):
             try:
