@@ -262,7 +262,8 @@ class Folders(object):
                 install_folder = os.path.join(program_folder, 'ladybug_tools')
             else:
                 try:
-                    os.makedirs(install_folder)
+                    if not os.path.isdir(install_folder):
+                        os.makedirs(install_folder)
                 except Exception as e:
                     # very rare case of an inaccessible HOME folder
                     # try to fall back on the Python installation folder of this package
