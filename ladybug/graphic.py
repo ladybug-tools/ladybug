@@ -11,7 +11,7 @@ from ladybug_geometry.geometry3d.plane import Plane
 
 
 class GraphicContainer(object):
-    """Graphic container used to get legends, title locations, and colors for any graphic.
+    """Graphic container used to get legends, title locations, and colors for a graphic.
 
     Args:
         values: A List or Tuple of numerical values that will be used to

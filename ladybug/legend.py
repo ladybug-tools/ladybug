@@ -404,7 +404,7 @@ class Legend(object):
                 stn, endn = seg_num[0], seg_num[-1]
                 spn = (endn - stn) / total_h
                 all_cols = [_color_range.color(v) for v in self._frange(stn, endn, spn)]
-                for col in all_cols:
+                for col in reversed(all_cols):
                     col_row = [col] * sw
                     col_row[0] = black
                     col_row[-1] = black
