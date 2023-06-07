@@ -69,9 +69,10 @@ class HourlyPlot(object):
         * values
         * colors
     """
-    __slots__ = ('_data_collection', '_base_point', '_x_dim', '_y_dim', '_z_dim',
-                 '_num_y', '_num_x', '_container', '_hour_points', '_hour_text',
-                 '_month_points', '_month_label_points', '_month_text', '_reverse_y')
+    __slots__ = (
+        '_data_collection', '_base_point', '_x_dim', '_y_dim', '_z_dim',
+        '_num_y', '_num_x', '_container', '_hour_points', '_hour_text', '_hour_text_24',
+        '_month_points', '_month_label_points', '_month_text', '_reverse_y')
 
     # editing HOUR_LABELS will change the labels produced for the entire chart
     HOUR_LABELS = (0, 6, 12, 18, 24)
@@ -261,10 +262,23 @@ class HourlyPlot(object):
 
     @property
     def hour_labels(self):
-        """Get a list of text strings for the 6-hour labels for the chart."""
+        """Get a list of text strings for the hour labels for the chart.
+
+        These will be in 12-hour clock format.
+        """
         if not self._hour_text:
             self._compute_static_hour_line_pts()
         return self._hour_text
+
+    @property
+    def hour_labels_24(self):
+        """Get a list of text strings for the hour labels for the chart.
+
+        These will be in 24-hour clock format.
+        """
+        if not self._hour_text_24:
+            self._compute_static_hour_line_pts()
+        return self._hour_text_24
 
     @property
     def month_lines2d(self):
@@ -392,7 +406,7 @@ class HourlyPlot(object):
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
         """
-        _hour_points, _hour_text = self._compute_hour_line_pts(hour_labels)
+        _hour_points, _hour_text, _hour_24 = self._compute_hour_line_pts(hour_labels)
         vec = Vector2D(self._num_x * self._x_dim)
         return [LineSegment2D(pt, vec) for pt in _hour_points]
 
@@ -403,7 +417,7 @@ class HourlyPlot(object):
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
         """
-        _hour_points, _hour_text = self._compute_hour_line_pts(hour_labels)
+        _hour_points, _hour_text, _hour_24 = self._compute_hour_line_pts(hour_labels)
         vec = Vector3D(self._num_x * self._x_dim)
         return [LineSegment3D(Point3D(pt.x, pt.y, self._base_point.z), vec)
                 for pt in _hour_points]
@@ -415,7 +429,7 @@ class HourlyPlot(object):
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
         """
-        _hour_points, _hour_text = self._compute_hour_line_pts(hour_labels)
+        _hour_points, _hour_text, _hour_24 = self._compute_hour_line_pts(hour_labels)
         txt_hght = self.legend_parameters.text_height
         return [Point2D(pt.x - txt_hght * 2, pt.y) for pt in _hour_points]
 
@@ -426,20 +440,22 @@ class HourlyPlot(object):
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
         """
-        _hour_points, _hour_text = self._compute_hour_line_pts(hour_labels)
+        _hour_points, _hour_text, _hour_24 = self._compute_hour_line_pts(hour_labels)
         txt_hght = self.legend_parameters.text_height
         return [Point3D(pt.x - txt_hght * 2, pt.y, self._base_point.z)
                 for pt in _hour_points]
 
-    def custom_hour_labels(self, hour_labels):
+    def custom_hour_labels(self, hour_labels, clock_24=False):
         """Get a list of text strings for the 6-hour labels for the chart.
 
         Args:
             hour_labels: An array of numbers from 0 to 24 representing the hours
                 to display. (eg. [0, 3, 6, 9, 12, 15, 18, 21, 24])
+            clock_24: Boolean for whether a 24-hour clock should be used instead
+                of the 12-hour clock.
         """
-        _hour_points, _hour_text = self._compute_hour_line_pts(hour_labels)
-        return _hour_text
+        _hour_points, _hour_text, _hour_24 = self._compute_hour_line_pts(hour_labels)
+        return _hour_24 if clock_24 else _hour_text
 
     def _compute_colored_mesh2d(self):
         """Compute a colored mesh from this object's data collection."""
@@ -490,7 +506,7 @@ class HourlyPlot(object):
 
     def _compute_static_hour_line_pts(self):
         """Compute the points for the hour lines and labels."""
-        self._hour_points, self._hour_text = \
+        self._hour_points, self._hour_text, self._hour_text_24 = \
             self._compute_hour_line_pts(self.HOUR_LABELS)
 
     def _compute_hour_line_pts(self, hour_labels):
@@ -503,7 +519,7 @@ class HourlyPlot(object):
         end_hr = m_aper.end_hour + 1
         t_step = m_aper.timestep
         _hour_points = []
-        _hour_text = []
+        _hour_text, _hour_text_24 = [], []
         last_hr = 0
         for hr in hour_labels:
             if st_hr <= hr <= end_hr:
@@ -512,6 +528,7 @@ class HourlyPlot(object):
                     self._container.max_point.y - y_dist
                 pt = Point2D(self._container.min_point.x, pt_y)
                 _hour_points.append(pt)
+                _hour_text_24.append('{}:00'.format(hr))
                 hr_val = hr if hr <= 12 else hr - 12
                 am_pm = 'PM' if 12 <= hr < 24 else 'AM'
                 if hr_val == 0:
@@ -521,7 +538,7 @@ class HourlyPlot(object):
         if self.analysis_period.timestep > 1 and last_hr == end_hr:
             _hour_points.pop(-1)
             _hour_text.pop(-1)
-        return _hour_points, _hour_text
+        return _hour_points, _hour_text, _hour_text_24
 
     def _compute_month_line_pts(self):
         """Compute the points for the month lines and labels."""

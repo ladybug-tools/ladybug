@@ -197,7 +197,7 @@ class BaseCollection(object):
         return new_data_c
 
     def is_in_data_type_range(self, raise_exception=True):
-        """Check if collection values are in physically possible ranges for the data_type.
+        """Check if collection values are in the range for the data_type.
 
         If this method returns False, the collection's values are physically or
         mathematically impossible for the data_type (eg. temperature below
@@ -306,7 +306,7 @@ class BaseCollection(object):
         return new_data_c
 
     def highest_values(self, count):
-        """Get a list of the the x highest values of the Data Collection and their indices.
+        """Get a list of the the highest values of the Data Collection and their indices.
 
         This is useful for situations where one needs to know the times of
         the year when the largest values of a data collection occur.  For example,
@@ -341,7 +341,7 @@ class BaseCollection(object):
         return highest_values, highest_values_index
 
     def lowest_values(self, count):
-        """Get a list of the the x lowest values of the Data Collection and their indices.
+        """Get a list of the the lowest values of the Data Collection and their indices.
 
         This is useful for situations where one needs to know the times of
         the year when the smallest values of a data collection occur.
@@ -633,7 +633,7 @@ class BaseCollection(object):
 
     @staticmethod
     def compute_function_aligned(funct, data_collections, data_type, unit):
-        """Compute a function with a list of aligned data collections or individual values.
+        """Compute a function with a list of aligned data collections or values.
 
         Args:
             funct: A function with a single numerical value as output and one or
