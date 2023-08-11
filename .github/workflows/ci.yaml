@@ -9,7 +9,7 @@ jobs:
     name: Unit tests
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: ['3.7', '3.10']
         os: [macos-latest, ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
@@ -26,12 +26,6 @@ jobs:
           pip install -r dev-requirements.txt
       - name: run tests
         run: python -m pytest --cov=. tests/
-      - name: run test coverage
-        if: ${{ matrix.python-version == 3.7 }}
-        run: |
-          echo "Coveralls is no longer supported"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
     name: Deploy to GitHub and PyPI
