@@ -120,9 +120,12 @@ def test_import_data():
     assert isinstance(epw.dew_point_temperature, HourlyContinuousCollection)
     assert isinstance(epw.relative_humidity, HourlyContinuousCollection)
     assert isinstance(epw.atmospheric_station_pressure, HourlyContinuousCollection)
-    assert isinstance(epw.extraterrestrial_horizontal_radiation, HourlyContinuousCollection)
-    assert isinstance(epw.extraterrestrial_direct_normal_radiation, HourlyContinuousCollection)
-    assert isinstance(epw.horizontal_infrared_radiation_intensity, HourlyContinuousCollection)
+    assert isinstance(
+        epw.extraterrestrial_horizontal_radiation, HourlyContinuousCollection)
+    assert isinstance(
+        epw.extraterrestrial_direct_normal_radiation, HourlyContinuousCollection)
+    assert isinstance(
+        epw.horizontal_infrared_radiation_intensity, HourlyContinuousCollection)
     assert isinstance(epw.global_horizontal_radiation, HourlyContinuousCollection)
     assert isinstance(epw.direct_normal_radiation, HourlyContinuousCollection)
     assert isinstance(epw.diffuse_horizontal_radiation, HourlyContinuousCollection)
@@ -424,3 +427,16 @@ def test_to_wea():
         assert float(line[17].split(' ')[-1]) == epw.diffuse_horizontal_radiation[11]
 
     os.remove(wea_path)
+
+
+def test_to_mos():
+    """Test the to_mos method."""
+    relative_path = './tests/assets/epw/chicago.epw'
+    mos_path = './tests/assets/epw/chicago.mos'
+    epw_obj = EPW(relative_path)
+
+    mos_file = epw_obj.to_mos(mos_path)
+    assert os.path.isfile(mos_file)
+    assert os.stat(mos_file).st_size > 1
+
+    os.remove(mos_file)

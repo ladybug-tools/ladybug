@@ -976,7 +976,7 @@ class EPW(object):
 
     @property
     def extraterrestrial_horizontal_radiation(self):
-        """Return annual Extraterrestrial Horizontal Radiation as a Ladybug Data Collection.
+        """Return annual Extraterrestrial Horizontal Radiation as a Data Collection.
 
         This is the Extraterrestrial Horizontal Radiation in Wh/m2. It is not currently
         used in EnergyPlus calculations. It should have a minimum value of 0; missing
@@ -986,7 +986,7 @@ class EPW(object):
 
     @property
     def extraterrestrial_direct_normal_radiation(self):
-        """Return annual Extraterrestrial Direct Normal Radiation as a Ladybug Data Collection.
+        """Return annual Extraterrestrial Direct Normal Radiation as a Data Collection.
 
         This is the Extraterrestrial Direct Normal Radiation in Wh/m2. (Amount of solar
         radiation in Wh/m2 received on a surface normal to the rays of the sun at the top
@@ -998,7 +998,7 @@ class EPW(object):
 
     @property
     def horizontal_infrared_radiation_intensity(self):
-        """Return annual Horizontal Infrared Radiation Intensity as a Ladybug Data Collection.
+        """Return annual Horizontal Infrared Radiation Intensity as a Data Collection.
 
         This is the Horizontal Infrared Radiation Intensity in W/m2. If it is missing,
         it is calculated from the Opaque Sky Cover field as shown in the following
@@ -1287,7 +1287,7 @@ climate-calculations.html#energyplus-sky-temperature-calculation
         accurate than these other sources, which are usually derived from multiple
         years of climate data instead of only one year. Information on the error
         introduced by using only one year of data to create design days can be
-        found in AHSRAE HOF 2013, Chapter 14, pg 14.
+        found in ASHRAE HOF 2013, Chapter 14, pg 14.
 
         Args:
             day_type: Text for the type of design day to be produced. Choose from.
@@ -1542,7 +1542,7 @@ climate-calculations.html#energyplus-sky-temperature-calculation
         return file_path
 
     def to_wea(self, file_path, hoys=None):
-        """Write an wea file from the epw file.
+        """Write a wea file from the epw file.
 
         WEA carries radiation values from epw. Gendaymtx uses these values to
         generate the sky. For an annual analysis it is identical to using epw2wea.
@@ -1580,6 +1580,74 @@ climate-calculations.html#energyplus-sky-temperature-calculation
         if originally_ip:
             self.convert_to_ip()
 
+        return file_path
+
+    def to_mos(self, file_path):
+        """Translate the EPW to a MOS file that can be used as input for Modelica.
+
+        MOS files can be used as input for simulations with Spawn of EnergyPlus.
+        They contain essentially the same information as the EPW files but just
+        formatted in a manner that can be quickly parsed by Modelica.
+
+        Args:
+            file_path: Full file path for output mos file. If the file path
+                does not contain the .mos extension, it will be automatically
+                added.
+        """
+        # create the header of the MOS file contents
+        file_contents = ['#1\ndouble tab1(8760,30)\n']
+        for hl in self.header:
+            file_contents.append('#{}'.format(hl))
+        comment_strs = (
+            '#C1 Time in seconds. Beginning of a year is 0s.',
+            '#C2 Dry bulb temperature in Celsius at indicated time',
+            '#C3 Dew point temperature in Celsius at indicated time',
+            '#C4 Relative humidity in percent at indicated time',
+            '#C5 Atmospheric station pressure in Pa at indicated time',
+            '#C6 Extraterrestrial horizontal radiation in Wh/m2',
+            '#C7 Extraterrestrial direct normal radiation in Wh/m2',
+            '#C8 Horizontal infrared radiation intensity in Wh/m2',
+            '#C9 Global horizontal radiation in Wh/m2',
+            '#C10 Direct normal radiation in Wh/m2',
+            '#C11 Diffuse horizontal radiation in Wh/m2',
+            '#C12 Averaged global horizontal illuminance in lux during minutes '
+            'preceding the indicated time',
+            '#C13 Direct normal illuminance in lux during minutes preceding the '
+            'indicated time',
+            '#C14 Diffuse horizontal illuminance in lux  during minutes preceding '
+            'the indicated time',
+            '#C15 Zenith luminance in Cd/m2 during minutes preceding the indicated time',
+            '#C16 Wind direction at indicated time. N=0, E=90, S=180, W=270',
+            '#C17 Wind speed in m/s at indicated time',
+            '#C18 Total sky cover at indicated time',
+            '#C19 Opaque sky cover at indicated time',
+            '#C20 Visibility in km at indicated time',
+            '#C21 Ceiling height in m',
+            '#C22 Present weather observation',
+            '#C23 Present weather codes',
+            '#C24 Precipitable water in mm',
+            '#C25 Aerosol optical depth',
+            '#C26 Snow depth in cm',
+            '#C27 Days since last snowfall',
+            '#C28 Albedo',
+            '#C29 Liquid precipitation depth in mm at indicated time',
+            '#C30 Liquid precipitation quantity'
+        )
+        for com_str in comment_strs:
+            file_contents.append('{}\n'.format(com_str))
+
+        # append all of the data to the file contents
+        time_sec = [float(h * 3660) for h in range(len(self.dry_bulb_temperature))]
+        for i, line in enumerate(zip(*self._data[6:])):
+            data_line = (time_sec[i],) + line
+            data_str = '	'.join(str(v) for v in data_line) + '\n'
+            file_contents.append(data_str)
+
+        # write the contents to a file
+        if not file_path.endswith('.mos'):
+            file_path = '{}.mos'.format(file_path)
+        file_data = ''.join(file_contents)
+        write_to_file(file_path, file_data, True)
         return file_path
 
     def _get_wea_header(self):
