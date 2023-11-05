@@ -179,26 +179,24 @@ class Folders(object):
             file_path: Path to a JSON file containing the file paths. A sample of this
                 JSON is the config.json file within this package.
         """
-        # check the default file path
-        assert os.path.isfile(file_path), \
-            ValueError('No file found at {}'.format(file_path))
-
         # set the default paths to be all blank
         default_path = {
             "ladybug_tools_folder": r'',
             "default_epw_folder": r''
         }
 
-        with open(file_path, 'r') as cfg:
-            try:
-                paths = json.load(cfg)
-            except Exception as e:
-                print('Failed to load paths from {}.\nThey will be set to defaults '
-                      'instead\n{}'.format(file_path, e))
-            else:
-                for key, p in paths.items():
-                    if not key.startswith('__') and p.strip():
-                        default_path[key] = p.strip()
+        # load any attributes that have been set in the config.json
+        if os.path.isfile(file_path):
+            with open(file_path, 'r') as cfg:
+                try:
+                    paths = json.load(cfg)
+                except Exception as e:
+                    print('Failed to load paths from {}.\nThey will be set to defaults '
+                        'instead\n{}'.format(file_path, e))
+                else:
+                    for key, p in paths.items():
+                        if not key.startswith('__') and p.strip():
+                            default_path[key] = p.strip()
 
         # set paths for the ladybug_tools_folder and default_epw_folder
         self.ladybug_tools_folder = default_path["ladybug_tools_folder"]
