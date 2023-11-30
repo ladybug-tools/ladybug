@@ -2,6 +2,7 @@
 import click
 import sys
 import logging
+import os
 
 from ladybug.wea import Wea
 from ladybug.ddy import DDY
@@ -101,9 +102,14 @@ def wea_to_constant(wea_file, value, output_file):
 
     \b
     Args:
-        wea_file: Full path to .wea file.
+        wea_file: Full path to .wea file. This can also be an .epw file.
     """
     try:
+        try:
+            _wea_file = os.path.join(os.path.dirname(wea_file), 'epw_to_wea.wea')
+            wea_file = Wea.from_epw_file(wea_file).write(_wea_file)
+        except Exception:
+            pass
         output_file.write(Wea.to_constant_value(wea_file, value))
     except Exception as e:
         _logger.exception('Wea translation failed.\n{}'.format(e))
