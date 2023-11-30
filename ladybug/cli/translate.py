@@ -94,7 +94,7 @@ def epw_to_ddy(epw_file, percentile, output_file):
               'string of the translation. By default this will be printed out to stdout',
               type=click.File('w'), default='-')
 def wea_to_constant(wea_file, value, output_file):
-    """Convert a Wea file to have a constant value for each datetime.
+    """Convert a Wea or an EPW file to have a constant value for each datetime.
 
     This is useful in workflows where hourly irradiance values are inconsequential
     to the analysis and one is only using the Wea as a format to pass location
@@ -105,11 +105,12 @@ def wea_to_constant(wea_file, value, output_file):
         wea_file: Full path to .wea file. This can also be an .epw file.
     """
     try:
-        try:
+        with open(wea_file) as inf:
+            first_word = inf.read(5)
+        is_wea = True if first_word == 'place' else False
+        if not is_wea:
             _wea_file = os.path.join(os.path.dirname(wea_file), 'epw_to_wea.wea')
             wea_file = Wea.from_epw_file(wea_file).write(_wea_file)
-        except Exception:
-            pass
         output_file.write(Wea.to_constant_value(wea_file, value))
     except Exception as e:
         _logger.exception('Wea translation failed.\n{}'.format(e))
