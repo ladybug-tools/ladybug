@@ -689,6 +689,8 @@ class BaseCollection(object):
             for i, col in enumerate(data_collections):
                 data_collections[i] = [col] * val_len if isinstance(col, float) else col
             result = data_colls[0].get_aligned_collection(data_type=data_type, unit=unit)
+            if not result._mutable:
+                result = result.to_mutable()
             for i in xrange(val_len):
                 result[i] = funct(*[col[i] for col in data_collections])
             return result
