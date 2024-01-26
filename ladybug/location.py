@@ -69,8 +69,9 @@ class Location(object):
         """
         optional_keys = ('city', 'state', 'country', 'latitude', 'longitude',
                          'time_zone', 'elevation', 'station_id', 'source')
+        auto_dict = {'type': 'Autocalculate'}
         for key in optional_keys:
-            if key not in data:
+            if key not in data or data[key] == auto_dict:
                 data[key] = None
 
         return cls(data['city'], data['state'], data['country'], data['latitude'],
