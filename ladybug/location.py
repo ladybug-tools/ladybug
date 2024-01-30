@@ -32,6 +32,7 @@ class Location(object):
         * state
         * station_id
         * time_zone
+        * is_default
     """
 
     __slots__ = ('city', 'state', 'country', '_lat', '_lon', '_tz', '_elev',
@@ -190,6 +191,11 @@ class Location(object):
     def meridian(self):
         """Get a number between -180 and +180 for the meridian west of Greenwich."""
         return -15 * self.time_zone
+
+    @property
+    def is_default(self):
+        """Get a boolean for whether the Location properties are defaulted."""
+        return self.latitude == 0 and self.longitude == 0 and self.elevation == 0
 
     def duplicate(self):
         """Duplicate location."""
