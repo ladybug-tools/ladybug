@@ -469,6 +469,159 @@ class ViewSphere(object):
         total_patch_area = 2 * math.pi
         return [p_area / total_patch_area for p_area in patch_areas]
 
+    def horizontal_circle_view_mesh(
+            self, center_point=Point3D(0, 0, 0), radius=1, azimuth_count=72):
+        """Get a mesh of a horizontal circle with vertices coordinated with view_vectors.
+
+        Args:
+            center_point: A Point3D for the center of the mesh. (Default: (0, 0, 0)).
+            radius: A number for the radius of the circle. (Default: 1).
+            azimuth_count: A positive integer greater than or equal to 3 for
+                the number of times that the horizontal circle will be
+                subdivided into vertices. (Default: 72).
+
+        Returns:
+            A tuple with two elements
+
+            -   circle_mesh: A ladybug_geometry circular Mesh3D that represents
+                the horizontal view at the input azimuth_count.
+
+            -   view_vecs: A list of ladybug_geometry Vector3D with one vector
+                per mesh vertex. The first vertex of the circle_mesh is the center
+                and each one after that is coordinated with the vector here.
+        """
+        # generate a list of vectors over the circle
+        view_vecs = self.horizontal_radial_vectors(azimuth_count)
+        # use the direction vectors to create a mesh of the sky dome
+        vertices, faces = [center_point], []
+        for i, vec in enumerate(view_vecs):
+            vertices.append(center_point.move(vec * radius))
+            faces.append((0, i + 1, i + 2))
+        faces.pop(-1)
+        faces.append((0, azimuth_count, 1))
+        circle_mesh = Mesh3D(vertices, faces)
+        return circle_mesh, view_vecs
+
+    def horizontal_radial_view_mesh(
+            self, center_point=Point3D(0, 0, 0), radius=1, offset_angle=30,
+            azimuth_count=72, altitude_count=6):
+        """Get a mesh of a radial circle with vertices coordinated with view_vectors.
+
+        Args:
+            center_point: A Point3D for the center of the mesh. (Default: (0, 0, 0)).
+            radius: A number for the radius of the circle. (Default: 1).
+            offset_angle: A number between 0 and 90 for the angle offset from the
+                horizontal plane at which vectors will be included. Vectors both
+                above and below this angle will be included (Default: 30).
+            azimuth_count: A positive integer greater than or equal to 3 for the
+                number of times that the horizontal circle will be subdivided
+                into vertices. (Default: 72).
+            altitude_count: An integer greater than or equal to 1, which notes
+                the number of vertical orientations at which the altitude will
+                be evaluated. (Default: 18).
+
+        Returns:
+            A tuple with two elements
+
+            -   radial_mesh: A ladybug_geometry Mesh3D that represents the horizontal
+                radial view at the input azimuth_count and altitude_count.
+
+            -   view_vecs: A list of ladybug_geometry Vector3D with one vector
+                per mesh vertex. The first vertex of the radial_mesh is the center
+                and each one after that is coordinated with the vector here.
+        """
+        # generate a list of vectors over the circle
+        horiz_angle = -2 * math.pi / azimuth_count
+        vert_angle = (math.radians(offset_angle)) / altitude_count
+        base_vec, x_axis = Vector3D(0, 1, 0), Vector3D(1, 0, 0)
+        view_vecs = [base_vec.rotate(x_axis, vert_angle * v)
+                     for v in range(altitude_count)]
+        for v in range(1, altitude_count + 1):
+            up_vec = base_vec.rotate(x_axis, vert_angle * v)
+            dn_vec = base_vec.rotate(x_axis, vert_angle * -v)
+            for h in range(azimuth_count):
+                view_vecs.append(up_vec.rotate_xy(horiz_angle * h))
+                view_vecs.append(dn_vec.rotate_xy(horiz_angle * h))
+        view_vecs.append(Vector3D(0, 0, 1))
+
+    def dome_view_mesh(
+            self, center_point=Point3D(0, 0, 0), radius=1,
+            azimuth_count=72, altitude_count=18):
+        """Get a mesh of a horizontal circle with vertices coordinated with view_vectors.
+
+        Args:
+            center_point: A Point3D for the center of the mesh. (Default: (0, 0, 0)).
+            radius: A number for the radius of the circle. (Default: 1).
+            azimuth_count: An integer greater than or equal to 3, which notes the number
+                of horizontal orientations to be evaluated on the dome. (Default: 72).
+            altitude_count: An integer greater than or equal to 3, which notes the number
+                of vertical orientations to be evaluated on the dome. (Default: 18).
+
+        Returns:
+            A tuple with two elements
+
+            -   dome_mesh: A ladybug_geometry Mesh3D that represents the hemispherical
+                view dome at the input azimuth_count and altitude_count.
+
+            -   view_vecs: A list of ladybug_geometry Vector3D with one vector
+                per mesh vertex.
+        """
+        # generate a list of vectors over the dome
+        horiz_angle = -2 * math.pi / azimuth_count
+        vert_angle = (math.pi / 2) / altitude_count
+        view_vecs = []
+        for v in range(altitude_count):
+            x_axis = Vector3D(1, 0, 0)
+            base_vec = Vector3D(0, 1, 0)
+            n_vec = base_vec.rotate(x_axis, vert_angle * v)
+            for h in range(azimuth_count):
+                view_vecs.append(n_vec.rotate_xy(horiz_angle * h))
+        view_vecs.append(Vector3D(0, 0, 1))
+
+        # use the direction vectors to create a mesh of the sky dome
+        vertices = []
+        for vec in view_vecs:
+            vertices.append(center_point.move(vec * radius))
+        faces, pt_i, az_ct = [], 0, azimuth_count
+        for row_count in range(altitude_count - 1):
+            for _ in range(az_ct - 1):
+                faces.append((pt_i, pt_i + 1, pt_i + az_ct + 1, pt_i + az_ct))
+                pt_i += 1  # advance the number of vertices
+            faces.append((pt_i, pt_i - az_ct + 1, pt_i + 1, pt_i + az_ct))
+            pt_i += 1  # advance the number of vertices
+        # add triangular faces to represent the last circular patch
+        end_vert_i = len(vertices) - 1
+        start_vert_i = len(vertices) - azimuth_count - 1
+        for tr_i in range(0, azimuth_count - 1):
+            faces.append((start_vert_i + tr_i, end_vert_i, start_vert_i + tr_i + 1))
+        faces.append((end_vert_i - 1, end_vert_i, start_vert_i))
+        dome_mesh = Mesh3D(vertices, faces)
+        return dome_mesh, view_vecs
+
+    def sphere_view_mesh(
+            self, center_point=Point3D(0, 0, 0), radius=1,
+            azimuth_count=72, altitude_count=18):
+        """Get a mesh of a sphere with vertices coordinated with view_vectors.
+
+        Args:
+            center_point: A Point3D for the center of the mesh. (Default: (0, 0, 0)).
+            radius: A number for the radius of the sphere. (Default: 1).
+            azimuth_count: An integer greater than or equal to 3, which notes the number
+                of horizontal orientations to be evaluated on the sphere. (Default: 72).
+            altitude_count: An integer greater than or equal to 3, which notes the number
+                of vertical orientations to be evaluated on the sphere. (Default: 18).
+
+        Returns:
+            A tuple with two elements
+
+            -   sphere_mesh: A ladybug_geometry Mesh3D that represents the
+                view sphere at the input azimuth_count and altitude_count.
+
+            -   view_vecs: A list of ladybug_geometry Vector3D with one vector
+                per mesh vertex.
+        """
+        pass
+
     @staticmethod
     def orientation_pattern(plane_normal, view_vectors):
         """Get booleans for whether view vectors are blocked by a plane.
