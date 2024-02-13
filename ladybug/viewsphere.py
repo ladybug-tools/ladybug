@@ -486,7 +486,7 @@ class ViewSphere(object):
             -   circle_mesh: A ladybug_geometry circular Mesh3D that represents
                 the horizontal view at the input azimuth_count.
 
-            -   view_vecs: A list of ladybug_geometry Vector3D with one vector
+            -   view_vecs: A tuple of ladybug_geometry Vector3D with one vector
                 per mesh vertex. The first vertex of the circle_mesh is the center
                 and each one after that is coordinated with the vector here.
         """
@@ -530,19 +530,62 @@ class ViewSphere(object):
                 per mesh vertex. The first vertex of the radial_mesh is the center
                 and each one after that is coordinated with the vector here.
         """
-        # generate a list of vectors over the circle
+        # compute the global parameters for generating the mesh
         horiz_angle = -2 * math.pi / azimuth_count
         vert_angle = (math.radians(offset_angle)) / altitude_count
         base_vec, x_axis = Vector3D(0, 1, 0), Vector3D(1, 0, 0)
-        view_vecs = [base_vec.rotate(x_axis, vert_angle * v)
-                     for v in range(altitude_count)]
+
+        # generate a list of vectors over the circle
+        view_vecs = list(self.horizontal_radial_vectors(azimuth_count))
+        vertices, faces = [center_point], []
+        for vec in view_vecs:
+            vertices.append(center_point.move(vec * radius))
+
+        # generate a list of vectors over the horizontal radial domain
+        up_i1, up_i2, up_i3, up_i4 = 2, 1, azimuth_count + 1, azimuth_count + 3
+        dn_i1, dn_i2, dn_i3, dn_i4 = 1, 2, azimuth_count + 4, azimuth_count + 2
         for v in range(1, altitude_count + 1):
             up_vec = base_vec.rotate(x_axis, vert_angle * v)
             dn_vec = base_vec.rotate(x_axis, vert_angle * -v)
-            for h in range(azimuth_count):
-                view_vecs.append(up_vec.rotate_xy(horiz_angle * h))
-                view_vecs.append(dn_vec.rotate_xy(horiz_angle * h))
-        view_vecs.append(Vector3D(0, 0, 1))
+            view_vecs.append(up_vec)
+            view_vecs.append(dn_vec)
+            vertices.append(center_point.move(up_vec * radius))
+            vertices.append(center_point.move(dn_vec * radius))
+            vi = 1 if v == 1 else 2
+            for h in range(1, azimuth_count):
+                vv_up = up_vec.rotate_xy(horiz_angle * h)
+                vv_dn = dn_vec.rotate_xy(horiz_angle * h)
+                view_vecs.append(vv_up)
+                view_vecs.append(vv_dn)
+                vertices.append(center_point.move(vv_up * radius))
+                vertices.append(center_point.move(vv_dn * radius))
+                faces.append((up_i1, up_i2, up_i3, up_i4))
+                faces.append((dn_i1, dn_i2, dn_i3, dn_i4))
+                up_i1, up_i2, up_i3, up_i4 = up_i1 + vi, up_i2 + vi, up_i3 + 2, up_i4 + 2
+                dn_i1, dn_i2, dn_i3, dn_i4 = dn_i1 + vi, dn_i2 + vi, dn_i3 + 2, dn_i4 + 2
+            sub_i = azimuth_count if v == 1 else 2 * azimuth_count
+            faces.append((up_i1 - sub_i, up_i2, up_i3, up_i4 - (2 * azimuth_count)))
+            faces.append((dn_i1, dn_i2 - sub_i, dn_i3 - (2 * azimuth_count), dn_i4))
+            ri = 3 if v == 1 else 2
+            up_i1, up_i2 = up_i1 + 2, up_i2 + vi
+            up_i3, up_i4 = up_i3 + 2, up_i4 + 2
+            dn_i1, dn_i2 = dn_i1 + 2, dn_i2 + ri
+            dn_i3, dn_i4 = dn_i3 + 2, dn_i4 + 2
+
+        # add a series of triangular faces to fill in the top and bottom of the mesh
+        az_2 = (2 * azimuth_count)
+        up_i3, up_i4 = up_i3 - az_2, up_i4 - az_2
+        dn_i3, dn_i4 = dn_i3 - az_2, dn_i4 - az_2
+        for h in range(azimuth_count - 1):
+            faces.append((0, up_i4, up_i3))
+            faces.append((0, dn_i4, dn_i3))
+            up_i3, up_i4 = up_i3 + 2, up_i4 + 2
+            dn_i3, dn_i4 = dn_i3 + 2, dn_i4 + 2
+        faces.append((0, up_i4 - az_2, up_i3))
+        faces.append((0, dn_i3 - 2, dn_i4 - az_2 + 2))
+
+        radial_mesh = Mesh3D(vertices, faces)
+        return radial_mesh, view_vecs
 
     def dome_view_mesh(
             self, center_point=Point3D(0, 0, 0), radius=1,
@@ -583,7 +626,7 @@ class ViewSphere(object):
         for vec in view_vecs:
             vertices.append(center_point.move(vec * radius))
         faces, pt_i, az_ct = [], 0, azimuth_count
-        for row_count in range(altitude_count - 1):
+        for _ in range(altitude_count - 1):
             for _ in range(az_ct - 1):
                 faces.append((pt_i, pt_i + 1, pt_i + az_ct + 1, pt_i + az_ct))
                 pt_i += 1  # advance the number of vertices
@@ -620,7 +663,69 @@ class ViewSphere(object):
             -   view_vecs: A list of ladybug_geometry Vector3D with one vector
                 per mesh vertex.
         """
-        pass
+        # compute the global parameters for generating the mesh
+        horiz_angle = -2 * math.pi / azimuth_count
+        vert_angle = (math.pi / 2) / altitude_count
+        base_vec, x_axis = Vector3D(0, 1, 0), Vector3D(1, 0, 0)
+
+        # generate a list of vectors over the circle
+        view_vecs = list(self.horizontal_radial_vectors(azimuth_count))
+        vertices, faces = [], []
+        for vec in view_vecs:
+            vertices.append(center_point.move(vec * radius))
+
+        # generate a list of vectors over the horizontal radial domain
+        up_i1, up_i2, up_i3, up_i4 = 1, 0, azimuth_count, azimuth_count + 2
+        dn_i1, dn_i2, dn_i3, dn_i4 = 0, 1, azimuth_count + 3, azimuth_count + 1
+        for v in range(1, altitude_count):
+            up_vec = base_vec.rotate(x_axis, vert_angle * v)
+            dn_vec = base_vec.rotate(x_axis, vert_angle * -v)
+            view_vecs.append(up_vec)
+            view_vecs.append(dn_vec)
+            vertices.append(center_point.move(up_vec * radius))
+            vertices.append(center_point.move(dn_vec * radius))
+            vi = 1 if v == 1 else 2
+            for h in range(1, azimuth_count):
+                vv_up = up_vec.rotate_xy(horiz_angle * h)
+                vv_dn = dn_vec.rotate_xy(horiz_angle * h)
+                view_vecs.append(vv_up)
+                view_vecs.append(vv_dn)
+                vertices.append(center_point.move(vv_up * radius))
+                vertices.append(center_point.move(vv_dn * radius))
+                faces.append((up_i1, up_i2, up_i3, up_i4))
+                faces.append((dn_i1, dn_i2, dn_i3, dn_i4))
+                up_i1, up_i2, up_i3, up_i4 = up_i1 + vi, up_i2 + vi, up_i3 + 2, up_i4 + 2
+                dn_i1, dn_i2, dn_i3, dn_i4 = dn_i1 + vi, dn_i2 + vi, dn_i3 + 2, dn_i4 + 2
+            sub_i = azimuth_count if v == 1 else 2 * azimuth_count
+            faces.append((up_i1 - sub_i, up_i2, up_i3, up_i4 - (2 * azimuth_count)))
+            faces.append((dn_i1, dn_i2 - sub_i, dn_i3 - (2 * azimuth_count), dn_i4))
+            ri = 3 if v == 1 else 2
+            up_i1, up_i2 = up_i1 + 2, up_i2 + vi
+            up_i3, up_i4 = up_i3 + 2, up_i4 + 2
+            dn_i1, dn_i2 = dn_i1 + 2, dn_i2 + ri
+            dn_i3, dn_i4 = dn_i3 + 2, dn_i4 + 2
+
+        # add a series of triangular faces to fill in the top and bottom of the mesh
+        top_vec, bot_vec = Vector3D(0, 0, 1), Vector3D(0, 0, -1)
+        top_i = len(vertices)
+        bot_i = top_i + 1
+        view_vecs.append(top_vec)
+        view_vecs.append(bot_vec)
+        vertices.append(center_point.move(top_vec * radius))
+        vertices.append(center_point.move(bot_vec * radius))
+        az_2 = (2 * azimuth_count)
+        up_i3, up_i4 = up_i3 - az_2, up_i4 - az_2
+        dn_i3, dn_i4 = dn_i3 - az_2, dn_i4 - az_2
+        for h in range(azimuth_count - 1):
+            faces.append((top_i, up_i4, up_i3))
+            faces.append((bot_i, dn_i4, dn_i3))
+            up_i3, up_i4 = up_i3 + 2, up_i4 + 2
+            dn_i3, dn_i4 = dn_i3 + 2, dn_i4 + 2
+        faces.append((top_i, up_i4 - az_2, up_i3))
+        faces.append((bot_i, dn_i3 - 2, dn_i4 - az_2 + 2))
+
+        radial_mesh = Mesh3D(vertices, faces)
+        return radial_mesh, view_vecs
 
     @staticmethod
     def orientation_pattern(plane_normal, view_vectors):
