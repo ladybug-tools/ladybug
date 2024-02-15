@@ -9,9 +9,9 @@ from .distance import Distance
 class Speed(DataTypeBase):
     """Speed
     """
-    _units = ('m/s', 'mph', 'km/h', 'knot', 'ft/s')
+    _units = ('m/s', 'mph', 'km/h', 'knot', 'ft/s', 'ft/min')
     _si_units = ('m/s', 'km/h')
-    _ip_units = ('mph', 'ft/s')
+    _ip_units = ('mph', 'ft/s', 'ft/min')
     _min = 0
     _abbreviation = 'v'
     _time_aggregated_type = Distance
@@ -29,6 +29,9 @@ class Speed(DataTypeBase):
     def _m_s_to_ft_s(self, value):
         return value * 3.28084
 
+    def _m_s_to_ft_min(self, value):
+        return value * 196.85
+
     def _mph_to_m_s(self, value):
         return value / 2.23694
 
@@ -40,6 +43,9 @@ class Speed(DataTypeBase):
 
     def _ft_s_to_m_s(self, value):
         return value / 3.28084
+
+    def _ft_min_to_m_s(self, value):
+        return value / 196.85
 
     def to_unit(self, values, unit, from_unit):
         """Return values converted to the unit given the input from_unit."""
