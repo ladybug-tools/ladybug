@@ -97,7 +97,7 @@ def ashrae_revised_clear_sky(altitudes, tb, td, use_2017_model=False):
         -   dir_norm_rad: A list of direct normal radiation values for each
             of the connected altitudes in W/m2.
 
-        -   dif_horiz_rad: A list of diffuse horizontall radiation values for each
+        -   dif_horiz_rad: A list of diffuse horizontally radiation values for each
             of the connected altitudes in W/m2.
     """
     dir_norm_rad = []

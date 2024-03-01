@@ -4,6 +4,7 @@ import os
 from ladybug.location import Location
 from ladybug.dt import Date
 from ladybug.analysisperiod import AnalysisPeriod
+from ladybug.datacollection import HourlyContinuousCollection
 from ladybug.designday import DesignDay
 from ladybug.ddy import DDY
 
@@ -24,6 +25,15 @@ def test_import_ddy():
 def test_dict_methods():
     """Test dict methods for the DDY object."""
     relative_path = './tests/assets/ddy/chicago.ddy'
+    ddy = DDY.from_ddy_file(relative_path)
+
+    ddy_dict = ddy.to_dict()
+    reconstructed_ddy = DDY.from_dict(ddy_dict)
+    assert ddy_dict == reconstructed_ddy.to_dict()
+    for dday1, dday2 in zip(ddy.design_days, reconstructed_ddy.design_days):
+        assert dday1 == dday2
+
+    relative_path = './tests/assets/ddy/london.ddy'
     ddy = DDY.from_ddy_file(relative_path)
 
     ddy_dict = ddy.to_dict()
@@ -68,6 +78,23 @@ def test_standard_ddy_properties():
         assert isinstance(des_day, DesignDay)
     assert len(ddy.filter_by_keyword('.4%')) == 4
     assert len(ddy.filter_by_keyword('99.6%')) == 3
+
+
+def test_ddy_tau_2017():
+    """Test properties of a ddy with ASHRAETau2017 clear sky model."""
+    relative_path = './tests/assets/ddy/london.ddy'
+
+    ddy = DDY.from_ddy_file(relative_path)
+
+    # Test accuracy of import
+    assert len(ddy.design_days) == 114
+    for des_day in ddy.design_days:
+        assert isinstance(des_day, DesignDay)
+    assert len(ddy.filter_by_keyword('99.6%')) == 3
+    summer_days = ddy.filter_by_keyword('.4%')
+    assert len(summer_days) == 28
+    for d_day in summer_days:
+        assert d_day.sky_condition.use_2017
 
 
 def test_duplicate():
@@ -183,6 +210,8 @@ def test_design_day_hourly_data():
 
     # sky cover values
     sc_data_collect = des_day.hourly_sky_cover
+    assert isinstance(sc_data_collect, HourlyContinuousCollection)
 
     # sky cover values
     hi_data_collect = des_day.hourly_horizontal_infrared
+    assert isinstance(hi_data_collect, HourlyContinuousCollection)
