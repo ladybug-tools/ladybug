@@ -205,10 +205,11 @@ class DesignDay(object):
             if sky_model == 'ASHRAEClearSky':
                 sky_clr = float(ep_fields[26]) if len(ep_fields) > 26 else 0
                 sky_condition = ASHRAEClearSky(date_obj, sky_clr, dl_save)
-            elif sky_model == 'ASHRAETau':
+            elif sky_model in ('ASHRAETau', 'ASHRAETau2017'):
+                use_2017 = True if sky_model.endswith('2017') else False
                 t_b = float(ep_fields[24]) if len(ep_fields) > 24 else 0
                 t_d = float(ep_fields[25]) if len(ep_fields) > 25 else 0
-                sky_condition = ASHRAETau(date_obj, t_b, t_d, dl_save)
+                sky_condition = ASHRAETau(date_obj, t_b, t_d, use_2017, dl_save)
             else:
                 sky_condition = _SkyCondition(date_obj, dl_save)
             if sky_model == 'Schedule':
@@ -241,8 +242,7 @@ class DesignDay(object):
             pressure: Barometric pressure in Pa.
             wind_speed: Wind speed over the design day in m/s.
             wind_dir: Wind direction over the design day in degrees.
-            sky_model: Type of solar model to use.  Choose from:
-                ASHRAEClearSky, ASHRAETau
+            sky_model: Type of solar model to use. Choose from ASHRAEClearSky, ASHRAETau.
             sky_properties: A list of properties describing the sky above.
                 For ASHRAEClearSky this is a single value for clearness
                 For ASHRAETau, this is the tau_beam and tau_diffuse
@@ -253,8 +253,10 @@ class DesignDay(object):
         wind_condition = WindCondition(wind_speed, wind_dir)
         if sky_model == 'ASHRAEClearSky':
             sky_condition = ASHRAEClearSky(date, sky_properties[0])
-        elif sky_model == 'ASHRAETau':
-            sky_condition = ASHRAETau(date, sky_properties[0], sky_properties[-1])
+        elif sky_model in ('ASHRAETau', 'ASHRAETau2017'):
+            use_2017 = True if sky_model.endswith('2017') else False
+            sky_condition = ASHRAETau(
+                date, sky_properties[0], sky_properties[-1], use_2017)
         return cls(name, day_type, location, dry_bulb_condition,
                    humidity_condition, wind_condition, sky_condition)
 
@@ -544,7 +546,7 @@ class DesignDay(object):
         if isinstance(self.sky_condition, ASHRAEClearSky):
             ep_vals[25] = self.sky_condition.clearness
         if isinstance(self.sky_condition, ASHRAETau):
-            ep_vals[20] = 'ASHRAETau'
+            ep_vals[20] = 'ASHRAETau2017' if self.sky_condition.use_2017 else 'ASHRAETau'
             ep_vals[23] = self.sky_condition.tau_b
             ep_vals[24] = self.sky_condition._tau_d
             ep_vals.pop()
@@ -1363,30 +1365,36 @@ class ASHRAETau(_SkyCondition):
             day occurs.
         tau_b: Value for the beam optical depths. Typically found in .stat files.
         tau_d: Value for the diffuse optical depth. Typically found in .stat files.
+        use_2017: A boolean to indicate whether the version of the ASHRAE Tau
+                model that should be the revised version published in 2017 (True)
+                or the original one published in 2009 (False). (Default: False).
         daylight_savings: Boolean to indicate whether daylight savings
-            time is active. Default: False
+            time is active. (Default: False).
 
     Properties:
         * date
         * tau_b
         * tau_d
+        * use_2017
         * daylight_savings
         * hourly_sky_cover
     """
-    __slots__ = ('_tau_b', '_tau_d')
+    __slots__ = ('_tau_b', '_tau_d', '_use_2017')
 
-    def __init__(self, date, tau_b, tau_d, daylight_savings=False):
+    def __init__(self, date, tau_b, tau_d, use_2017=False, daylight_savings=False):
         _SkyCondition.__init__(self, date, daylight_savings)
         self.tau_b = tau_b
         self.tau_d = tau_d
+        self.use_2017 = use_2017
 
     @classmethod
-    def from_analysis_period(cls, analysis_period, tau_b, tau_d, daylight_savings=False):
+    def from_analysis_period(cls, analysis_period, tau_b, tau_d, use_2017=False,
+                             daylight_savings=False):
         """"Initialize a ASHRAETau sky condition from an analysis_period"""
         cls._check_analysis_period(analysis_period)
         st_dt = analysis_period.st_time
-        return cls(Date(st_dt.month, st_dt.day, st_dt.leap_year), tau_b, tau_d,
-                   daylight_savings)
+        return cls(Date(st_dt.month, st_dt.day, st_dt.leap_year),
+                   tau_b, tau_d, use_2017, daylight_savings)
 
     @classmethod
     def from_dict(cls, data):
@@ -1402,6 +1410,7 @@ class ASHRAETau(_SkyCondition):
             "date": [7, 21],
             "tau_b": 0.0,  # float
             "tau_d": 0.0,  # float
+            "use_2017": True,  # boolean for whether the 2017 model is used
             "daylight_savings": False  # bool
             }
         """
@@ -1411,10 +1420,12 @@ class ASHRAETau(_SkyCondition):
             assert key in data, 'Required key "{}" is missing!'.format(key)
 
         # assign defaults for optional keys
+        use_2017 = data['use_2017'] if 'use_2017' in data else False
         dl_save = data['daylight_savings'] if 'daylight_savings' \
             in data else False
 
-        return cls(Date.from_array(data['date']), data['tau_b'], data['tau_d'], dl_save)
+        return cls(Date.from_array(data['date']),
+                   data['tau_b'], data['tau_d'], use_2017, dl_save)
 
     @property
     def tau_b(self):
@@ -1438,6 +1449,16 @@ class ASHRAETau(_SkyCondition):
             ' number. Got {}'.format(type(data))
         self._tau_d = data
 
+    @property
+    def use_2017(self):
+        """Boolean for whether the version of the 2017 version of the ASHRAE Tau is used.
+        """
+        return self._use_2017
+
+    @use_2017.setter
+    def use_2017(self, value):
+        self._use_2017 = bool(value)
+
     def radiation_values(self, location, timestep=1):
         """Gat arrays of direct, diffuse, and global radiation at each timestep."""
         # create sunpath and get altitude at every timestep of the design day
@@ -1448,7 +1469,7 @@ class ASHRAETau(_SkyCondition):
             sun = sp.calculate_sun_from_date_time(t_date)
             altitudes.append(sun.altitude)
         dir_norm, diff_horiz = ashrae_revised_clear_sky(
-            altitudes, self._tau_b, self._tau_d)
+            altitudes, self._tau_b, self._tau_d, self._use_2017)
         glob_horiz = [dhr + dnr * math.sin(math.radians(alt)) for
                       alt, dnr, dhr in zip(altitudes, dir_norm, diff_horiz)]
         return dir_norm, diff_horiz, glob_horiz
@@ -1460,15 +1481,18 @@ class ASHRAETau(_SkyCondition):
             'date': self.date.to_array(),
             'tau_b': self.tau_b,
             'tau_d': self.tau_d,
+            'use_2017': self.use_2017,
             'daylight_savings': self.daylight_savings
         }
 
     def __copy__(self):
-        return ASHRAETau(self._date, self._tau_b, self._tau_d, self._daylight_savings)
+        return ASHRAETau(self._date, self._tau_b, self._tau_d, self._use_2017,
+                         self._daylight_savings)
 
     def __key(self):
         """A tuple based on the object properties, useful for hashing."""
-        return (hash(self._date), self._tau_b, self._tau_d, self._daylight_savings)
+        return (hash(self._date), self._tau_b, self._tau_d, self._use_2017,
+                self._daylight_savings)
 
     def __hash__(self):
         return hash(self.__key())

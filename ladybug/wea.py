@@ -324,7 +324,7 @@ class Wea(object):
         return cls(epw.location, direct_normal, diffuse_horizontal)
 
     @classmethod
-    def from_stat_file(cls, statfile, timestep=1, is_leap_year=False):
+    def from_stat_file(cls, statfile, timestep=1, is_leap_year=False, use_2017=False):
         """Create an ASHRAE Revised Clear Sky Wea object from data in .stat file.
 
         The .stat file must have monthly sky optical depths within it in order to
@@ -336,6 +336,9 @@ class Wea(object):
                 hour. Default is 1 for one value per hour.
             is_leap_year: A boolean to indicate if values are for a leap
                 year. (Default: False).
+            use_2017: A boolean to indicate whether the version of the ASHRAE Tau
+                model that should be the revised version published in 2017 (True)
+                or the original one published in 2009 (False). (Default: False).
         """
         stat = STAT(statfile)
 
@@ -352,14 +355,14 @@ class Wea(object):
         check_missing(stat.monthly_tau_beam, 'monthly_tau_beam')
         check_missing(stat.monthly_tau_diffuse, 'monthly_tau_diffuse')
 
-        return cls.from_ashrae_revised_clear_sky(stat.location, stat.monthly_tau_beam,
-                                                 stat.monthly_tau_diffuse, timestep,
-                                                 is_leap_year)
+        return cls.from_ashrae_revised_clear_sky(
+            stat.location, stat.monthly_tau_beam, stat.monthly_tau_diffuse,
+            timestep, is_leap_year, use_2017)
 
     @classmethod
     def from_ashrae_revised_clear_sky(cls, location, monthly_tau_beam,
                                       monthly_tau_diffuse, timestep=1,
-                                      is_leap_year=False):
+                                      is_leap_year=False, use_2017=False):
         """Create a wea object representing an ASHRAE Revised Clear Sky ("Tau Model")
 
         ASHRAE Revised Clear Skies are intended to determine peak solar load
@@ -367,7 +370,7 @@ class Wea(object):
         currently the default recommended sky model used to autosize HVAC
         systems in EnergyPlus. For more information on the ASHRAE Revised Clear
         Sky model, see the EnergyPlus Engineering Reference:
-        https://bigladdersoftware.com/epx/docs/8-9/engineering-reference/climate-calculations.html
+        https://bigladdersoftware.com/epx/docs/23-2/engineering-reference/climate-calculations.html
 
         Args:
             location: Ladybug location object.
@@ -379,6 +382,9 @@ class Wea(object):
                 hour. Default is 1 for one value per hour.
             is_leap_year: A boolean to indicate if values are for a leap
                 year. (Default: False).
+            use_2017: A boolean to indicate whether the version of the ASHRAE Tau
+                model that should be the revised version published in 2017 (True)
+                or the original one published in 2009 (False). (Default: False).
         """
         # extract metadata
         metadata = {'source': location.source, 'country': location.country,
@@ -397,7 +403,7 @@ class Wea(object):
         direct_norm, diffuse_horiz = [], []
         for i_mon, alt_list in enumerate(altitudes):
             dir_norm_rad, dif_horiz_rad = ashrae_revised_clear_sky(
-                alt_list, monthly_tau_beam[i_mon], monthly_tau_diffuse[i_mon])
+                alt_list, monthly_tau_beam[i_mon], monthly_tau_diffuse[i_mon], use_2017)
             direct_norm.extend(dir_norm_rad)
             diffuse_horiz.extend(dif_horiz_rad)
 
