@@ -1,4 +1,5 @@
 include ladybug/config.json
+include ladybug/WMM.COF
 recursive-exclude tests *
 recursive-exclude docs *
 recursive-exclude .github *
