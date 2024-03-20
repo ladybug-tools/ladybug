@@ -69,7 +69,7 @@ class STAT(object):
     _wind_dir_names = ('North', 'NorthEast', 'East', 'SouthEast', 'South',
                        'SouthWest', 'West', 'NorthWest')
     # compiled strings for identifying data in the file
-    _coord_pattern1 = re.compile(r"{([NSEW])(\s*\d*)deg(\s*\d*)")
+    _coord_pattern1 = re.compile(r"{([NSEW])(\s*\d*).(\s*\d*)")
     _coord_pattern2 = re.compile(r"{([NSEW])(\s*\d*) (\s*\d*)")
     _elev_pattern1 = re.compile(r"Elevation\s*[-]*\s*(\d*)m\s*(\S*)")
     _elev_pattern2 = re.compile(r"Elevation\s*[-]*\s*(\d*)\s*m\s*(\S*)")
@@ -272,8 +272,7 @@ class STAT(object):
             source = self._header[6].strip().replace('Data Source -- ', '')
             station_id = self._header[8].strip().replace('WMO Station ', '')
             if iron_python:  # IronPython
-                matches = self._coord_pattern1.findall(
-                    self._header[3].replace('\xb0', 'deg'))
+                matches = self._coord_pattern1.findall(self._header[3])
             else:  # CPython
                 matches = self._coord_pattern2.findall(self._header[3])
             lat_sign = -1 if matches[0][0] == 'S' else 1
