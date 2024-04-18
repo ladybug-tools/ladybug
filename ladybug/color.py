@@ -150,6 +150,13 @@ class Color(object):
 class Colorset(object):
     """Ladybug Color-range repository.
 
+    Note that the colorblind friendly schemes have prioritized readability for red-green
+    colorblindness (deuteranomaly, protanomaly, protanopia, and deuteranopia),
+    which is by far more common than blue-yellow colorblindness. However, they
+    are not necessarily ideal for all types of color blindness, though they are
+    monotonic and perceptually uniform to all forms of color vision. This means
+    that they should be readable as a dark-to-light scale by anyone.
+
     A list of default Ladybug colorsets for color range:
         * 0 - Original Ladybug
         * 1 - Nuanced Ladybug
@@ -178,6 +185,9 @@ class Colorset(object):
         * 24 - Multicolored 2
         * 25 - Multicolored 3
         * 26 - OpenStudio Palette
+        * 27 - Cividis (colorblind friendly)
+        * 28 - Viridis (colorblind friendly)
+        * 29 - Parula (colorblind friendly)
 
     Usage:
 
@@ -250,7 +260,13 @@ class Colorset(object):
              (128, 20, 20), (255, 128, 128), (64, 128, 128),
              (128, 128, 128), (255, 128, 128), (128, 64, 0),
              (64, 180, 255), (160, 150, 100), (120, 75, 190), (255, 255, 200),
-             (0, 128, 0)]
+             (0, 128, 0)],
+        27: [(0, 32, 81), (60, 77, 110), (127, 124, 117), (187, 175, 113),
+             (253, 234, 69)],
+        28: [(68, 1, 84), (59, 82, 139), (33, 145, 140), (94, 201, 98),
+             (253, 231, 37)],
+        29: [(52, 62, 175), (2, 99, 225), (7, 155, 207), (36, 180, 170),
+             (107, 190, 130), (232, 185, 78), (252, 203, 47), (248, 250, 13)]
     }
 
     def __init__(self):
@@ -274,7 +290,7 @@ class Colorset(object):
 
     @classmethod
     def ecotect(cls):
-        """Ecotect colors."""
+        """Ecotect colors, also known to some as Plasma."""
         return tuple(Color(*color) for color in cls._colors[3])
 
     @classmethod
@@ -397,6 +413,24 @@ class Colorset(object):
         Window, Door, Shade, Air
         """
         return tuple(Color(*color) for color in cls._colors[26])
+
+    @classmethod
+    def cividis(cls):
+        """Cividis colors, which were designed to be colorblind friendly."""
+        return tuple(Color(*color) for color in cls._colors[27])
+
+    @classmethod
+    def viridis(cls):
+        """Viridis colors, which were designed to be colorblind friendly."""
+        return tuple(Color(*color) for color in cls._colors[28])
+
+    @classmethod
+    def parula(cls):
+        """Parula colors - the default of Matlab.
+
+        Parula was designed to be colorblind friendly
+        ."""
+        return tuple(Color(*color) for color in cls._colors[29])
 
     def __len__(self):
         """Return length of currently installed color sets."""
