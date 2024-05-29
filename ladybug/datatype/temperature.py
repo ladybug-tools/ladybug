@@ -119,3 +119,7 @@ class ClothingTemperature(Temperature):
 
 class PrevailingOutdoorTemperature(Temperature):
     _abbreviation = 'Tprevail'
+
+
+class NeutralTemperature(Temperature):
+    _abbreviation = 'Tn'
