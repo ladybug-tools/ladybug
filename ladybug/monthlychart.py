@@ -236,7 +236,7 @@ class MonthlyChart(object):
         """Get a list of Polyline2D for the data of this graphic.
 
         These meshes will display the percentile borders of the data and the mean
-        in the case of hourly data.  It will display a single line in the case of
+        in the case of hourly data. It will display a single line in the case of
         monthly-per-hour data.
         """
         if self._time_interval == 'Hourly':
@@ -493,7 +493,7 @@ class MonthlyChart(object):
                     data_arr[0][0], d_range, min_val, step)
                 prev_y_up = self._hour_y_values_base(
                     data_arr[0][0], d_range, min_val, step)
-                for i, (data, sign) in enumerate(zip(data_arr, data_sign)):
+                for data, sign in zip(data_arr, data_sign):
                     if sign in ('+/-', '-/+') and self._is_cumulative(t):
                         d_i = -1 if sign == '+/-' else 0
                         up_vals, low_vals = self._hour_y_values_stack_split(
@@ -543,20 +543,45 @@ class MonthlyChart(object):
             min_val = self._minimums[j]
             prev_y_low = self._hour_y_values_base(data_arr[0], d_range, min_val, step)
             prev_y_up = self._hour_y_values_base(data_arr[0], d_range, min_val, step)
-            for i, data in enumerate(data_arr):
-                if self._stack:
-                    dat_total = sum(data.values)
-                    prev_y = prev_y_up if dat_total > 0 else prev_y_low
-                    vals = self._hour_y_values_stack(
-                        data, d_range, min_val, step, prev_y)
-                    if self._is_cumulative(t):  # set the start y so the next data stacks
-                        if dat_total > 0:
-                            prev_y_up = vals
-                        else:
-                            prev_y_low = vals
-                else:
+            if self._stack:
+                for data in data_arr:
+                    pos = all(v >= 0 for v in data._values)
+                    neg = all(v <= 0 for v in data._values)
+                    if pos or neg:
+                        prev_y = prev_y_up if pos else prev_y_low
+                        vals = self._hour_y_values_stack(
+                            data, d_range, min_val, step, prev_y)
+                        if self._is_cumulative(t):  # set the start y so the next data stacks
+                            if pos:
+                                prev_y_up = vals
+                            else:
+                                prev_y_low = vals
+                        lines.extend(self._hour_polylines(vals, x_dist))
+                    else:  # plot two lines separating pos and neg values
+                        pos_vals, neg_vals = [], []
+                        for v in data._values:
+                            if v >= 0:
+                                pos_vals.append(v)
+                                neg_vals.append(0)
+                            else:
+                                pos_vals.append(0)
+                                neg_vals.append(v)
+                        pos_data = data.to_mutable()
+                        neg_data = data.to_mutable()
+                        pos_data.values = pos_vals
+                        neg_data.values = neg_vals
+                        pos_vals = self._hour_y_values_stack(
+                            pos_data, d_range, min_val, step, prev_y_up)
+                        neg_vals = self._hour_y_values_stack(
+                            neg_data, d_range, min_val, step, prev_y_low)
+                        lines.extend(self._hour_polylines(pos_vals, x_dist))
+                        lines.extend(self._hour_polylines(neg_vals, x_dist))
+                        prev_y_up = pos_vals
+                        prev_y_low = neg_vals
+            else:
+                for data in data_arr:
                     vals = self._hour_y_values(data, d_range, min_val, step)
-                lines.extend(self._hour_polylines(vals, x_dist))
+                    lines.extend(self._hour_polylines(vals, x_dist))
         return lines
 
     def _compute_monthly_bars(self):
