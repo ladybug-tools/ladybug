@@ -440,7 +440,7 @@ class BaseCollection(object):
         """Filter the Data Collection based on a list of booleans.
 
         Args:
-            pattern: A list of True/False values.  Typically, this is a list
+            pattern: A list of True/False values. Typically, this is a list
                 with a length matching the length of the Data Collections values
                 but it can also be a pattern to be repeated over the Data Collection.
 
