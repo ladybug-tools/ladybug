@@ -54,6 +54,7 @@ class MonthlyChart(object):
         * percentile
         * data_meshes
         * data_polylines
+        * data_polylines_with_colors
         * legend
         * chart_border
         * y_axis_lines
@@ -235,9 +236,21 @@ class MonthlyChart(object):
     def data_polylines(self):
         """Get a list of Polyline2D for the data of this graphic.
 
-        These meshes will display the percentile borders of the data and the mean
-        in the case of hourly data. It will display a single line in the case of
-        monthly-per-hour data.
+        These polylines will display the percentile borders of the data (and the mean
+        in the case of hourly data). In the case of monthly-per-hour data,
+        it will display a single line.
+        """
+        if self._time_interval == 'Hourly':
+            return self._compute_hourly_lines()[0]
+        elif self._time_interval == 'MonthlyPerHour':
+            return self._compute_monthly_per_hour_lines()[0]
+
+    @property
+    def data_polylines_with_colors(self):
+        """Get a tuple with a list of Polyline2D first and list of colors second.
+
+        The first item of the tuple is equivalent to the data_polylines property
+        and the second item relates each polyline to a color.
         """
         if self._time_interval == 'Hourly':
             return self._compute_hourly_lines()
@@ -479,7 +492,8 @@ class MonthlyChart(object):
     def _compute_hourly_lines(self):
         """Compute a list of lines from this object's input data."""
         # get values used by all polylines
-        lines = []
+        lines, line_colors = [], []
+        colors = self.colors
         step = self._grouped_data[0][0][0].header.analysis_period.timestep * 24
         x_dist = self._x_dim / step
 
@@ -493,13 +507,16 @@ class MonthlyChart(object):
                     data_arr[0][0], d_range, min_val, step)
                 prev_y_up = self._hour_y_values_base(
                     data_arr[0][0], d_range, min_val, step)
-                for data, sign in zip(data_arr, data_sign):
+                for i, (data, sign) in enumerate(zip(data_arr, data_sign)):
                     if sign in ('+/-', '-/+') and self._is_cumulative(t):
                         d_i = -1 if sign == '+/-' else 0
                         up_vals, low_vals = self._hour_y_values_stack_split(
                             data, d_range, min_val, step, prev_y_up, prev_y_low, d_i)
-                        lines.extend(self._hour_polylines(low_vals, x_dist))
-                        lines.extend(self._hour_polylines(up_vals, x_dist))
+                        lines_up = self._hour_polylines(up_vals, x_dist)
+                        lines_low =self._hour_polylines(low_vals, x_dist)
+                        lines.extend(lines_up)
+                        lines.extend(lines_low)
+                        total_len = len(lines_up) + len(lines_low)
                         prev_y_up = up_vals
                         prev_y_low = low_vals
                     else:
@@ -513,27 +530,42 @@ class MonthlyChart(object):
                                 prev_y_up = up_vals
                             else:
                                 prev_y_low = low_vals
-                        lines.extend(self._hour_polylines(low_vals, x_dist))
-                        lines.extend(self._hour_polylines(up_vals, x_dist))
+                        lines_up = self._hour_polylines(up_vals, x_dist)
+                        lines_low =self._hour_polylines(low_vals, x_dist)
+                        lines.extend(lines_up)
+                        lines.extend(lines_low)
+                        total_len = len(lines_up) + len(lines_low)
                         if len(data) == 3:  # get the middle value if it exists
                             mid_vals = self._hour_y_values(
                                 data[1], d_range, min_val, step)
-                            lines.extend(self._hour_polylines(mid_vals, x_dist))
+                            lines_mid = self._hour_polylines(mid_vals, x_dist)
+                            lines.extend(lines_mid)
+                            total_len += len(lines_mid)
+                    line_col = [colors[self._color_map[j][i]]] * total_len
+                    line_colors.extend(line_col)
             else:
-                for data in data_arr:
+                for i, data in enumerate(data_arr):
                     low_vals = self._hour_y_values(data[0], d_range, min_val, step)
                     up_vals = self._hour_y_values(data[-1], d_range, min_val, step)
-                    lines.extend(self._hour_polylines(low_vals, x_dist))
-                    lines.extend(self._hour_polylines(up_vals, x_dist))
+                    lines_up = self._hour_polylines(up_vals, x_dist)
+                    lines_low =self._hour_polylines(low_vals, x_dist)
+                    lines.extend(lines_up)
+                    lines.extend(lines_low)
+                    total_len = len(lines_up) + len(lines_low)
                     if len(data) == 3:  # get the middle value if it exists
                         mid_vals = self._hour_y_values(data[1], d_range, min_val, step)
-                        lines.extend(self._hour_polylines(mid_vals, x_dist))
-        return lines
+                        lines_mid = self._hour_polylines(mid_vals, x_dist)
+                        lines.extend(lines_mid)
+                        total_len += len(lines_mid)
+                    line_col = [colors[self._color_map[j][i]]] * total_len
+                    line_colors.extend(line_col)
+        return lines, line_colors
 
     def _compute_monthly_per_hour_lines(self):
         """Compute a list of lines from this object's input data."""
         # get values used by all polylines
-        lines = []
+        lines, line_colors = [], []
+        colors = self.colors
         step = self._grouped_data[0][0].header.analysis_period.timestep * 24
         x_dist = self._x_dim / step
 
@@ -543,20 +575,22 @@ class MonthlyChart(object):
             min_val = self._minimums[j]
             prev_y_low = self._hour_y_values_base(data_arr[0], d_range, min_val, step)
             prev_y_up = self._hour_y_values_base(data_arr[0], d_range, min_val, step)
-            if self._stack:
-                for data in data_arr:
+            if self._stack and self._is_cumulative(t):
+                for i, data in enumerate(data_arr):
                     pos = all(v >= 0 for v in data._values)
                     neg = all(v <= 0 for v in data._values)
                     if pos or neg:
                         prev_y = prev_y_up if pos else prev_y_low
                         vals = self._hour_y_values_stack(
                             data, d_range, min_val, step, prev_y)
-                        if self._is_cumulative(t):  # set the start y so the next data stacks
-                            if pos:
-                                prev_y_up = vals
-                            else:
-                                prev_y_low = vals
-                        lines.extend(self._hour_polylines(vals, x_dist))
+                         # set start y so the next data stacks
+                        if pos:
+                            prev_y_up = vals
+                        else:
+                            prev_y_low = vals
+                        data_p_lines = self._hour_polylines(vals, x_dist)
+                        lines.extend(data_p_lines)
+                        total_len = len(data_p_lines)
                     else:  # plot two lines separating pos and neg values
                         pos_vals, neg_vals = [], []
                         for v in data._values:
@@ -574,15 +608,23 @@ class MonthlyChart(object):
                             pos_data, d_range, min_val, step, prev_y_up)
                         neg_vals = self._hour_y_values_stack(
                             neg_data, d_range, min_val, step, prev_y_low)
-                        lines.extend(self._hour_polylines(pos_vals, x_dist))
-                        lines.extend(self._hour_polylines(neg_vals, x_dist))
+                        lines_pos = self._hour_polylines(pos_vals, x_dist)
+                        lines_neg = self._hour_polylines(neg_vals, x_dist)
+                        lines.extend(lines_pos)
+                        lines.extend(lines_neg)
+                        total_len = len(lines_pos) + len(lines_neg)
                         prev_y_up = pos_vals
                         prev_y_low = neg_vals
+                    line_col = [colors[self._color_map[j][i]]] * total_len
+                    line_colors.extend(line_col)
             else:
-                for data in data_arr:
+                for i, data in enumerate(data_arr):
                     vals = self._hour_y_values(data, d_range, min_val, step)
-                    lines.extend(self._hour_polylines(vals, x_dist))
-        return lines
+                    data_p_lines = self._hour_polylines(vals, x_dist)
+                    lines.extend(data_p_lines)
+                    line_col = [colors[self._color_map[j][i]]] * len(data_p_lines)
+                    line_colors.extend(line_col)
+        return lines, line_colors
 
     def _compute_monthly_bars(self):
         """Compute a list of bar colored meshes from this object's input data."""
