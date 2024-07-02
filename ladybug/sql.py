@@ -205,6 +205,66 @@ class SQLiteResult(object):
         """
         return self._extract_component_sizes(component_type)
 
+    def values_by_output_name(self, output_name):
+        """Get a list of values for a specified output.
+
+        This list will be flat and will not be organized into different run periods
+        or different zones.
+
+        Args:
+            output_name: The name of an EnergyPlus output to be retrieved from
+                the SQLite result file. This can also be an array of output names
+                for which all data collections should be retrieved.
+
+        Returns:
+            An array of values for the requested output type. This will be an empty list
+            if no output of the requested name was found in the file.
+        """
+        conn = sqlite3.connect(self.file_path)
+        try:
+            # extract all indices in the ReportDataDictionary with the output_name
+            c = conn.cursor()
+            cols = 'ReportDataDictionaryIndex, IndexGroup, KeyValue, Name, ' \
+                'ReportingFrequency, Units'
+            if isinstance(output_name, str):  # assume it's a single output
+                query = 'SELECT {} FROM ReportDataDictionary WHERE Name=?'.format(cols)
+                c.execute(query, (output_name,))
+            elif len(output_name) == 1:  # assume it's a list
+                query = 'SELECT {} FROM ReportDataDictionary WHERE Name=?'.format(cols)
+                c.execute(query, (output_name[0],))
+            else:  # assume it is a list of outputs
+                c.execute('SELECT {} FROM ReportDataDictionary WHERE Name IN {}'.format(
+                    cols, tuple(output_name)))
+            header_rows = c.fetchall()
+
+            # if nothing was found, return an empty list
+            if len(header_rows) == 0:
+                conn.close()  # ensure connection is always closed
+                return []
+
+            # remove any data not of the same frequency
+            freq = header_rows[0][4]
+            header_rows = [row for row in header_rows if row[4] == freq]
+
+            # extract all data of the relevant type from ReportData
+            rel_indices = tuple(row[0] for row in header_rows)
+            if len(rel_indices) == 1:
+                c.execute('SELECT Value, TimeIndex FROM ReportData WHERE '
+                          'ReportDataDictionaryIndex=? ORDER BY '
+                          'TimeIndex', rel_indices)
+            else:
+                c.execute('SELECT Value, TimeIndex FROM ReportData WHERE '
+                          'ReportDataDictionaryIndex IN {} ORDER BY '
+                          'TimeIndex'.format(rel_indices))
+            data = c.fetchall()
+            conn.close()  # ensure connection is always closed
+        except Exception as e:
+            conn.close()  # ensure connection is always closed
+            raise Exception(str(e))
+
+        # return all of the values that were found
+        return [val[0] for val in data]
+
     def data_collections_by_output_name(self, output_name):
         """Get an array of Ladybug DataCollections for a specified output.
 
