@@ -7,6 +7,7 @@ from ladybug.logutil import get_logger
 
 import importlib
 import pkgutil
+import sys
 
 # set up the logger
 logger = get_logger(__name__)
@@ -20,6 +21,7 @@ for finder, name, ispkg in pkgutil.iter_modules():
     try:
         extensions[name] = importlib.import_module(name)
     except Exception:
-        logger.exception('Failed to import {0}!'.format(name))
+        if (sys.version_info >= (3, 0)):
+            logger.exception('Failed to import {0}!'.format(name))
     else:
         logger.info('Successfully imported Ladybug plugin: {}'.format(name))
