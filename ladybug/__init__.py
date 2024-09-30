@@ -21,7 +21,7 @@ for finder, name, ispkg in pkgutil.iter_modules():
     try:
         extensions[name] = importlib.import_module(name)
     except Exception:
-        if (sys.version_info >= (3, 0)):
+        if (sys.version_info >= (3, 0)) and name != 'ladybug_vtk':
             logger.exception('Failed to import {0}!'.format(name))
     else:
         logger.info('Successfully imported Ladybug plugin: {}'.format(name))
