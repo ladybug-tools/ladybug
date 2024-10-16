@@ -16,6 +16,10 @@ from datetime import datetime
 import os
 import re
 import sys
+
+# The theme to use for HTML and HTML Help pages
+import sphinx_bootstrap_theme
+
 sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
@@ -71,7 +75,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -81,13 +85,11 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+# hide the class names in the nav bar
+toc_object_entries_show_parents = 'hide'
+
 
 # -- Options for HTML output -------------------------------------------------
-
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-import sphinx_bootstrap_theme
 
 # html_theme = 'alabaster'
 html_theme = 'bootstrap'
@@ -121,6 +123,7 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_css_files = ['custom.css']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -594,13 +597,3 @@ if custom_cli_docs:
     create_cli_files()
 
 # -----------------------------------------------------------------------------
-
-
-def setup(app):
-    """Run custom code with access to the Sphinx application object
-    Args:
-        app: the Sphinx application object
-    """
-
-    # Add bootstrap theme custom stylesheet
-    app.add_stylesheet("custom.css")
