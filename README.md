@@ -20,7 +20,12 @@ For the Legacy Ladybug Grasshopper Plugin see [this repository](https://github.c
 
 ## Installation
 
+To install the library use:
+
 `pip install ladybug-core`
+
+To check if Honeybee command line interface is installed correctly use `ladybug viz` and you
+should get a `viiiiiiiiiiiiizzzzzzzzz!` back in response!
 
 ## Usage
 
@@ -43,6 +48,33 @@ sun = sp.calculate_sun(month=11, day=15, hour=11.0)
 
 print('altitude: {}, azimuth: {}'.format(sun.altitude, sun.azimuth))
 >>> altitude: 72.26, azimuth: 32.37
+```
+
+## Local Development
+1. Clone this repo locally
+```console
+git clone git@github.com:ladybug-tools/ladybug-core.git
+
+# or
+
+git clone https://github.com/ladybug-tools/ladybug.git
+```
+2. Install dependencies:
+```console
+cd ladybug
+pip install -r dev-requirements.txt
+pip install -r requirements.txt
+```
+
+3. Run Tests:
+```console
+python -m pytest ./tests
+```
+
+4. Generate Documentation:
+```console
+sphinx-apidoc -f -e -d 4 -o ./docs ./ladybug
+sphinx-build -b html ./docs ./docs/_build/docs
 ```
 
 ### Derivative Work
