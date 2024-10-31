@@ -248,7 +248,8 @@ class BaseCollection(object):
         new_data_c._values = [val / area for val in self.values]
 
         # normalize the data type and unit in the header
-        new_data_c._header._unit = '{}/{}'.format(head.unit, area_unit)
+        new_data_c._header._unit = '{}/{}'.format(head.unit, area_unit) \
+            if '/' not in head.unit else '{}-{}'.format(head.unit, area_unit)
         new_data_c._header._data_type = norm_type_class()
         new_data_c._header._data_type.is_unit_acceptable(new_data_c._header._unit)
         if 'type' in head.metadata:  # key used to identify sophisticated data types
@@ -297,7 +298,9 @@ class BaseCollection(object):
         new_data_c._values = [val * area for val in self.values]
 
         # normalize the data type and unit in the header
-        new_data_c._header._unit = head.unit.replace('/{}'.format(area_unit), '')
+        new_data_c._header._unit = head.unit.replace('/{}'.format(area_unit), '') \
+            if '-' not in head.unit.split('/')[-1] else \
+            head.unit.replace('-{}'.format(area_unit), '')
         new_data_c._header._data_type = agg_class()
         new_data_c._header._data_type.is_unit_acceptable(new_data_c._header._unit)
         if 'type' in head.metadata:  # key used to identify sophisticated data types
