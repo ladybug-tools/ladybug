@@ -53,7 +53,7 @@ print('altitude: {}, azimuth: {}'.format(sun.altitude, sun.azimuth))
 ## Local Development
 1. Clone this repo locally
 ```console
-git clone git@github.com:ladybug-tools/ladybug-core.git
+git clone git@github.com:ladybug-tools/ladybug.git
 
 # or
 
