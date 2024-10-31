@@ -192,6 +192,30 @@ def test_import_design_conditions():
     assert len(epw.extreme_design_condition_dictionary.keys()) == 16
 
 
+def test_import_design_conditions_2021():
+    """Test the functions that import design conditions with 2021 ASHRAE data."""
+    relative_path = './tests/assets/epw/long_beach_2021.epw'
+    epw = EPW(relative_path)
+    assert isinstance(epw.heating_design_condition_dictionary, dict)
+    assert len(epw.heating_design_condition_dictionary.keys()) == 16
+    assert isinstance(epw.cooling_design_condition_dictionary, dict)
+    assert len(epw.cooling_design_condition_dictionary.keys()) == 32
+    assert isinstance(epw.extreme_design_condition_dictionary, dict)
+    assert len(epw.extreme_design_condition_dictionary.keys()) == 15
+
+    with open(relative_path, 'r') as epwin:
+        header_lines = [epwin.readline() for i in range(8)]
+
+    for i in range(len(epw.header)):
+        line1, line2 = epw.header[i], header_lines[i]
+        if i in (1, 4, 5, 6):
+            # These lines should match exactly
+            assert line1.rstrip() == line2.rstrip()
+        elif i in (0, 2, 3, 7):
+            # The order of data in these lines can change and spaces can get deleted
+            assert len(line1.split(',')) == len(line2.split(','))
+
+
 def test_set_design_conditions():
     """Test the functions that set design conditions."""
     relative_path = './tests/assets/epw/chicago.epw'
