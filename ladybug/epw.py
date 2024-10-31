@@ -109,7 +109,7 @@ class EPW(object):
         * sky_temperature
     """
     __slots__ = ('_file_path', '_is_header_loaded', '_is_data_loaded', '_is_ip',
-                 '_data', '_metadata', '_location',
+                 '_data', '_metadata', '_location', '_is_2009_ashrae',
                  '_heating_dict', '_cooling_dict', '_extremes_dict',
                  '_extreme_hot_weeks', '_extreme_cold_weeks', '_typical_weeks',
                  '_monthly_ground_temps', '_is_leap_year', 'daylight_savings_start',
@@ -126,6 +126,7 @@ class EPW(object):
         # placeholders for the EPW data that will be imported
         self._data = []
         self._metadata = {}
+        self._is_2009_ashrae = False
         self._heating_dict = {}
         self._cooling_dict = {}
         self._extremes_dict = {}
@@ -326,6 +327,8 @@ class EPW(object):
 
         # Set all of the header properties if they exist in the dictionary.
         epw_obj._metadata = data['metadata']
+        epw_obj._is_2009_ashrae = data['is_2009_ashrae'] \
+            if 'is_2009_ashrae' in data else False
         epw_obj.heating_design_condition_dictionary = data['heating_dict']
         epw_obj.cooling_design_condition_dictionary = data['cooling_dict']
         epw_obj.extreme_design_condition_dictionary = data['extremes_dict']
@@ -441,18 +444,34 @@ class EPW(object):
     def _import_header(self, header_lines):
         """Set EPW design days, typical weeks, and ground temperatures from header lines.
         """
-        # parse the heating, cooling and extreme design conditions.
+        # parse the heating, cooling and extreme design conditions. 
         dday_data = header_lines[1].strip().split(',')
         if len(dday_data) >= 2 and int(dday_data[1]) == 1:
-            if dday_data[4] == 'Heating':
-                for key, val in zip(DesignDay.HEATING_KEYS, dday_data[5:20]):
-                    self._heating_dict[key] = val
-            if dday_data[20] == 'Cooling':
-                for key, val in zip(DesignDay.COOLING_KEYS, dday_data[21:53]):
-                    self._cooling_dict[key] = val
-            if dday_data[53] == 'Extremes':
-                for key, val in zip(DesignDay.EXTREME_KEYS, dday_data[54:70]):
-                    self._extremes_dict[key] = val
+            if '2009' in dday_data[2]:  # parse using ASHRAE 2009 standard
+                self._is_2009_ashrae = True
+                if dday_data[4] == 'Heating':
+                    for key, val in zip(DesignDay.HEATING_KEYS, dday_data[5:20]):
+                        self._heating_dict[key] = val
+                if dday_data[20] == 'Cooling':
+                    for key, val in zip(DesignDay.COOLING_KEYS, dday_data[21:53]):
+                        self._cooling_dict[key] = val
+                if dday_data[53] == 'Extremes':
+                    for key, val in zip(DesignDay.EXTREME_KEYS, dday_data[54:70]):
+                        self._extremes_dict[key] = val
+            else:  # parse using the ASHRAE 2021 standard
+                if dday_data[4] == 'Heating':
+                    for key, val in zip(DesignDay.HEATING_KEYS, dday_data[5:21]):
+                        self._heating_dict[key] = val
+                if dday_data[21] == 'Cooling':
+                    for key, val in zip(DesignDay.COOLING_KEYS, dday_data[22:54]):
+                        if key == 'Hrs_8-4_&_DB':
+                            key = 'WBmax'
+                        self._cooling_dict[key] = val
+                if dday_data[54] == 'Extremes':
+                    ext_keys = list(DesignDay.EXTREME_KEYS)
+                    ext_keys.pop(3)  # ASHRAE moved this key
+                    for key, val in zip(ext_keys, dday_data[55:71]):
+                        self._extremes_dict[key] = val
 
         # parse typical and extreme periods into analysis periods.
         week_data = header_lines[2].split(',')
@@ -780,9 +799,12 @@ class EPW(object):
         """Check if an input design condition dictionary is acceptable."""
         assert isinstance(des_dict, dict), '{}' \
             ' must be a dictionary. Got {}.'.format(cond_name, type(des_dict))
-        if bool(des_dict):
+        optional_keys = ('Hrs_8-4_&_DB', 'WSF', 'WBmax')
+        if des_dict:
             input_keys = list(des_dict.keys())
             for key in req_keys:
+                if key in optional_keys:
+                    continue
                 assert key in input_keys, 'Required key "{}" was not found in ' \
                     '{}'.format(key, cond_name)
 
@@ -790,7 +812,7 @@ class EPW(object):
         """Check if input for the typical/extreme weeks of the header is correct."""
         assert isinstance(data, dict), '{}' \
             ' must be an OrderedDict. Got {}.'.format(week_type, type(data))
-        if bool(data):
+        if data:
             for val in data.values():
                 assert isinstance(val, AnalysisPeriod), '{} dictionary must contain' \
                     ' AnalysisPeriod objects. Got {}.'.format(week_type, type(val))
@@ -810,11 +832,23 @@ class EPW(object):
         summer_found = bool(self._cooling_dict)
         extreme_found = bool(self._extremes_dict)
         if winter_found and summer_found and extreme_found:
-            des_str = 'DESIGN CONDITIONS,1,Climate Design Data 2009 ASHRAE Handbook,,'
+            if self._is_2009_ashrae:
+                des_str = 'DESIGN CONDITIONS,1,Climate Design Data 2009 ' \
+                    'ASHRAE Handbook,,'
+                h_keys, c_keys = list(DesignDay.HEATING_KEYS), DesignDay.COOLING_KEYS
+                h_keys.pop(-1)
+                ext_keys = DesignDay.EXTREME_KEYS
+            else:
+                des_str = 'DESIGN CONDITIONS,1,2021 ASHRAE Handbook -- Fundamentals - ' \
+                    'Chapter 14 Climatic Design Information,,'
+                h_keys, c_keys = DesignDay.HEATING_KEYS, list(DesignDay.COOLING_KEYS)
+                c_keys[-1] = 'WBmax'
+                ext_keys = list(DesignDay.EXTREME_KEYS)
+                ext_keys.pop(3)
             des_str = des_str + 'Heating,{},Cooling,{},Extremes,{}\n'.format(
-                ','.join([self._heating_dict[key] for key in DesignDay.HEATING_KEYS]),
-                ','.join([self._cooling_dict[key] for key in DesignDay.COOLING_KEYS]),
-                ','.join([self._extremes_dict[key] for key in DesignDay.EXTREME_KEYS]))
+                ','.join([self._heating_dict[key] for key in h_keys]),
+                ','.join([self._cooling_dict[key] for key in c_keys]),
+                ','.join([self._extremes_dict[key] for key in ext_keys]))
         else:
             des_str = 'DESIGN CONDITIONS,0\n'
         weeks = []
@@ -1684,6 +1718,7 @@ climate-calculations.html#energyplus-sky-temperature-calculation
             'extreme_cold_weeks': cold_wks,
             'typical_weeks': typ_wks,
             "monthly_ground_temps": grnd_temps,
+            "is_2009_ashrae": self._is_2009_ashrae,
             "is_ip": self._is_ip,
             "is_leap_year": self.is_leap_year,
             "daylight_savings_start": self.daylight_savings_start,

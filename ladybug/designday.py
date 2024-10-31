@@ -67,10 +67,11 @@ class DesignDay(object):
                  'CustomDay1', 'CustomDay2')
 
     # keys denoting the values from which design days are derived
-    # these keys and their order com from Climate Design Data of ASHRAE Handbook
+    # these keys and their order come from Climate Design Data of ASHRAE Handbook
+    # https://ashrae-meteo.info/
     HEATING_KEYS = ('Month', 'DB996', 'DB990', 'DP996', 'HR_DP996', 'DB_DP996',
                     'DP990', 'HR_DP990', 'DB_DP990', 'WS004c', 'DB_WS004c',
-                    'WS010c', 'DB_WS010c', 'WS_DB996', 'WD_DB996')
+                    'WS010c', 'DB_WS010c', 'WS_DB996', 'WD_DB996', 'WSF')
     COOLING_KEYS = ('Month', 'DBR', 'DB004', 'WB_DB004', 'DB010', 'WB_DB010',
                     'DB020', 'WB_DB020', 'WB004', 'DB_WB004', 'WB010', 'DB_WB010',
                     'WB020', 'DB_WB020', 'WS_DB004', 'WD_DB004', 'DP004',
