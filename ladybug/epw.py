@@ -816,9 +816,14 @@ class EPW(object):
             for val in data.values():
                 assert isinstance(val, AnalysisPeriod), '{} dictionary must contain' \
                     ' AnalysisPeriod objects. Got {}.'.format(week_type, type(val))
-                assert len(val.doys_int) == 7, '{} AnalysisPeriod must be for'\
-                    ' a week.  Got AnalysisPeriod for {} days.'.format(
-                        week_type, type(val))
+                if val.is_reversed:
+                    assert 7 <= len(val.doys_int) <= 21, '{} AnalysisPeriod must be for'\
+                        ' a week.  Got AnalysisPeriod for {} days.'.format(
+                            week_type, val.doys_int)
+                else:
+                    assert len(val.doys_int) == 7, '{} AnalysisPeriod must be for'\
+                        ' a week.  Got AnalysisPeriod for {} days.'.format(
+                            week_type, val.doys_int)
 
     @property
     def header(self):
