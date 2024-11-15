@@ -28,6 +28,20 @@ def test_init_color():
         assert isinstance(c, int)
 
 
+def test_color_to_from_hex():
+    """Test the from_hex and to_hex methods."""
+    hex_code = '#ffffff'
+    color = Color.from_hex(hex_code)
+    assert color.r == 255
+    assert color.g == 255
+    assert color.b == 255
+    assert color.to_hex() == hex_code
+
+    color = Color(255, 0, 100)
+    hex_code = color.to_hex()
+    assert color.from_hex(hex_code) == color
+
+
 def test_init_color_invalid():
     """Test the initialization of invalid color objects."""
     with pytest.raises(Exception):
