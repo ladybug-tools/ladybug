@@ -36,6 +36,18 @@ class Color(object):
         self.a = a
 
     @classmethod
+    def from_hex(cls, hex_string):
+        """Create a color from a hex code.
+
+        Args:
+            hex_string: Text string of a hex code given as #rrggbb.
+        """
+        value = hex_string.lower().lstrip('#')
+        lv = len(value)
+        rgb = tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+        return cls(rgb[0], rgb[1], rgb[2])
+
+    @classmethod
     def from_dict(cls, data):
         """Create a color from a dictionary.
 
@@ -101,6 +113,10 @@ class Color(object):
     def duplicate(self):
         """Return a copy of the current color."""
         return self.__copy__()
+
+    def to_hex(self):
+        """Get color as #rrggbb hex code."""
+        return '#%02x%02x%02x' % (self.r, self.g, self.b)
 
     def to_dict(self):
         """Get color as a dictionary."""
