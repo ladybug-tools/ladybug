@@ -7,7 +7,6 @@ import platform
 import shutil
 import zipfile
 import sys
-from distutils import dir_util
 
 if (sys.version_info < (3, 0)):
     import urllib2
@@ -84,7 +83,7 @@ def nukedir(target_dir, rmdir=False):
             os.rmdir(d)
         except Exception:
             try:
-                dir_util.remove_tree(d)
+                shutil.rmtree(d)
             except Exception:
                 print("Failed to remove %s" % d)
 
