@@ -1,5 +1,6 @@
 # coding=utf-8
 """Utility functions for running the functions of CLI commands outside of the CLI."""
+import os
 
 
 def run_command_function(command_function, arguments=None, options=None):
@@ -29,3 +30,30 @@ def run_command_function(command_function, arguments=None, options=None):
 
     # run the command using arguments and keyword arguments
     return command_function(*args, **kwargs)
+
+
+def process_content_to_output(content_str, output_file=None):
+    """Process output strings from commands for various formats of output_files.
+
+    Args:
+        content_str: A text string for file contents that are being output from
+            a command.
+        output_file: Any of the typically supported --output-file types of the
+            CLI. This can be a string for a file path, a file object, or the stdout
+            file object used by click. If None, the string is simply returned from
+            this method. (Default: None).
+    """
+    if output_file is None:
+        return content_str
+    elif isinstance(output_file, str):
+        dir_name = os.path.dirname(os.path.abspath(output_file))
+        if not os.path.isdir(dir_name):
+            os.makedirs(dir_name)
+        with open(output_file, 'w') as of:
+            of.write(content_str)
+    else:
+        if 'stdout' not in str(output_file):
+            dir_name = os.path.dirname(os.path.abspath(output_file.name))
+            if not os.path.isdir(dir_name):
+                os.makedirs(dir_name)
+        output_file.write(content_str)

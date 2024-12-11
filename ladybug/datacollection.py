@@ -495,11 +495,11 @@ class HourlyDiscontinuousCollection(BaseCollection):
         return new_ap, new_values, new_datetimes
 
     def _check_analysis_period(self, analysis_period):
-        assert self.header.analysis_period.timestep == analysis_period.timestep,\
+        assert self.header.analysis_period.timestep == analysis_period.timestep, \
             'analysis_period timestep must match that on the'\
             'Collection header. {} != {}'.format(
                 analysis_period.timestep, self.header.analysis_period.timestep)
-        assert self.header.analysis_period.is_leap_year is analysis_period.is_leap_year,\
+        assert self.header.analysis_period.is_leap_year is analysis_period.is_leap_year, \
             'analysis_period is_leap_year must match that on the'\
             'Collection header. {} != {}'.format(
                 analysis_period.is_leap_year, self.header.analysis_period.is_leap_year)
@@ -1253,7 +1253,7 @@ class DailyCollection(BaseCollection):
         return new_coll
 
     def _check_analysis_period(self, analysis_period):
-        assert self.header.analysis_period.is_leap_year is analysis_period.is_leap_year,\
+        assert self.header.analysis_period.is_leap_year is analysis_period.is_leap_year, \
             'analysis_period is_leap_year must match that on the'\
             'Collection header. {} != {}'.format(
                 analysis_period.is_leap_year, self.header.analysis_period.is_leap_year)
