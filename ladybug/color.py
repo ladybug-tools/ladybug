@@ -204,6 +204,10 @@ class Colorset(object):
         * 27 - Cividis (colorblind friendly)
         * 28 - Viridis (colorblind friendly)
         * 29 - Parula (colorblind friendly)
+        * 30 - Energy Balance by Face Type
+        * 31 - Peak Cooling by Face Type
+        * 31 - Peak Hating by Face Type
+
 
     Usage:
 
@@ -282,7 +286,17 @@ class Colorset(object):
         28: [(68, 1, 84), (59, 82, 139), (33, 145, 140), (94, 201, 98),
              (253, 231, 37)],
         29: [(52, 62, 175), (2, 99, 225), (7, 155, 207), (36, 180, 170),
-             (107, 190, 130), (232, 185, 78), (252, 203, 47), (248, 250, 13)]
+             (107, 190, 130), (232, 185, 78), (252, 203, 47), (248, 250, 13)],
+        30: list(reversed(_multicolored)) +
+            [(128, 102, 64), (201, 114, 38), (186, 158, 134)],
+        31: [(255, 251, 0), (255, 186, 186), (225, 0, 0), (255, 242, 140),
+             (209, 123, 123), (135, 178, 224), (134, 180, 186), (128, 102, 64),
+             (201, 114, 38), (186, 158, 134), (255, 175, 46), (4, 25, 145),
+             (204, 204, 204), (150, 150, 150), (110, 110, 110), (50, 50, 50)],
+        32: [(148, 24, 24), (255, 251, 0), (255, 186, 186), (225, 0, 0), (255, 242, 140),
+             (209, 123, 123), (135, 178, 224), (134, 180, 186), (128, 102, 64),
+             (201, 114, 38), (186, 158, 134), (255, 175, 46),
+             (204, 204, 204), (150, 150, 150), (110, 110, 110), (50, 50, 50)]
     }
 
     def __init__(self):
@@ -340,6 +354,16 @@ class Colorset(object):
         return tuple(Color(*color) for color in cls._colors[9])
 
     @classmethod
+    def peak_cooling_by_face_type(cls):
+        """Colors for a complete cooling peak load balance broken out by face type."""
+        return tuple(Color(*color) for color in cls._colors[31])
+
+    @classmethod
+    def peak_heating_by_face_type(cls):
+        """Colors for a complete heating peak load balance broken out by face type."""
+        return tuple(Color(*color) for color in cls._colors[31])
+
+    @classmethod
     def heat_sensation(cls):
         """Red colors for heat sensation."""
         return tuple(Color(*color) for color in cls._colors[10])
@@ -388,6 +412,12 @@ class Colorset(object):
     def energy_balance_storage(cls):
         """Energy Balance colors with a brown color for storage term."""
         return tuple(Color(*color) for color in cls._colors[19])
+
+    @classmethod
+    def energy_balance_by_face_type(cls):
+        """Energy Balance colors with extra brown colors for storage terms by face type.
+        """
+        return tuple(Color(*color) for color in cls._colors[30])
 
     @classmethod
     def therm(cls):
