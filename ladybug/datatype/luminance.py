@@ -9,8 +9,8 @@ class Luminance(DataTypeBase):
     """Luminance
     """
     _units = ('cd/m2', 'cd/ft2')
-    _si_units = ('cd/m2')
-    _ip_units = ('cd/ft2')
+    _si_units = ('cd/m2',)
+    _ip_units = ('cd/ft2',)
     _min = 0
     _abbreviation = 'Lv'
     _point_in_time = False

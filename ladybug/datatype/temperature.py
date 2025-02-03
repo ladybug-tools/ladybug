@@ -10,7 +10,7 @@ class Temperature(DataTypeBase):
     """
     _units = ('C', 'F', 'K')
     _si_units = ('C', 'K')
-    _ip_units = ('F')
+    _ip_units = ('F',)
     _min = -273.15
     _abbreviation = 'T'
 
