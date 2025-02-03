@@ -9,8 +9,8 @@ class Illuminance(DataTypeBase):
     """Illuminance
     """
     _units = ('lux', 'fc')
-    _si_units = ('lux')
-    _ip_units = ('fc')
+    _si_units = ('lux',)
+    _ip_units = ('fc',)
     _min = 0
     _abbreviation = 'Ev'
     _point_in_time = False

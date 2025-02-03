@@ -11,7 +11,7 @@ class TemperatureDelta(DataTypeBase):
     """
     _units = ('dC', 'dF', 'dK')
     _si_units = ('dC', 'dK')
-    _ip_units = ('dF')
+    _ip_units = ('dF',)
     _abbreviation = 'DeltaT'
     _time_aggregated_type = TemperatureTime
     _time_aggregated_factor = 1. / 24.
