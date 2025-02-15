@@ -1,0 +1,7 @@
+ladybug.datatype.angle module
+=============================
+
+.. automodule:: ladybug.datatype.angle
+   :members:
+   :undoc-members:
+   :show-inheritance:
