@@ -513,7 +513,7 @@ class MonthlyChart(object):
                         up_vals, low_vals = self._hour_y_values_stack_split(
                             data, d_range, min_val, step, prev_y_up, prev_y_low, d_i)
                         lines_up = self._hour_polylines(up_vals, x_dist)
-                        lines_low =self._hour_polylines(low_vals, x_dist)
+                        lines_low = self._hour_polylines(low_vals, x_dist)
                         lines.extend(lines_up)
                         lines.extend(lines_low)
                         total_len = len(lines_up) + len(lines_low)
@@ -531,7 +531,7 @@ class MonthlyChart(object):
                             else:
                                 prev_y_low = low_vals
                         lines_up = self._hour_polylines(up_vals, x_dist)
-                        lines_low =self._hour_polylines(low_vals, x_dist)
+                        lines_low = self._hour_polylines(low_vals, x_dist)
                         lines.extend(lines_up)
                         lines.extend(lines_low)
                         total_len = len(lines_up) + len(lines_low)
@@ -548,7 +548,7 @@ class MonthlyChart(object):
                     low_vals = self._hour_y_values(data[0], d_range, min_val, step)
                     up_vals = self._hour_y_values(data[-1], d_range, min_val, step)
                     lines_up = self._hour_polylines(up_vals, x_dist)
-                    lines_low =self._hour_polylines(low_vals, x_dist)
+                    lines_low = self._hour_polylines(low_vals, x_dist)
                     lines.extend(lines_up)
                     lines.extend(lines_low)
                     total_len = len(lines_up) + len(lines_low)
@@ -583,7 +583,7 @@ class MonthlyChart(object):
                         prev_y = prev_y_up if pos else prev_y_low
                         vals = self._hour_y_values_stack(
                             data, d_range, min_val, step, prev_y)
-                         # set start y so the next data stacks
+                        # set start y so the next data stacks
                         if pos:
                             prev_y_up = vals
                         else:

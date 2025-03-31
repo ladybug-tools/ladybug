@@ -514,7 +514,12 @@ class EPW(object):
 
         # parse leap year, daylight savings and comments.
         leap_dl_sav = header_lines[4].strip().split(',')
-        self._is_leap_year = True if leap_dl_sav[1] == 'Yes' else False
+        if leap_dl_sav[1] == 'Yes':
+            self._is_leap_year = True
+        elif leap_dl_sav[1] == 'No':
+            self._is_leap_year = False
+        else:
+            self._is_leap_year = None
         self.daylight_savings_start = leap_dl_sav[2]
         self.daylight_savings_end = leap_dl_sav[3]
         comments_1 = header_lines[5].strip().split(',')
@@ -530,6 +535,8 @@ class EPW(object):
         """Set all of the EPW data collections by parsing from the body lines."""
         # get the number of fields and make an annual analysis period
         self._num_of_fields = min(len(body_lines[0].strip().split(',')), 35)
+        if self.is_leap_year is None:
+            self._is_leap_year = True if len(body_lines) == 8784 else False
         analysis_period = AnalysisPeriod(is_leap_year=self.is_leap_year)
 
         # create headers and an empty list for each field in epw file
@@ -1306,9 +1313,10 @@ class EPW(object):
 climate-calculations.html#energyplus-sky-temperature-calculation
         """
         # create sky temperature header
-        sky_temp_header = Header(data_type=temperature.SkyTemperature(), unit='C',
-                                 analysis_period=AnalysisPeriod(),
-                                 metadata=self._metadata)
+        sky_temp_header = Header(
+            data_type=temperature.SkyTemperature(), unit='C',
+            analysis_period=AnalysisPeriod(is_leap_year=self.is_leap_year),
+            metadata=self._metadata)
 
         # calculate sy temperature for each hour
         horiz_ir = self._get_data_by_field(12).values

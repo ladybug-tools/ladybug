@@ -3,7 +3,6 @@
 from __future__ import division
 
 from .base import DataTypeBase
-from .volume import Volume
 from .volumeflowrateintensity import VolumeFlowRateIntensity
 
 

@@ -192,7 +192,7 @@ class Folders(object):
                     paths = json.load(cfg)
                 except Exception as e:
                     print('Failed to load paths from {}.\nThey will be set to defaults '
-                        'instead\n{}'.format(file_path, e))
+                          'instead\n{}'.format(file_path, e))
                 else:
                     for key, p in paths.items():
                         if not key.startswith('__') and p.strip():

@@ -55,6 +55,19 @@ def test_import_non_utf_epw():
     assert len(skyt) == 8760
 
 
+def test_import_no_leap_field_epw():
+    """Test import of an epw with no leap year tag."""
+    path = './tests/assets/epw/los_angeles_no_leap_field.epw'
+    epw = EPW(path)
+
+    dbt = epw.dry_bulb_temperature
+    skyt = epw.sky_temperature  # test sky temperature calculation
+    assert epw.is_data_loaded
+    assert len(dbt) == 8784
+    assert len(skyt) == 8784
+    assert epw.is_leap_year
+
+
 def test_epw_from_file_string():
     """Test initialization of EPW from a file string."""
     relative_path = './tests/assets/epw/chicago.epw'
