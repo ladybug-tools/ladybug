@@ -702,6 +702,18 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         _new_header._analysis_period = _new_a_per
         return HourlyContinuousCollection(_new_header, _new_values)
 
+    def cull_to_timestep(self, timestep=1):
+        """Get a collection with only datetimes that fit a timestep."""
+        valid_s = self.header.analysis_period.VALIDTIMESTEPS.keys()
+        assert timestep in valid_s, \
+            'timestep {} is not valid. Choose from: {}'.format(timestep, valid_s)
+        new_ap, new_values, _ = self._timestep_cull(timestep)
+        new_header = self.header.duplicate()
+        new_header._analysis_period = new_ap
+        new_coll = HourlyContinuousCollection(new_header, new_values)
+        new_coll._validated_a_period = True
+        return new_coll
+
     def filter_by_conditional_statement(self, statement):
         """Filter the Data Collection based on a conditional statement.
 
