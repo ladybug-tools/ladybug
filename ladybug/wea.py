@@ -607,7 +607,7 @@ class Wea(object):
     @property
     def header(self):
         """Get the Wea header as a string."""
-        return "place %s\n" % self.location.city + \
+        return "place %s_%s\n" % (self.location.city, self.location.country) + \
             "latitude %.2f\n" % self.location.latitude + \
             "longitude %.2f\n" % -self.location.longitude + \
             "time_zone %d\n" % (-self.location.time_zone * 15) + \
@@ -1125,7 +1125,14 @@ class Wea(object):
         assert first_line.startswith('place'), 'Failed to find place in .wea header.\n' \
             '{} is not a valid wea file.'.format(wea_file_name)
         location = Location()
-        location.city = ' '.join(first_line.split()[1:])
+        place_info = ' '.join(first_line.split()[1:])
+        if '_' in place_info:
+            city, country = place_info.rsplit('_', 1)
+        else:
+            city = place_info
+            country = '-'
+        location.city = city
+        location.country = country
         location.latitude = float(weaf.readline().split()[-1])
         location.longitude = -float(weaf.readline().split()[-1])
         location.time_zone = -int(weaf.readline().split()[-1]) / 15
