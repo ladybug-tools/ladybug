@@ -10,7 +10,7 @@
 
 Ladybug is a Python library to analyze, modify, and visualize EnergyPlus Weather files (epw). You can download epw files from [EPWMap](http://www.ladybug.tools/epwmap/).
 
-This repository is the core library that is the base for the Ladybug Grasshopper Plugin. For plugin-specific questions and comments refer to [ladybug-grasshopper](https://github.com/ladybug-tools/ladybug-grasshopper).
+This repository is the core library that is the base for the [Ladybug Grasshopper Plugin](https://www.ladybug.tools/#intro). For plugin-specific questions and comments refer to [ladybug-grasshopper](https://github.com/ladybug-tools/ladybug-grasshopper).
 
 ## Note
 
