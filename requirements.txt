@@ -1,3 +1,3 @@
-ladybug-geometry==1.34.5
+ladybug-geometry==1.34.6
 click==7.1.2;python_version<'3.8'
 click==8.1.7;python_version>='3.8'
