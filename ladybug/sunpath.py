@@ -179,8 +179,8 @@ class Sunpath(object):
         if not self.daylight_saving_period:
             return False
         if self.daylight_saving_period.is_reversed:
-            return self.daylight_saving_period.end_time.moy <= datetime.moy or \
-                self.daylight_saving_period.st_time.moy >= datetime.moy
+            return datetime.moy <= self.daylight_saving_period.end_time.moy or \
+                datetime.moy >= self.daylight_saving_period.st_time.moy
         else:
             return self.daylight_saving_period.st_time.moy <= datetime.moy < \
                 self.daylight_saving_period.end_time.moy

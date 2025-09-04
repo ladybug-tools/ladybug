@@ -22,7 +22,6 @@ RUN mkdir ladybug_tools && touch ladybug_tools/config.json
 COPY ladybug ${LIBRARYDIR}/ladybug
 COPY .git ${LIBRARYDIR}/.git
 COPY setup.py ${LIBRARYDIR}
-COPY setup.cfg ${LIBRARYDIR}
 COPY requirements.txt ${LIBRARYDIR}
 COPY README.md ${LIBRARYDIR}
 COPY LICENSE ${LIBRARYDIR}
