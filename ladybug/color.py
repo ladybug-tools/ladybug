@@ -655,7 +655,7 @@ class ColorRange(object):
         """Calculate a color along the range for an input value."""
         if value < self._domain[0]:
             return self._colors[0]
-        if value > self._domain[-1]:
+        if value >= self._domain[-1]:
             return self._colors[-1]
 
         # find the index of the value in domain

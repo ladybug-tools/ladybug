@@ -144,7 +144,8 @@ def test_color_range_discontinuous():
 
     assert color_range.color(99) == Color(75, 107, 169)
     assert color_range.color(100) == Color(245, 239, 103)
-    assert color_range.color(2000) == Color(245, 239, 103)
+    assert color_range.color(1999) == Color(245, 239, 103)
+    assert color_range.color(2000) == Color(234, 38, 0)
     assert color_range.color(2001) == Color(234, 38, 0)
 
 

@@ -497,7 +497,7 @@ def test_categorized_to_from_dict():
 
 def test_categorized_colors():
     """Test the LegendParametersCategorized colors property."""
-    data = [100, 300, 500, 1000, 2000, 3000]
+    data = [100, 300, 500, 1000, 1999, 3000]
     leg_colors = [Color(0, 0, 255), Color(0, 255, 0), Color(255, 0, 0)]
     legend_par = LegendParametersCategorized([300, 2000], leg_colors)
 
