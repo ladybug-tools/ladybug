@@ -61,9 +61,4 @@ def process_content_to_output(content_str, output_file=None):
             dir_name = os.path.dirname(os.path.abspath(output_file.name))
             if not os.path.isdir(dir_name):
                 os.makedirs(dir_name)
-        if (sys.version_info < (3, 0)):  # we need to manually encode it as UTF-8
-            with open(output_file, 'w') as of:
-                of.write(content_str.encode('utf-8'))
-        else:
-            with open(output_file, 'w', encoding='utf-8') as of:
-                of.write(content_str)
+        output_file.write(content_str)
