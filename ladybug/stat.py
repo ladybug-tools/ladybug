@@ -299,9 +299,9 @@ class STAT(object):
             self._stand_press_at_elev = self._regex_check(
                 self._press_pattern, self._header[5])
             self._ashrae_climate_zone = self._regex_check(
-                self._ashraecz_pattern, self._body)
+                self._ashraecz_pattern, self._body, enforce_string=True)
             self._koppen_climate_zone = self._regex_check(
-                self._koppencz_pattern, self._body)
+                self._koppencz_pattern, self._body, enforce_string=True)
 
             # pull out extreme and seasonal weeks.
             self._extreme_hot_week = self._regex_week_parse(self._hotweek_pattern)
@@ -340,9 +340,11 @@ class STAT(object):
         finally:
             statwin.close()
 
-    def _regex_check(self, regex_pattern, search_space):
+    def _regex_check(self, regex_pattern, search_space, enforce_string=False):
         matches = regex_pattern.findall(search_space)
         if len(matches) > 0:
+            if enforce_string:
+                return matches[0]
             try:
                 return float(matches[0])
             except ValueError:
