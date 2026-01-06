@@ -421,6 +421,7 @@ class SQLiteResult(object):
 
             # extract all data of the relevant type from ReportData
             rel_indices = tuple(row[0] for row in header_rows)
+            rel_indices = str(rel_indices).replace(',)', ')')
             query = 'SELECT ReportData.Value, ReportData.TimeIndex ' \
                 'FROM ReportData ' \
                 'INNER JOIN Time ON ReportData.TimeIndex=Time.TimeIndex ' \
