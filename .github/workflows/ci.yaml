@@ -86,6 +86,16 @@ jobs:
           -H "Accept: application/vnd.github.everest-preview+json" \
           -d '{"event_type": "ladybug_core_release", "client_payload": {"version": "${{ steps.new_release.outputs.tag }}"}}' \
           -u ladybugbot:$DEPS_TOKEN
+      - name: Update fairyfly-core
+        if: contains(steps.new_release.outputs.tag, '.')
+        env:
+          DISPATCH_REPO: ladybug-tools/fairyfly-core
+          DEPS_TOKEN: ${{ secrets.DEPS_UPDATING }}
+        run: |
+          curl -X POST https://api.github.com/repos/$DISPATCH_REPO/dispatches \
+          -H "Accept: application/vnd.github.everest-preview+json" \
+          -d '{"event_type": "ladybug_core_release", "client_payload": {"version": "${{ steps.new_release.outputs.tag }}"}}' \
+          -u ladybugbot:$DEPS_TOKEN
       - name: Update pollination-ladybug
         if: contains(steps.new_release.outputs.tag, '.')
         env:
