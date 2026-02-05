@@ -5,11 +5,8 @@ from ladybug.legend import Legend, LegendParameters, LegendParametersCategorized
 from ladybug.color import Color, Colorset, ColorRange
 from ladybug.datatype.thermalcondition import PredictedMeanVote
 
-from ladybug_geometry.geometry2d.pointvector import Point2D
-from ladybug_geometry.geometry2d.mesh import Mesh2D
-from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
-from ladybug_geometry.geometry3d.plane import Plane
-from ladybug_geometry.geometry3d.mesh import Mesh3D
+from ladybug_geometry.geometry2d import Point2D, Mesh2D
+from ladybug_geometry.geometry3d import Point3D, Vector3D, Polyline3D, Plane, Mesh3D
 
 import pytest
 
@@ -527,3 +524,16 @@ def test_categorized_category_names():
 
     with pytest.raises(AssertionError):
         legend_par.category_names = ['low', 'desired', 'too much', 'not a category']
+
+
+def test_mesh_contours():
+    """Test the LegendParametersCategorized category_names property."""
+    mesh2d = Mesh2D.from_grid(num_x=2, num_y=2)
+    mesh3d = Mesh3D.from_mesh2d(mesh2d)
+    data = [0, 1, 2, 3]
+
+    legend = Legend(data, LegendParameters(segment_count=3))
+    contours, thresholds = legend.mesh_contours(mesh3d, 0.01)
+    assert len(contours) == len(thresholds) == 1
+    assert isinstance(contours[0][0], Polyline3D)
+    assert thresholds[0] == 1.5
