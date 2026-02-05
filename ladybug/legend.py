@@ -9,11 +9,8 @@ import sys
 if (sys.version_info > (3, 0)):  # python 3
     xrange = range
 
-from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
-from ladybug_geometry.geometry3d.plane import Plane
-from ladybug_geometry.geometry3d.mesh import Mesh3D
-from ladybug_geometry.geometry2d.pointvector import Point2D
-from ladybug_geometry.geometry2d.mesh import Mesh2D
+from ladybug_geometry.geometry2d import Point2D, Mesh2D
+from ladybug_geometry.geometry3d import Point3D, Vector3D, Polyline3D, Plane, Mesh3D
 
 from .color import Color, Colorset, ColorRange
 
@@ -440,6 +437,79 @@ class Legend(object):
                     color_mtx.append(all_cols)
                 color_mtx.append([black] * total_w)
         return color_mtx
+
+    def mesh_contours(self, mesh, tolerance):
+        """Get Polyline3Ds for contours of a Mesh3D associated with this legend's values.
+
+        Args:
+            mesh: A ladybug-geometry Mesh3D for which contours will be derived.
+                The number of faces or the number of vertices must match the
+                number of values associated with this Legend.
+            tolerance: The minimum difference between mesh vertices at which point
+                they are considered equivalent.
+
+        Returns:
+            A tuple with two elements.
+
+            -   contours -- A list of lists where each sub-list represents
+                contours associated with a specific threshold. Contours are
+                composed of Polyline3D and LineSegment3D.
+
+            -   thresholds -- list of numbers for the threshold value associated
+                with each contour. The length of this list matches the contours.
+        """
+        # check the input values and provide defaults
+        val_count = len(self.values)
+        face_match = val_count == len(mesh.faces)
+        assert face_match or val_count == len(mesh.vertices), \
+            'Number of values ({}) must match the number of mesh faces ({}) or ' \
+            'the number of mesh vertices ({}).'.format(
+                val_count, len(mesh.faces), len(mesh.vertices))
+
+        # figure out the thresholds to be used for the contour lines
+        min_val, max_val = self.legend_parameters.min, self.legend_parameters.max
+        if min_val == max_val:
+            return [], []  # no contours to be generated
+        thresholds = list(self.segment_numbers)
+        if self.is_max_default:
+            thresholds.pop(-1)  # no need to make a contour
+        if self.is_min_default:
+            thresholds.pop(0)  # no need to make a contour
+        if len(thresholds) == 0:  # ensure there is at least one threshold
+            thresholds = [(max_val + min_val) / 2]
+
+        # loop through the thresholds and generate contour lines
+        contours = []
+        init_naked_edges = mesh.naked_edges
+        for abs_thresh in thresholds:
+            # remove faces below the threshold
+            pattern = [val > abs_thresh for val in self.values]
+            if all(v for v in pattern):
+                contours.append([])
+                continue  # full mesh in contour; not a useful line
+            elif all(not v for v in pattern):
+                contours.append([])
+                continue  # none of the mesh lies in the contour; not a useful line
+            sub_mesh, _ = mesh.remove_faces(pattern) if face_match else \
+                mesh.remove_vertices(pattern)
+
+            # create the contour lines
+            contour_segs = []
+            for seg in sub_mesh.naked_edges:
+                for i_seg in init_naked_edges:
+                    if seg.p1.is_equivalent(i_seg.p1, tolerance) and \
+                            seg.p2.is_equivalent(i_seg.p2, tolerance):
+                        break
+                else:  # we have found a new segment for contouring
+                    contour_segs.append(seg)
+            polylines = Polyline3D.join_segments(contour_segs, tolerance)
+            final_contours = []
+            for cont in polylines:
+                if isinstance(cont, Polyline3D):
+                    cont = Polyline3D(cont.vertices, True)
+                final_contours.append(cont)
+            contours.append(final_contours)
+        return contours, thresholds
 
     def duplicate(self):
         """Return a copy of the current legend."""
