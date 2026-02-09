@@ -1207,9 +1207,54 @@ class LegendParameters(object):
         else:
             self._user_data['color_set'] = colorset_name
 
-    def duplicate(self):
-        """Return a copy of the current legend parameters."""
-        return self.__copy__()
+    def to_categorized(self, values):
+        """Get a version of these parameters as LegendParametersCategorized.
+
+        Args:
+            values: A list of numerical values to which the legend parameters
+                are applied. These will be used to determine the domain of the
+                categorized legend.
+        """
+        # determine the domain of the categorized legend
+        legend = Legend(values, self)
+        min_val, max_val = legend.legend_parameters.min, legend.legend_parameters.max
+        if min_val == max_val:
+            thresholds = [min_val]  # make a dummy threshold at the value
+        thresholds = list(legend.segment_numbers)
+        if legend.is_max_default:
+            thresholds.pop(-1)  # no need to make a category
+        if legend.is_min_default:
+            thresholds.pop(0)  # no need to make a category
+        if len(thresholds) == 0:  # ensure there is at least one threshold
+            thresholds = [(max_val + min_val) / 2]
+
+        # determine the colors of the categorized legend
+        _l_par = legend.legend_parameters
+        try:
+            _seg_stp = (_l_par.max - _l_par.min) / (_l_par.segment_count - 1)
+        except ZeroDivisionError:
+            _seg_stp = 0
+        _half_step = _seg_stp / 2
+        color_vals = [v - _half_step for v in thresholds]
+        color_vals.append(color_vals[-1] + _seg_stp)
+        _color_range = legend.color_range
+        colors = tuple(_color_range.color(val) for val in color_vals)
+
+        # create the categorized legend parameters
+        new_par = LegendParametersCategorized(thresholds, colors, title=self.title)
+        new_par._continuous_legend = self._continuous_legend
+        new_par._ordinal_dictionary = self._ordinal_dictionary
+        new_par._decimal_count = self._decimal_count
+        new_par._include_larger_smaller = self._include_larger_smaller
+        new_par._vertical = self._vertical
+        new_par._font = self._font
+        new_par.properties_3d = self.properties_3d.duplicate()
+        new_par.properties_2d = self.properties_2d.duplicate()
+        new_par._user_data = None if self.user_data is None else self.user_data.copy()
+        new_par._is_segment_count_default = self._is_segment_count_default
+        new_par._are_colors_default = self._are_colors_default
+        new_par._is_title_default = self._is_title_default
+        return new_par
 
     def to_dict(self):
         """Get legend parameters as a dictionary."""
@@ -1223,6 +1268,10 @@ class LegendParameters(object):
         base['ordinal_dictionary'] = self.ordinal_dictionary
         base['type'] = 'LegendParameters'
         return base
+
+    def duplicate(self):
+        """Return a copy of the current legend parameters."""
+        return self.__copy__()
 
     def _base_dict(self):
         """Get a dictionary with the base properties shared by all LegendParameters."""
@@ -1833,10 +1882,6 @@ class Legend3DParameters(object):
             self._is_segment_width_default, self._is_text_height_default
         ))
 
-    def duplicate(self):
-        """Return a copy of the current Legend3DParameters."""
-        return self.__copy__()
-
     def to_dict(self):
         """Get Legend3DParameters as a dictionary."""
         base = {'type': 'Legend3DParameters'}
@@ -1849,6 +1894,10 @@ class Legend3DParameters(object):
         if not self.is_text_height_default:
             base['text_height'] = self.text_height
         return base
+
+    def duplicate(self):
+        """Return a copy of the current Legend3DParameters."""
+        return self.__copy__()
 
     def __copy__(self):
         new_par = Legend3DParameters(
