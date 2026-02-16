@@ -1,0 +1,7 @@
+ladybug.legend module
+=====================
+
+.. automodule:: ladybug.legend
+   :members:
+   :undoc-members:
+   :show-inheritance:

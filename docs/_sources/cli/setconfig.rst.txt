@@ -1,0 +1,6 @@
+setconfig
+=========
+
+.. click:: ladybug.cli.setconfig:set_config
+   :prog: ladybug set-config
+   :show-nested:

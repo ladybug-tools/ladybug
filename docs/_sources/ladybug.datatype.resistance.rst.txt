@@ -1,0 +1,7 @@
+ladybug.datatype.resistance module
+==================================
+
+.. automodule:: ladybug.datatype.resistance
+   :members:
+   :undoc-members:
+   :show-inheritance:

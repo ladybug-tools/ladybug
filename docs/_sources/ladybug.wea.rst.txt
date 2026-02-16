@@ -1,0 +1,7 @@
+ladybug.wea module
+==================
+
+.. automodule:: ladybug.wea
+   :members:
+   :undoc-members:
+   :show-inheritance:

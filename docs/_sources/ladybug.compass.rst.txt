@@ -1,0 +1,7 @@
+ladybug.compass module
+======================
+
+.. automodule:: ladybug.compass
+   :members:
+   :undoc-members:
+   :show-inheritance:

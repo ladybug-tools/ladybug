@@ -1,0 +1,7 @@
+ladybug.datatype.specificenergy module
+======================================
+
+.. automodule:: ladybug.datatype.specificenergy
+   :members:
+   :undoc-members:
+   :show-inheritance:

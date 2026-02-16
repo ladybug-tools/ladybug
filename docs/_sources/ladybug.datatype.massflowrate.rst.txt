@@ -1,0 +1,7 @@
+ladybug.datatype.massflowrate module
+====================================
+
+.. automodule:: ladybug.datatype.massflowrate
+   :members:
+   :undoc-members:
+   :show-inheritance:

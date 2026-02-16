@@ -1,0 +1,7 @@
+ladybug.color module
+====================
+
+.. automodule:: ladybug.color
+   :members:
+   :undoc-members:
+   :show-inheritance:

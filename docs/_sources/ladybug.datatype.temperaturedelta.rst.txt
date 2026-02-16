@@ -1,0 +1,7 @@
+ladybug.datatype.temperaturedelta module
+========================================
+
+.. automodule:: ladybug.datatype.temperaturedelta
+   :members:
+   :undoc-members:
+   :show-inheritance:
