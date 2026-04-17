@@ -1155,6 +1155,11 @@ class BaseCollection(object):
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        return self.__add__(other)
+
     def __sub__(self, other):
         new_vals = self._sub_values(other)
         new_obj = self.__class__(self.header.duplicate(), new_vals, self.datetimes)

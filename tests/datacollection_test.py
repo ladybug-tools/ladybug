@@ -221,6 +221,10 @@ def test_operators_hourly_continuous():
     assert isinstance(add, HourlyContinuousCollection)
     assert add[0] == v1 + v1
 
+    add2 = sum([dc1, dc2])
+    assert isinstance(add2, HourlyContinuousCollection)
+    assert add2[0] == v1 + v1
+
     sub = dc1 - dc2
     assert isinstance(sub, HourlyContinuousCollection)
     assert sub[0] == v1 - v1
