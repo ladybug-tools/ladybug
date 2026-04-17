@@ -1,0 +1,7 @@
+ladybug.datacollectionimmutable module
+======================================
+
+.. automodule:: ladybug.datacollectionimmutable
+   :members:
+   :undoc-members:
+   :show-inheritance:

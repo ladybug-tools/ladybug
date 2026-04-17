@@ -1,0 +1,7 @@
+ladybug.datatype.thermalcondition module
+========================================
+
+.. automodule:: ladybug.datatype.thermalcondition
+   :members:
+   :undoc-members:
+   :show-inheritance:
