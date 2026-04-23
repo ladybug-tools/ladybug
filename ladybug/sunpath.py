@@ -399,9 +399,9 @@ class Sunpath(object):
             sunrise = 24 * sunrise
             sunset = 24 * sunset
             if self.is_daylight_saving_hour(datetime):  # spring forward!
-                noon = noon - 1
-                sunrise = sunrise - 1
-                sunset = sunset - 1
+                noon = noon + 1
+                sunrise = sunrise + 1
+                sunset = sunset + 1
 
             # compute sunrise datetime
             if sunrise >= 0:
