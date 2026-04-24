@@ -1298,8 +1298,10 @@ class LegendParameters(object):
     def _convert_colors(cols):
         """Convert a list of colors into ladybug Color objects."""
         try:
-            cols = tuple(col if isinstance(col, Color) else Color(
-                col.R, col.G, col.B) for col in cols)
+            cols = tuple(
+                col if isinstance(col, Color) else Color(col.R, col.G, col.B, col.A)
+                for col in cols
+            )
         except Exception:
             try:
                 cols = tuple(Color(col.Red, col.Green, col.Blue)

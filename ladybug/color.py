@@ -279,7 +279,7 @@ class Colorset(object):
         26: [(230, 180, 60), (230, 215, 150), (165, 82, 0),
              (128, 20, 20), (255, 128, 128), (64, 128, 128),
              (128, 128, 128), (255, 128, 128), (128, 64, 0),
-             (64, 180, 255), (160, 150, 100), (120, 75, 190), (255, 255, 200),
+             (64, 180, 255, 127), (160, 150, 100), (120, 75, 190), (255, 255, 200),
              (0, 128, 0)],
         27: [(0, 32, 81), (60, 77, 110), (127, 124, 117), (187, 175, 113),
              (253, 234, 69)],
@@ -595,8 +595,10 @@ class ColorRange(object):
                 and not isinstance(cols, (str, dict, bytes, bytearray)), \
                 'Colors should be a list or tuple. Got {}'.format(type(cols))
             try:
-                cols = tuple(col if isinstance(col, Color) else Color(
-                    col.R, col.G, col.B) for col in cols)
+                cols = tuple(
+                    col if isinstance(col, Color) else Color(col.R, col.G, col.B, col.A)
+                    for col in cols
+                )
             except AttributeError:
                 try:
                     cols = tuple(Color(col.Red, col.Green, col.Blue) for col in cols)
@@ -693,8 +695,9 @@ class ColorRange(object):
         red = round(factor * (max_color.r - min_color.r) + min_color.r)
         green = round(factor * (max_color.g - min_color.g) + min_color.g)
         blue = round(factor * (max_color.b - min_color.b) + min_color.b)
+        alpha = round(factor * (max_color.a - min_color.a) + min_color.a)
 
-        return Color(red, green, blue)
+        return Color(red, green, blue, alpha)
 
     def __copy__(self):
         return self.__class__(self.colors, self.domain, self.continuous_colors)

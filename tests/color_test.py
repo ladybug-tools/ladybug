@@ -90,7 +90,7 @@ def test_init_colorset():
 
     for key in colorset._colors.keys():
         for col in colorset._colors[key]:
-            assert len(col) == 3
+            assert len(col) in (3, 4)
 
 
 def test_init_colorset_by_name():
