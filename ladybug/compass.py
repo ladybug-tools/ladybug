@@ -13,9 +13,9 @@ import math
 class Compass(object):
     """Object for computing geometry for the compass used by a variety of graphics.
 
-    Methods to project points to orthographic and stereographic projections are
-    also within this class so that "domed" visualizations can be synchronized with
-    the compass in the 2D plane.
+    Methods to project points to orthographic, stereographic, equidistant, and
+    equisolid projections are also within this class so that "domed"
+    visualizations can be synchronized with the compass in the 2D plane.
 
     Args:
         radius: A positive number for the radius of the compass. (Default: 100).
@@ -262,6 +262,59 @@ class Compass(object):
                 stereographic projection.
         """
         return Point2D(point.x, point.y)
+
+    @staticmethod
+    def point3d_to_equidistant(point, radius=100, origin=Point3D()):
+        """Get a Point2D for a given Point3D using an equidistant projection.
+
+        Args:
+            point: A ladybug_geometry Point3D to be projected into 2D space via
+                equidistant projection.
+            radius: A positive number for the radius of the sphere on which the
+                point exists. (Default: 100).
+            origin: An optional ladybug_geometry Point3D representing the origin
+                of the coordinate system in which the projection is happening.
+                (eg. the center of the compass).
+        """
+        # move the point to the world origin
+        coords = ((point.x - origin.x), (point.y - origin.y), (point.z - origin.z))
+        dist_xy = math.sqrt(coords[0] ** 2 + coords[1] ** 2)
+        if dist_xy == 0:
+            return Point2D(origin.x, origin.y)
+
+        z_ratio = coords[2] / radius
+        z_ratio = min(1, max(-1, z_ratio))
+        zenith_angle = math.acos(z_ratio)
+        proj_radius = radius * ((2 * zenith_angle) / math.pi)
+        scale = proj_radius / dist_xy
+        return Point2D(coords[0] * scale + origin.x, coords[1] * scale + origin.y)
+
+    @staticmethod
+    def point3d_to_equisolid(point, radius=100, origin=Point3D()):
+        """Get a Point2D for a given Point3D using an equisolid projection.
+
+        Args:
+            point: A ladybug_geometry Point3D to be projected into 2D space via
+                equisolid projection.
+            radius: A positive number for the radius of the sphere on which the
+                point exists. (Default: 100).
+            origin: An optional ladybug_geometry Point3D representing the origin
+                of the coordinate system in which the projection is happening.
+                (eg. the center of the compass).
+        """
+        # move the point to the world origin
+        coords = ((point.x - origin.x), (point.y - origin.y), (point.z - origin.z))
+        dist_xy = math.sqrt(coords[0] ** 2 + coords[1] ** 2)
+        if dist_xy == 0:
+            return Point2D(origin.x, origin.y)
+
+        z_ratio = coords[2] / radius
+        z_ratio = min(1, max(-1, z_ratio))
+        zenith_angle = math.acos(z_ratio)
+        proj_radius = radius * (
+            math.sin(zenith_angle / 2) / math.sin(math.pi / 4))
+        scale = proj_radius / dist_xy
+        return Point2D(coords[0] * scale + origin.x, coords[1] * scale + origin.y)
 
     @staticmethod
     def point3d_to_stereographic(point, radius=100, origin=Point3D()):
