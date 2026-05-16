@@ -1,4 +1,6 @@
 # coding=utf-8
+import math
+
 from ladybug.compass import Compass
 
 from ladybug_geometry.geometry2d.pointvector import Point2D, Vector2D
@@ -62,6 +64,58 @@ def test_compass_stereographic():
     assert len(compass.stereographic_altitude_circles) == len(compass.ALTITUDES)
     for lin in compass.stereographic_altitude_circles:
         assert isinstance(lin, Arc2D)
+
+
+def test_point3d_to_equidistant():
+    """Test the equidistant projection of 3D points to a 2D plane."""
+    assert Compass.point3d_to_equidistant(Point3D(0, 0, 100)).is_equivalent(
+        Point2D(0, 0), 0.01)
+    assert Compass.point3d_to_equidistant(Point3D(100, 0, 0)).is_equivalent(
+        Point2D(100, 0), 0.01)
+    assert Compass.point3d_to_equidistant(Point3D(0, 100, 0)).is_equivalent(
+        Point2D(0, 100), 0.01)
+
+    half_radius = math.sqrt(0.5) * 100
+    assert Compass.point3d_to_equidistant(
+        Point3D(half_radius, 0, half_radius)).is_equivalent(
+            Point2D(50, 0), 0.01)
+
+    origin = Point3D(10, 20, 30)
+    assert Compass.point3d_to_equidistant(
+        Point3D(110, 20, 30), origin=origin).is_equivalent(
+            Point2D(110, 20), 0.01)
+    half_large_radius = math.sqrt(0.5) * 200
+    assert Compass.point3d_to_equidistant(
+        Point3D(0, half_large_radius, half_large_radius), radius=200).is_equivalent(
+            Point2D(0, 100), 0.01)
+
+
+def test_point3d_to_equisolid():
+    """Test the equisolid projection of 3D points to a 2D plane."""
+    assert Compass.point3d_to_equisolid(Point3D(0, 0, 100)).is_equivalent(
+        Point2D(0, 0), 0.01)
+    assert Compass.point3d_to_equisolid(Point3D(100, 0, 0)).is_equivalent(
+        Point2D(100, 0), 0.01)
+    assert Compass.point3d_to_equisolid(Point3D(0, 100, 0)).is_equivalent(
+        Point2D(0, 100), 0.01)
+
+    half_radius = math.sqrt(0.5) * 100
+    expected_radius = \
+        100 * math.sin(math.radians(45) / 2) / math.sin(math.pi / 4)
+    assert Compass.point3d_to_equisolid(
+        Point3D(half_radius, 0, half_radius)).is_equivalent(
+            Point2D(expected_radius, 0), 0.01)
+
+    origin = Point3D(10, 20, 30)
+    assert Compass.point3d_to_equisolid(
+        Point3D(110, 20, 30), origin=origin).is_equivalent(
+            Point2D(110, 20), 0.01)
+    half_large_radius = math.sqrt(0.5) * 200
+    expected_large_radius = \
+        200 * math.sin(math.radians(45) / 2) / math.sin(math.pi / 4)
+    assert Compass.point3d_to_equisolid(
+        Point3D(0, half_large_radius, half_large_radius), radius=200).is_equivalent(
+            Point2D(0, expected_large_radius), 0.01)
 
 
 def test_set_properties():
