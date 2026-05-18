@@ -45,6 +45,10 @@ class Compass(object):
         * orthographic_altitude_points
         * stereographic_altitude_circles
         * stereographic_altitude_points
+        * equidistant_altitude_circles
+        * equidistant_altitude_points
+        * equisolid_altitude_circles
+        * equisolid_altitude_points
     """
     __slots__ = ('_radius', '_center', '_north_angle', '_north_vector',
                  '_spacing_factor')
@@ -214,6 +218,58 @@ class Compass(object):
             ang = math.radians(angle)
             pt3d = Point3D(math.cos(ang), 0, math.sin(ang))
             add_y = (self.point3d_to_stereographic(pt3d, 1).x * self.radius) \
+                - spacing_fac
+            pts.append(Point2D(self.center.x, self.center.y + add_y))
+        if self._north_angle != 0:
+            pts = [pt.rotate(self._north_angle, self.center) for pt in pts]
+        return pts
+
+    @property
+    def equidistant_altitude_circles(self):
+        """Get a list of circles for the equidistant altitude labels."""
+        circles = []
+        for angle in self.ALTITUDES:
+            ang = math.radians(angle)
+            pt3d = Point3D(math.cos(ang), 0, math.sin(ang))
+            radius = self.point3d_to_equidistant(pt3d, 1).x * self.radius
+            circles.append(Arc2D(self.center, radius))
+        return circles
+
+    @property
+    def equidistant_altitude_points(self):
+        """Get a list of Point2Ds for the equidistant altitude labels."""
+        pts = []
+        for angle in self.ALTITUDES:
+            spacing_fac = self.radius * 0.01  # spacing factor
+            ang = math.radians(angle)
+            pt3d = Point3D(math.cos(ang), 0, math.sin(ang))
+            add_y = (self.point3d_to_equidistant(pt3d, 1).x * self.radius) \
+                - spacing_fac
+            pts.append(Point2D(self.center.x, self.center.y + add_y))
+        if self._north_angle != 0:
+            pts = [pt.rotate(self._north_angle, self.center) for pt in pts]
+        return pts
+
+    @property
+    def equisolid_altitude_circles(self):
+        """Get a list of circles for the equisolid altitude labels."""
+        circles = []
+        for angle in self.ALTITUDES:
+            ang = math.radians(angle)
+            pt3d = Point3D(math.cos(ang), 0, math.sin(ang))
+            radius = self.point3d_to_equisolid(pt3d, 1).x * self.radius
+            circles.append(Arc2D(self.center, radius))
+        return circles
+
+    @property
+    def equisolid_altitude_points(self):
+        """Get a list of Point2Ds for the equisolid altitude labels."""
+        pts = []
+        for angle in self.ALTITUDES:
+            spacing_fac = self.radius * 0.01  # spacing factor
+            ang = math.radians(angle)
+            pt3d = Point3D(math.cos(ang), 0, math.sin(ang))
+            add_y = (self.point3d_to_equisolid(pt3d, 1).x * self.radius) \
                 - spacing_fac
             pts.append(Point2D(self.center.x, self.center.y + add_y))
         if self._north_angle != 0:

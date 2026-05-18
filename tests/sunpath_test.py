@@ -51,6 +51,8 @@ def test_init_sun():
     assert isinstance(sun.position_3d(radius=1), Point3D)
     assert isinstance(sun.position_2d(radius=1), Point2D)
     assert isinstance(sun.position_2d(projection='Stereographic', radius=1), Point2D)
+    assert isinstance(sun.position_2d(projection='Equidistant', radius=1), Point2D)
+    assert isinstance(sun.position_2d(projection='Equisolid', radius=1), Point2D)
 
 
 def test_azimuth_from_y_axis():

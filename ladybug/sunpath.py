@@ -605,6 +605,8 @@ class Sunpath(object):
 
                 * Orthographic
                 * Stereographic
+                * Equidistant
+                * Equisolid
 
             origin: A ladybug_geometry Point2D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
@@ -699,6 +701,8 @@ class Sunpath(object):
 
                 * Orthographic
                 * Stereographic
+                * Equidistant
+                * Equisolid
 
             origin: A ladybug_geometry Point2D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
@@ -775,6 +779,8 @@ class Sunpath(object):
 
                 * Orthographic
                 * Stereographic
+                * Equidistant
+                * Equisolid
 
             origin: A ladybug_geometry Point2D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
@@ -992,6 +998,8 @@ class Sunpath(object):
 
                 * Orthographic
                 * Stereographic
+                * Equidistant
+                * Equisolid
 
             origin_3d: Point3D for the origin around which projection will occur.
         """
@@ -1000,13 +1008,15 @@ class Sunpath(object):
             for pl in plines_3d:
                 pts = [Compass.point3d_to_orthographic(pt) for pt in pl.vertices]
                 plines_2d.append(Polyline2D(pts, True))
-        elif projection.title() == 'Stereographic':
-            for pline in plines_3d:
-                pts = [Compass.point3d_to_stereographic(pt, radius, origin_3d)
-                       for pt in pline.vertices]
-                plines_2d.append(Polyline2D(pts, True))
         else:
-            raise ValueError('Projection "{}" is not supported.'.format(projection))
+            func_name = 'point3d_to_{}'.format(projection.lower())
+            try:
+                project_func = getattr(Compass, func_name)
+            except Exception:
+                raise ValueError('Projection "{}" is not supported.'.format(projection))
+            for pline in plines_3d:
+                pts = [project_func(pt, radius, origin_3d) for pt in pline.vertices]
+                plines_2d.append(Polyline2D(pts, True))
         return plines_2d
 
     def __repr__(self):
@@ -1193,6 +1203,8 @@ class Sun(object):
 
                 * Orthographic
                 * Stereographic
+                * Equidistant
+                * Equisolid
 
             origin: A ladybug_geometry Point2D to note the center of the sun path.
             radius: A number to note the radius of the sunpath.
@@ -1203,11 +1215,13 @@ class Sun(object):
         o_3d = Point3D(origin.x, origin.y, 0)
         if projection.title() == 'Orthographic':
             return Compass.point3d_to_orthographic(self.position_3d(o_3d, radius))
-        elif projection.title() == 'Stereographic':
-            return Compass.point3d_to_stereographic(
-                self.position_3d(o_3d, radius), radius, o_3d)
         else:
-            raise ValueError('Projection "{}" is not supported.'.format(projection))
+            func_name = 'point3d_to_{}'.format(projection.lower())
+            try:
+                project_func = getattr(Compass, func_name)
+            except Exception:
+                raise ValueError('Projection "{}" is not supported.'.format(projection))
+            return project_func(self.position_3d(o_3d, radius), radius, o_3d)
 
     def _calculate_sun_vector(self):
         """Calculate sun vector for this sun."""
