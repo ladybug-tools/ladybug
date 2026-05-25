@@ -234,6 +234,7 @@ class EPW(object):
             epw_obj._data[3].append(hr)
             epw_obj._data[4].append(0)
             epw_obj._data[5].append(uncertainty)
+        epw_obj._data[1][0] = 12
 
         # generate missing hourly data
         calc_length = len(analysis_period.datetimes)
@@ -444,7 +445,7 @@ class EPW(object):
     def _import_header(self, header_lines):
         """Set EPW design days, typical weeks, and ground temperatures from header lines.
         """
-        # parse the heating, cooling and extreme design conditions. 
+        # parse the heating, cooling and extreme design conditions
         dday_data = header_lines[1].strip().split(',')
         if len(dday_data) >= 2 and int(dday_data[1]) == 1:
             if '2009' in dday_data[2]:  # parse using ASHRAE 2009 standard
@@ -607,7 +608,7 @@ class EPW(object):
 
     @property
     def location(self):
-        """Return location data."""
+        """Get or set a location object for latitude, longitude, and time zone."""
         self._load_header_check()
         return self._location
 
@@ -902,30 +903,8 @@ class EPW(object):
             ','.join(['%.2f' % x for x in data_c.values]))
         return monthly_str
 
-    def _get_data_by_field(self, field_number):
-        """Return a data field by field number.
-
-        This is a useful method to get the values for fields that Ladybug
-        currently doesn't import by default. You can find list of fields by typing
-        EPWFields.fields
-
-        Args:
-            field_number: a value between 0 to 34 for different available epw fields.
-
-        Returns:
-            An annual Ladybug list
-        """
-        if not self.is_data_loaded:
-            self._import_data()
-
-        # check input data
-        if not 0 <= field_number < self._num_of_fields:
-            raise ValueError("Field number should be between 0-%d" % self._num_of_fields)
-
-        return self._data[field_number]
-
-    def import_data_by_field(self, field_number):
-        """Return an annual data collection for any field_number in epw file.
+    def get_data_by_field(self, field_number):
+        """Get an annual data collection for any field_number in epw file.
 
         This is useful to get data for fields that the EPW object currently doesn't
         have properties for (eg. Uncertainty Flags). You can find list of fields
@@ -971,68 +950,121 @@ class EPW(object):
                 *   34 Liquid Precipitation Quantity
 
         Returns:
-            An annual Ladybug list
+            An annual HourlyContinuousCollection with timeseries data for the given field.
         """
-        return self._get_data_by_field(field_number)
+        if not self.is_data_loaded:
+            self._import_data()
+        # check input data
+        if not 0 <= field_number < self._num_of_fields:
+            raise ValueError("Field number should be between 0-%d" % self._num_of_fields)
+        return self._data[field_number]
+
+    def set_data_by_field(self, data, field_number):
+        """Set an annual data collection for any field number in epw file.
+
+        Args:
+            data: An annual HourlyContinuousCollection with timeseries data to be
+                set for the given field.
+            field_number: A value between 0 to 34 for different available epw fields.
+        """
+        # get the current data collection for comparison
+        exist_data = self.get_data_by_field(field_number)
+        name = str(exist_data.header.data_type)
+        unit = exist_data.header.unit
+        # check input data
+        assert isinstance(data, HourlyContinuousCollection), \
+            '{} must be an hourly continuous data collection. Got {}.'.format(
+                name, type(data))
+        assert data.header.analysis_period.is_annual, '{} analysis_period must ' \
+            'be annual. Got {}'.format(name, data.header.analysis_period)
+        assert data.header.analysis_period.is_leap_year == self.is_leap_year, \
+            '{} analysis_period must is_leap_year must match across input data collections.'
+        assert data.header.unit == unit, '{} unit is not {}. '\
+            'Got {}.'.format(name, unit, data.header.unit)
+        self._data[field_number].values = data.values
 
     @property
     def years(self):
-        """Return years as a Ladybug Data Collection."""
-        return self._get_data_by_field(0)
+        """Get or set years as a Ladybug Data Collection."""
+        return self.get_data_by_field(0)
+
+    @years.setter
+    def years(self, value):
+        self.set_data_by_field(value, 0)
 
     @property
     def dry_bulb_temperature(self):
-        """Return annual Dry Bulb Temperature as a Ladybug Data Collection.
+        """Get or set annual Dry Bulb Temperature as a Ladybug Data Collection.
 
         This is the dry bulb temperature in C at the time indicated. Note that
         this is a full numeric field (i.e. 23.6) and not an integer representation
         with tenths. Valid values range from -70C to 70 C. Missing value for this
         field is 99.9.
         """
-        return self._get_data_by_field(6)
+        return self.get_data_by_field(6)
+
+    @dry_bulb_temperature.setter
+    def dry_bulb_temperature(self, value):
+        self.set_data_by_field(value, 6)
 
     @property
     def dew_point_temperature(self):
-        u"""Return annual Dew Point Temperature as a Ladybug Data Collection.
+        u"""Get or set annual Dew Point Temperature as a Ladybug Data Collection.
 
         This is the dew point temperature in C at the time indicated. Note that this is
         a full numeric field (i.e. 23.6) and not an integer representation with tenths.
         Valid values range from -70 C to 70 C. Missing value for this field is 99.9
         """
-        return self._get_data_by_field(7)
+        return self.get_data_by_field(7)
+
+    @dew_point_temperature.setter
+    def dew_point_temperature(self, value):
+        self.set_data_by_field(value, 7)
 
     @property
     def relative_humidity(self):
-        u"""Return annual Relative Humidity as a Ladybug Data Collection.
+        u"""Get or set annual Relative Humidity as a Ladybug Data Collection.
 
         This is the Relative Humidity in percent at the time indicated. Valid values
         range from 0% to 110%. Missing value for this field is 999.
         """
-        return self._get_data_by_field(8)
+        return self.get_data_by_field(8)
+
+    @relative_humidity.setter
+    def relative_humidity(self, value):
+        self.set_data_by_field(value, 8)
 
     @property
     def atmospheric_station_pressure(self):
-        """Return annual Atmospheric Station Pressure as a Ladybug Data Collection.
+        """Get or set annual Atmospheric Station Pressure as a Ladybug Data Collection.
 
         This is the station pressure in Pa at the time indicated. Valid values range
         from 31,000 to 120,000. (These values were chosen from the standard barometric
         pressure for all elevations of the World). Missing value for this field is 999999
         """
-        return self._get_data_by_field(9)
+        return self.get_data_by_field(9)
+
+    @atmospheric_station_pressure.setter
+    def atmospheric_station_pressure(self, value):
+        self.set_data_by_field(value, 9)
 
     @property
     def extraterrestrial_horizontal_radiation(self):
-        """Return annual Extraterrestrial Horizontal Radiation as a Data Collection.
+        """Get or set annual Extraterrestrial Horizontal Radiation as a Data Collection.
 
         This is the Extraterrestrial Horizontal Radiation in Wh/m2. It is not currently
         used in EnergyPlus calculations. It should have a minimum value of 0; missing
         value for this field is 9999.
         """
-        return self._get_data_by_field(10)
+        return self.get_data_by_field(10)
+
+    @extraterrestrial_horizontal_radiation.setter
+    def extraterrestrial_horizontal_radiation(self, value):
+        self.set_data_by_field(value, 10)
 
     @property
     def extraterrestrial_direct_normal_radiation(self):
-        """Return annual Extraterrestrial Direct Normal Radiation as a Data Collection.
+        """Get or set annual Extraterrestrial Direct Normal Radiation as a Data Collection.
 
         This is the Extraterrestrial Direct Normal Radiation in Wh/m2. (Amount of solar
         radiation in Wh/m2 received on a surface normal to the rays of the sun at the top
@@ -1040,22 +1072,30 @@ class EPW(object):
         It is not currently used in EnergyPlus calculations. It should have a minimum
         value of 0; missing value for this field is 9999.
         """
-        return self._get_data_by_field(11)
+        return self.get_data_by_field(11)
+
+    @extraterrestrial_direct_normal_radiation.setter
+    def extraterrestrial_direct_normal_radiation(self, value):
+        self.set_data_by_field(value, 11)
 
     @property
     def horizontal_infrared_radiation_intensity(self):
-        """Return annual Horizontal Infrared Radiation Intensity as a Data Collection.
+        """Get or set annual Horizontal Infrared Radiation Intensity as a Data Collection.
 
         This is the Horizontal Infrared Radiation Intensity in W/m2. If it is missing,
         it is calculated from the Opaque Sky Cover field as shown in the following
         explanation. It should have a minimum value of 0; missing value for this field
         is 9999.
         """
-        return self._get_data_by_field(12)
+        return self.get_data_by_field(12)
+
+    @horizontal_infrared_radiation_intensity.setter
+    def horizontal_infrared_radiation_intensity(self, value):
+        self.set_data_by_field(value, 12)
 
     @property
     def global_horizontal_radiation(self):
-        """Return annual Global Horizontal Radiation as a Ladybug Data Collection.
+        """Get or set annual Global Horizontal Radiation as a Ladybug Data Collection.
 
         This is the Global Horizontal Radiation in Wh/m2. (Total amount of direct and
         diffuse solar radiation in Wh/m2 received on a horizontal surface during the
@@ -1063,11 +1103,15 @@ class EPW(object):
         EnergyPlus calculations. It should have a minimum value of 0; missing value
         for this field is 9999.
         """
-        return self._get_data_by_field(13)
+        return self.get_data_by_field(13)
+
+    @global_horizontal_radiation.setter
+    def global_horizontal_radiation(self, value):
+        self.set_data_by_field(value, 13)
 
     @property
     def direct_normal_radiation(self):
-        """Return annual Direct Normal Radiation as a Ladybug Data Collection.
+        """Get or set annual Direct Normal Radiation as a Ladybug Data Collection.
 
         This is the Direct Normal Radiation in Wh/m2. (Amount of solar radiation in
         Wh/m2 received directly from the solar disk on a surface perpendicular to the
@@ -1075,11 +1119,15 @@ class EPW(object):
         field is missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such
         missing values are totaled and presented at the end of the runperiod.
         """
-        return self._get_data_by_field(14)
+        return self.get_data_by_field(14)
+
+    @direct_normal_radiation.setter
+    def direct_normal_radiation(self, value):
+        self.set_data_by_field(value, 14)
 
     @property
     def diffuse_horizontal_radiation(self):
-        """Return annual Diffuse Horizontal Radiation as a Ladybug Data Collection.
+        """Get or set annual Diffuse Horizontal Radiation as a Ladybug Data Collection.
 
         This is the Diffuse Horizontal Radiation in Wh/m2. (Amount of solar radiation in
         Wh/m2 received from the sky (excluding the solar disk) on a horizontal surface
@@ -1087,11 +1135,15 @@ class EPW(object):
         missing ( >= 9999) or invalid ( < 0), it is set to 0. Counts of such missing
         values are totaled and presented at the end of the runperiod
         """
-        return self._get_data_by_field(15)
+        return self.get_data_by_field(15)
+
+    @diffuse_horizontal_radiation.setter
+    def diffuse_horizontal_radiation(self, value):
+        self.set_data_by_field(value, 15)
 
     @property
     def global_horizontal_illuminance(self):
-        """Return annual Global Horizontal Illuminance as a Ladybug Data Collection.
+        """Get or set annual Global Horizontal Illuminance as a Ladybug Data Collection.
 
         This is the Global Horizontal Illuminance in lux. (Average total amount of
         direct and diffuse illuminance in hundreds of lux received on a horizontal
@@ -1100,11 +1152,15 @@ class EPW(object):
         missing value for this field is 999999 and will be considered missing if greater
         than or equal to 999900.
         """
-        return self._get_data_by_field(16)
+        return self.get_data_by_field(16)
+
+    @global_horizontal_illuminance.setter
+    def global_horizontal_illuminance(self, value):
+        self.set_data_by_field(value, 16)
 
     @property
     def direct_normal_illuminance(self):
-        """Return annual Direct Normal Illuminance as a Ladybug Data Collection.
+        """Get or set annual Direct Normal Illuminance as a Ladybug Data Collection.
 
         This is the Direct Normal Illuminance in lux. (Average amount of illuminance in
         hundreds of lux received directly from the solar disk on a surface perpendicular
@@ -1113,11 +1169,15 @@ class EPW(object):
         value of 0; missing value for this field is 999999 and will be considered missing
         if greater than or equal to 999900.
         """
-        return self._get_data_by_field(17)
+        return self.get_data_by_field(17)
+
+    @direct_normal_illuminance.setter
+    def direct_normal_illuminance(self, value):
+        self.set_data_by_field(value, 17)
 
     @property
     def diffuse_horizontal_illuminance(self):
-        """Return annual Diffuse Horizontal Illuminance as a Ladybug Data Collection.
+        """Get or set annual Diffuse Horizontal Illuminance as a Ladybug Data Collection.
 
         This is the Diffuse Horizontal Illuminance in lux. (Average amount of illuminance
         in hundreds of lux received from the sky (excluding the solar disk) on a
@@ -1126,53 +1186,73 @@ class EPW(object):
         value of 0; missing value for this field is 999999 and will be considered missing
         if greater than or equal to 999900.
         """
-        return self._get_data_by_field(18)
+        return self.get_data_by_field(18)
+
+    @diffuse_horizontal_illuminance.setter
+    def diffuse_horizontal_illuminance(self, value):
+        self.set_data_by_field(value, 18)
 
     @property
     def zenith_luminance(self):
-        """Return annual Zenith Luminance as a Ladybug Data Collection.
+        """Get or set annual Zenith Luminance as a Ladybug Data Collection.
 
         This is the Zenith Illuminance in Cd/m2. (Average amount of luminance at
         the sky's zenith in tens of Cd/m2 during the number of minutes preceding
         the time indicated.) It is not currently used in EnergyPlus calculations.
         It should have a minimum value of 0; missing value for this field is 9999.
         """
-        return self._get_data_by_field(19)
+        return self.get_data_by_field(19)
+
+    @zenith_luminance.setter
+    def zenith_luminance(self, value):
+        self.set_data_by_field(value, 19)
 
     @property
     def wind_direction(self):
-        """Return annual Wind Direction as a Ladybug Data Collection.
+        """Get or set annual Wind Direction as a Ladybug Data Collection.
 
         This is the Wind Direction in degrees where the convention is that North=0.0,
         East=90.0, South=180.0, West=270.0. (Wind direction in degrees at the time
         indicated. If calm, direction equals zero.) Values can range from 0 to 360.
         Missing value is 999.
         """
-        return self._get_data_by_field(20)
+        return self.get_data_by_field(20)
+
+    @wind_direction.setter
+    def wind_direction(self, value):
+        self.set_data_by_field(value, 20)
 
     @property
     def wind_speed(self):
-        """Return annual Wind Speed as a Ladybug Data Collection.
+        """Get or set annual Wind Speed as a Ladybug Data Collection.
 
         This is the wind speed in m/sec. (Wind speed at time indicated.) Values can
         range from 0 to 40. Missing value is 999.
         """
-        return self._get_data_by_field(21)
+        return self.get_data_by_field(21)
+
+    @wind_speed.setter
+    def wind_speed(self, value):
+        self.set_data_by_field(value, 21)
 
     @property
     def total_sky_cover(self):
-        """Return annual Total Sky Cover as a Ladybug Data Collection.
+        """Get or set annual Total Sky Cover as a Ladybug Data Collection.
 
         This is the value for total sky cover (tenths of coverage). (i.e. 1 is 1/10
         covered. 10 is total coverage). (Amount of sky dome in tenths covered by clouds
         or obscuring phenomena at the hour indicated at the time indicated.) Minimum
         value is 0; maximum value is 10; missing value is 99.
         """
-        return self._get_data_by_field(22)
+        return self.get_data_by_field(22)
+
+    @total_sky_cover.setter
+    def total_sky_cover(self, value):
+        self.set_data_by_field(value, 22)
 
     @property
     def opaque_sky_cover(self):
-        """Return annual Opaque Sky Cover as a Ladybug Data Collection.
+        """Get or set annual Opaque Sky Cover as a Ladybug Data Collection.
 
         This is the value for opaque sky cover (tenths of coverage). (i.e. 1 is 1/10
         covered. 10 is total coverage). (Amount of sky dome in tenths covered by
@@ -1182,31 +1262,43 @@ class EPW(object):
         Horizontal Infrared Radiation Intensity. Minimum value is 0; maximum value is
         10; missing value is 99.
         """
-        return self._get_data_by_field(23)
+        return self.get_data_by_field(23)
+
+    @opaque_sky_cover.setter
+    def opaque_sky_cover(self, value):
+        self.set_data_by_field(value, 23)
 
     @property
     def visibility(self):
-        """Return annual Visibility as a Ladybug Data Collection.
+        """Get or set annual Visibility as a Ladybug Data Collection.
 
         This is the value for visibility in km. (Horizontal visibility at the time
         indicated.) It is not currently used in EnergyPlus calculations. Missing
         value is 9999.
         """
-        return self._get_data_by_field(24)
+        return self.get_data_by_field(24)
+
+    @visibility.setter
+    def visibility(self, value):
+        self.set_data_by_field(value, 24)
 
     @property
     def ceiling_height(self):
-        """Return annual Ceiling Height as a Ladybug Data Collection.
+        """Get or set annual Ceiling Height as a Ladybug Data Collection.
 
         This is the value for ceiling height in m. (77777 is unlimited ceiling height.
         88888 is cirroform ceiling.) It is not currently used in EnergyPlus calculations.
         Missing value is 99999
         """
-        return self._get_data_by_field(25)
+        return self.get_data_by_field(25)
+
+    @ceiling_height.setter
+    def ceiling_height(self, value):
+        self.set_data_by_field(value, 25)
 
     @property
     def present_weather_observation(self):
-        """Return annual Present Weather Observation as a Ladybug Data Collection.
+        """Get or set annual Present Weather Observation as a Ladybug Data Collection.
 
         If the value of the field is 0, then the observed weather codes are taken from
         the following field. If the value of the field is 9, then "missing" weather is
@@ -1214,11 +1306,15 @@ class EPW(object):
         Present Weather Codes) is for rain/wet surfaces, a missing observation field or
         a missing weather code implies no rain.
         """
-        return self._get_data_by_field(26)
+        return self.get_data_by_field(26)
+
+    @present_weather_observation.setter
+    def present_weather_observation(self, value):
+        self.set_data_by_field(value, 26)
 
     @property
     def present_weather_codes(self):
-        """Return annual Present Weather Codes as a Ladybug Data Collection.
+        """Get or set annual Present Weather Codes as a Ladybug Data Collection.
 
         The present weather codes field is assumed to follow the TMY2 conventions for
         this field. Note that though this field may be represented as numeric (e.g. in
@@ -1230,11 +1326,15 @@ class EPW(object):
         representing liquid precipitation - where the surfaces of the building would be
         wet. EnergyPlus uses "Snow Depth" to determine if snow is on the ground.
         """
-        return self._get_data_by_field(27)
+        return self.get_data_by_field(27)
+
+    @present_weather_codes.setter
+    def present_weather_codes(self, value):
+        self.set_data_by_field(value, 27)
 
     @property
     def precipitable_water(self):
-        """Return annual Precipitable Water as a Ladybug Data Collection.
+        """Get or set annual Precipitable Water as a Ladybug Data Collection.
 
         This is the value for Precipitable Water in mm. (This is not rain - rain is
         inferred from the PresWeathObs field but a better result is from the Liquid
@@ -1242,48 +1342,68 @@ class EPW(object):
         (primarily due to the unreliability of the reporting of this value). Missing
         value is 999.
         """
-        return self._get_data_by_field(28)
+        return self.get_data_by_field(28)
+
+    @precipitable_water.setter
+    def precipitable_water(self, value):
+        self.set_data_by_field(value, 28)
 
     @property
     def aerosol_optical_depth(self):
-        """Return annual Aerosol Optical Depth as a Ladybug Data Collection.
+        """Get or set annual Aerosol Optical Depth as a Ladybug Data Collection.
 
         This is the value for Aerosol Optical Depth in thousandths. It is not currently
         used in EnergyPlus calculations. Missing value is .999.
         """
-        return self._get_data_by_field(29)
+        return self.get_data_by_field(29)
+
+    @aerosol_optical_depth.setter
+    def aerosol_optical_depth(self, value):
+        self.set_data_by_field(value, 29)
 
     @property
     def snow_depth(self):
-        """Return annual Snow Depth as a Ladybug Data Collection.
+        """Get or set annual Snow Depth as a Ladybug Data Collection.
 
         This is the value for Snow Depth in cm. This field is used to tell when snow
         is on the ground and, thus, the ground reflectance may change. Missing value
         is 999.
         """
-        return self._get_data_by_field(30)
+        return self.get_data_by_field(30)
+
+    @snow_depth.setter
+    def snow_depth(self, value):
+        self.set_data_by_field(value, 30)
 
     @property
     def days_since_last_snowfall(self):
-        """Return annual Days Since Last Snow Fall as a Ladybug Data Collection.
+        """Get or set annual Days Since Last Snow Fall as a Ladybug Data Collection.
 
         This is the value for Days Since Last Snowfall. It is not currently used in
         EnergyPlus calculations. Missing value is 99.
         """
-        return self._get_data_by_field(31)
+        return self.get_data_by_field(31)
+
+    @days_since_last_snowfall.setter
+    def days_since_last_snowfall(self, value):
+        self.set_data_by_field(value, 31)
 
     @property
     def albedo(self):
-        """Return annual Albedo values as a Ladybug Data Collection.
+        """Get or set annual Albedo values as a Ladybug Data Collection.
 
         The ratio (unitless) of reflected solar irradiance to global horizontal
         irradiance. It is not currently used in EnergyPlus.
         """
-        return self._get_data_by_field(32)
+        return self.get_data_by_field(32)
+
+    @albedo.setter
+    def albedo(self, value):
+        self.set_data_by_field(value, 32)
 
     @property
     def liquid_precipitation_depth(self):
-        """Return annual liquid precipitation depth as a Ladybug Data Collection.
+        """Get or set annual liquid precipitation depth as a Ladybug Data Collection.
 
         The amount of liquid precipitation (mm) observed at the indicated time for the
         period indicated in the liquid precipitation quantity field. If this value is
@@ -1291,20 +1411,28 @@ class EPW(object):
         Conversely, if the precipitation flag shows rain and this field is missing or
         zero, it is set to 1.5 (mm).
         """
-        return self._get_data_by_field(33)
+        return self.get_data_by_field(33)
+
+    @liquid_precipitation_depth.setter
+    def liquid_precipitation_depth(self, value):
+        self.set_data_by_field(value, 33)
 
     @property
     def liquid_precipitation_quantity(self):
-        """Return annual Liquid Precipitation Quantity as a Ladybug Data Collection.
+        """Get or set annual Liquid Precipitation Quantity as a Ladybug Data Collection.
 
         The period of accumulation (hr) for the liquid precipitation depth field.
         It is not currently used in EnergyPlus.
         """
-        return self._get_data_by_field(34)
+        return self.get_data_by_field(34)
+
+    @liquid_precipitation_quantity.setter
+    def liquid_precipitation_quantity(self, value):
+        self.set_data_by_field(value, 34)
 
     @property
     def sky_temperature(self):
-        """Return annual Sky Temperature as a Ladybug Data Collection.
+        """Get annual Sky Temperature as a Ladybug Data Collection.
 
         This value in degrees Celsius is derived from the Horizontal Infrared
         Radiation Intensity in Wh/m2. It represents the long wave radiant
@@ -1319,7 +1447,7 @@ climate-calculations.html#energyplus-sky-temperature-calculation
             metadata=self._metadata)
 
         # calculate sy temperature for each hour
-        horiz_ir = self._get_data_by_field(12).values
+        horiz_ir = self.get_data_by_field(12).values
         sky_temp_data = [calc_sky_temperature(hir) for hir in horiz_ir]
         return HourlyContinuousCollection(sky_temp_header, sky_temp_data)
 
@@ -1807,6 +1935,12 @@ climate-calculations.html#energyplus-sky-temperature-calculation
     def ToString(self):
         """Overwrite .NET ToString."""
         return self.__repr__()
+
+    def __getitem__(self, key):
+        return self.get_data_by_field(key)
+
+    def __setitem__(self, key, value):
+        return self.set_data_by_field(value, key)
 
     def __repr__(self):
         """EPW representation."""
