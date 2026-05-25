@@ -1,0 +1,7 @@
+ladybug.datatype.conductance module
+===================================
+
+.. automodule:: ladybug.datatype.conductance
+   :members:
+   :undoc-members:
+   :show-inheritance:

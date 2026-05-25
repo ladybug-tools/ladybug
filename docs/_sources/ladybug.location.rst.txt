@@ -1,0 +1,7 @@
+ladybug.location module
+=======================
+
+.. automodule:: ladybug.location
+   :members:
+   :undoc-members:
+   :show-inheritance:

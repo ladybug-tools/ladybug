@@ -1,0 +1,7 @@
+ladybug.stat module
+===================
+
+.. automodule:: ladybug.stat
+   :members:
+   :undoc-members:
+   :show-inheritance:
