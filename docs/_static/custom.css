@@ -1,0 +1,65 @@
+/*
+ * bootstrap-sphinx.css
+ * ~~~~~~~~~~~~~~~~~~~~
+ *
+ * Sphinx stylesheet -- Bootstrap theme.
+ */
+
+/* Overwrite colors */
+div.navbar-inverse {
+  background-color: #EB2227;
+  border-color: #EB2227;
+}
+a {
+  color: #EB2227;
+}
+a:visited {
+  color: #Bf0408;
+}
+code {
+  color: #Bf0408;
+}
+div.bs-sidenav a {
+  color: #333333;
+}
+
+/* Prevent top nav from blocking docs */
+div.navbar-fixed-top {
+  position: absolute;
+}
+
+/* Indent the side nav when in mobile mode */
+@media screen and (min-width: 0px) {
+  div.bs-sidenav ul {
+    margin-bottom: 0;
+    padding-left: 5px;
+    list-style: none;
+  }
+}
+
+/* Widen and de-indent the side nav when space is restricted */
+@media screen and (min-width: 992px) {
+  .bs-sidenav .nav > .active > ul {
+    display: block;
+  }
+  div.bs-sidenav ul {
+    margin-bottom: 0;
+    padding-left: 0px;
+    list-style: none;
+  }
+  .bs-sidenav {
+    width: 300px;
+  }
+}
+
+/* Slightly indent the side nav when space allows it */
+@media screen and (min-width: 1200px) {
+  div.bs-sidenav ul {
+    margin-bottom: 0;
+    padding-left: 5px;
+    list-style: none;
+  }
+  .bs-sidenav {
+    width: 370px;
+  }
+}

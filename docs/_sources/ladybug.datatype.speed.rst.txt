@@ -1,0 +1,7 @@
+ladybug.datatype.speed module
+=============================
+
+.. automodule:: ladybug.datatype.speed
+   :members:
+   :undoc-members:
+   :show-inheritance:

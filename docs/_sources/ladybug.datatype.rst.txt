@@ -1,0 +1,53 @@
+ladybug.datatype package
+========================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   ladybug.datatype.angle
+   ladybug.datatype.area
+   ladybug.datatype.base
+   ladybug.datatype.conductance
+   ladybug.datatype.conductivity
+   ladybug.datatype.current
+   ladybug.datatype.density
+   ladybug.datatype.distance
+   ladybug.datatype.energy
+   ladybug.datatype.energyflux
+   ladybug.datatype.energyintensity
+   ladybug.datatype.fraction
+   ladybug.datatype.generic
+   ladybug.datatype.illuminance
+   ladybug.datatype.luminance
+   ladybug.datatype.mass
+   ladybug.datatype.massflowrate
+   ladybug.datatype.power
+   ladybug.datatype.pressure
+   ladybug.datatype.resistance
+   ladybug.datatype.resistivity
+   ladybug.datatype.rvalue
+   ladybug.datatype.specificenergy
+   ladybug.datatype.specificheatcapacity
+   ladybug.datatype.speed
+   ladybug.datatype.temperature
+   ladybug.datatype.temperaturedelta
+   ladybug.datatype.temperaturetime
+   ladybug.datatype.thermalcondition
+   ladybug.datatype.time
+   ladybug.datatype.uvalue
+   ladybug.datatype.voltage
+   ladybug.datatype.volume
+   ladybug.datatype.volumeflowrate
+   ladybug.datatype.volumeflowrateintensity
+   ladybug.datatype.volumeheatcapacity
+
+Module contents
+---------------
+
+.. automodule:: ladybug.datatype
+   :members:
+   :undoc-members:
+   :show-inheritance:
