@@ -25,6 +25,7 @@ from .datacollection import HourlyDiscontinuousCollection, HourlyContinuousColle
 
 class _ImmutableCollectionBase(object):
     """Base class for all immutable Data Collections."""
+    __slots__ = ()
     _mutable = False
 
     @property
@@ -62,6 +63,12 @@ class _ImmutableCollectionBase(object):
 class HourlyDiscontinuousCollectionImmutable(
         _ImmutableCollectionBase, HourlyDiscontinuousCollection):
     """Immutable Discontinuous Data Collection at hourly or sub-hourly intervals."""
+    __slots__ = ()
+
+    @property
+    def mutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        return HourlyDiscontinuousCollection
 
     def convert_to_culled_timestep(self, timestep=1):
         """This method is not available for immutable collections."""
@@ -77,6 +84,12 @@ class HourlyDiscontinuousCollectionImmutable(
 class HourlyContinuousCollectionImmutable(
         _ImmutableCollectionBase, HourlyContinuousCollection):
     """Immutable Continuous Data Collection at hourly or sub-hourly intervals."""
+    __slots__ = ()
+
+    @property
+    def mutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        return DailyCollection
 
     def convert_to_culled_timestep(self, timestep=1):
         """This method is not available for immutable collections."""
@@ -96,6 +109,12 @@ class HourlyContinuousCollectionImmutable(
 class DailyCollectionImmutable(
         _ImmutableCollectionBase, DailyCollection):
     """Immutable Daily Data Collection."""
+    __slots__ = ()
+
+    @property
+    def mutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        return DailyCollection
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
@@ -107,6 +126,12 @@ class DailyCollectionImmutable(
 class MonthlyCollectionImmutable(
         _ImmutableCollectionBase, MonthlyCollection):
     """Immutable Monthly Data Collection."""
+    __slots__ = ()
+
+    @property
+    def mutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        return MonthlyCollection
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
@@ -118,6 +143,12 @@ class MonthlyCollectionImmutable(
 class MonthlyPerHourCollectionImmutable(
         _ImmutableCollectionBase, MonthlyPerHourCollection):
     """Immutable Monthly Per Hour Data Collection."""
+    __slots__ = ()
+
+    @property
+    def mutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        return MonthlyPerHourCollection
 
     def to_mutable(self):
         """Get a mutable version of this collection."""

@@ -33,7 +33,6 @@ class BaseCollection(object):
     __slots__ = ('_header', '_values', '_datetimes', '_validated_a_period')
     _collection_type = None
     _mutable = True
-    _enumeration = None
 
     def __init__(self, header, values, datetimes):
         """Initialize base collection.
@@ -103,6 +102,16 @@ class BaseCollection(object):
         This will always be True when a collection is derived from a continuous one.
         """
         return self._validated_a_period
+
+    @property
+    def mutable_class(self):
+        """Get the mutable class for this type of data collection."""
+        return self.__class__
+
+    @property
+    def immutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        return self.__class__
 
     @property
     def datetime_strings(self):
@@ -212,14 +221,12 @@ class BaseCollection(object):
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        return self.duplicate()
+
+        return self.mutable_class(self.header, self.values, self.datetimes)
 
     def to_immutable(self):
         """Get an immutable version of this collection."""
-        if self._enumeration is None:
-            self._get_mutable_enumeration()
-        col_obj = self._enumeration['immutable'][self._collection_type]
-        new_obj = col_obj(self.header, self.values, self.datetimes)
+        new_obj = self.immutable_class(self.header, self.values, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
@@ -398,9 +405,7 @@ class BaseCollection(object):
             A new Data Collection containing only the filtered data.
         """
         _filt_values, _filt_datetimes = self._filter_by_statement(statement)
-        if self._enumeration is None:
-            self._get_mutable_enumeration()
-        col_obj = self._enumeration['mutable'][self._collection_type]
+        col_obj = self.mutable_class
         try:
             collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
         except AssertionError as e:
@@ -427,9 +432,7 @@ class BaseCollection(object):
             A new Data Collection with filtered data.
         """
         _filt_values, _filt_datetimes = self._filter_by_range(greater_than, less_than)
-        if self._enumeration is None:
-            self._get_mutable_enumeration()
-        col_obj = self._enumeration['mutable'][self._collection_type]
+        col_obj = self.mutable_class
         try:
             collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
         except AssertionError as e:
@@ -451,9 +454,7 @@ class BaseCollection(object):
             A new Data Collection with filtered data.
         """
         _filt_values, _filt_datetimes = self._filter_by_pattern(pattern)
-        if self._enumeration is None:
-            self._get_mutable_enumeration()
-        col_obj = self._enumeration['mutable'][self._collection_type]
+        col_obj = self.mutable_class
         collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
@@ -509,12 +510,10 @@ class BaseCollection(object):
         if mutable is None:
             collection = self.__class__(header, values, self.datetimes)
         else:
-            if self._enumeration is None:
-                self._get_mutable_enumeration()
             if not mutable:
-                col_obj = self._enumeration['immutable'][self._collection_type]
+                col_obj = self.immutable_class
             else:
-                col_obj = self._enumeration['mutable'][self._collection_type]
+                col_obj = self.mutable_class
             collection = col_obj(header, values, self.datetimes)
         collection._validated_a_period = self._validated_a_period
         return collection
@@ -1121,14 +1120,6 @@ class BaseCollection(object):
         def percentile_function(vals):
             return self._percentile(vals, percentile)
         return percentile_function
-
-    def _get_mutable_enumeration(self):
-        self._enumeration = {'mutable': {}, 'immutable': {}}
-        for clss in self._all_subclasses(BaseCollection):
-            if clss._mutable:
-                self._enumeration['mutable'][clss._collection_type] = clss
-            else:
-                self._enumeration['immutable'][clss._collection_type] = clss
 
     def _all_subclasses(self, clss):
         return set(clss.__subclasses__()).union(

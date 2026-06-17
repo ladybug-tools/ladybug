@@ -1928,9 +1928,7 @@ climate-calculations.html#energyplus-sky-temperature-calculation
         Args:
             file_path: Text for the full path to where the file will be written.
         """
-        file_data = self.to_file_string()
-        write_to_file(file_path, file_data, True)
-        return file_data
+        return self.write(file_path)
 
     def ToString(self):
         """Overwrite .NET ToString."""

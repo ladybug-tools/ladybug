@@ -76,7 +76,7 @@ class HourlyDiscontinuousCollection(BaseCollection):
         * validated_a_period
         * values
     """
-
+    __slots__ = ()
     _collection_type = 'HourlyDiscontinuous'
 
     def __init__(self, header, values, datetimes):
@@ -140,6 +140,12 @@ class HourlyDiscontinuousCollection(BaseCollection):
         for val, dt in zip(self.values, self.datetimes):
             moy_dict[dt.moy] = val
         return moy_dict
+
+    @property
+    def immutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        from .datacollectionimmutable import HourlyDiscontinuousCollectionImmutable
+        return HourlyDiscontinuousCollectionImmutable
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter a Data Collection based on an analysis period.
@@ -595,7 +601,7 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         * validated_a_period
         * values
     """
-
+    __slots__ = ()
     _collection_type = 'HourlyContinuous'
 
     def __init__(self, header, values):
@@ -643,6 +649,12 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         if self._datetimes is None:
             self._datetimes = self.header.analysis_period.datetimes
         return self._datetimes
+
+    @property
+    def immutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        from .datacollectionimmutable import HourlyContinuousCollectionImmutable
+        return HourlyContinuousCollectionImmutable
 
     def interpolate_holes(self):
         """All continuous collections do not have holes in the data set.
@@ -900,12 +912,13 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
                 indx += interval
         return hourly_data_by_month
 
+    def to_mutable(self):
+        """Get an mutable version of this collection."""
+        return self.mutable_class(self.header, self.values)
+
     def to_immutable(self):
         """Get an immutable version of this collection."""
-        if self._enumeration is None:
-            self._get_mutable_enumeration()
-        col_obj = self._enumeration['immutable'][self._collection_type]
-        return col_obj(self.header, self.values)
+        return self.immutable_class(self.header, self.values)
 
     def get_aligned_collection(self, value=0, data_type=None, unit=None, mutable=None):
         """Return a Collection aligned with this one composed of one repeated value.
@@ -937,12 +950,10 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
         if mutable is None:
             collection = self.__class__(header, values)
         else:
-            if self._enumeration is None:
-                self._get_mutable_enumeration()
             if not mutable:
-                col_obj = self._enumeration['immutable'][self._collection_type]
+                col_obj = self.immutable_class
             else:
-                col_obj = self._enumeration['mutable'][self._collection_type]
+                col_obj = self.mutable_class
             collection = col_obj(header, values)
         return collection
 
@@ -1093,6 +1104,7 @@ class DailyCollection(BaseCollection):
         * validated_a_period
         * values
     """
+    __slots__ = ()
     _collection_type = 'Daily'
 
     def __init__(self, header, values, datetimes):
@@ -1117,6 +1129,12 @@ class DailyCollection(BaseCollection):
         """
         lp_yr = self.header.analysis_period.is_leap_year
         return [str(Date.from_doy(d, lp_yr)) for d in self._datetimes]
+
+    @property
+    def immutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        from .datacollectionimmutable import DailyCollectionImmutable
+        return DailyCollectionImmutable
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -1341,7 +1359,7 @@ class MonthlyCollection(BaseCollection):
         * validated_a_period
         * values
     """
-
+    __slots__ = ()
     _collection_type = 'Monthly'
 
     def __init__(self, header, values, datetimes):
@@ -1365,6 +1383,12 @@ class MonthlyCollection(BaseCollection):
         These provides a human-readable way to interpret the datetimes.
         """
         return [AnalysisPeriod.MONTHNAMES[int(d)] for d in self._datetimes]
+
+    @property
+    def immutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        from .datacollectionimmutable import MonthlyCollectionImmutable
+        return MonthlyCollectionImmutable
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
@@ -1492,7 +1516,7 @@ class MonthlyPerHourCollection(BaseCollection):
         * validated_a_period
         * values
     """
-
+    __slots__ = ()
     _collection_type = 'MonthlyPerHour'
 
     def __init__(self, header, values, datetimes):
@@ -1519,6 +1543,12 @@ class MonthlyPerHourCollection(BaseCollection):
             '{} {}'.format(AnalysisPeriod.MONTHNAMES[int(d[0])], Time(d[1], d[2]))
             for d in self._datetimes
         ]
+
+    @property
+    def immutable_class(self):
+        """Get the immutable class for this type of data collection."""
+        from .datacollectionimmutable import MonthlyPerHourCollectionImmutable
+        return MonthlyPerHourCollectionImmutable
 
     def filter_by_analysis_period(self, analysis_period):
         """Filter the Data Collection based on an analysis period.
