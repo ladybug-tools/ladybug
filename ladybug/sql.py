@@ -980,7 +980,7 @@ class ZoneSize(object):
         try:
             date_str = sql_table_row[8] if '24:00:00' not in sql_table_row[8] else \
                 sql_table_row[8].replace('24:00:00', '00:00:00')
-            pyd = datetime.strptime(date_str, '%m/%d %H:%M:%S')
+            pyd = datetime.strptime('2020-{}'.format(date_str), '%Y-%m/%d %H:%M:%S')
             self._peak_date_time = DateTime(pyd.month, pyd.day, pyd.hour, pyd.minute)
         except Exception:  # likely a zone with no cooling; a peak value of 0
             self._peak_date_time = None
