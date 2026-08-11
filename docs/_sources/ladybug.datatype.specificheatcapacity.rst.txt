@@ -1,0 +1,7 @@
+ladybug.datatype.specificheatcapacity module
+============================================
+
+.. automodule:: ladybug.datatype.specificheatcapacity
+   :members:
+   :undoc-members:
+   :show-inheritance:
