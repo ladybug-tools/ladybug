@@ -877,12 +877,12 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
                 hourly_data_by_day[start_doy] = self._values[i:i + indx_per_day]
                 start_doy += 1
         else:
-            end_ind = 24 * a_per.timestep * (365 - start_doy)
+            end_ind = indx_per_day * (365 - start_doy)
             for i in range(0, end_ind + 1, indx_per_day):
                 hourly_data_by_day[start_doy] = self._values[i:i + indx_per_day]
                 start_doy += 1
             start_doy = 1
-            for i in range(end_ind, len(self._values), indx_per_day):
+            for i in range(end_ind + indx_per_day, len(self._values), indx_per_day):
                 hourly_data_by_day[start_doy] = self._values[i:i + indx_per_day]
                 start_doy += 1
         return hourly_data_by_day
