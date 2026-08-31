@@ -296,8 +296,8 @@ class Sunpath(object):
                 azimuth = (math.degrees(math.acos(az_init)) + 180) % 360
             else:
                 azimuth = (540 - math.degrees(math.acos(az_init))) % 360
-        except ValueError:  # perfect solar noon yields math domain error
-            azimuth = 180
+        except ValueError:  # perfect solar noon (az_init == +/-1) yields math domain error
+            azimuth = 180 if az_init > 0 else 0
 
         # create the sun for this hour
         return Sun(datetime, altitude, azimuth, is_solar_time, is_daylight_saving,

@@ -150,6 +150,25 @@ def test_solar_time():
     assert sun.azimuth == approx(270, rel=1e-2)
 
 
+def test_calculate_sun_with_solar_time():
+    """Test the calculate_sun methods with solar time."""
+    ocean_s = Location('Test', 'Southern Ocean', latitude=-50, longitude=0, time_zone=0)
+    sp = Sunpath.from_location(ocean_s)
+
+    sun = sp.calculate_sun(1, 21, 12, True)
+    assert sun.azimuth == 0
+    sun = sp.calculate_sun(2, 21, 12, True)
+    assert sun.azimuth == 0
+
+    ocean_s = Location('Test', 'Northern Ocean', latitude=50, longitude=0, time_zone=0)
+    sp = Sunpath.from_location(ocean_s)
+
+    sun = sp.calculate_sun(1, 21, 12, True)
+    assert sun.azimuth == 180
+    sun = sp.calculate_sun(2, 21, 12, True)
+    assert sun.azimuth == 180
+
+
 def test_daylight_saving():
     """Test the applicaiton of daylight saving time."""
     nyc = Location('New_York', country='USA', latitude=40.72, longitude=-74.02,
