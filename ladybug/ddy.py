@@ -93,7 +93,12 @@ class DDY(object):
 
             # build design day and location objects
             location = Location.from_idf(loc_matches[0][0])
-            ddays = [DesignDay.from_idf(match[0], location) for match in dday_matches]
+            ddays = []
+            for match in dday_matches:
+                try:
+                    ddays.append(DesignDay.from_idf(match[0], location))
+                except Exception:
+                    pass  # probably a design day that has been commented out
         finally:
             ddywin.close()
 

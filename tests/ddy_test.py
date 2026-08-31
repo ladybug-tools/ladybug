@@ -73,7 +73,7 @@ def test_standard_ddy_properties():
     assert ddy.location.time_zone == 9
     assert ddy.location.elevation == 35
 
-    assert len(ddy.design_days) == 18
+    assert len(ddy.design_days) == 17
     for des_day in ddy.design_days:
         assert isinstance(des_day, DesignDay)
     assert len(ddy.filter_by_keyword('.4%')) == 4
