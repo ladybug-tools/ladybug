@@ -142,7 +142,7 @@ class DateTime(datetime):
             dt = DateTime.from_date_time_string("31 Dec 12:00")
         """
         try:
-            dt = datetime.strptime(datetime_string, '%d %b %H:%M')
+            dt = datetime.strptime('2016-{}'.format(datetime_string), '%Y-%d %b %H:%M')
         except AttributeError:  # older Python version before strptime
             vals = datetime_string.split(' ')
             tim = vals[-1].split(':')
@@ -397,7 +397,7 @@ class Date(date):
             dt = Date.from_date_string("31 Dec")
         """
         try:
-            dt = datetime.strptime(date_string, '%d %b')
+            dt = datetime.strptime('2016-{}'.format(date_string), '%Y-%d %b')
         except AttributeError:  # older Python version before strptime
             vals = date_string.split(' ')
             dt = datetime(2016, MONTHNAMES.index(vals[1]) + 1, int(vals[0]))
