@@ -887,7 +887,7 @@ class Wea(object):
                 srf_dif = dhr * ((math.sin(math.radians(altitude)) / 2) + 0.5)
             else:
                 y = max(0.45, 0.55 + (0.437 * math.cos(vec_angle)) + 0.313 *
-                        math.cos(vec_angle) * 0.313 * math.cos(vec_angle))
+                        math.cos(vec_angle) * math.cos(vec_angle))
                 srf_dif = dhr * (y * (
                     math.sin(math.radians(abs(90 - altitude)))) +
                     math.cos(math.radians(abs(90 - altitude))))
