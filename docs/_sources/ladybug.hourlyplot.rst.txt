@@ -1,0 +1,7 @@
+ladybug.hourlyplot module
+=========================
+
+.. automodule:: ladybug.hourlyplot
+   :members:
+   :undoc-members:
+   :show-inheritance:

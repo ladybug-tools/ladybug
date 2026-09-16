@@ -1,0 +1,7 @@
+ladybug.cli.translate module
+============================
+
+.. automodule:: ladybug.cli.translate
+   :members:
+   :undoc-members:
+   :show-inheritance:
