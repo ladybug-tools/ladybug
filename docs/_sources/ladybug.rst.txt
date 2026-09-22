@@ -1,0 +1,60 @@
+ladybug package
+===============
+
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   ladybug.cli
+   ladybug.datatype
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   ladybug.analysisperiod
+   ladybug.climatezone
+   ladybug.color
+   ladybug.commandutil
+   ladybug.compass
+   ladybug.config
+   ladybug.datacollection
+   ladybug.datacollectionimmutable
+   ladybug.datautil
+   ladybug.ddy
+   ladybug.designday
+   ladybug.dt
+   ladybug.epw
+   ladybug.futil
+   ladybug.graphic
+   ladybug.header
+   ladybug.hourlyplot
+   ladybug.legend
+   ladybug.location
+   ladybug.logutil
+   ladybug.monthlychart
+   ladybug.north
+   ladybug.psychchart
+   ladybug.psychrometrics
+   ladybug.rootfinding
+   ladybug.skymodel
+   ladybug.solarenvelope
+   ladybug.sql
+   ladybug.stat
+   ladybug.sunpath
+   ladybug.viewsphere
+   ladybug.wea
+   ladybug.windprofile
+   ladybug.windrose
+
+Module contents
+---------------
+
+.. automodule:: ladybug
+   :members:
+   :undoc-members:
+   :show-inheritance:
