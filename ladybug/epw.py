@@ -536,7 +536,7 @@ class EPW(object):
         """Set all of the EPW data collections by parsing from the body lines."""
         # get the number of fields and make an annual analysis period
         self._num_of_fields = min(len(body_lines[0].strip().split(',')), 35)
-        if self.is_leap_year is None:
+        if not self.is_leap_year:
             self._is_leap_year = True if len(body_lines) == 8784 else False
         analysis_period = AnalysisPeriod(is_leap_year=self.is_leap_year)
 
@@ -1516,8 +1516,11 @@ climate-calculations.html#energyplus-sky-temperature-calculation
             # get the date as the 21st of the hottest month
             date_obj = Date(avg_mon_temp.highest_values(1)[1][0] + 1, 21)
             # compute the daily range of temperature from the days of the hottest month
-            hot_mon_db = self.dry_bulb_temperature.filter_by_analysis_period(
-                AnalysisPeriod(st_month=date_obj.month, end_month=date_obj.month))
+            ha_per = AnalysisPeriod(
+                st_month=date_obj.month, end_month=date_obj.month,
+                is_leap_year=self.is_leap_year
+            )
+            hot_mon_db = self.dry_bulb_temperature.filter_by_analysis_period(ha_per)
             temp_ranges = []
             for day in hot_mon_db.group_by_day().values():
                 if day != []:
