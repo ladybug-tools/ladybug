@@ -1057,13 +1057,15 @@ class BaseCollection(object):
 
     def _check_values(self, values):
         """Check values whenever they come through the values setter."""
-        assert isinstance(values, Iterable) and not \
-            isinstance(values, (str, dict, bytes, bytearray)), \
-            'values should be a list or tuple. Got {}'.format(type(values))
-        assert len(values) == len(self.datetimes), \
-            'Length of values list must match length of datetimes list. ' \
-            '{} != {}'.format(len(values), len(self.datetimes))
-        assert len(values) > 0, 'Data Collection must include at least one value'
+        if not isinstance(values, Iterable) or isinstance(
+                values, (str, dict, bytes, bytearray)):
+            raise TypeError('values should be a list or tuple. Got {}'.format(type(values)))
+        if len(values) != len(self.datetimes):
+            raise ValueError(
+                'Length of values list must match length of datetimes list. '
+                '{} != {}'.format(len(values), len(self.datetimes)))
+        if len(values) == 0:
+            raise ValueError('Data Collection must include at least one value')
 
     def _check_aligned_header(self, data_type, unit):
         """Check the header inputs whenever get_aligned_collection is called."""

@@ -1029,12 +1029,14 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
     def _check_values(self, values):
         """Check values whenever they come through the values setter."""
-        assert isinstance(values, Iterable) and not isinstance(
-            values, (str, dict, bytes, bytearray)), \
-            'values should be a list or tuple. Got {}'.format(type(values))
-        assert len(values) == len(self.header.analysis_period), 'Length of ' \
-            'values does not match that expected by the header analysis_period.'\
-            ' {} != {}'.format(len(values), len(self.header.analysis_period))
+        if not isinstance(values, Iterable) or isinstance(
+                values, (str, dict, bytes, bytearray)):
+            raise TypeError('values should be a list or tuple. Got {}'.format(type(values)))
+        if len(values) != len(self.header.analysis_period):
+            raise ValueError(
+                'Length of values does not match that expected by the header '
+                'analysis_period. {} != {}'.format(
+                    len(values), len(self.header.analysis_period)))
 
     @property
     def is_continuous(self):
