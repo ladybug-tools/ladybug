@@ -68,6 +68,26 @@ def test_init_incorrect():
                              [v1, v2], {'1': 1, '2': 2})
 
 
+def test_values_validation_uses_explicit_exceptions():
+    """Validate collection values even when Python assertions are disabled."""
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    header = Header(Temperature(), 'C', a_per)
+    datetimes = [DateTime(6, 21, 12), DateTime(6, 21, 13)]
+
+    with pytest.raises(TypeError, match='values should be'):
+        BaseCollection(header, '20,25', datetimes)
+    with pytest.raises(ValueError, match='Length of values list'):
+        BaseCollection(header, [20], datetimes)
+    with pytest.raises(ValueError, match='at least one value'):
+        BaseCollection(header, [], [])
+
+    annual_header = Header(Temperature(), 'C', AnalysisPeriod())
+    with pytest.raises(TypeError, match='values should be'):
+        HourlyContinuousCollection(annual_header, '20')
+    with pytest.raises(ValueError, match='header analysis_period'):
+        HourlyContinuousCollection(annual_header, [20])
+
+
 def test_init_hourly():
     """Test the init methods for discontinuous collections."""
     a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
@@ -1334,6 +1354,22 @@ def test_filter_collections_by_statement():
     assert filt_coll[1].values == (12, 12, 12, 12, 12, 12, 12)
     assert filt_coll[2].values == (24, 25, 26, 27, 28, 29, 30)
     assert isinstance(filt_coll[0], HourlyDiscontinuousCollection)
+
+
+def test_filter_no_match_error_message():
+    """A filter that matches nothing reports why instead of a generic error."""
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dts = [DateTime(6, 21, 12), DateTime(6, 21, 13)]
+    dc = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per), [20, 25], dts)
+    with pytest.raises(ValueError, match='No value meets the conditional'):
+        dc.filter_by_conditional_statement('a > 100')
+    with pytest.raises(ValueError, match='No value was found in the range'):
+        dc.filter_by_range(100, 200)
+
+    header = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=1))
+    cont = HourlyContinuousCollection(header, list(xrange(24)))
+    with pytest.raises(ValueError, match='No value meets the conditional'):
+        HourlyContinuousCollection.filter_collections_by_statement([cont], 'a > 100')
 
 
 def test_is_in_range_data_type():

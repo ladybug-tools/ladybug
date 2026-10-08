@@ -914,11 +914,11 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
     def to_mutable(self):
         """Get an mutable version of this collection."""
-        return self.mutable_class(self.header, self.values)
+        return self.mutable_class(self.header.duplicate(), self.values)
 
     def to_immutable(self):
         """Get an immutable version of this collection."""
-        return self.immutable_class(self.header, self.values)
+        return self.immutable_class(self.header.duplicate(), self.values)
 
     def get_aligned_collection(self, value=0, data_type=None, unit=None, mutable=None):
         """Return a Collection aligned with this one composed of one repeated value.
@@ -1029,12 +1029,14 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
     def _check_values(self, values):
         """Check values whenever they come through the values setter."""
-        assert isinstance(values, Iterable) and not isinstance(
-            values, (str, dict, bytes, bytearray)), \
-            'values should be a list or tuple. Got {}'.format(type(values))
-        assert len(values) == len(self.header.analysis_period), 'Length of ' \
-            'values does not match that expected by the header analysis_period.'\
-            ' {} != {}'.format(len(values), len(self.header.analysis_period))
+        if not isinstance(values, Iterable) or isinstance(
+                values, (str, dict, bytes, bytearray)):
+            raise TypeError('values should be a list or tuple. Got {}'.format(type(values)))
+        if len(values) != len(self.header.analysis_period):
+            raise ValueError(
+                'Length of values does not match that expected by the header '
+                'analysis_period. {} != {}'.format(
+                    len(values), len(self.header.analysis_period)))
 
     @property
     def is_continuous(self):

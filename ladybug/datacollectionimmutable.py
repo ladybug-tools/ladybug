@@ -45,6 +45,33 @@ class _ImmutableCollectionBase(object):
         return 'values are immutable for {}.\nUse to_mutable() method to get a ' \
             'mutable version of this collection.'.format(self.__class__.__name__)
 
+    def convert_to_unit(self, unit):
+        """Not available for immutable collections; use to_unit() instead."""
+        raise AttributeError(self._mutable_message)
+
+    def convert_to_ip(self):
+        """Not available for immutable collections; use to_ip() instead."""
+        raise AttributeError(self._mutable_message)
+
+    def convert_to_si(self):
+        """Not available for immutable collections; use to_si() instead."""
+        raise AttributeError(self._mutable_message)
+
+    def to_unit(self, unit):
+        new_data_c = self.to_mutable()
+        new_data_c.convert_to_unit(unit)
+        return new_data_c
+
+    def to_ip(self):
+        new_data_c = self.to_mutable()
+        new_data_c.convert_to_ip()
+        return new_data_c
+
+    def to_si(self):
+        new_data_c = self.to_mutable()
+        new_data_c.convert_to_si()
+        return new_data_c
+
     def to_immutable(self):
         """Get an immutable version of this collection."""
         return self.duplicate()
@@ -76,7 +103,8 @@ class HourlyDiscontinuousCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        new_obj = HourlyDiscontinuousCollection(self.header, self.values, self.datetimes)
+        new_obj = HourlyDiscontinuousCollection(
+            self.header.duplicate(), self.values, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
@@ -89,7 +117,7 @@ class HourlyContinuousCollectionImmutable(
     @property
     def mutable_class(self):
         """Get the immutable class for this type of data collection."""
-        return DailyCollection
+        return HourlyContinuousCollection
 
     def convert_to_culled_timestep(self, timestep=1):
         """This method is not available for immutable collections."""
@@ -97,7 +125,7 @@ class HourlyContinuousCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        new_obj = HourlyContinuousCollection(self.header, self.values)
+        new_obj = HourlyContinuousCollection(self.header.duplicate(), self.values)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
@@ -118,7 +146,8 @@ class DailyCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        new_obj = DailyCollection(self.header, self.values, self.datetimes)
+        new_obj = DailyCollection(
+            self.header.duplicate(), self.values, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
@@ -135,7 +164,8 @@ class MonthlyCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        new_obj = MonthlyCollection(self.header, self.values, self.datetimes)
+        new_obj = MonthlyCollection(
+            self.header.duplicate(), self.values, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
@@ -152,6 +182,7 @@ class MonthlyPerHourCollectionImmutable(
 
     def to_mutable(self):
         """Get a mutable version of this collection."""
-        new_obj = MonthlyPerHourCollection(self.header, self.values, self.datetimes)
+        new_obj = MonthlyPerHourCollection(
+            self.header.duplicate(), self.values, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj

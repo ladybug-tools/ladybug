@@ -222,11 +222,11 @@ class BaseCollection(object):
     def to_mutable(self):
         """Get a mutable version of this collection."""
 
-        return self.mutable_class(self.header, self.values, self.datetimes)
+        return self.mutable_class(self.header.duplicate(), self.values, self.datetimes)
 
     def to_immutable(self):
         """Get an immutable version of this collection."""
-        new_obj = self.immutable_class(self.header, self.values, self.datetimes)
+        new_obj = self.immutable_class(self.header.duplicate(), self.values, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 
@@ -408,9 +408,9 @@ class BaseCollection(object):
         col_obj = self.mutable_class
         try:
             collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
-        except AssertionError as e:
-            raise AssertionError('No value meets the conditional statement.'
-                                 '\n{}'.format(e))
+        except ValueError as e:
+            raise ValueError('No value meets the conditional statement.'
+                             '\n{}'.format(e))
         collection._validated_a_period = self._validated_a_period
         return collection
 
@@ -435,8 +435,8 @@ class BaseCollection(object):
         col_obj = self.mutable_class
         try:
             collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
-        except AssertionError as e:
-            raise AssertionError(
+        except ValueError as e:
+            raise ValueError(
                 'No value was found in the range {} to {}.\n{}'.format(
                     greater_than, less_than, e))
         collection._validated_a_period = self._validated_a_period
@@ -565,9 +565,9 @@ class BaseCollection(object):
             data_collections, statement)
         try:
             collections = [coll.filter_by_pattern(pattern) for coll in data_collections]
-        except AssertionError as e:
-            raise AssertionError('No value meets the conditional statement.'
-                                 '\n{}'.format(e))
+        except ValueError as e:
+            raise ValueError('No value meets the conditional statement.'
+                             '\n{}'.format(e))
         return collections
 
     @staticmethod
@@ -1057,13 +1057,15 @@ class BaseCollection(object):
 
     def _check_values(self, values):
         """Check values whenever they come through the values setter."""
-        assert isinstance(values, Iterable) and not \
-            isinstance(values, (str, dict, bytes, bytearray)), \
-            'values should be a list or tuple. Got {}'.format(type(values))
-        assert len(values) == len(self.datetimes), \
-            'Length of values list must match length of datetimes list. ' \
-            '{} != {}'.format(len(values), len(self.datetimes))
-        assert len(values) > 0, 'Data Collection must include at least one value'
+        if not isinstance(values, Iterable) or isinstance(
+                values, (str, dict, bytes, bytearray)):
+            raise TypeError('values should be a list or tuple. Got {}'.format(type(values)))
+        if len(values) != len(self.datetimes):
+            raise ValueError(
+                'Length of values list must match length of datetimes list. '
+                '{} != {}'.format(len(values), len(self.datetimes)))
+        if len(values) == 0:
+            raise ValueError('Data Collection must include at least one value')
 
     def _check_aligned_header(self, data_type, unit):
         """Check the header inputs whenever get_aligned_collection is called."""
