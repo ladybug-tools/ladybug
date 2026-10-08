@@ -408,9 +408,9 @@ class BaseCollection(object):
         col_obj = self.mutable_class
         try:
             collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
-        except AssertionError as e:
-            raise AssertionError('No value meets the conditional statement.'
-                                 '\n{}'.format(e))
+        except ValueError as e:
+            raise ValueError('No value meets the conditional statement.'
+                             '\n{}'.format(e))
         collection._validated_a_period = self._validated_a_period
         return collection
 
@@ -435,8 +435,8 @@ class BaseCollection(object):
         col_obj = self.mutable_class
         try:
             collection = col_obj(self.header.duplicate(), _filt_values, _filt_datetimes)
-        except AssertionError as e:
-            raise AssertionError(
+        except ValueError as e:
+            raise ValueError(
                 'No value was found in the range {} to {}.\n{}'.format(
                     greater_than, less_than, e))
         collection._validated_a_period = self._validated_a_period
@@ -565,9 +565,9 @@ class BaseCollection(object):
             data_collections, statement)
         try:
             collections = [coll.filter_by_pattern(pattern) for coll in data_collections]
-        except AssertionError as e:
-            raise AssertionError('No value meets the conditional statement.'
-                                 '\n{}'.format(e))
+        except ValueError as e:
+            raise ValueError('No value meets the conditional statement.'
+                             '\n{}'.format(e))
         return collections
 
     @staticmethod

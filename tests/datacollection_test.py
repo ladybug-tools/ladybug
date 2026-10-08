@@ -1356,6 +1356,22 @@ def test_filter_collections_by_statement():
     assert isinstance(filt_coll[0], HourlyDiscontinuousCollection)
 
 
+def test_filter_no_match_error_message():
+    """A filter that matches nothing reports why instead of a generic error."""
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    dts = [DateTime(6, 21, 12), DateTime(6, 21, 13)]
+    dc = HourlyDiscontinuousCollection(Header(Temperature(), 'C', a_per), [20, 25], dts)
+    with pytest.raises(ValueError, match='No value meets the conditional'):
+        dc.filter_by_conditional_statement('a > 100')
+    with pytest.raises(ValueError, match='No value was found in the range'):
+        dc.filter_by_range(100, 200)
+
+    header = Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=1))
+    cont = HourlyContinuousCollection(header, list(xrange(24)))
+    with pytest.raises(ValueError, match='No value meets the conditional'):
+        HourlyContinuousCollection.filter_collections_by_statement([cont], 'a > 100')
+
+
 def test_is_in_range_data_type():
     """Test the function to check whether values are in range for the data_type."""
     header1 = Header(Temperature(), 'C', AnalysisPeriod())
