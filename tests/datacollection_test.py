@@ -22,6 +22,8 @@ from ladybug.psychrometrics import humid_ratio_from_db_rh
 
 import pytest
 import sys
+import calendar
+from collections import OrderedDict
 if (sys.version_info >= (3, 0)):
     xrange = range
 
@@ -1084,6 +1086,113 @@ def test_group_by_month_discontinuous():
     days_per_month = AnalysisPeriod().NUMOFDAYSEACHMONTH
     for i, val in enumerate(day_dict.values()):
         assert len(val) == 24 * days_per_month[i]
+
+
+# analysis period shapes that group_by_month has to handle
+GROUP_BY_MONTH_PERIODS = [
+    {},
+    {'is_leap_year': True},
+    {'timestep': 4},
+    {'st_month': 3, 'st_day': 15, 'end_month': 6, 'end_day': 20},
+    {'st_month': 3, 'st_day': 15, 'end_month': 3, 'end_day': 20},
+    {'st_month': 1, 'st_day': 1, 'end_month': 1, 'end_day': 31},
+    {'st_month': 11, 'st_day': 15, 'end_month': 2, 'end_day': 10},
+    {'st_month': 12, 'st_day': 1, 'end_month': 2, 'end_day': 28},
+    {'st_month': 7, 'st_day': 1, 'end_month': 8, 'end_day': 31, 'timestep': 2},
+    {'st_month': 10, 'st_day': 1, 'end_month': 12, 'end_day': 31},
+]
+
+
+def _expected_month_sizes(st_month=1, st_day=1, end_month=12, end_day=31,
+                          timestep=1, is_leap_year=False):
+    """Count the values each month of an hourly period holds, without ladybug."""
+    year = 2016 if is_leap_year else 2017
+    sizes = OrderedDict()
+    month, day = st_month, st_day
+    while True:
+        sizes[month] = sizes.get(month, 0) + 24 * timestep
+        if (month, day) == (end_month, end_day):
+            return sizes
+        day += 1
+        if day > calendar.monthrange(year, month)[1]:
+            month, day = month % 12 + 1, 1
+
+
+@pytest.mark.parametrize('period', GROUP_BY_MONTH_PERIODS)
+def test_group_by_month_continuous_sizes(period):
+    """Test that every month holds only its own values and none are shared."""
+    a_per = AnalysisPeriod(**period)
+    header = Header(GenericType('Test', 'unit'), 'unit', a_per)
+    dc = HourlyContinuousCollection(header, list(xrange(len(a_per))))
+    groups = dc.group_by_month()
+
+    expected = _expected_month_sizes(**period)
+    assert dict((m, len(v)) for m, v in groups.items() if v) == dict(expected)
+    assert sum(len(v) for v in groups.values()) == len(dc)
+    # each value is its own index, so the groups in period order give them back
+    assert [v for m in a_per.months_int for v in groups[m]] == list(xrange(len(dc)))
+
+
+@pytest.mark.parametrize('period', GROUP_BY_MONTH_PERIODS)
+def test_group_by_month_continuous_values_in_correct_month(period):
+    """Test that each value is filed under the month of its own datetime."""
+    a_per = AnalysisPeriod(**period)
+    header = Header(GenericType('Test', 'unit'), 'unit', a_per)
+    dc = HourlyContinuousCollection(header, list(xrange(len(a_per))))
+    months = [dt.month for dt in dc.datetimes]
+    for month, vals in dc.group_by_month().items():
+        assert all(months[int(v)] == month for v in vals)
+
+
+@pytest.mark.parametrize('period', GROUP_BY_MONTH_PERIODS)
+def test_group_by_month_continuous_matches_discontinuous(period):
+    """Test that the continuous shortcut agrees with the datetime-based grouping."""
+    a_per = AnalysisPeriod(**period)
+    header = Header(GenericType('Test', 'unit'), 'unit', a_per)
+    dc = HourlyContinuousCollection(header, list(xrange(len(a_per))))
+    assert dc.group_by_month() == HourlyDiscontinuousCollection.group_by_month(dc)
+
+
+def test_total_monthly_counts_each_hour_once():
+    """Test that a constant collection totals to the number of hours in each month."""
+    header = Header(GenericType('Test', 'unit'), 'unit', AnalysisPeriod())
+    dc = HourlyContinuousCollection(header, [1] * 8760)
+    days_per_month = AnalysisPeriod().NUMOFDAYSEACHMONTH
+    assert list(dc.total_monthly().values) == [24 * d for d in days_per_month]
+
+
+def test_total_monthly_first_hour_belongs_to_its_own_month():
+    """Test that the first hour of a month is not also counted in the month before."""
+    days_per_month = AnalysisPeriod().NUMOFDAYSEACHMONTH
+    values = [0] * 8760
+    for i in xrange(12):
+        values[24 * sum(days_per_month[:i])] = 1
+    header = Header(GenericType('Test', 'unit'), 'unit', AnalysisPeriod())
+    dc = HourlyContinuousCollection(header, values)
+    assert list(dc.total_monthly().values) == [1] * 12
+
+
+def test_average_monthly_is_exact_mean_of_each_month():
+    """Test that monthly averages use exactly the hours of each month."""
+    header = Header(GenericType('Test', 'unit'), 'unit', AnalysisPeriod())
+    dc = HourlyContinuousCollection(header, list(xrange(8760)))
+    days_per_month = AnalysisPeriod().NUMOFDAYSEACHMONTH
+    averages = dc.average_monthly().values
+    for i in xrange(12):
+        start = 24 * sum(days_per_month[:i])
+        end = start + 24 * days_per_month[i]
+        assert averages[i] == (start + end - 1) / 2  # mean of start..end - 1
+
+
+def test_percentile_monthly_ignores_next_months_first_hour():
+    """Test that a spike in the first hour of February does not show up in January."""
+    values = [0] * 8760
+    values[24 * 31] = 1000  # 1 Feb 00:00
+    header = Header(GenericType('Test', 'unit'), 'unit', AnalysisPeriod())
+    dc = HourlyContinuousCollection(header, values)
+    month_max = dc.percentile_monthly(100).values
+    assert month_max[0] == 0
+    assert month_max[1] == 1000
 
 
 def test_interpolate_holes():
