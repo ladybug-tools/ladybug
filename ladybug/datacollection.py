@@ -914,11 +914,11 @@ class HourlyContinuousCollection(HourlyDiscontinuousCollection):
 
     def to_mutable(self):
         """Get an mutable version of this collection."""
-        return self.mutable_class(self.header, self.values)
+        return self.mutable_class(self.header.duplicate(), self.values)
 
     def to_immutable(self):
         """Get an immutable version of this collection."""
-        return self.immutable_class(self.header, self.values)
+        return self.immutable_class(self.header.duplicate(), self.values)
 
     def get_aligned_collection(self, value=0, data_type=None, unit=None, mutable=None):
         """Return a Collection aligned with this one composed of one repeated value.

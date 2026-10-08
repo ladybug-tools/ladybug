@@ -222,11 +222,11 @@ class BaseCollection(object):
     def to_mutable(self):
         """Get a mutable version of this collection."""
 
-        return self.mutable_class(self.header, self.values, self.datetimes)
+        return self.mutable_class(self.header.duplicate(), self.values, self.datetimes)
 
     def to_immutable(self):
         """Get an immutable version of this collection."""
-        new_obj = self.immutable_class(self.header, self.values, self.datetimes)
+        new_obj = self.immutable_class(self.header.duplicate(), self.values, self.datetimes)
         new_obj._validated_a_period = self._validated_a_period
         return new_obj
 

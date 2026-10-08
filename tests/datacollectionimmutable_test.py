@@ -94,6 +94,97 @@ def test_init_continuous():
     assert not dc4.is_mutable
 
 
+def _make_collection(kind):
+    """Get a mutable Celsius temperature collection of the requested kind."""
+    a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
+    day_per = AnalysisPeriod(6, 21, 0, 6, 22, 23)
+    mon_per = AnalysisPeriod(6, 1, 0, 7, 31, 23)
+    builders = {
+        'discontinuous': lambda: HourlyDiscontinuousCollection(
+            Header(Temperature(), 'C', a_per), [20, 25],
+            [DateTime(6, 21, 12), DateTime(6, 21, 13)]),
+        'continuous': lambda: HourlyContinuousCollection(
+            Header(Temperature(), 'C', AnalysisPeriod(end_month=1, end_day=1)),
+            [20] * 24),
+        'daily': lambda: DailyCollection(
+            Header(Temperature(), 'C', day_per), [20, 25], day_per.doys_int),
+        'monthly': lambda: MonthlyCollection(
+            Header(Temperature(), 'C', mon_per), [20, 25], mon_per.months_int),
+        'monthly_per_hour': lambda: MonthlyPerHourCollection(
+            Header(Temperature(), 'C', mon_per), [20] * 24 + [25] * 24,
+            mon_per.months_per_hour)
+    }
+    return builders[kind]()
+
+
+COLLECTION_KINDS = \
+    ('discontinuous', 'continuous', 'daily', 'monthly', 'monthly_per_hour')
+
+
+@pytest.mark.parametrize('kind', COLLECTION_KINDS)
+def test_mutable_immutable_conversion_does_not_share_header(kind):
+    """Converting between mutable and immutable must give each its own header."""
+    source = _make_collection(kind)
+    immutable = source.to_immutable()
+    assert immutable.header is not source.header
+    assert immutable.to_mutable().header is not immutable.header
+    assert source.to_mutable().header is not source.header
+
+
+@pytest.mark.parametrize('kind', COLLECTION_KINDS)
+def test_unit_conversion_on_immutable_collection(kind):
+    """In-place conversion is blocked; to_* returns a converted mutable copy."""
+    source = _make_collection(kind)
+    immutable = source.to_immutable()
+
+    with pytest.raises(AttributeError):
+        immutable.convert_to_ip()
+    with pytest.raises(AttributeError):
+        immutable.convert_to_si()
+    with pytest.raises(AttributeError):
+        immutable.convert_to_unit('F')
+
+    converted = immutable.to_ip()
+    assert type(converted) is type(source)
+    assert converted.is_mutable
+    assert converted.header.unit == 'F'
+    assert converted.values[0] == pytest.approx(68)
+    assert immutable.to_si().is_mutable
+    assert immutable.to_unit('F').header.unit == 'F'
+    assert immutable.header.unit == 'C'
+    assert immutable.values[0] == 20
+    assert source.header.unit == 'C'
+    assert source.values[0] == 20
+
+    source.convert_to_ip()
+    assert immutable.header.unit == 'C'
+
+
+@pytest.mark.parametrize('kind', COLLECTION_KINDS)
+def test_mutable_and_immutable_classes_point_at_each_other(kind):
+    """Each mutable class and its immutable counterpart must name one another."""
+    source = _make_collection(kind)
+    immutable = source.to_immutable()
+    assert source.mutable_class is type(source)
+    assert source.immutable_class is type(immutable)
+    assert immutable.mutable_class is type(source)
+    assert immutable.immutable_class is type(immutable)
+
+
+@pytest.mark.parametrize('kind', COLLECTION_KINDS)
+def test_get_aligned_collection_mutability(kind):
+    """get_aligned_collection honors mutable= from a mutable or immutable start."""
+    source = _make_collection(kind)
+    immutable = source.to_immutable()
+    for start in (source, immutable):
+        assert type(start.get_aligned_collection(5)) is type(start)
+        assert type(start.get_aligned_collection(5, mutable=False)) is type(immutable)
+        aligned = start.get_aligned_collection(5, mutable=True)
+        assert type(aligned) is type(source)
+        assert aligned.is_mutable
+        assert set(aligned.values) == {5}
+
+
 def test_daily():
     """Test the daily collections."""
     a_per = AnalysisPeriod(6, 21, 0, 6, 22, 23)
