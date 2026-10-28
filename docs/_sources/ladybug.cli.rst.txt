@@ -1,0 +1,19 @@
+ladybug.cli package
+===================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   ladybug.cli.setconfig
+   ladybug.cli.translate
+
+Module contents
+---------------
+
+.. automodule:: ladybug.cli
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,7 @@
+ladybug.datatype.resistivity module
+===================================
+
+.. automodule:: ladybug.datatype.resistivity
+   :members:
+   :undoc-members:
+   :show-inheritance:

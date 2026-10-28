@@ -1,0 +1,7 @@
+main
+====
+
+.. click:: ladybug.cli.__init__:main
+   :prog: ladybug
+   :show-nested:
+   :commands: config ,viz

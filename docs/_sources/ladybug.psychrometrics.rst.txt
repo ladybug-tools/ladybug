@@ -1,0 +1,7 @@
+ladybug.psychrometrics module
+=============================
+
+.. automodule:: ladybug.psychrometrics
+   :members:
+   :undoc-members:
+   :show-inheritance:

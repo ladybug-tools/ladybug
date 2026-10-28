@@ -1,0 +1,7 @@
+ladybug.datatype.base module
+============================
+
+.. automodule:: ladybug.datatype.base
+   :members:
+   :undoc-members:
+   :show-inheritance:

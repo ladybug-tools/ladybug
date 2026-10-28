@@ -1,0 +1,7 @@
+ladybug.datatype.area module
+============================
+
+.. automodule:: ladybug.datatype.area
+   :members:
+   :undoc-members:
+   :show-inheritance:

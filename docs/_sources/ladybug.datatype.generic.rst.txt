@@ -1,0 +1,7 @@
+ladybug.datatype.generic module
+===============================
+
+.. automodule:: ladybug.datatype.generic
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,0 +1,6 @@
+translate
+=========
+
+.. click:: ladybug.cli.translate:translate
+   :prog: ladybug translate
+   :show-nested:
