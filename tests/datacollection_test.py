@@ -1086,6 +1086,48 @@ def test_group_by_month_discontinuous():
         assert len(val) == 24 * days_per_month[i]
 
 
+def test_total_monthly_counts_each_hour_once():
+    """Test that a constant collection totals to the number of hours in each month."""
+    header = Header(GenericType('Test', 'unit'), 'unit', AnalysisPeriod())
+    dc = HourlyContinuousCollection(header, [1] * 8760)
+    days_per_month = AnalysisPeriod().NUMOFDAYSEACHMONTH
+    assert list(dc.total_monthly().values) == [24 * d for d in days_per_month]
+
+
+def test_total_monthly_first_hour_belongs_to_its_own_month():
+    """Test that the first hour of a month is not also counted in the month before."""
+    days_per_month = AnalysisPeriod().NUMOFDAYSEACHMONTH
+    values = [0] * 8760
+    for i in xrange(12):
+        values[24 * sum(days_per_month[:i])] = 1
+    header = Header(GenericType('Test', 'unit'), 'unit', AnalysisPeriod())
+    dc = HourlyContinuousCollection(header, values)
+    assert list(dc.total_monthly().values) == [1] * 12
+
+
+def test_average_monthly_is_exact_mean_of_each_month():
+    """Test that monthly averages use exactly the hours of each month."""
+    header = Header(GenericType('Test', 'unit'), 'unit', AnalysisPeriod())
+    dc = HourlyContinuousCollection(header, list(xrange(8760)))
+    days_per_month = AnalysisPeriod().NUMOFDAYSEACHMONTH
+    averages = dc.average_monthly().values
+    for i in xrange(12):
+        start = 24 * sum(days_per_month[:i])
+        end = start + 24 * days_per_month[i]
+        assert averages[i] == (start + end - 1) / 2  # mean of start..end - 1
+
+
+def test_percentile_monthly_ignores_next_months_first_hour():
+    """Test that a spike in the first hour of February does not show up in January."""
+    values = [0] * 8760
+    values[24 * 31] = 1000  # 1 Feb 00:00
+    header = Header(GenericType('Test', 'unit'), 'unit', AnalysisPeriod())
+    dc = HourlyContinuousCollection(header, values)
+    month_max = dc.percentile_monthly(100).values
+    assert month_max[0] == 0
+    assert month_max[1] == 1000
+
+
 def test_interpolate_holes():
     """Test the interpolate holes method on the discontinuous collection."""
     a_per = AnalysisPeriod(6, 21, 0, 6, 21, 23)
