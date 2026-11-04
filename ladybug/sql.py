@@ -328,24 +328,26 @@ class SQLiteResult(object):
                 report_frequency, run_period.timestep, run_period.is_leap_year)
 
         # create the header objects to be used for the resulting data collections
-        units = header_rows[0][-1] if header_rows[0][-1] != 'J' else 'kWh'
-        data_type, units = self._data_type_from_unit(units, header_rows[0][3])
-        meta_datas = []
+        # each row gets its own data type since several output names can be requested
+        types_units, meta_datas = [], []
         for row in header_rows:
-            obj_type = row[1] if 'Surface' not in output_name else 'Surface'
+            units = row[-1] if row[-1] != 'J' else 'kWh'
+            types_units.append(self._data_type_from_unit(units, row[3]))
+            obj_type = row[1] if 'Surface' not in row[3] else 'Surface'
             meta_datas.append({'type': row[3], obj_type: row[2]})
         headers = []
         if report_frequency == 'Annual':
             pass
         elif isinstance(run_period, list):  # multiple run periods
             for runper in run_period:
-                for m_data in meta_datas:
+                for (data_type, units), m_data in zip(types_units, meta_datas):
                     headers.append(Header(data_type, units, runper, m_data))
         else:  # just one run period
-            for m_data in meta_datas:
+            for (data_type, units), m_data in zip(types_units, meta_datas):
                 headers.append(Header(data_type, units, run_period, m_data))
 
         # format the data such that we have one list for each of the header rows
+        n_lists = len(header_rows)
         if isinstance(run_period, list):  # multiple run periods
             if report_frequency == 'Monthly':
                 chunks = [len(runper.months_int) for runper in run_period]
@@ -353,16 +355,13 @@ class SQLiteResult(object):
                 chunks = [len(runper.doys_int) for runper in run_period]
             else:
                 chunks = [len(runper) for runper in run_period]
-            if units == 'kWh':
-                all_values = self._partition_and_convert_timeseries_chunks(data, chunks)
-            else:
-                all_values = self._partition_timeseries_chunks(data, chunks)
+            all_values = self._partition_timeseries_chunks(data, chunks)
         else:  # just one run period
-            n_lists = len(header_rows)
-            if units == 'kWh':
-                all_values = self._partition_and_convert_timeseries(data, n_lists)
-            else:
-                all_values = self._partition_timeseries(data, n_lists)
+            all_values = self._partition_timeseries(data, n_lists)
+        # convert only the rows that are in Joules to kWh
+        all_values = [[val / 3600000. for val in values]
+                      if header_rows[i % n_lists][-1] == 'J' else values
+                      for i, values in enumerate(all_values)]
 
         # create the final data collections
         data_colls = []
@@ -897,25 +896,6 @@ class SQLiteResult(object):
             day_vals = []
             for i in range(0, chunk * n_lists, n_lists):
                 day_vals.append([val[0] for val in data[start + i:start + i + n_lists]])
-            all_values.extend(zip(*day_vals))
-        return all_values
-
-    @staticmethod
-    def _partition_and_convert_timeseries_chunks(data, chunks):
-        """Partition timeseries data based on a chunking pattern + convert it to kWh.
-
-        Args:
-            chunks: A list of integers for the chunking pattern (eg. [24, 24, 8760]).
-        """
-        n_lists = int(len(data) / sum(chunks))
-        zero_sum_chunks = [0] + SQLiteResult._accumulate(chunks)
-        all_values = []
-        for j, chunk in enumerate(chunks):
-            start = zero_sum_chunks[j] * n_lists
-            day_vals = []
-            for i in range(0, chunk * n_lists, n_lists):
-                day_vals.append([val[0] / 3600000. for val in
-                                 data[start + i:start + i + n_lists]])
             all_values.extend(zip(*day_vals))
         return all_values
 
