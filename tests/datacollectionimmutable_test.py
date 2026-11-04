@@ -20,7 +20,7 @@ if (sys.version_info >= (3, 0)):
 
 
 def test_hourly():
-    """Test the dicontinuous collections."""
+    """Test the discontinuous collections."""
     a_per = AnalysisPeriod(6, 21, 12, 6, 21, 13)
     dt1, dt2 = DateTime(6, 21, 12), DateTime(6, 21, 13)
     v1, v2 = 20, 25
@@ -198,6 +198,32 @@ def test_monthly_per_hour():
     dc4 = dc3.to_immutable()
     assert isinstance(dc4, MonthlyPerHourCollectionImmutable)
     assert not dc4.is_mutable
+
+
+def test_unit_conversion_on_immutable_collection():
+    """In-place conversion is blocked; to_* returns a converted mutable copy."""
+    header = Header(Temperature(), 'C', AnalysisPeriod())
+    values = list(xrange(8760))
+    source = HourlyContinuousCollection(header, values)
+    immutable = source.to_immutable()
+
+    with pytest.raises(AttributeError):
+        immutable.convert_to_ip()
+    with pytest.raises(AttributeError):
+        immutable.convert_to_si()
+    with pytest.raises(AttributeError):
+        immutable.convert_to_unit('F')
+
+    converted = immutable.to_ip()
+    assert converted.is_mutable
+    assert converted.header.unit == 'F'
+    assert converted.values[0] == pytest.approx(32)
+    assert immutable.to_si().is_mutable
+    assert immutable.to_unit('F').header.unit == 'F'
+    assert immutable.header.unit == 'C'
+    assert immutable.values[0] == 0
+    assert source.header.unit == 'C'
+    assert source.values[0] == 0
 
 
 def test_get_aligned_collection():
