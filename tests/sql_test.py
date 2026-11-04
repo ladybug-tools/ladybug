@@ -3,6 +3,7 @@ from ladybug.sql import SQLiteResult, ZoneSize, ComponentSize
 
 from ladybug.datatype.energy import Energy
 from ladybug.datatype.temperature import Temperature
+from ladybug.datatype.fraction import Fraction
 from ladybug.dt import DateTime
 from ladybug.analysisperiod import AnalysisPeriod
 from ladybug.location import Location
@@ -213,6 +214,43 @@ def test_sqlite_data_collections_by_output_names():
     data_colls = sql_obj.data_collections_by_output_name(
         ('Zone Lights Electric Energy',))
     assert len(data_colls) == 7
+
+
+def test_sqlite_data_collections_by_output_names_mixed_types():
+    """Test the data_collections_by_output_name method with names of different types."""
+    sql_path = './tests/assets/sql/eplusout_hourly.sql'
+    sql_obj = SQLiteResult(sql_path)
+
+    data_colls = sql_obj.data_collections_by_output_name(
+        ('Zone Mean Air Temperature', 'Zone Air Relative Humidity'))
+    assert len(data_colls) == 14
+    for coll in data_colls:
+        if coll.header.metadata['type'] == 'Zone Mean Air Temperature':
+            assert isinstance(coll.header.data_type, Temperature)
+            assert coll.header.unit == 'C'
+        else:
+            assert isinstance(coll.header.data_type, Fraction)
+            assert coll.header.unit == '%'
+
+    data_colls = sql_obj.data_collections_by_output_name(
+        ('Zone Lights Electric Energy', 'Zone Mean Radiant Temperature'))
+    single_colls = \
+        sql_obj.data_collections_by_output_name('Zone Lights Electric Energy') + \
+        sql_obj.data_collections_by_output_name('Zone Mean Radiant Temperature')
+    assert sorted(coll.values for coll in data_colls) == \
+        sorted(coll.values for coll in single_colls)
+
+
+def test_sqlite_data_collections_by_output_names_surface():
+    """Test the data_collections_by_output_name method with several surface outputs."""
+    sql_path = './tests/assets/sql/eplusout_design_days.sql'
+    sql_obj = SQLiteResult(sql_path)
+
+    data_colls = sql_obj.data_collections_by_output_name(
+        ('Surface Window Heat Gain Energy', 'Surface Window Heat Loss Energy'))
+    assert len(data_colls) == 112
+    for coll in data_colls:
+        assert 'Surface' in coll.header.metadata
 
 
 def test_sqlite_data_collections_by_output_name_openstudio():
