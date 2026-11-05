@@ -95,7 +95,7 @@ class ProjectInfo(object):
         * gbxml_building_type
         * vintage
     """
-    __slots__ = ('_north_angle', '_weather_urls', '_location',
+    __slots__ = ('_north_angle', '_north_vector', '_weather_urls', '_location',
                  '_ashrae_climate_zone', '_building_type', '_vintage')
     CLIMATE_ZONES = (
         '0A', '1A', '2A', '3A', '4A', '5A', '6A',
@@ -236,7 +236,7 @@ class ProjectInfo(object):
         """Get the default design days for the project if weather_urls are specified."""
         if self.default_epw_file is not None:
             if self.default_ddy_file is not None:
-                ddy_obj = DDY(self.default_ddy_file)
+                ddy_obj = DDY.from_ddy_file(self.default_ddy_file)
                 des_days = []
                 for dday in ddy_obj:
                     if '99.6%' in dday.name or '.4%' in dday.name:
@@ -311,7 +311,7 @@ class ProjectInfo(object):
         * Courthouse
         * College
         """
-        return self._building_type
+        return tuple(self._building_type)
 
     @building_type.setter
     def building_type(self, value):
@@ -339,7 +339,7 @@ class ProjectInfo(object):
     @property
     def gbxml_building_type(self):
         """Get text for the type of building as it might appear in gbXML."""
-        if len(self._building_type == 1):
+        if len(self._building_type) == 1:
             return self.BUILDING_TYPES[self._building_type[0]]
         return 'Unknown'
 
@@ -373,7 +373,7 @@ class ProjectInfo(object):
                 clean_input = self._valid_string(vt, 'vintage').lower()
                 for key in self.VINTAGES:
                     if key.lower() == clean_input:
-                        value = key
+                        value[i] = key
                         break
                 else:
                     raise ValueError(
