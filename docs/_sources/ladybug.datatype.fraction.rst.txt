@@ -1,0 +1,7 @@
+ladybug.datatype.fraction module
+================================
+
+.. automodule:: ladybug.datatype.fraction
+   :members:
+   :undoc-members:
+   :show-inheritance:

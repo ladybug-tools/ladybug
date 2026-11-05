@@ -1,0 +1,7 @@
+ladybug.datatype.energyintensity module
+=======================================
+
+.. automodule:: ladybug.datatype.energyintensity
+   :members:
+   :undoc-members:
+   :show-inheritance:

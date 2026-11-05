@@ -1,0 +1,6 @@
+download
+========
+
+.. click:: ladybug.cli.download:translate
+   :prog: ladybug translate
+   :show-nested:
