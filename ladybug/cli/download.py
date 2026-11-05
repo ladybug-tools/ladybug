@@ -61,4 +61,4 @@ def download_weather(weather_url, folder=None, log_file=None):
     """
     down_files = ProjectInfo.download_weather(weather_url, folder)
     down_files = [f for f in down_files if f is not None]
-    return process_content_to_output(down_files, log_file)
+    return process_content_to_output('\n'.join(down_files), log_file)

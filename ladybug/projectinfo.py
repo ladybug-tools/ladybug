@@ -476,8 +476,9 @@ class ProjectInfo(object):
             lone_epw = True
 
         # establish the default file names
-        folder = folders.default_epw_folder \
-            if folder is None or not os.path.isdir(folder) else folder
+        folder = folders.default_epw_folder if folder is None else folder
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
         epw = os.path.join(folder, _folder_name, _folder_name + '.epw')
         stat = os.path.join(folder, _folder_name, _folder_name + '.stat')
         ddy = os.path.join(folder, _folder_name, _folder_name + '.ddy')
