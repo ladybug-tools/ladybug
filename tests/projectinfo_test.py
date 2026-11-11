@@ -146,3 +146,7 @@ def test_project_info_dict_methods():
     new_project = ProjectInfo.from_dict(project_dict)
     assert new_project == project
     assert project_dict == new_project.to_dict()
+
+    pi_file = project.to_json()
+    new_project = ProjectInfo.from_json(pi_file)
+    assert new_project == project
