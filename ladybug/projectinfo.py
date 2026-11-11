@@ -2,8 +2,12 @@
 """Complete set of Project Information including location, orientation and weather."""
 from __future__ import division
 import os
+import io
+import json
 import math
 import re
+import uuid
+
 from ladybug_geometry.geometry2d.pointvector import Vector2D
 
 from .config import folders
@@ -26,7 +30,7 @@ class ProjectInfo(object):
     """Complete set of Project Information including location, orientation and weather.
 
     Args:
-        north_angle: North angle in degrees. A number between -360 to 360 where
+        north: North angle in degrees. A number between -360 to 360 where
             positive values rotate the compass counterclockwise (towards the
             West) and negative values rotate the compass clockwise (towards
             the East). (Default: 0).
@@ -82,6 +86,7 @@ class ProjectInfo(object):
             * ASHRAE_2019
 
     Properties:
+        * north
         * north_angle
         * north_vector
         * weather_urls
@@ -133,15 +138,29 @@ class ProjectInfo(object):
     VINTAGES = ('DOE_Ref_Pre_1980', 'DOE_Ref_1980_2004', 'ASHRAE_2004', 'ASHRAE_2007',
                 'ASHRAE_2010', 'ASHRAE_2013', 'ASHRAE_2016', 'ASHRAE_2019')
 
-    def __init__(self, north_angle=0, weather_urls=None, location=None,
+    def __init__(self, north=0, weather_urls=None, location=None,
                  ashrae_climate_zone=None, building_type=None, vintage=None):
         """Initialize ProjectInfo."""
-        self.north_angle = north_angle
+        self.north = north
         self.weather_urls = weather_urls
         self.location = location
         self.ashrae_climate_zone = ashrae_climate_zone
         self.building_type = building_type
         self.vintage = vintage
+
+    @property
+    def north(self):
+        """Get or set a number between -360 and 360 for the north direction in degrees.
+
+        This is the counterclockwise difference between the North and the positive
+        Y-axis. A value of 90 will rotate the compass West and -90 will rotate it East.
+        """
+        return self._north_angle
+
+    @north.setter
+    def north(self, value):
+        self._north_angle = self._float_in_range(value, -360.0, 360.0, 'north angle')
+        self._north_vector = Vector2D(0, 1).rotate(math.radians(self._north_angle))
 
     @property
     def north_angle(self):
@@ -400,7 +419,7 @@ class ProjectInfo(object):
 
             {
             "type": "ProjectInfo",
-            "north_angle": 15,  # project angle from true north
+            "north": 15,  # project angle from true north
             "weather_urls": [],  # Array of URLs pointing to weather files
             "location": {},  # Ladybug Location object dictionary
             "ashrae_climate_zone": "5A",  # climate zone
@@ -410,20 +429,37 @@ class ProjectInfo(object):
         """
         assert data['type'] == 'ProjectInfo', \
             'Expected ProjectInfo dictionary. Got {}.'.format(data['type'])
-        north_angle = data['north_angle'] if 'north_angle' in data else 0
+        north = data['north'] if 'north' in data else 0
         urls = data['weather_urls'] if 'weather_urls' in data else None
         loc = Location.from_dict(data['location']) \
             if 'location' in data and data['location'] is not None else None
         cz = data['ashrae_climate_zone'] if 'ashrae_climate_zone' in data else None
         bt = data['building_type'] if 'building_type' in data else None
         vt = data['vintage'] if 'vintage' in data else None
-        return cls(north_angle, urls, loc, cz, bt, vt)
+        return cls(north, urls, loc, cz, bt, vt)
+
+    @classmethod
+    def from_json(cls, json_file):
+        """Initialize a Model from a JSON file.
+
+        Args:
+            json_file: Path to JSON file containing a ProjectInfo object.
+        """
+        assert os.path.isfile(json_file), 'Failed to find %s' % json_file
+        with io.open(json_file, encoding='utf-8') as inf:
+            inf.read(1)
+            second_char = inf.read(1)
+        with io.open(json_file, encoding='utf-8') as inf:
+            if second_char == '{':
+                inf.read(1)
+            data = json.load(inf)
+        return cls.from_dict(data)
 
     def to_dict(self):
         """ProjectInfo dictionary representation."""
         siz_par = {
             'type': 'ProjectInfo',
-            'north_angle': self.north_angle
+            'north': self.north
         }
         if len(self._weather_urls) != 0:
             siz_par['weather_urls'] = self._weather_urls
@@ -436,6 +472,34 @@ class ProjectInfo(object):
         if len(self._vintage) != 0:
             siz_par['vintage'] = self._vintage
         return siz_par
+
+    def to_json(self, name=None, folder=None, indent=None):
+        """Write ProjectInfo object to JSON.
+
+        Args:
+            name: A text string for the name of the JSON file. If None, the location
+                name will be used and if no location is assigned, a unique
+                ID will be generated. (Default: None).
+            folder: A text string for the directory where the JSON will be written.
+                If unspecified, the default EPW folder will be used. This
+                is usually at "%APPDATA%\\ladybug_tools\\weather."
+            indent: A positive integer to set the indentation used in the resulting
+                JSON file. (Default: None).
+        """
+        # create dictionary from the ProjectInfo object
+        pr_dict = self.to_dict()
+        # set up a name and folder for the JSON
+        if name is None:
+            name = self.location.city if self.location is not None \
+                and self.location.city is not None else str(uuid.uuid4())[:8]
+        file_name = name if name.lower().endswith('.json') or \
+            name.lower().endswith('.json') else '{}.json'.format(name)
+        folder = folder if folder is not None else folders.default_epw_folder
+        pr_file = os.path.join(folder, file_name)
+        # write JSON
+        with open(pr_file, 'w') as fp:
+            json.dump(pr_dict, fp, indent=indent)
+        return pr_file
 
     @staticmethod
     def download_weather(weather_url, folder=None):
@@ -484,13 +548,17 @@ class ProjectInfo(object):
         ddy = os.path.join(folder, _folder_name, _folder_name + '.ddy')
 
         # download and unzip the files if they do not exist
-        if not os.path.isfile(epw) or not os.path.isfile(stat) or not os.path.isfile(ddy):
-            if lone_epw:
-                download_file(weather_url, epw, True)
-            else:
-                zip_file_path = os.path.join(folder, _folder_name, _folder_name + '.zip')
-                download_file(weather_url, zip_file_path, True)
-                unzip_file(zip_file_path)
+        try:
+            if not os.path.isfile(epw) or not os.path.isfile(stat) \
+                    or not os.path.isfile(ddy):
+                if lone_epw:
+                    download_file(weather_url, epw, True)
+                else:
+                    zip_file_path = os.path.join(folder, _folder_name, _folder_name + '.zip')
+                    download_file(weather_url, zip_file_path, True)
+                    unzip_file(zip_file_path)
+        except Exception:  # no internet connection available
+            return None, None, None
 
         # set output
         epw_file, stat_file, ddy_file = epw, None, None
@@ -549,7 +617,8 @@ class ProjectInfo(object):
 
     def __key(self):
         """A tuple based on the object properties, useful for hashing."""
-        return tuple(self._weather_urls) + tuple(self._building_type), tuple(self._vintage) + \
+        return tuple(self._weather_urls) + tuple(self._building_type) + \
+            tuple(self._vintage) + \
             (self._north_angle, hash(self._location), self._ashrae_climate_zone)
 
     def __hash__(self):

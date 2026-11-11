@@ -17,7 +17,6 @@ def test_download_weather():
 
     if os.name == 'nt':
         result = runner.invoke(download_weather_cli, in_args)
-        print(result.output)
         assert result.exit_code == 0
         out_paths = result.output.split('\n')
         assert len(out_paths) == 3
