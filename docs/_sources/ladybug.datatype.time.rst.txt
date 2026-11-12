@@ -1,0 +1,7 @@
+ladybug.datatype.time module
+============================
+
+.. automodule:: ladybug.datatype.time
+   :members:
+   :undoc-members:
+   :show-inheritance:

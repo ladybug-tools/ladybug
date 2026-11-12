@@ -1,0 +1,7 @@
+ladybug.windprofile module
+==========================
+
+.. automodule:: ladybug.windprofile
+   :members:
+   :undoc-members:
+   :show-inheritance:
