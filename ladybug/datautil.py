@@ -115,7 +115,7 @@ def collections_from_csv(data_file):
         dts = [inv_map[d] for d in datetimes]
         data = [MonthlyCollection(h, v, dts) for h, v in zip(heads, t_vals)]
     elif coll_class == DailyCollection:
-        dts = [Date.from_date_string(d, aper.is_leap_year) for d in datetimes]
+        dts = [Date.from_date_string(d, aper.is_leap_year).doy for d in datetimes]
         data = [DailyCollection(h, v, dts) for h, v in zip(heads, t_vals)]
     elif coll_class == MonthlyPerHourCollection:
         inv_map = {v: k for k, v in AnalysisPeriod.MONTHNAMES.items()}
