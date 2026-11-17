@@ -107,6 +107,7 @@ class EPW(object):
         * liquid_precipitation_depth
         * liquid_precipitation_quantity
         * sky_temperature
+        * wet_bulb_temperature
     """
     __slots__ = ('_file_path', '_is_header_loaded', '_is_data_loaded', '_is_ip',
                  '_data', '_metadata', '_location', '_is_2009_ashrae',
@@ -1450,6 +1451,26 @@ climate-calculations.html#energyplus-sky-temperature-calculation
         horiz_ir = self.get_data_by_field(12).values
         sky_temp_data = [calc_sky_temperature(hir) for hir in horiz_ir]
         return HourlyContinuousCollection(sky_temp_header, sky_temp_data)
+
+    @property
+    def wet_bulb_temperature(self):
+        """Get annual Wet Bulb Temperature as a Ladybug Data Collection.
+
+        This value in degrees Celsius is derived from the Dry Bulb Temperature,
+        the Relative Humidity, and the Atmospheric Station Pressure.
+        """
+        # create sky temperature header
+        wb_header = Header(
+            data_type=temperature.WetBulbTemperature(), unit='C',
+            analysis_period=AnalysisPeriod(is_leap_year=self.is_leap_year),
+            metadata=self._metadata)
+
+        # calculate sy temperature for each hour
+        db = self.get_data_by_field(6).values
+        rh = self.get_data_by_field(8).values
+        press = self.get_data_by_field(9).values
+        wb_temp_data = [wet_bulb_from_db_rh(d, r, p) for d, r, p in zip(db, rh, press)]
+        return HourlyContinuousCollection(wb_header, wb_temp_data)
 
     def approximate_design_day(self, day_type='SummerDesignDay', percentile=0.4):
         """Get a DesignDay object derived from percentile analysis of annual EPW data.
