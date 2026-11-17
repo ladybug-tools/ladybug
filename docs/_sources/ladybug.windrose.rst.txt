@@ -1,0 +1,7 @@
+ladybug.windrose module
+=======================
+
+.. automodule:: ladybug.windrose
+   :members:
+   :undoc-members:
+   :show-inheritance:
