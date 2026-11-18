@@ -638,13 +638,19 @@ class SQLiteResult(object):
             # extract all indices in the ReportDataDictionary
             c = conn.cursor()
             c.execute('SELECT Name, IndexGroup, Units, ReportingFrequency '
-                      'FROM ReportDataDictionary')
+                      'FROM ReportDataDictionary ORDER BY ReportDataDictionaryIndex')
             outputs = c.fetchall()
             conn.close()  # ensure connection is always closed
         except Exception as e:
             conn.close()  # ensure connection is always closed
             raise Exception(str(e))
-        unique_outputs = set(outputs)
+        # keep the order of the file so that every run gives the same result
+        unique_outputs, found, freq_count = [], set(), {}
+        for outp in outputs:
+            if outp not in found:
+                found.add(outp)
+                unique_outputs.append(outp)
+            freq_count[outp[3]] = freq_count.get(outp[3], 0) + 1
         self._available_outputs = tuple(outp[0] for outp in unique_outputs)
         self._available_outputs_info = []
         for outp in unique_outputs:
@@ -655,7 +661,13 @@ class SQLiteResult(object):
             outp_dict['data_type'], outp_dict['units'] = \
                 self._data_type_from_unit(outp_dict['units'], outp[0])
             self._available_outputs_info.append(outp_dict)
-            self._reporting_frequency = outp[3]
+        # use the frequency of most outputs, and the first one in the file on a tie
+        if unique_outputs:
+            freqs = []
+            for outp in unique_outputs:
+                if outp[3] not in freqs:
+                    freqs.append(outp[3])
+            self._reporting_frequency = max(freqs, key=lambda f: freq_count[f])
 
     def _extract_timestep(self):
         """Extract an integer for the timestep of the data.
