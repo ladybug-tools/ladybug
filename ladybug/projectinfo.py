@@ -255,7 +255,10 @@ class ProjectInfo(object):
         """Get the default design days for the project if weather_urls are specified."""
         if self.default_epw_file is not None:
             if self.default_ddy_file is not None:
-                ddy_obj = DDY.from_ddy_file(self.default_ddy_file)
+                try:
+                    ddy_obj = DDY.from_ddy_file(self.default_ddy_file)
+                except AssertionError:  # no design days in the file
+                    ddy_obj = []
                 des_days = []
                 for dday in ddy_obj:
                     if '99.6%' in dday.name or '.4%' in dday.name:
