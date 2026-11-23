@@ -33,6 +33,20 @@ def test_sqlite_init():
     assert 'Zone Ideal Loads Supply Air Total Heating Energy' in all_output
 
 
+def test_sqlite_mixed_reporting_frequency():
+    """Test reporting_frequency and available_outputs with outputs at several frequencies."""
+    sql_path = './tests/assets/sql/eplusout_openstudio_error.sql'
+    sql_obj = SQLiteResult(sql_path)
+
+    # 8 hourly outputs, 4 at the timestep, 2 daily and 1 monthly
+    assert sql_obj.reporting_frequency == 'Hourly'
+    assert len(sql_obj.available_outputs) == 15
+    assert sql_obj.available_outputs[:3] == (
+        'Site Outdoor Air Drybulb Temperature', 'Site Outdoor Air Wetbulb Temperature',
+        'Electricity:Facility')
+    assert sql_obj.available_outputs[-1] == 'DistrictCooling:Facility'
+
+
 def test_available_results_info():
     """Test the available_results_info property."""
     sql_path = './tests/assets/sql/eplusout_hourly.sql'
