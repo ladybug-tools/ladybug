@@ -1,0 +1,7 @@
+ladybug.cli.download module
+===========================
+
+.. automodule:: ladybug.cli.download
+   :members:
+   :undoc-members:
+   :show-inheritance:
